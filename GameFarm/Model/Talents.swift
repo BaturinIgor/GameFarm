@@ -47,7 +47,6 @@ struct TalentSpec {
 
     let id: TalentID
     let branch: TalentBranch
-    let name: String
     let emoji: String
     let maxRank: Int
     let tier: Int
