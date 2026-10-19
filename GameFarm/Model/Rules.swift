@@ -1,0 +1,149 @@
+import Foundation
+
+enum GameRules {
+    static let maxLevel = 60
+    static let maxActiveAnimals = 5
+    static let baseSpeed = 165.0
+    static let baseReach: Double = 46
+
+    static func xpToNext(_ level: Int) -> Int {
+        Int((20 * pow(Double(level), 1.6)).rounded())
+    }
+
+    /// Очки талантов, полученные к уровню: по одному за уровень и бонусное каждые 10 уровней.
+    static func talentPoints(at level: Int) -> Int {
+        level + level / 10
+    }
+
+    static func capacity(at level: Int) -> Int {
+        30 + 5 * level
+    }
+
+    static func levelCoinReward(_ level: Int) -> Int {
+        25 * level
+    }
+
+    static func respecCost(_ level: Int) -> Int {
+        50 * level
+    }
+
+    static func tameXP(_ level: Int) -> Int {
+        10 + 2 * level
+    }
+
+    static func unlockXP(_ location: LocationID) -> Int {
+        location.spec.level * 15
+    }
+}
+
+struct UnlockLine: Identifiable {
+    let id = UUID()
+    let icon: String
+    let text: String
+}
+
+extension GameRules {
+    /// Что даёт достижение уровня.
+    static func rewards(at level: Int) -> [UnlockLine] {
+        var lines: [UnlockLine] = []
+        let points = talentPoints(at: level) - talentPoints(at: level - 1)
+        lines.append(UnlockLine(icon: "🌟", text: points > 1 ? "+\(points) очка таланта" : "+1 очко таланта"))
+        lines.append(UnlockLine(icon: "🪙", text: "+\(levelCoinReward(level)) монет"))
+        lines.append(UnlockLine(icon: "🎒", text: "+5 мест в рюкзаке"))
+        lines.append(UnlockLine(icon: "💪", text: "+2% к урону и +1% к цене продажи"))
+        return lines
+    }
+
+    /// Что открывается ровно на этом уровне.
+    static func unlocks(at level: Int) -> [UnlockLine] {
+        var lines: [UnlockLine] = []
+        for id in LocationID.allCases where id.spec.level == level && level > 1 {
+            lines.append(UnlockLine(icon: id.spec.emoji, text: "Можно открыть локацию: \(id.spec.name)"))
+        }
+        for tool in ToolKind.upgradable {
+            for tier in 2...ToolTier.maxTier where ToolTier.requiredLevel(tool, tier: tier) == level {
+                lines.append(UnlockLine(icon: tool.emoji, text: "В мастерской: \(ToolTier.name(tool, tier: tier))"))
+            }
+        }
+        for id in AnimalID.allCases {
+            if case .shop(_, let need) = id.spec.source, need == level {
+                lines.append(UnlockLine(icon: id.spec.emoji, text: "В лавке: \(id.spec.name)"))
+            }
+        }
+        if let tier = TalentSpec.tierLevels.firstIndex(of: level), tier > 0 {
+            lines.append(UnlockLine(icon: "🌳", text: "Новый ряд талантов (ряд \(tier + 1))"))
+        }
+        return lines
+    }
+}
+
+struct Producer {
+    let animal: AnimalID
+    let kind: ResourceKind
+    let interval: Double
+}
+
+struct Helper {
+    let animal: AnimalID
+    let spec: HelperSpec
+    let damage: Double
+}
+
+/// Итоговые характеристики с учётом уровня, талантов, инструментов и животных.
+struct Stats {
+    var damageMult = 1.0
+    var woodBonus = 0.0
+    var stoneBonus = 0.0
+    var handMult = 1.0
+    var hitInterval = 0.55
+    var critChance = 0.0
+    var critMult = 2.0
+    var shatterChance = 0.0
+    var quake = false
+    var yieldAll = 0.0
+    var yieldCategory: [ResourceCategory: Double] = [:]
+    var yieldKind: [ResourceKind: Double] = [:]
+    var doubleChance = 0.0
+    var respawnMult = 1.0
+    var regrowChance = 0.0
+    var xpMult = 1.0
+    var sellMult = 1.0
+    var goldenTouch = false
+    var gemChance = 0.0
+    var speed = GameRules.baseSpeed
+    var capacity = 35
+    var reach: Double = GameRules.baseReach
+    var tameMult = 1.0
+    var spawnMult = 1.0
+    var helperMult = 1.0
+    var producerMult = 1.0
+    var discount = 1.0
+    var autoDeposit = false
+    var animalMult = 1.0
+    var producers: [Producer] = []
+    var helpers: [Helper] = []
+
+    func yieldMultiplier(for kind: ResourceKind) -> Double {
+        1 + yieldAll + (yieldCategory[kind.category] ?? 0) + (yieldKind[kind] ?? 0)
+    }
+}
+
+struct Encounter: Equatable {
+    let animal: AnimalID
+}
+
+struct Toast: Identifiable, Equatable {
+    let id = UUID()
+    let icon: String
+    let text: String
+}
+
+struct LevelUpInfo: Equatable {
+    let from: Int
+    let to: Int
+}
+
+struct OfflineReport: Equatable {
+    let duration: Double
+    let items: [ResourceAmount]
+}

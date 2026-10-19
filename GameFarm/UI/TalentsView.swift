@@ -1,0 +1,255 @@
+import SwiftUI
+
+struct TalentsView: View {
+    @Environment(GameState.self) private var game
+    @State private var branch: TalentBranch = .mining
+    @State private var selected: TalentID?
+    @State private var confirmReset = false
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                header
+                Picker("Ветка", selection: $branch) {
+                    ForEach(TalentBranch.allCases) { b in
+                        Text("\(b.emoji) \(b.title)").tag(b)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+
+                GeometryReader { geo in
+                    ScrollView {
+                        TalentTreeCanvas(branch: branch, width: geo.size.width, selected: $selected)
+                            .padding(.bottom, 20)
+                    }
+                }
+            }
+            .safeAreaInset(edge: .bottom) {
+                if let id = selected {
+                    TalentDetail(id: id)
+                        .padding(.horizontal, 12)
+                        .padding(.bottom, 6)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .animation(.spring(duration: 0.3), value: selected)
+            .onChange(of: branch) { _, _ in selected = nil }
+            .sheetChrome("Таланты", coins: game.save.coins)
+            .confirmationDialog("Сбросить все таланты?", isPresented: $confirmReset, titleVisibility: .visible) {
+                Button("Сбросить за \(Fmt.n(game.respecCost)) 🪙", role: .destructive) {
+                    game.resetTalents()
+                    selected = nil
+                }
+            } message: {
+                Text("Все очки вернутся, и их можно будет распределить заново.")
+            }
+        }
+    }
+
+    private var header: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Свободно очков: \(game.talentPointsFree)")
+                    .font(.headline)
+                Text("1 очко за каждый уровень, +1 бонусное каждые 10 уровней")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button {
+                confirmReset = true
+            } label: {
+                Image(systemName: "arrow.counterclockwise")
+                    .font(.system(size: 15, weight: .bold))
+            }
+            .buttonStyle(.bordered)
+            .buttonBorderShape(.circle)
+            .disabled(game.talentPointsSpent == 0 || game.save.coins < game.respecCost)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+}
+
+/// Дерево ветки: узлы по рядам и линии от родителей к детям.
+struct TalentTreeCanvas: View {
+    @Environment(GameState.self) private var game
+    let branch: TalentBranch
+    let width: CGFloat
+    @Binding var selected: TalentID?
+
+    private let rowHeight: CGFloat = 112
+    private let top: CGFloat = 50
+    private let left: CGFloat = 54
+
+    private func position(_ spec: TalentSpec) -> CGPoint {
+        let columnWidth = (width - left - 12) / 3
+        return CGPoint(x: left + columnWidth * (CGFloat(spec.column) + 0.5), y: top + CGFloat(spec.tier) * rowHeight)
+    }
+
+    var body: some View {
+        let talents = branch.talents
+        let height = top + CGFloat(TalentSpec.tierLevels.count - 1) * rowHeight + 70
+        ZStack(alignment: .topLeading) {
+            ForEach(Array(TalentSpec.tierLevels.enumerated()), id: \.offset) { item in
+                let reached = game.save.level >= item.element
+                Text("Ур.\n\(item.element)")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(reached ? Color.primary : Color.secondary)
+                    .frame(width: 40)
+                    .position(x: 26, y: top + CGFloat(item.offset) * rowHeight)
+                Rectangle()
+                    .fill(Color.secondary.opacity(0.08))
+                    .frame(width: max(0, width - 60), height: 1)
+                    .position(x: 30 + (width - 60) / 2 + 12, y: top + CGFloat(item.offset) * rowHeight + rowHeight / 2)
+            }
+
+            ForEach(talents) { id in
+                ForEach(id.spec.parents, id: \.self) { parent in
+                    let active = game.rank(parent) > 0
+                    Path { path in
+                        path.move(to: position(parent.spec))
+                        path.addLine(to: position(id.spec))
+                    }
+                    .stroke(active ? branch.color : Color.secondary.opacity(0.3),
+                            style: StrokeStyle(lineWidth: active ? 4 : 3, lineCap: .round, dash: active ? [] : [6, 6]))
+                }
+            }
+
+            ForEach(talents) { id in
+                TalentNode(id: id, color: branch.color, isSelected: selected == id) {
+                    selected = selected == id ? nil : id
+                }
+                .position(position(id.spec))
+            }
+        }
+        .frame(width: width, height: height, alignment: .topLeading)
+    }
+}
+
+struct TalentNode: View {
+    @Environment(GameState.self) private var game
+    let id: TalentID
+    let color: Color
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        let spec = id.spec
+        let rank = game.rank(id)
+        let available = game.talentAvailable(id)
+        let learnable = game.canLearn(id)
+        let maxed = rank >= spec.maxRank
+        Button(action: action) {
+            VStack(spacing: 4) {
+                ZStack {
+                    Circle()
+                        .fill(rank > 0 ? color.opacity(0.25) : Color(uiColor: .secondarySystemGroupedBackground))
+                    Circle()
+                        .strokeBorder(rank > 0 ? color : Color.secondary.opacity(0.35), lineWidth: isSelected ? 4 : 2.5)
+                    Text(spec.emoji)
+                        .font(.system(size: 26))
+                        .grayscale(available ? 0 : 1)
+                    if !available {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(4)
+                            .background(Circle().fill(Color.black.opacity(0.55)))
+                            .offset(x: 20, y: -20)
+                    } else if learnable {
+                        Image(systemName: "plus")
+                            .font(.system(size: 11, weight: .heavy))
+                            .foregroundStyle(.white)
+                            .padding(4)
+                            .background(Circle().fill(Color.green))
+                            .offset(x: 20, y: -20)
+                    }
+                }
+                .frame(width: 60, height: 60)
+                .shadow(color: rank > 0 ? color.opacity(0.4) : .clear, radius: 8)
+
+                Text("\(rank)/\(spec.maxRank)")
+                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(maxed ? color : Color.secondary.opacity(0.18)))
+                    .foregroundStyle(maxed ? Color.white : Color.primary)
+            }
+            .opacity(available ? 1 : 0.55)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+struct TalentDetail: View {
+    @Environment(GameState.self) private var game
+    let id: TalentID
+
+    var body: some View {
+        let spec = id.spec
+        let rank = game.rank(id)
+        let maxed = rank >= spec.maxRank
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                Text(spec.emoji).font(.system(size: 30))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(spec.name).font(.headline)
+                    Text("Ранг \(rank) из \(spec.maxRank)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+            if rank > 0 {
+                Text("Сейчас: \(spec.effect(at: rank))")
+                    .font(.subheadline)
+            }
+            if !maxed {
+                Text(rank > 0 ? "Дальше: \(spec.effect(at: rank + 1))" : spec.effect(at: 1))
+                    .font(.subheadline)
+                    .foregroundStyle(rank > 0 ? Color.secondary : Color.primary)
+            }
+            requirements(spec)
+            if !maxed {
+                Button {
+                    withAnimation(.spring(duration: 0.3)) {
+                        if game.learn(id) {
+                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        }
+                    }
+                } label: {
+                    Text(game.talentPointsFree > 0 ? "Изучить за 1 очко" : "Нет свободных очков")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
+                .disabled(!game.canLearn(id))
+            }
+        }
+        .padding(16)
+        .glassEffect(.regular, in: .rect(cornerRadius: 24))
+    }
+
+    @ViewBuilder
+    private func requirements(_ spec: TalentSpec) -> some View {
+        let levelOK = game.save.level >= spec.requiredLevel
+        let missing = spec.parents.filter { game.rank($0) == 0 }
+        if !levelOK || !missing.isEmpty {
+            VStack(alignment: .leading, spacing: 3) {
+                if !levelOK {
+                    Label("Нужен уровень \(spec.requiredLevel)", systemImage: "lock.fill")
+                }
+                ForEach(missing, id: \.self) { parent in
+                    Label("Сначала изучи \"\(parent.spec.name)\"", systemImage: "arrow.up.circle")
+                }
+            }
+            .font(.caption.bold())
+            .foregroundStyle(.orange)
+        }
+    }
+}

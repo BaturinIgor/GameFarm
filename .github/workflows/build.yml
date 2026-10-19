@@ -1,0 +1,86 @@
+name: Build IPA
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "README.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-ipa
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          brew install xcodegen ldid
+          xcodebuild -version
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build
+        run: |
+          set +e
+          xcodebuild \
+            -project GameFarm.xcodeproj \
+            -scheme GameFarm \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build > build.log 2>&1
+          status=$?
+          echo "---- errors ----"
+          grep -E "error:|fatal error" build.log | sort -u | head -150
+          echo "---- tail ----"
+          tail -40 build.log
+          exit $status
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+          if-no-files-found: ignore
+
+      - name: Package IPA
+        run: |
+          APP="build/Build/Products/Release-iphoneos/GameFarm.app"
+          ls "$APP"
+          ldid -S "$APP/GameFarm"
+          rm -rf Payload GameFarm.ipa
+          mkdir Payload
+          cp -R "$APP" Payload/
+          zip -qry GameFarm.ipa Payload
+          ls -lh GameFarm.ipa
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: GameFarm-ipa
+          path: GameFarm.ipa
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="build-${{ github.run_number }}"
+          gh release create "$TAG" GameFarm.ipa \
+            --title "GameFarm, сборка ${{ github.run_number }}" \
+            --notes "Скачай GameFarm.ipa и установи через SideStore." \
+            --latest

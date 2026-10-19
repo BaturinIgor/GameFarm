@@ -1,0 +1,204 @@
+import UIKit
+
+enum ToolKind: String, CaseIterable, Identifiable {
+    case hand, axe, pickaxe, rod
+
+    var id: String { rawValue }
+
+    static let upgradable: [ToolKind] = [.axe, .pickaxe, .rod]
+
+    var emoji: String {
+        switch self {
+        case .hand: "✋"
+        case .axe: "🪓"
+        case .pickaxe: "⛏️"
+        case .rod: "🎣"
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .hand: "Руки"
+        case .axe: "Топор"
+        case .pickaxe: "Кирка"
+        case .rod: "Удочка"
+        }
+    }
+
+    var purpose: String {
+        switch self {
+        case .hand: "Собирать ягоды, яблоки, грибы и морковь"
+        case .axe: "Рубить деревья, бамбук и кактусы"
+        case .pickaxe: "Добывать камень, руду, лёд и самоцветы"
+        case .rod: "Ловить рыбу"
+        }
+    }
+}
+
+enum ToolTier {
+    static let maxTier = 6
+
+    /// Сила удара инструмента по ступеням.
+    static func power(_ tier: Int) -> Double {
+        let table: [Double] = [1, 1.8, 3, 4.6, 6.8, 10]
+        return table[max(0, min(table.count - 1, tier - 1))]
+    }
+
+    static func name(_ tool: ToolKind, tier: Int) -> String {
+        let index = max(0, min(5, tier - 1))
+        let masculine = ["Деревянный", "Каменный", "Железный", "Золотой", "Алмазный", "Кристальный"]
+        let feminine = ["Деревянная", "Каменная", "Железная", "Золотая", "Алмазная", "Кристальная"]
+        let adjective = tool == .axe ? masculine[index] : feminine[index]
+        return "\(adjective) \(tool.title.lowercased())"
+    }
+
+    static func color(_ tier: Int) -> UIColor {
+        switch tier {
+        case 1: UIColor(red: 0.62, green: 0.42, blue: 0.24, alpha: 1)
+        case 2: UIColor(red: 0.55, green: 0.57, blue: 0.6, alpha: 1)
+        case 3: UIColor(red: 0.75, green: 0.78, blue: 0.84, alpha: 1)
+        case 4: UIColor(red: 0.98, green: 0.78, blue: 0.2, alpha: 1)
+        case 5: UIColor(red: 0.4, green: 0.88, blue: 1.0, alpha: 1)
+        default: UIColor(red: 0.72, green: 0.45, blue: 1.0, alpha: 1)
+        }
+    }
+
+    static func requiredLevel(_ tool: ToolKind, tier: Int) -> Int {
+        let index = max(0, min(5, tier - 1))
+        switch tool {
+        case .rod: return [1, 11, 16, 24, 32, 40][index]
+        default: return [1, 3, 7, 13, 20, 28][index]
+        }
+    }
+
+    static func cost(_ tool: ToolKind, tier: Int) -> Cost {
+        switch (tool, tier) {
+        case (.axe, 2): Cost(coins: 40, (.wood, 40), (.stone, 20))
+        case (.axe, 3): Cost(coins: 250, (.wood, 150), (.stone, 60), (.coal, 20))
+        case (.axe, 4): Cost(coins: 1000, (.wood, 300), (.iron, 50), (.bamboo, 40))
+        case (.axe, 5): Cost(coins: 4000, (.wood, 600), (.gold, 30), (.cactus, 40))
+        case (.axe, 6): Cost(coins: 12000, (.wood, 1200), (.diamond, 8), (.ice, 60))
+        case (.pickaxe, 2): Cost(coins: 40, (.wood, 25), (.stone, 40))
+        case (.pickaxe, 3): Cost(coins: 250, (.stone, 150), (.coal, 30))
+        case (.pickaxe, 4): Cost(coins: 1000, (.stone, 300), (.iron, 60), (.coal, 60))
+        case (.pickaxe, 5): Cost(coins: 4000, (.iron, 150), (.gold, 40))
+        case (.pickaxe, 6): Cost(coins: 12000, (.gold, 120), (.diamond, 12), (.ice, 80))
+        case (.rod, 2): Cost(coins: 500, (.wood, 100), (.bamboo, 40), (.fish, 30))
+        case (.rod, 3): Cost(coins: 1500, (.bamboo, 120), (.iron, 40), (.fish, 80))
+        case (.rod, 4): Cost(coins: 5000, (.gold, 30), (.ice, 40), (.fish, 150))
+        case (.rod, 5): Cost(coins: 12000, (.diamond, 6), (.fish, 300))
+        case (.rod, 6): Cost(coins: 25000, (.crystal, 15), (.fish, 500))
+        default: Cost()
+        }
+    }
+}
+
+/// Что именно можно добыть на точке.
+struct NodeYield {
+    let kind: ResourceKind
+    let min: Int
+    let max: Int
+    var chance: Double = 1
+}
+
+enum NodeType: String, CaseIterable {
+    case tree, pine, palm, snowPine, glowTree
+    case bush, appleTree, mushroom, carrot, cactus, bamboo, glowShroom
+    case rock, boulder, coalOre, ironOre, goldOre, iceBlock, diamondOre, crystalOre
+    case fishSpot, oasisFish, iceHole
+
+    var spec: NodeSpec { NodeSpec.table[self]! }
+}
+
+struct NodeSpec {
+    let type: NodeType
+    let name: String
+    let tool: ToolKind
+    let tier: Int
+    let hp: Double
+    let xp: Int
+    let respawn: Double
+    let yields: [NodeYield]
+    /// Радиус для столкновений и дальности добычи.
+    let radius: CGFloat
+    /// Персонаж не может пройти сквозь точку.
+    let blocking: Bool
+    /// Точка остаётся препятствием и после добычи (яблоня без яблок).
+    var keepsBody: Bool = false
+    /// Высота полоски прочности над точкой.
+    let barHeight: CGFloat
+    let chip: UIColor
+
+    var mainResource: ResourceKind { yields[0].kind }
+
+    static let table: [NodeType: NodeSpec] = {
+        let brown = UIColor(red: 0.55, green: 0.36, blue: 0.2, alpha: 1)
+        let green = UIColor(red: 0.3, green: 0.68, blue: 0.3, alpha: 1)
+        let gray = UIColor(white: 0.6, alpha: 1)
+        let water = UIColor(red: 0.55, green: 0.8, blue: 1, alpha: 1)
+        let list: [NodeSpec] = [
+            NodeSpec(type: .tree, name: "Дуб", tool: .axe, tier: 1, hp: 3, xp: 3, respawn: 8,
+                     yields: [NodeYield(kind: .wood, min: 2, max: 3)], radius: 18, blocking: true, barHeight: 70, chip: brown),
+            NodeSpec(type: .pine, name: "Ель", tool: .axe, tier: 2, hp: 6, xp: 6, respawn: 11,
+                     yields: [NodeYield(kind: .wood, min: 4, max: 5)], radius: 16, blocking: true, barHeight: 74, chip: brown),
+            NodeSpec(type: .palm, name: "Пальма", tool: .axe, tier: 3, hp: 10, xp: 9, respawn: 14,
+                     yields: [NodeYield(kind: .wood, min: 5, max: 6), NodeYield(kind: .coconut, min: 1, max: 2, chance: 0.7)],
+                     radius: 16, blocking: true, barHeight: 76, chip: brown),
+            NodeSpec(type: .snowPine, name: "Снежная ель", tool: .axe, tier: 4, hp: 17, xp: 14, respawn: 16,
+                     yields: [NodeYield(kind: .wood, min: 8, max: 10)], radius: 18, blocking: true, barHeight: 78, chip: .white),
+            NodeSpec(type: .glowTree, name: "Светлое древо", tool: .axe, tier: 5, hp: 26, xp: 22, respawn: 22,
+                     yields: [NodeYield(kind: .wood, min: 12, max: 15), NodeYield(kind: .crystal, min: 1, max: 1, chance: 0.15)],
+                     radius: 20, blocking: true, barHeight: 80, chip: UIColor(red: 0.75, green: 0.55, blue: 1, alpha: 1)),
+            NodeSpec(type: .bush, name: "Черничный куст", tool: .hand, tier: 1, hp: 2, xp: 1, respawn: 7,
+                     yields: [NodeYield(kind: .berries, min: 2, max: 3)], radius: 14, blocking: false, barHeight: 40,
+                     chip: UIColor(red: 0.35, green: 0.4, blue: 0.85, alpha: 1)),
+            NodeSpec(type: .appleTree, name: "Яблоня", tool: .hand, tier: 1, hp: 3, xp: 2, respawn: 10,
+                     yields: [NodeYield(kind: .apples, min: 2, max: 3)], radius: 18, blocking: true, keepsBody: true, barHeight: 70,
+                     chip: UIColor(red: 0.9, green: 0.2, blue: 0.2, alpha: 1)),
+            NodeSpec(type: .mushroom, name: "Грибы", tool: .hand, tier: 1, hp: 1, xp: 2, respawn: 8,
+                     yields: [NodeYield(kind: .mushrooms, min: 1, max: 2)], radius: 10, blocking: false, barHeight: 34,
+                     chip: UIColor(red: 0.85, green: 0.25, blue: 0.2, alpha: 1)),
+            NodeSpec(type: .carrot, name: "Морковная грядка", tool: .hand, tier: 1, hp: 2, xp: 3, respawn: 9,
+                     yields: [NodeYield(kind: .carrots, min: 2, max: 3)], radius: 11, blocking: false, barHeight: 36,
+                     chip: UIColor(red: 1, green: 0.55, blue: 0.1, alpha: 1)),
+            NodeSpec(type: .cactus, name: "Кактус", tool: .axe, tier: 2, hp: 5, xp: 7, respawn: 12,
+                     yields: [NodeYield(kind: .cactus, min: 2, max: 3)], radius: 14, blocking: true, barHeight: 56, chip: green),
+            NodeSpec(type: .bamboo, name: "Бамбук", tool: .axe, tier: 2, hp: 5, xp: 5, respawn: 10,
+                     yields: [NodeYield(kind: .bamboo, min: 3, max: 4)], radius: 14, blocking: true, barHeight: 62, chip: green),
+            NodeSpec(type: .glowShroom, name: "Светогрибы", tool: .hand, tier: 1, hp: 4, xp: 10, respawn: 14,
+                     yields: [NodeYield(kind: .mushrooms, min: 4, max: 6)], radius: 12, blocking: false, barHeight: 40,
+                     chip: UIColor(red: 0.4, green: 0.95, blue: 1, alpha: 1)),
+            NodeSpec(type: .rock, name: "Камень", tool: .pickaxe, tier: 1, hp: 4, xp: 3, respawn: 9,
+                     yields: [NodeYield(kind: .stone, min: 2, max: 3)], radius: 16, blocking: true, barHeight: 44, chip: gray),
+            NodeSpec(type: .boulder, name: "Валун", tool: .pickaxe, tier: 2, hp: 8, xp: 6, respawn: 13,
+                     yields: [NodeYield(kind: .stone, min: 5, max: 7), NodeYield(kind: .coal, min: 1, max: 1, chance: 0.3)],
+                     radius: 24, blocking: true, barHeight: 60, chip: gray),
+            NodeSpec(type: .coalOre, name: "Угольная жила", tool: .pickaxe, tier: 2, hp: 7, xp: 6, respawn: 13,
+                     yields: [NodeYield(kind: .coal, min: 2, max: 3), NodeYield(kind: .stone, min: 1, max: 1, chance: 0.5)],
+                     radius: 20, blocking: true, barHeight: 52, chip: UIColor(white: 0.2, alpha: 1)),
+            NodeSpec(type: .ironOre, name: "Железная жила", tool: .pickaxe, tier: 3, hp: 11, xp: 10, respawn: 16,
+                     yields: [NodeYield(kind: .iron, min: 2, max: 3), NodeYield(kind: .stone, min: 1, max: 1, chance: 0.5)],
+                     radius: 20, blocking: true, barHeight: 52, chip: ResourceKind.iron.oreColor),
+            NodeSpec(type: .goldOre, name: "Золотая жила", tool: .pickaxe, tier: 4, hp: 18, xp: 16, respawn: 22,
+                     yields: [NodeYield(kind: .gold, min: 2, max: 3)], radius: 20, blocking: true, barHeight: 52,
+                     chip: ResourceKind.gold.oreColor),
+            NodeSpec(type: .iceBlock, name: "Глыба льда", tool: .pickaxe, tier: 4, hp: 15, xp: 14, respawn: 16,
+                     yields: [NodeYield(kind: .ice, min: 3, max: 4)], radius: 18, blocking: true, barHeight: 52, chip: water),
+            NodeSpec(type: .diamondOre, name: "Алмазная жила", tool: .pickaxe, tier: 5, hp: 30, xp: 30, respawn: 35,
+                     yields: [NodeYield(kind: .diamond, min: 1, max: 2), NodeYield(kind: .stone, min: 2, max: 2, chance: 0.5)],
+                     radius: 20, blocking: true, barHeight: 56, chip: ResourceKind.diamond.oreColor),
+            NodeSpec(type: .crystalOre, name: "Кристаллы", tool: .pickaxe, tier: 6, hp: 46, xp: 45, respawn: 45,
+                     yields: [NodeYield(kind: .crystal, min: 1, max: 2)], radius: 22, blocking: true, barHeight: 64,
+                     chip: ResourceKind.crystal.oreColor),
+            NodeSpec(type: .fishSpot, name: "Рыбное место", tool: .rod, tier: 1, hp: 4, xp: 4, respawn: 10,
+                     yields: [NodeYield(kind: .fish, min: 1, max: 2)], radius: 14, blocking: false, barHeight: 34, chip: water),
+            NodeSpec(type: .oasisFish, name: "Оазис", tool: .rod, tier: 2, hp: 7, xp: 8, respawn: 13,
+                     yields: [NodeYield(kind: .fish, min: 2, max: 3)], radius: 14, blocking: false, barHeight: 34, chip: water),
+            NodeSpec(type: .iceHole, name: "Лунка", tool: .rod, tier: 3, hp: 12, xp: 14, respawn: 16,
+                     yields: [NodeYield(kind: .fish, min: 4, max: 5)], radius: 16, blocking: false, barHeight: 34, chip: water)
+        ]
+        var dict: [NodeType: NodeSpec] = [:]
+        for spec in list { dict[spec.type] = spec }
+        return dict
+    }()
+}
