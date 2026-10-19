@@ -1,0 +1,250 @@
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:106:55: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .farmer, branch: .gathering, emoji: "🌾", maxRank: 3, tier: 3, column: 0,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:108:55: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .trader, branch: .gathering, emoji: "💰", maxRank: 5, tier: 3, column: 2,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:110:57: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .gardener, branch: .gathering, emoji: "🪴", maxRank: 3, tier: 4, column: 0,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:112:58: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .gemFinder, branch: .gathering, emoji: "💎", maxRank: 3, tier: 4, column: 2,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:114:60: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .goldenTouch, branch: .gathering, emoji: "👑", maxRank: 1, tier: 5, column: 1,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:117:51: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .swift, branch: .travel, emoji: "👟", maxRank: 5, tier: 0, column: 1,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:119:53: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .bigPack, branch: .travel, emoji: "🎒", maxRank: 5, tier: 1, column: 0,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:121:51: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .reach, branch: .travel, emoji: "🤲", maxRank: 3, tier: 1, column: 2,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:123:51: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .tamer, branch: .travel, emoji: "🪢", maxRank: 3, tier: 2, column: 1,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:125:55: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .beastBond, branch: .travel, emoji: "❤️", maxRank: 4, tier: 3, column: 0,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:127:56: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .packLeader, branch: .travel, emoji: "🐺", maxRank: 4, tier: 3, column: 2,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:129:52: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .thrift, branch: .travel, emoji: "🏷️", maxRank: 3, tier: 4, column: 0,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:131:56: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .nightShift, branch: .travel, emoji: "🌙", maxRank: 3, tier: 4, column: 2,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:133:52: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .portal, branch: .travel, emoji: "🌀", maxRank: 1, tier: 5, column: 1,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:136:58: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .doubleStrike, branch: .mining, emoji: "⚔️", maxRank: 4, tier: 6, column: 0,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:138:55: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .shockwave, branch: .mining, emoji: "🌊", maxRank: 3, tier: 6, column: 1,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:140:55: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .oreHunter, branch: .mining, emoji: "🪙", maxRank: 4, tier: 6, column: 2,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:142:53: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .execute, branch: .mining, emoji: "🗡️", maxRank: 3, tier: 7, column: 0,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:144:53: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .crusher, branch: .mining, emoji: "🔨", maxRank: 3, tier: 7, column: 1,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:146:54: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .tireless, branch: .mining, emoji: "🔋", maxRank: 4, tier: 7, column: 2,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:148:56: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .toolMaster, branch: .mining, emoji: "🏆", maxRank: 1, tier: 8, column: 1,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:151:55: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .finder, branch: .gathering, emoji: "🔍", maxRank: 4, tier: 6, column: 0,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:153:57: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .goldRush, branch: .gathering, emoji: "🤑", maxRank: 3, tier: 6, column: 1,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:155:56: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .jeweler, branch: .gathering, emoji: "💍", maxRank: 3, tier: 6, column: 2,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:157:56: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .fertile, branch: .gathering, emoji: "🌻", maxRank: 5, tier: 7, column: 0,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:159:55: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .triple, branch: .gathering, emoji: "🎰", maxRank: 3, tier: 7, column: 1,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:161:53: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .sage, branch: .gathering, emoji: "🦉", maxRank: 5, tier: 7, column: 2,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:163:58: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .abundance, branch: .gathering, emoji: "🌈", maxRank: 1, tier: 8, column: 1,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:166:56: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .packMaster, branch: .travel, emoji: "🧳", maxRank: 4, tier: 6, column: 0,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:168:54: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .tailwind, branch: .travel, emoji: "🍃", maxRank: 4, tier: 6, column: 1,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:170:56: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .depotReach, branch: .travel, emoji: "📦", maxRank: 3, tier: 6, column: 2,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:172:53: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .bargain, branch: .travel, emoji: "🤝", maxRank: 3, tier: 7, column: 0,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:174:53: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .tracker, branch: .travel, emoji: "🧭", maxRank: 3, tier: 7, column: 1,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:176:57: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .storekeeper, branch: .travel, emoji: "📋", maxRank: 3, tier: 7, column: 2,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:178:53: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .strider, branch: .travel, emoji: "🚀", maxRank: 1, tier: 8, column: 1,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:181:58: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .animalFriend, branch: .beasts, emoji: "🤗", maxRank: 5, tier: 0, column: 1,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:183:54: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .training, branch: .beasts, emoji: "🎾", maxRank: 5, tier: 1, column: 0,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:185:53: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .rancher, branch: .beasts, emoji: "🧑‍🌾", maxRank: 5, tier: 1, column: 2,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:187:53: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .keenEye, branch: .beasts, emoji: "👀", maxRank: 3, tier: 2, column: 1,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:189:54: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .packTier, branch: .beasts, emoji: "🐺", maxRank: 2, tier: 3, column: 0,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:191:53: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .pasture, branch: .beasts, emoji: "🏡", maxRank: 3, tier: 3, column: 2,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:193:54: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .starFood, branch: .beasts, emoji: "⭐", maxRank: 4, tier: 4, column: 1,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:195:55: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .beastLoot, branch: .beasts, emoji: "🦴", maxRank: 4, tier: 5, column: 0,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:197:53: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .catcher, branch: .beasts, emoji: "🪤", maxRank: 3, tier: 5, column: 2,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:199:51: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .alpha, branch: .beasts, emoji: "🦁", maxRank: 5, tier: 6, column: 1,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:201:54: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .herdsman, branch: .beasts, emoji: "🐑", maxRank: 3, tier: 7, column: 0,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:203:56: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .starHunter, branch: .beasts, emoji: "🌠", maxRank: 3, tier: 7, column: 2,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:205:50: error: missing argument for parameter 'name' in call
+            TalentSpec(id: .soul, branch: .beasts, emoji: "💞", maxRank: 1, tier: 8, column: 1,
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:45:8: note: 'init(id:branch:name:emoji:maxRank:tier:column:parents:perRank:unit:)' declared here
+struct TalentSpec {
+       ^
+
+** BUILD FAILED **
+
+
+The following build commands failed:
+	SwiftCompile normal arm64 Compiling\ Ads.swift,\ Animals.swift,\ AnimalsView.swift,\ Art.swift,\ Components.swift,\ ContentView.swift,\ Effects.swift,\ Entities.swift,\ GameFarmApp.swift,\ GameScene.swift,\ GameState.swift,\ L10n.swift,\ LevelView.swift,\ Locations.swift,\ MapView.swift,\ NodeArt.swift,\ Overlays.swift,\ Premium.swift,\ Quests.swift,\ QuestsView.swift,\ Resources.swift,\ Rules.swift,\ SaveData.swift,\ ShopView.swift,\ StorageView.swift,\ Store.swift,\ Talents.swift,\ TalentsView.swift,\ Tools.swift,\ WorkshopView.swift,\ World.swift,\ GeneratedAssetSymbols.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/App/Ads.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Animals.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/UI/AnimalsView.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/Game/Art.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/UI/Components.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/UI/ContentView.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/Game/Effects.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/Game/Entities.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/App/GameFarmApp.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/Game/GameScene.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/Model/GameState.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/Model/L10n.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/UI/LevelView.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Locations.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/UI/MapView.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/Game/NodeArt.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/UI/Overlays.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Premium.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Quests.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/UI/QuestsView.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Resources.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Rules.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/Model/SaveData.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/UI/ShopView.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/UI/StorageView.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/App/Store.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/UI/TalentsView.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Tools.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/UI/WorkshopView.swift /Users/runner/work/GameFarm/GameFarm/GameFarm/Game/World.swift /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphoneos/GameFarm.build/DerivedSources/GeneratedAssetSymbols.swift /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/Swift.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/Dispatch.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/_DarwinFoundation1.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/QuartzCore.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/LocalAuthentication.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/LightweightCodeRequirements.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/CoreData.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/OSLog.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/DataDetection.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/SpriteKit.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/FileProvider.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/Symbols.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/StoreKit.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/simd.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/System.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/ModelIO.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/Network.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/Metal.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/XPC.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/_Builtin_float.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/os.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/Observation.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/Spatial.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/ObjectiveC.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/_DarwinFoundation3.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/GLKit.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/ExtensionFoundation.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/CoreTransferable.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/SwiftUICore.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/Foundation.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/_Concurrency.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/CoreText.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/CryptoKit.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/DeveloperToolsSupport.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/CoreFoundation.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/UIKit.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/WebKit.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/BackgroundAssets.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/Distributed.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/_SpriteKit_SwiftUI.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/CoreGraphics.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/_StringProcessing.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/Darwin.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/UniformTypeIdentifiers.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/CoreVideo.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/_DarwinFoundation2.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/CoreImage.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/SwiftUI.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/Combine.swiftmodule/arm64e-apple-ios.swiftmodule /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos/prebuilt-modules/26.5/Accessibility.swiftmodule/arm64e-apple-ios.swiftmodule /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/_Builtin_stdarg-1MA7WXQBTM54EOA1C5SO3D844.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/Accessibility-4KL0SEUIQIOHC23IO1IGEQQH0.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/WebKit-6M42AABYIAKFNJT87JGF4AVOI.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/simd-EM07E9BABSQ4Z3LADJ4Q1KSX0.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/OSLog-3RM1N9BW05ASB4JACZAODZVSZ.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/DataDetection-EHYQ2ONRSO9NIKD80CN9PN96G.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/os_object-DF9JJM4GCOZW5LUO5Q2LMO2J2.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/Network-BWNADMJQLUXCAXEGU5KJ413O0.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/CoreGraphics-9RWUNP9D4M9X1YCO8DXI7JOO.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/CoreText-5U4ZWH0QCZNJRWWT36OLYSZHZ.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/UserNotifications-1JX51BQRKKPZR3I1OD8BWOHWZ.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/OpenGLES-1JLSJVNHO9UAKPXX1WURZBTX3.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/_AvailabilityInternal-3FG81M6220XLV57Z9Z8UA95XR.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/XPC-74TQ54EHKE961G0H44I6PNEIO.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/FileProvider-13A5T6BVUTMPFDR02Q437C60M.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/_Builtin_intrinsics-A9KCEVPJIJKF7R3B5X5NS47H5.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/_Builtin_stdbool-DX108K70NWU8CPECN00GL5N3A.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/dnssd-1M1YRJ642241Q9FR2HCK8TYSB.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/UIUtilities-3Z1DSMZ4XXG34JBA68HT96PX4.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/StoreKit-2IED2CHB6XW25AR7ILFFJW12K.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/ModelIO-3PZ3QFEAKYAXBVG8FUSDI9D4O.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/_DarwinFoundation3-85HDXXV2XY57HJ2LGQRJYLZCY.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/LocalAuthentication-903UY8EQ3S1DVZI85IKKLUPX6.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/SwiftShims-17LX852L9K6A0PE4PK9B6W017.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/_Builtin_tgmath-DMBVZ1PSVDH3S2K13MI67I5EB.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/CFNetwork-5OLCCJW4T2MMKJ8B7DBS6EWEC.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/SwiftUICore-1073JNCB0PQ400AMCKCETI1JU.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/Spatial-DFM8AJ7XRT12FY0AL07L5YD82.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/BackgroundAssets-8PUYNQTYKFMZH8MTKUZ7SV1O3.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/Symbols-A0VZB2BAPAA2XZ3M0A9COBQC7.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/ptrauth-EAL2CFUT5OLH13TOTHJZL0Q1F.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/DeveloperToolsSupport-DBCCE7Z7O6FOXDS1WDGKPX64F.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/_Builtin_stddef-8VE0EB1E1YOZQDUA8N0RYVJKU.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/_DarwinFoundation2-AEEJ2V879K3QM6KMZDL9H5DXI.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/_Builtin_stdint-EACQ1LKMMBSC5EBXB778R436M.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/CoreData-4DQ1HER158S35WWQ0905AO4F2.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/_Builtin_limits-8J63T1BO55N0ADID0N6YBOO4F.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/SpriteKit-9VG2R66KYF5V2MLX4WPPHLPW9.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/UniformTypeIdentifiers-Z92T78YB8DZFDSXMMGBLLRZZ.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/_Builtin_float-CSLP5Z0LZ0IXDDQTSUOB2Q8NC.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/ExtensionFoundation-8WNNM77H8XJZE5QY0GZOQQZQG.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/CoreFoundation-A4AAS5HP0KW54C5R7LY20UQWX.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/CoreTransferable-8ZR0LJP7AMLD9AMO11O5EEYS0.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/Metal-CH55VXJLUO8HXKKMRU0TDW0M.pcm /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/GoogleMobileAds-ETVPXGWXURQMM7AEPVL982AEM.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/QuartzCore-9U1RAIOPUXEVTDKQI61YQRLJW.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/Foundation-302A19A3X7PS4TEHKKWQQLPO1.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/ImageIO-9EQZKR7W2UBS9XX4EHS4GRSF4.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/ObjectiveC-9VRFDGLAQM2RZGBRL5OZC2HAG.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/os_workgroup-E8NH6PAJNYRKNTCW30VPZL4UC.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/Darwin-6CIY9KTI1LUXTC35JY54AEH4J.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/_Builtin_stdatomic-1WBAST7FMJZBEBO3GJVO9ZNY3.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/IOSurface-AOHLRVV32CPFQW05A5HXB9CJ9.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/MachO-120ZNB2CHK4BT2YZ8VI96J9HZ.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/_SwiftConcurrencyShims-9DH52DLBFVPVPC7RX9MTNRGKQ.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/ptrcheck-2Q4MO21AHW12I5BTJWBI60XQY.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/Dispatch-G487QINRS8MJRQDBS1W3YT8L.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/CoreVideo-13T2S8OGPQJV721SOI0JHHA51.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/sys_types-1XX0SKSGV2P6OSA42BFF844ZI.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/SwiftUI-OEZFXAKFUNM7H00XS91SLMFQ.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/_Builtin_inttypes-8L8N8AYKXEZJUR7EN9NF99MNK.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/GLKit-6HYBDLBAWOE5CJ1TUE7M2PXG0.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/_DarwinFoundation1-2BQ3AXB8ZD44P3HPEB1Z2081J.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/CoreImage-3GYGMC82Q3IX68FI3RNMBCWG2.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/UIKit-694XQF93FLIQSKE5CFY9OBJG7.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/os-6MT3N00OU7BQ50OOR1V57WFJO.pcm /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/Security-9KJWFQCDDTRJNCSXYIYIO9HEL.pcm /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphoneos/GameFarm.build/Objects-normal/arm64/GameFarm-dependencies-1.json (in target 'GameFarm' from project 'GameFarm')
+	CompileSwift normal arm64 (in target 'GameFarm' from project 'GameFarm')
+	Building project GameFarm with scheme GameFarm and configuration Release
+(3 failures)
