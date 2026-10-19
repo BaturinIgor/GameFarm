@@ -51,6 +51,20 @@ jobs:
           tail -40 build.log
           exit $status
 
+      - name: Publish errors on failure
+        if: failure()
+        run: |
+          grep -E "error:|fatal error" build.log | sort -u > errors.txt || true
+          head -40 errors.txt | sed 's/^/::error::/' || true
+          tail -250 build.log > tail.txt
+          git config user.name "ci"
+          git config user.email "ci@users.noreply.github.com"
+          git checkout --orphan ci-logs
+          git rm -rf --cached . > /dev/null
+          git add -f errors.txt tail.txt
+          git commit -q -m "CI errors run ${{ github.run_number }}"
+          git push -q -f origin ci-logs
+
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
