@@ -94,29 +94,50 @@ struct Stats {
     var damageMult = 1.0
     var woodBonus = 0.0
     var stoneBonus = 0.0
+    var highTierBonus = 0.0
     var handMult = 1.0
     var hitInterval = 0.55
     var critChance = 0.0
     var critMult = 2.0
     var shatterChance = 0.0
+    var doubleStrikeChance = 0.0
+    var executeThreshold = 0.0
     var quake = false
+    var quakePower = 0.4
+    var quakeRadius: Double = 110
+    var toolBonus = 0
     var yieldAll = 0.0
     var yieldCategory: [ResourceCategory: Double] = [:]
     var yieldKind: [ResourceKind: Double] = [:]
     var doubleChance = 0.0
+    var tripleChance = 0.0
+    var finderChance = 0.0
     var respawnMult = 1.0
     var regrowChance = 0.0
     var xpMult = 1.0
     var sellMult = 1.0
+    var sellCategory: [ResourceCategory: Double] = [:]
     var goldenTouch = false
+    var goldMult = 1.0
     var gemChance = 0.0
     var speed = GameRules.baseSpeed
     var capacity = 35
     var reach: Double = GameRules.baseReach
+    var depositRadius: Double = 92
     var tameMult = 1.0
+    var shopMult = 1.0
     var spawnMult = 1.0
+    var storekeeperXP = 0
     var helperMult = 1.0
+    var helperSpeed = 1.0
+    var helperRange: Double = 260
+    var helperTierBonus = 0
+    var helperYield = 1.0
     var producerMult = 1.0
+    var doubleProductChance = 0.0
+    var offlineHours = 6.0
+    var starStep = 0.25
+    var doubleStarChance = 0.0
     var discount = 1.0
     var autoDeposit = false
     var animalMult = 1.0
@@ -125,6 +146,10 @@ struct Stats {
 
     func yieldMultiplier(for kind: ResourceKind) -> Double {
         1 + yieldAll + (yieldCategory[kind.category] ?? 0) + (yieldKind[kind] ?? 0)
+    }
+
+    func starMultiplier(_ stars: Int) -> Double {
+        AnimalSpec.starMultiplier(stars, step: starStep)
     }
 }
 
@@ -136,6 +161,11 @@ struct Toast: Identifiable, Equatable {
     let id = UUID()
     let icon: String
     let text: String
+}
+
+struct Treasure: Equatable {
+    let coins: Int
+    let items: [ResourceAmount]
 }
 
 struct LevelUpInfo: Equatable {

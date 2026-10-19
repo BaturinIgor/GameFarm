@@ -8,10 +8,29 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            SpriteView(scene: scene, preferredFramesPerSecond: 60, options: [.ignoresSiblingOrder])
+            SpriteView(scene: scene, preferredFramesPerSecond: 120, options: [.ignoresSiblingOrder])
                 .ignoresSafeArea()
 
             HUDView(scene: scene, sheet: $sheet)
+
+            if let id = game.banner {
+                LocationBanner(id: id)
+                    .transition(.asymmetric(insertion: .scale(scale: 0.7).combined(with: .opacity),
+                                            removal: .opacity.combined(with: .move(edge: .top))))
+                    .allowsHitTesting(false)
+                    .zIndex(5)
+            }
+
+            if let treasure = game.treasureFound {
+                TreasureCard(treasure: treasure)
+                    .transition(.scale(scale: 0.6).combined(with: .opacity))
+                    .allowsHitTesting(false)
+                    .zIndex(6)
+                    .task(id: treasure) {
+                        try? await Task.sleep(for: .seconds(2.6))
+                        withAnimation(.easeOut(duration: 0.3)) { game.treasureFound = nil }
+                    }
+            }
 
             if let info = game.levelUp {
                 LevelUpOverlay(info: info) {
@@ -27,6 +46,8 @@ struct ContentView: View {
                 .zIndex(9)
             }
         }
+        .animation(.spring(duration: 0.4, bounce: 0.35), value: game.banner)
+        .animation(.spring(duration: 0.4, bounce: 0.4), value: game.treasureFound)
         .animation(.spring(duration: 0.35), value: game.levelUp)
         .animation(.spring(duration: 0.35), value: game.offlineReport)
         .sheet(item: $sheet) { which in
@@ -36,6 +57,7 @@ struct ContentView: View {
                 case .workshop: WorkshopView()
                 case .talents: TalentsView()
                 case .animals: AnimalsView()
+                case .quests: QuestsView()
                 case .map: MapView { sheet = nil }
                 case .level: LevelView()
                 }
@@ -43,6 +65,57 @@ struct ContentView: View {
             .environment(game)
             .presentationDragIndicator(.visible)
         }
+    }
+}
+
+struct LocationBanner: View {
+    let id: LocationID
+
+    var body: some View {
+        let spec = id.spec
+        VStack(spacing: 4) {
+            Text(spec.emoji).font(.system(size: 46))
+            Text(spec.name)
+                .font(.system(size: 26, weight: .heavy, design: .rounded))
+            Text(spec.blurb)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.horizontal, 22)
+        .padding(.vertical, 16)
+        .frame(maxWidth: 320)
+        .glassEffect(.regular.tint(Color(uiColor: spec.ground).opacity(0.35)), in: .rect(cornerRadius: 28))
+        .frame(maxHeight: .infinity, alignment: .top)
+        .padding(.top, 150)
+    }
+}
+
+struct TreasureCard: View {
+    let treasure: Treasure
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Text("🎁 Клад!")
+                .font(.system(size: 22, weight: .heavy, design: .rounded))
+            HStack(spacing: 10) {
+                HStack(spacing: 3) {
+                    Text("🪙")
+                    Text("+\(Fmt.n(treasure.coins))").font(.system(size: 16, weight: .bold, design: .rounded))
+                }
+                ForEach(treasure.items) { item in
+                    HStack(spacing: 3) {
+                        ResourceIcon(kind: item.kind, size: 22)
+                        Text("+\(Fmt.n(item.amount))").font(.system(size: 16, weight: .bold, design: .rounded))
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+        .glassEffect(.regular.tint(Color.yellow.opacity(0.3)), in: .rect(cornerRadius: 24))
+        .frame(maxHeight: .infinity, alignment: .top)
+        .padding(.top, 170)
     }
 }
 
@@ -96,26 +169,43 @@ struct HUDView: View {
             HStack(spacing: 10) {
                 ZStack {
                     Circle()
-                        .stroke(Color.white.opacity(0.3), lineWidth: 5)
+                        .fill(LinearGradient(colors: [Color.orange.opacity(0.9), Color.pink.opacity(0.85)],
+                                             startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .padding(4)
+                    Circle()
+                        .stroke(Color.white.opacity(0.35), lineWidth: 4)
                     Circle()
                         .trim(from: 0, to: game.levelProgress)
-                        .stroke(Color.yellow, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                        .stroke(AngularGradient(colors: [.yellow, .orange, .yellow], center: .center),
+                                style: StrokeStyle(lineWidth: 4, lineCap: .round))
                         .rotationEffect(.degrees(-90))
+                        .animation(.easeOut(duration: 0.4), value: game.levelProgress)
                     Text("\(game.save.level)")
-                        .font(.system(size: 19, weight: .heavy, design: .rounded))
+                        .font(.system(size: 18, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.25), radius: 1, y: 1)
                         .contentTransition(.numericText())
                 }
                 .frame(width: 46, height: 46)
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text("\(game.save.current.spec.emoji) \(game.save.current.spec.name)")
                         .font(.system(size: 14, weight: .bold))
                         .lineLimit(1)
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Color.primary.opacity(0.12))
+                        Capsule()
+                            .fill(LinearGradient(colors: [.yellow, .orange], startPoint: .leading, endPoint: .trailing))
+                            .frame(width: max(4, 110 * game.levelProgress))
+                            .animation(.easeOut(duration: 0.4), value: game.levelProgress)
+                    }
+                    .frame(width: 110, height: 5)
                     Text(game.save.level >= GameRules.maxLevel ? "Максимальный уровень" : "\(Fmt.n(game.save.xp)) / \(Fmt.n(game.xpToNext)) опыта")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
+                        .contentTransition(.numericText())
                 }
-                .padding(.trailing, 6)
+                .padding(.trailing, 8)
             }
             .padding(5)
         }
@@ -130,6 +220,7 @@ struct HUDView: View {
                 .font(.system(size: 15, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .contentTransition(.numericText())
+                .animation(.snappy, value: game.save.coins)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 7)
@@ -145,27 +236,30 @@ struct HUDView: View {
             Text("🎒").font(.system(size: 15))
             ZStack(alignment: .leading) {
                 Capsule().fill(Color.primary.opacity(0.15))
-                Capsule().fill(color).frame(width: 54 * fraction)
+                Capsule().fill(color.gradient).frame(width: 54 * fraction)
+                    .animation(.easeOut(duration: 0.25), value: fraction)
             }
             .frame(width: 54, height: 7)
             Text("\(count)/\(capacity)")
                 .font(.system(size: 12, weight: .bold, design: .rounded))
                 .monospacedDigit()
+                .contentTransition(.numericText())
                 .foregroundStyle(fraction >= 1 ? Color.red : Color.primary)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
         .glassEffect(.regular, in: .capsule)
-        .scaleEffect(game.backpackFull ? 1.06 : 1)
-        .animation(.spring(duration: 0.3), value: game.backpackFull)
+        .scaleEffect(game.backpackFull ? 1.07 : 1)
+        .animation(.spring(duration: 0.3, bounce: 0.5), value: game.backpackFull)
     }
 
     private var bottomBar: some View {
-        HStack(spacing: 7) {
+        HStack(spacing: 6) {
             HUDButton(icon: "📦", title: "Склад") { sheet = .storage }
             HUDButton(icon: "🔨", title: "Мастерская", badge: workshopBadge) { sheet = .workshop }
             HUDButton(icon: "🌟", title: "Таланты", badge: game.talentPointsFree) { sheet = .talents }
             HUDButton(icon: "🐾", title: "Звери") { sheet = .animals }
+            HUDButton(icon: "📜", title: "Задания", badge: game.claimableQuests + game.claimableAchievements) { sheet = .quests }
             HUDButton(icon: "🗺️", title: "Карта", badge: mapBadge) { sheet = .map }
         }
     }
@@ -195,14 +289,14 @@ struct HUDButton: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 1) {
-                Text(icon).font(.system(size: 25))
+                Text(icon).font(.system(size: 24))
                 Text(title)
                     .font(.system(size: 10, weight: .semibold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 58)
+            .frame(height: 56)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -268,7 +362,7 @@ struct EncounterCard: View {
                     Text(spec.name).font(.headline)
                     if stars > 0 { StarsView(stars: stars) }
                 }
-                Text(spec.effects.first?.text(multiplier: AnimalSpec.starMultiplier(max(1, stars + 1))) ?? "")
+                Text(spec.effects.first?.text(multiplier: game.stats.starMultiplier(max(1, stars + 1)) * game.stats.animalMult) ?? "")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)

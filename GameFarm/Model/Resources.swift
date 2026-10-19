@@ -2,7 +2,7 @@ import UIKit
 
 /// Группа ресурсов: для бонусов талантов и животных и для разделов склада.
 enum ResourceCategory: String, CaseIterable, Identifiable {
-    case wood, stone, ore, gem, food, farm
+    case wood, stone, ore, gem, food, farm, treasure
 
     var id: String { rawValue }
 
@@ -14,6 +14,7 @@ enum ResourceCategory: String, CaseIterable, Identifiable {
         case .gem: "Самоцветы"
         case .food: "Еда"
         case .farm: "С фермы"
+        case .treasure: "Диковинки"
         }
     }
 
@@ -26,14 +27,16 @@ enum ResourceCategory: String, CaseIterable, Identifiable {
         case .gem: "самоцветов"
         case .food: "еды"
         case .farm: "продуктов фермы"
+        case .treasure: "диковинок"
         }
     }
 }
 
 enum ResourceKind: String, CaseIterable, Identifiable {
-    case wood, bamboo, stone, coal, iron, gold, ice, diamond, crystal
-    case berries, apples, mushrooms, carrots, fish, cactus, coconut
+    case wood, bamboo, stone, clay, coal, iron, gold, sulfur, obsidian, ice, diamond, crystal, ruby
+    case berries, apples, mushrooms, carrots, herbs, fish, cactus, coconut, banana, pineapple, goldenApple
     case egg, milk, wool, honey, feather
+    case shell, coral, pearl, cloud, stardust
 
     var id: String { rawValue }
 
@@ -42,59 +45,81 @@ enum ResourceKind: String, CaseIterable, Identifiable {
         case .wood: "Древесина"
         case .bamboo: "Бамбук"
         case .stone: "Камень"
+        case .clay: "Глина"
         case .coal: "Уголь"
         case .iron: "Железо"
         case .gold: "Золото"
+        case .sulfur: "Сера"
+        case .obsidian: "Обсидиан"
         case .ice: "Лёд"
         case .diamond: "Алмазы"
         case .crystal: "Кристаллы"
+        case .ruby: "Рубины"
         case .berries: "Ягоды"
         case .apples: "Яблоки"
         case .mushrooms: "Грибы"
         case .carrots: "Морковь"
+        case .herbs: "Травы"
         case .fish: "Рыба"
         case .cactus: "Кактусы"
         case .coconut: "Кокосы"
+        case .banana: "Бананы"
+        case .pineapple: "Ананасы"
+        case .goldenApple: "Золотые яблоки"
         case .egg: "Яйца"
         case .milk: "Молоко"
         case .wool: "Шерсть"
         case .honey: "Мёд"
         case .feather: "Перья"
+        case .shell: "Ракушки"
+        case .coral: "Кораллы"
+        case .pearl: "Жемчуг"
+        case .cloud: "Облачная вата"
+        case .stardust: "Звёздная пыль"
         }
     }
 
-    /// nil - иконка рисуется кодом (руды и кристаллы).
+    /// nil - иконка рисуется кодом.
     var emoji: String? {
         switch self {
         case .wood: "🪵"
         case .bamboo: "🎋"
         case .stone: "🪨"
-        case .coal, .iron, .gold, .crystal: nil
+        case .clay: "🧱"
+        case .coal, .iron, .gold, .sulfur, .obsidian, .crystal, .ruby, .pearl, .goldenApple: nil
         case .ice: "🧊"
         case .diamond: "💎"
         case .berries: "🫐"
         case .apples: "🍎"
         case .mushrooms: "🍄"
         case .carrots: "🥕"
+        case .herbs: "🌿"
         case .fish: "🐟"
         case .cactus: "🌵"
         case .coconut: "🥥"
+        case .banana: "🍌"
+        case .pineapple: "🍍"
         case .egg: "🥚"
         case .milk: "🥛"
         case .wool: "🧶"
         case .honey: "🍯"
         case .feather: "🪶"
+        case .shell: "🐚"
+        case .coral: "🪸"
+        case .cloud: "☁️"
+        case .stardust: "🌟"
         }
     }
 
     var category: ResourceCategory {
         switch self {
         case .wood, .bamboo: .wood
-        case .stone, .ice: .stone
-        case .coal, .iron, .gold: .ore
-        case .diamond, .crystal: .gem
-        case .berries, .apples, .mushrooms, .carrots, .fish, .cactus, .coconut: .food
+        case .stone, .clay, .ice: .stone
+        case .coal, .iron, .gold, .sulfur, .obsidian: .ore
+        case .diamond, .crystal, .ruby: .gem
+        case .berries, .apples, .mushrooms, .carrots, .herbs, .fish, .cactus, .coconut, .banana, .pineapple, .goldenApple: .food
         case .egg, .milk, .wool, .honey, .feather: .farm
+        case .shell, .coral, .pearl, .cloud, .stardust: .treasure
         }
     }
 
@@ -104,35 +129,53 @@ enum ResourceKind: String, CaseIterable, Identifiable {
         case .wood: 1
         case .bamboo: 3
         case .stone: 1
+        case .clay: 3
         case .coal: 3
         case .iron: 6
         case .gold: 15
+        case .sulfur: 20
+        case .obsidian: 30
         case .ice: 8
         case .diamond: 60
         case .crystal: 120
+        case .ruby: 150
         case .berries: 1
         case .apples: 2
         case .mushrooms: 2
         case .carrots: 2
+        case .herbs: 3
         case .fish: 4
         case .cactus: 5
         case .coconut: 6
+        case .banana: 8
+        case .pineapple: 10
+        case .goldenApple: 60
         case .egg: 4
         case .milk: 6
         case .wool: 8
         case .honey: 12
         case .feather: 5
+        case .shell: 10
+        case .coral: 25
+        case .pearl: 90
+        case .cloud: 40
+        case .stardust: 220
         }
     }
 
-    /// Цвет вкраплений для нарисованных руд.
+    /// Основной цвет для нарисованных иконок.
     var oreColor: UIColor {
         switch self {
         case .coal: UIColor(red: 0.13, green: 0.13, blue: 0.16, alpha: 1)
         case .iron: UIColor(red: 0.86, green: 0.52, blue: 0.32, alpha: 1)
         case .gold: UIColor(red: 1.0, green: 0.82, blue: 0.18, alpha: 1)
+        case .sulfur: UIColor(red: 0.95, green: 0.92, blue: 0.25, alpha: 1)
+        case .obsidian: UIColor(red: 0.3, green: 0.18, blue: 0.45, alpha: 1)
         case .crystal: UIColor(red: 0.72, green: 0.45, blue: 1.0, alpha: 1)
         case .diamond: UIColor(red: 0.45, green: 0.9, blue: 1.0, alpha: 1)
+        case .ruby: UIColor(red: 0.95, green: 0.15, blue: 0.3, alpha: 1)
+        case .pearl: UIColor(red: 0.96, green: 0.94, blue: 0.98, alpha: 1)
+        case .goldenApple: UIColor(red: 1.0, green: 0.8, blue: 0.2, alpha: 1)
         default: .gray
         }
     }

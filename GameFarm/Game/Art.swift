@@ -50,8 +50,163 @@ enum Art {
 
     static func icon(_ kind: ResourceKind) -> UIImage {
         if let e = kind.emoji { return emojiImage(e, size: 64) }
-        if kind == .crystal { return crystalImage(size: 64) }
-        return oreImage(kind.oreColor, size: 64)
+        switch kind {
+        case .crystal: return crystalImage(size: 64)
+        case .ruby, .obsidian: return gemImage(kind.oreColor, size: 64)
+        case .pearl: return pearlImage(size: 64)
+        case .goldenApple: return tintedEmoji("🍎", tint: kind.oreColor, amount: 0.6, size: 64)
+        default: return oreImage(kind.oreColor, size: 64)
+        }
+    }
+
+    /// Эмодзи, перекрашенный в заданный цвет с сохранением объёма.
+    static func tintedEmoji(_ emoji: String, tint: UIColor, amount: CGFloat, size: CGFloat) -> UIImage {
+        image("tinted|\(emoji)|\(tint.description)|\(amount)|\(size)") {
+            let base = emojiImage(emoji, size: size)
+            return renderer(CGSize(width: size, height: size)).image { ctx in
+                let rect = CGRect(x: 0, y: 0, width: size, height: size)
+                base.draw(in: rect)
+                ctx.cgContext.setBlendMode(.sourceAtop)
+                tint.withAlphaComponent(amount).setFill()
+                ctx.cgContext.fill(rect)
+                ctx.cgContext.setBlendMode(.normal)
+                UIColor.white.withAlphaComponent(0.45).setFill()
+                UIBezierPath(ovalIn: CGRect(x: size * 0.3, y: size * 0.28, width: size * 0.16, height: size * 0.12)).fill()
+            }
+        }
+    }
+
+    static func tintedEmojiTexture(_ emoji: String, tint: UIColor, amount: CGFloat, size: CGFloat) -> SKTexture {
+        let px = (size / 8).rounded(.up) * 8
+        return texture("tintedTex|\(emoji)|\(tint.description)|\(amount)|\(px)") {
+            tintedEmoji(emoji, tint: tint, amount: amount, size: px)
+        }
+    }
+
+    /// Огранённый камень: рубин, обсидиан.
+    static func gemImage(_ color: UIColor, size: CGFloat) -> UIImage {
+        image("gem|\(color.description)|\(size)") {
+            renderer(CGSize(width: size, height: size)).image { _ in
+                let s = size
+                let top: [CGPoint] = [
+                    CGPoint(x: s * 0.2, y: s * 0.36), CGPoint(x: s * 0.34, y: s * 0.2),
+                    CGPoint(x: s * 0.66, y: s * 0.2), CGPoint(x: s * 0.8, y: s * 0.36)
+                ]
+                let bottom = CGPoint(x: s * 0.5, y: s * 0.86)
+                let outline = UIBezierPath()
+                outline.move(to: top[0])
+                for p in top.dropFirst() { outline.addLine(to: p) }
+                outline.addLine(to: bottom)
+                outline.close()
+                color.setFill()
+                outline.fill()
+                // Грани
+                let left = UIBezierPath()
+                left.move(to: top[0]); left.addLine(to: CGPoint(x: s * 0.42, y: s * 0.36)); left.addLine(to: bottom); left.close()
+                UIColor.white.withAlphaComponent(0.25).setFill()
+                left.fill()
+                let right = UIBezierPath()
+                right.move(to: top[3]); right.addLine(to: CGPoint(x: s * 0.58, y: s * 0.36)); right.addLine(to: bottom); right.close()
+                UIColor.black.withAlphaComponent(0.25).setFill()
+                right.fill()
+                let crown = UIBezierPath()
+                crown.move(to: top[1]); crown.addLine(to: top[2]); crown.addLine(to: CGPoint(x: s * 0.58, y: s * 0.36))
+                crown.addLine(to: CGPoint(x: s * 0.42, y: s * 0.36)); crown.close()
+                UIColor.white.withAlphaComponent(0.45).setFill()
+                crown.fill()
+                UIColor.black.withAlphaComponent(0.45).setStroke()
+                outline.lineWidth = s * 0.03
+                outline.lineJoinStyle = .round
+                outline.stroke()
+            }
+        }
+    }
+
+    static func pearlImage(size: CGFloat) -> UIImage {
+        image("pearl|\(size)") {
+            renderer(CGSize(width: size, height: size)).image { ctx in
+                let rect = CGRect(x: size * 0.18, y: size * 0.18, width: size * 0.64, height: size * 0.64)
+                let colors = [UIColor.white.cgColor,
+                              UIColor(red: 0.93, green: 0.88, blue: 0.95, alpha: 1).cgColor,
+                              UIColor(red: 0.78, green: 0.72, blue: 0.86, alpha: 1).cgColor] as CFArray
+                let space = CGColorSpaceCreateDeviceRGB()
+                ctx.cgContext.saveGState()
+                UIBezierPath(ovalIn: rect).addClip()
+                if let gradient = CGGradient(colorsSpace: space, colors: colors, locations: [0, 0.5, 1]) {
+                    ctx.cgContext.drawRadialGradient(gradient, startCenter: CGPoint(x: rect.minX + rect.width * 0.35, y: rect.minY + rect.height * 0.3),
+                                                     startRadius: 0, endCenter: CGPoint(x: rect.midX, y: rect.midY),
+                                                     endRadius: rect.width * 0.6, options: [.drawsAfterEndLocation])
+                }
+                ctx.cgContext.restoreGState()
+                UIColor(white: 0.5, alpha: 0.5).setStroke()
+                let ring = UIBezierPath(ovalIn: rect)
+                ring.lineWidth = size * 0.02
+                ring.stroke()
+            }
+        }
+    }
+
+    static var clay: SKTexture {
+        texture("clayMound") {
+            renderer(CGSize(width: 64, height: 40)).image { _ in
+                UIColor(red: 0.6, green: 0.34, blue: 0.22, alpha: 1).setFill()
+                UIBezierPath(ovalIn: CGRect(x: 2, y: 10, width: 60, height: 28)).fill()
+                UIColor(red: 0.78, green: 0.47, blue: 0.3, alpha: 1).setFill()
+                UIBezierPath(ovalIn: CGRect(x: 8, y: 6, width: 48, height: 24)).fill()
+                UIColor(red: 0.88, green: 0.6, blue: 0.42, alpha: 1).setFill()
+                UIBezierPath(ovalIn: CGRect(x: 16, y: 8, width: 22, height: 9)).fill()
+            }
+        }
+    }
+
+    static var puff: SKTexture {
+        texture("puff") {
+            renderer(CGSize(width: 32, height: 32)).image { ctx in
+                let colors = [UIColor.white.withAlphaComponent(0.8).cgColor, UIColor.white.withAlphaComponent(0).cgColor] as CFArray
+                if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0.2, 1]) {
+                    ctx.cgContext.drawRadialGradient(gradient, startCenter: CGPoint(x: 16, y: 16), startRadius: 0,
+                                                     endCenter: CGPoint(x: 16, y: 16), endRadius: 16, options: [])
+                }
+            }
+        }
+    }
+
+    static var dot: SKTexture {
+        texture("dot") {
+            renderer(CGSize(width: 16, height: 16)).image { _ in
+                UIColor.white.setFill()
+                UIBezierPath(ovalIn: CGRect(x: 0, y: 0, width: 16, height: 16)).fill()
+            }
+        }
+    }
+
+    static var spark: SKTexture {
+        texture("spark") {
+            renderer(CGSize(width: 24, height: 24)).image { _ in
+                let p = UIBezierPath()
+                p.move(to: CGPoint(x: 12, y: 0))
+                p.addQuadCurve(to: CGPoint(x: 24, y: 12), controlPoint: CGPoint(x: 13.5, y: 10.5))
+                p.addQuadCurve(to: CGPoint(x: 12, y: 24), controlPoint: CGPoint(x: 13.5, y: 13.5))
+                p.addQuadCurve(to: CGPoint(x: 0, y: 12), controlPoint: CGPoint(x: 10.5, y: 13.5))
+                p.addQuadCurve(to: CGPoint(x: 12, y: 0), controlPoint: CGPoint(x: 10.5, y: 10.5))
+                UIColor.white.setFill()
+                p.fill()
+            }
+        }
+    }
+
+    static var cloudShadow: SKTexture {
+        texture("cloudShadow") {
+            renderer(CGSize(width: 256, height: 160), scale: 1).image { ctx in
+                let colors = [UIColor.black.cgColor, UIColor.black.withAlphaComponent(0).cgColor] as CFArray
+                guard let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1]) else { return }
+                let blobs: [(CGFloat, CGFloat, CGFloat)] = [(90, 80, 70), (150, 70, 60), (125, 100, 55), (180, 95, 45)]
+                for (x, y, r) in blobs {
+                    ctx.cgContext.drawRadialGradient(gradient, startCenter: CGPoint(x: x, y: y), startRadius: 0,
+                                                     endCenter: CGPoint(x: x, y: y), endRadius: r, options: [])
+                }
+            }
+        }
     }
 
     static func iconTexture(_ kind: ResourceKind) -> SKTexture {

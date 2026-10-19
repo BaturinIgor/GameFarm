@@ -124,4 +124,60 @@ enum Effects {
             ]))
         }
     }
+    /// Облачко пыли у ног или после разрушения.
+    static func puff(at point: CGPoint, in parent: SKNode, color: UIColor, size: CGFloat = 22, z: CGFloat = 99) {
+        let node = SKSpriteNode(texture: Art.puff, size: CGSize(width: size, height: size))
+        node.color = color
+        node.colorBlendFactor = 1
+        node.alpha = 0.55
+        node.position = point
+        node.zPosition = z
+        node.setScale(0.4)
+        parent.addChild(node)
+        let grow = SKAction.scale(to: 1.3, duration: 0.5)
+        grow.timingMode = .easeOut
+        node.run(.sequence([.group([grow, .fadeOut(withDuration: 0.5), .moveBy(x: 0, y: 6, duration: 0.5)]), .removeFromParent()]))
+    }
+
+    /// Разлетающиеся спрайты: листья, капли, искры.
+    static func scatter(_ texture: SKTexture, count: Int, at point: CGPoint, in parent: SKNode, size: CGFloat,
+                        color: UIColor? = nil, spread: CGFloat = 50, rise: CGFloat = 30, additive: Bool = false, duration: Double = 0.6) {
+        for _ in 0..<count {
+            let node = SKSpriteNode(texture: texture, size: CGSize(width: size, height: size))
+            if let color {
+                node.color = color
+                node.colorBlendFactor = 1
+            }
+            if additive { node.blendMode = .add }
+            node.position = point
+            node.zPosition = 880
+            node.zRotation = CGFloat.random(in: 0...6)
+            parent.addChild(node)
+            let a = CGFloat.random(in: 0...(.pi * 2))
+            let r = CGFloat.random(in: spread * 0.4...spread)
+            let dx = cos(a) * r
+            let dy = sin(a) * r * 0.6 + rise
+            let move = SKAction.moveBy(x: dx, y: dy, duration: duration)
+            move.timingMode = .easeOut
+            node.run(.sequence([
+                .group([move, .rotate(byAngle: CGFloat.random(in: -3...3), duration: duration),
+                        .sequence([.wait(forDuration: duration * 0.5), .fadeOut(withDuration: duration * 0.5)])]),
+                .removeFromParent()
+            ]))
+        }
+    }
+
+    static func ring(at point: CGPoint, in parent: SKNode, color: UIColor, radius: CGFloat = 30) {
+        let node = SKShapeNode(circleOfRadius: radius)
+        node.strokeColor = color
+        node.lineWidth = 3
+        node.fillColor = .clear
+        node.position = point
+        node.zPosition = 870
+        node.setScale(0.3)
+        parent.addChild(node)
+        let grow = SKAction.scale(to: 1.4, duration: 0.45)
+        grow.timingMode = .easeOut
+        node.run(.sequence([.group([grow, .fadeOut(withDuration: 0.45)]), .removeFromParent()]))
+    }
 }

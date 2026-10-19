@@ -33,30 +33,41 @@ struct LocationCard: View {
         let ground = Color(uiColor: spec.ground)
 
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 12) {
-                Text(spec.emoji)
-                    .font(.system(size: 36))
-                    .frame(width: 60, height: 60)
-                    .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(ground))
-                    .overlay(alignment: .bottomTrailing) {
+            ZStack(alignment: .leading) {
+                LinearGradient(colors: [ground, Color(uiColor: spec.patches.last ?? spec.ground), Color(uiColor: spec.path)],
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                HStack(spacing: -6) {
+                    Spacer()
+                    ForEach(Array(spec.decor.prefix(3).enumerated()), id: \.offset) { item in
+                        Text(item.element).font(.system(size: 22)).opacity(0.7)
+                            .offset(y: item.offset % 2 == 0 ? -14 : 12)
+                    }
+                    Text(spec.emoji)
+                        .font(.system(size: 58))
+                        .shadow(color: .black.opacity(0.25), radius: 6, y: 3)
+                        .padding(.trailing, 10)
+                }
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(spec.name).font(.headline)
                         if !unlocked {
-                            Image(systemName: "lock.fill")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .padding(5)
-                                .background(Circle().fill(Color.black.opacity(0.6)))
-                                .offset(x: 4, y: 4)
+                            Image(systemName: "lock.fill").font(.system(size: 12, weight: .bold))
                         }
                     }
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(spec.name).font(.headline)
                     Text(spec.blurb)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                Spacer(minLength: 0)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .frame(maxWidth: 230, alignment: .leading)
+                .padding(10)
             }
+            .frame(height: 104)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .saturation(unlocked ? 1 : 0.55)
 
             FlowLayout(spacing: 5) {
                 ForEach(spec.resources) { kind in

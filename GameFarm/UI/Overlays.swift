@@ -18,6 +18,9 @@ struct LevelUpOverlay: View {
         ZStack {
             Color.black.opacity(0.45).ignoresSafeArea()
                 .onTapGesture(perform: onClose)
+            ConfettiView()
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
             VStack(spacing: 14) {
                 Text("🎉").font(.system(size: 56))
                     .scaleEffect(appeared ? 1 : 0.4)
@@ -104,6 +107,46 @@ struct OfflineOverlay: View {
             .frame(maxWidth: 360)
             .glassEffect(.regular, in: .rect(cornerRadius: 28))
             .padding(24)
+        }
+    }
+}
+
+/// Конфетти, падающее сверху. Рисуется через Canvas без отдельных вью на каждую частицу.
+struct ConfettiView: View {
+    private struct Piece {
+        let x: Double
+        let delay: Double
+        let speed: Double
+        let sway: Double
+        let spin: Double
+        let size: Double
+        let color: Color
+    }
+
+    private let pieces: [Piece] = (0..<90).map { _ in
+        Piece(x: Double.random(in: 0...1), delay: Double.random(in: 0...0.8), speed: Double.random(in: 0.22...0.42),
+              sway: Double.random(in: 10...40), spin: Double.random(in: 2...7), size: Double.random(in: 6...11),
+              color: [Color.yellow, .orange, .pink, .mint, .cyan, .purple, .red].randomElement() ?? .yellow)
+    }
+    @State private var start = Date()
+
+    var body: some View {
+        TimelineView(.animation) { timeline in
+            Canvas { context, size in
+                let t = timeline.date.timeIntervalSince(start)
+                for piece in pieces {
+                    let local = t - piece.delay
+                    guard local > 0 else { continue }
+                    let y = -20 + local * piece.speed * size.height
+                    guard y < size.height + 20 else { continue }
+                    let x = piece.x * size.width + sin(local * 3 + piece.x * 10) * piece.sway
+                    var c = context
+                    c.translateBy(x: x, y: y)
+                    c.rotate(by: .radians(local * piece.spin))
+                    let rect = CGRect(x: -piece.size / 2, y: -piece.size / 4, width: piece.size, height: piece.size / 2)
+                    c.fill(Path(roundedRect: rect, cornerRadius: 1.5), with: .color(piece.color))
+                }
+            }
         }
     }
 }

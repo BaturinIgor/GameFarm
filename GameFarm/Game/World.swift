@@ -133,27 +133,44 @@ enum WorldLayout {
 }
 
 enum WorldArt {
+    static let scale: CGFloat = 1.5
+
+    private static func softBlob(_ c: CGContext, center: CGPoint, radius: CGFloat, color: UIColor, squash: CGFloat = 0.7) {
+        let colors = [color.cgColor, color.withAlphaComponent(0).cgColor] as CFArray
+        guard let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0.35, 1]) else { return }
+        c.saveGState()
+        c.translateBy(x: center.x, y: center.y)
+        c.scaleBy(x: 1, y: squash)
+        c.drawRadialGradient(gradient, startCenter: .zero, startRadius: 0, endCenter: .zero, endRadius: radius, options: [])
+        c.restoreGState()
+    }
+
+    private static func isGreen(_ color: UIColor) -> Bool {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        color.getRed(&r, green: &g, blue: &b, alpha: &a)
+        return g > r + 0.08 && g > b + 0.05
+    }
+
     /// Рисует землю локации одной картинкой. Координаты UIKit перевёрнуты относительно SpriteKit.
     static func ground(_ spec: LocationSpec, spots: [SpotPlacement]) -> UIImage {
         let size = spec.size
         let format = UIGraphicsImageRendererFormat.preferred()
-        format.scale = 1
+        format.scale = scale
         format.opaque = true
         var rng = SeededRNG(seed: spec.seed &+ 7)
         func flip(_ p: CGPoint) -> CGPoint { CGPoint(x: p.x, y: size.height - p.y) }
+        let green = isGreen(spec.ground)
 
         return UIGraphicsImageRenderer(size: size, format: format).image { ctx in
             let c = ctx.cgContext
             spec.ground.setFill()
             c.fill(CGRect(origin: .zero, size: size))
 
-            // Пятна разных оттенков
-            for _ in 0..<320 {
-                let color = rng.pick(spec.patches).withAlphaComponent(rng.range(0.35, 0.75))
-                color.setFill()
-                let r = rng.range(30, 150)
-                let p = CGPoint(x: rng.range(0, size.width), y: rng.range(0, size.height))
-                c.fillEllipse(in: CGRect(x: p.x - r, y: p.y - r * 0.7, width: r * 2, height: r * 1.4))
+            // Мягкие пятна разных оттенков
+            for _ in 0..<260 {
+                let color = rng.pick(spec.patches).withAlphaComponent(rng.range(0.45, 0.85))
+                let p = CGPoint(x: rng.range(-60, size.width + 60), y: rng.range(-60, size.height + 60))
+                softBlob(c, center: p, radius: rng.range(50, 190), color: color, squash: rng.range(0.55, 0.85))
             }
 
             // Тропинки от склада к группам ресурсов
@@ -169,73 +186,119 @@ enum WorldArt {
                 let path = UIBezierPath()
                 path.move(to: base)
                 path.addQuadCurve(to: target, controlPoint: mid)
-                spec.path.withAlphaComponent(0.32).setStroke()
-                path.lineWidth = 30
+                spec.speck.withAlphaComponent(0.18).setStroke()
+                path.lineWidth = 36
                 path.stroke()
-                spec.path.withAlphaComponent(0.25).setStroke()
-                path.lineWidth = 18
+                spec.path.withAlphaComponent(0.45).setStroke()
+                path.lineWidth = 28
+                path.stroke()
+                spec.path.withAlphaComponent(0.35).setStroke()
+                path.lineWidth = 16
                 path.stroke()
             }
 
-            // Травинки и крапинки
-            spec.speck.withAlphaComponent(0.55).setStroke()
-            c.setLineWidth(1.6)
-            for _ in 0..<2600 {
+            // Пучки травы из трёх травинок
+            let dark = spec.speck.withAlphaComponent(0.6)
+            let light = spec.patches.last?.withAlphaComponent(0.7) ?? dark
+            c.setLineWidth(1.5)
+            for i in 0..<2200 {
                 let p = CGPoint(x: rng.range(0, size.width), y: rng.range(0, size.height))
-                let len = rng.range(3, 7)
-                c.move(to: p)
-                c.addLine(to: CGPoint(x: p.x + rng.range(-2, 2), y: p.y - len))
+                let h = rng.range(4, 9)
+                (i % 3 == 0 ? light : dark).setStroke()
+                c.move(to: p); c.addLine(to: CGPoint(x: p.x - 3, y: p.y - h * 0.8))
+                c.move(to: p); c.addLine(to: CGPoint(x: p.x, y: p.y - h))
+                c.move(to: p); c.addLine(to: CGPoint(x: p.x + 3, y: p.y - h * 0.75))
+                c.strokePath()
             }
-            c.strokePath()
+
+            // Камешки
+            for _ in 0..<220 {
+                let p = CGPoint(x: rng.range(0, size.width), y: rng.range(0, size.height))
+                let w = rng.range(3, 8)
+                UIColor.black.withAlphaComponent(0.12).setFill()
+                c.fillEllipse(in: CGRect(x: p.x - w / 2 + 1, y: p.y - w * 0.3 + 1.5, width: w, height: w * 0.6))
+                UIColor.white.withAlphaComponent(0.28).setFill()
+                c.fillEllipse(in: CGRect(x: p.x - w / 2, y: p.y - w * 0.3, width: w, height: w * 0.6))
+            }
+
+            // Цветочки на зелёной земле
+            if green {
+                let petals = [UIColor(red: 1, green: 0.85, blue: 0.3, alpha: 1), UIColor(red: 1, green: 0.6, blue: 0.75, alpha: 1),
+                              UIColor.white, UIColor(red: 0.7, green: 0.6, blue: 1, alpha: 1)]
+                for _ in 0..<420 {
+                    let p = CGPoint(x: rng.range(0, size.width), y: rng.range(0, size.height))
+                    rng.pick(petals).withAlphaComponent(0.9).setFill()
+                    let r = rng.range(1.6, 3)
+                    c.fillEllipse(in: CGRect(x: p.x - r, y: p.y - r, width: r * 2, height: r * 2))
+                }
+            }
 
             // Водоёмы
             for pond in spec.ponds {
                 let center = flip(spec.point(pond.x, pond.y))
                 let r = pond.radius
                 if pond.frozen {
-                    UIColor(red: 0.78, green: 0.9, blue: 0.98, alpha: 1).setFill()
-                    c.fillEllipse(in: CGRect(x: center.x - r - 10, y: center.y - r - 10, width: (r + 10) * 2, height: (r + 10) * 2))
-                    UIColor(red: 0.66, green: 0.84, blue: 0.96, alpha: 1).setFill()
+                    UIColor(red: 0.84, green: 0.93, blue: 0.99, alpha: 1).setFill()
+                    c.fillEllipse(in: CGRect(x: center.x - r - 12, y: center.y - r - 12, width: (r + 12) * 2, height: (r + 12) * 2))
+                    softBlob(c, center: center, radius: r, color: UIColor(red: 0.6, green: 0.8, blue: 0.95, alpha: 1), squash: 1)
+                    UIColor(red: 0.66, green: 0.84, blue: 0.96, alpha: 0.6).setFill()
                     c.fillEllipse(in: CGRect(x: center.x - r, y: center.y - r, width: r * 2, height: r * 2))
-                    UIColor.white.withAlphaComponent(0.7).setStroke()
+                    UIColor.white.withAlphaComponent(0.75).setStroke()
                     c.setLineWidth(2)
-                    for _ in 0..<14 {
+                    for _ in 0..<16 {
                         let a = rng.range(0, .pi * 2)
-                        let r1 = rng.range(0, r * 0.6)
+                        let r1 = rng.range(0, r * 0.7)
                         let start = CGPoint(x: center.x + cos(a) * r1, y: center.y + sin(a) * r1)
                         c.move(to: start)
                         c.addLine(to: CGPoint(x: start.x + rng.range(-40, 40), y: start.y + rng.range(-40, 40)))
                     }
                     c.strokePath()
                 } else {
-                    spec.path.withAlphaComponent(0.9).setFill()
+                    let shore = spec.shore ?? spec.path
+                    softBlob(c, center: center, radius: r + 46, color: shore.withAlphaComponent(0.8), squash: 1)
+                    shore.setFill()
                     c.fillEllipse(in: CGRect(x: center.x - r - 14, y: center.y - r - 14, width: (r + 14) * 2, height: (r + 14) * 2))
-                    UIColor(red: 0.2, green: 0.55, blue: 0.85, alpha: 1).setFill()
+                    spec.water.setFill()
                     c.fillEllipse(in: CGRect(x: center.x - r, y: center.y - r, width: r * 2, height: r * 2))
-                    UIColor(red: 0.28, green: 0.66, blue: 0.94, alpha: 1).setFill()
-                    c.fillEllipse(in: CGRect(x: center.x - r * 0.8, y: center.y - r * 0.85, width: r * 1.5, height: r * 1.45))
+                    c.saveGState()
+                    c.addEllipse(in: CGRect(x: center.x - r, y: center.y - r, width: r * 2, height: r * 2))
+                    c.clip()
+                    softBlob(c, center: CGPoint(x: center.x - r * 0.15, y: center.y - r * 0.2), radius: r * 0.95, color: spec.waterLight, squash: 0.85)
+                    UIColor.black.withAlphaComponent(0.18).setStroke()
+                    c.setLineWidth(10)
+                    c.strokeEllipse(in: CGRect(x: center.x - r, y: center.y - r, width: r * 2, height: r * 2))
+                    c.restoreGState()
                     UIColor.white.withAlphaComponent(0.35).setStroke()
                     c.setLineWidth(2.5)
-                    for _ in 0..<8 {
+                    for _ in 0..<10 {
                         let a = rng.range(0, .pi * 2)
-                        let r1 = rng.range(r * 0.2, r * 0.7)
+                        let r1 = rng.range(r * 0.2, r * 0.75)
                         let p = CGPoint(x: center.x + cos(a) * r1, y: center.y + sin(a) * r1)
                         c.move(to: p)
-                        c.addLine(to: CGPoint(x: p.x + 18, y: p.y))
+                        c.addLine(to: CGPoint(x: p.x + rng.range(10, 24), y: p.y))
                     }
                     c.strokePath()
                 }
             }
 
-            // Площадка склада
-            spec.path.withAlphaComponent(0.55).setFill()
-            c.fillEllipse(in: CGRect(x: base.x - 120, y: base.y - 90, width: 240, height: 180))
+            // Площадка склада: мощёный круг
+            softBlob(c, center: base, radius: 150, color: spec.path.withAlphaComponent(0.6), squash: 0.8)
+            spec.path.withAlphaComponent(0.85).setFill()
+            c.fillEllipse(in: CGRect(x: base.x - 105, y: base.y - 82, width: 210, height: 164))
+            for i in 0..<26 {
+                let a = CGFloat(i) / 26 * .pi * 2
+                let p = CGPoint(x: base.x + cos(a) * 100, y: base.y + sin(a) * 78)
+                UIColor.black.withAlphaComponent(0.12).setFill()
+                c.fillEllipse(in: CGRect(x: p.x - 9, y: p.y - 5, width: 18, height: 11))
+                UIColor.white.withAlphaComponent(0.3).setFill()
+                c.fillEllipse(in: CGRect(x: p.x - 9, y: p.y - 6, width: 18, height: 10))
+            }
 
             // Затемнение по краям
             let space = CGColorSpaceCreateDeviceRGB()
-            let colors = [UIColor.black.withAlphaComponent(0.28).cgColor, UIColor.black.withAlphaComponent(0).cgColor] as CFArray
+            let colors = [UIColor.black.withAlphaComponent(0.3).cgColor, UIColor.black.withAlphaComponent(0).cgColor] as CFArray
             if let gradient = CGGradient(colorsSpace: space, colors: colors, locations: [0, 1]) {
-                let edge: CGFloat = 70
+                let edge: CGFloat = 80
                 c.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: 0, y: edge), options: [])
                 c.drawLinearGradient(gradient, start: CGPoint(x: 0, y: size.height), end: CGPoint(x: 0, y: size.height - edge), options: [])
                 c.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: edge, y: 0), options: [])

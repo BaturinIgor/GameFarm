@@ -19,12 +19,18 @@ struct SaveData: Codable {
     var coinsEarned = 0
     var lastSeen = Date()
     var tutorialDone = false
+    var quests: [Quest] = []
+    var questsDone = 0
+    var claimed: [String] = []
+    var bonusTalentPoints = 0
+    var treasures = 0
 
     init() {}
 
     enum CodingKeys: String, CodingKey {
         case level, xp, coins, storage, backpack, tools, talents, unlocked, current
         case animals, active, gathered, harvests, coinsEarned, lastSeen, tutorialDone
+        case quests, questsDone, claimed, bonusTalentPoints, treasures
     }
 
     init(from decoder: Decoder) throws {
@@ -48,6 +54,11 @@ struct SaveData: Codable {
         coinsEarned = try c.decodeIfPresent(Int.self, forKey: .coinsEarned) ?? 0
         lastSeen = try c.decodeIfPresent(Date.self, forKey: .lastSeen) ?? Date()
         tutorialDone = try c.decodeIfPresent(Bool.self, forKey: .tutorialDone) ?? false
+        quests = (try? c.decodeIfPresent([Quest].self, forKey: .quests)) ?? []
+        questsDone = try c.decodeIfPresent(Int.self, forKey: .questsDone) ?? 0
+        claimed = try c.decodeIfPresent([String].self, forKey: .claimed) ?? []
+        bonusTalentPoints = try c.decodeIfPresent(Int.self, forKey: .bonusTalentPoints) ?? 0
+        treasures = try c.decodeIfPresent(Int.self, forKey: .treasures) ?? 0
 
         if !unlocked.contains(.meadow) { unlocked.insert(.meadow, at: 0) }
         if !unlocked.contains(current) { current = .meadow }
@@ -73,6 +84,11 @@ struct SaveData: Codable {
         try c.encode(coinsEarned, forKey: .coinsEarned)
         try c.encode(lastSeen, forKey: .lastSeen)
         try c.encode(tutorialDone, forKey: .tutorialDone)
+        try c.encode(quests, forKey: .quests)
+        try c.encode(questsDone, forKey: .questsDone)
+        try c.encode(claimed, forKey: .claimed)
+        try c.encode(bonusTalentPoints, forKey: .bonusTalentPoints)
+        try c.encode(treasures, forKey: .treasures)
     }
 
     private static func map<K: RawRepresentable & Hashable>(_ raw: [String: Int]?) -> [K: Int]? where K.RawValue == String {

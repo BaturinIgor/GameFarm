@@ -10,20 +10,21 @@ struct TalentsView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 header
-                Picker("Ветка", selection: $branch) {
-                    ForEach(TalentBranch.allCases) { b in
-                        Text("\(b.emoji) \(b.title)").tag(b)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 16)
-                .padding(.bottom, 8)
+                branchPicker
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 8)
 
                 GeometryReader { geo in
                     ScrollView {
                         TalentTreeCanvas(branch: branch, width: geo.size.width, selected: $selected)
                             .padding(.bottom, 20)
+                            .id(branch)
+                            .transition(.opacity.combined(with: .scale(scale: 0.98)))
                     }
+                    .background(
+                        LinearGradient(colors: [branch.color.opacity(0.10), Color.clear],
+                                       startPoint: .top, endPoint: .bottom)
+                    )
                 }
             }
             .safeAreaInset(edge: .bottom) {
@@ -48,12 +49,47 @@ struct TalentsView: View {
         }
     }
 
+    private var branchPicker: some View {
+        HStack(spacing: 6) {
+            ForEach(TalentBranch.allCases) { b in
+                let active = b == branch
+                Button {
+                    withAnimation(.spring(duration: 0.3)) { branch = b }
+                } label: {
+                    VStack(spacing: 2) {
+                        Text(b.emoji).font(.system(size: 20))
+                        Text(b.title)
+                            .font(.system(size: 11, weight: .bold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                        Text("\(game.pointsSpent(in: b))")
+                            .font(.system(size: 10, weight: .heavy, design: .rounded))
+                            .foregroundStyle(active ? Color.white : Color.secondary)
+                            .padding(.horizontal, 6)
+                            .background(Capsule().fill(active ? b.color : Color.secondary.opacity(0.15)))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 7)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(active ? b.color.opacity(0.22) : Color(uiColor: .secondarySystemGroupedBackground))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(active ? b.color : Color.clear, lineWidth: 2)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
     private var header: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Свободно очков: \(game.talentPointsFree)")
                     .font(.headline)
-                Text("1 очко за каждый уровень, +1 бонусное каждые 10 уровней")
+                Text("1 очко за уровень, бонусные за каждые 10 уровней и достижения")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

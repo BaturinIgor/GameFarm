@@ -114,7 +114,7 @@ struct AnimalRow: View {
     var body: some View {
         let spec = id.spec
         let stars = game.stars(id)
-        let multiplier = AnimalSpec.starMultiplier(max(1, stars)) * game.stats.animalMult
+        let multiplier = game.stats.starMultiplier(max(1, stars)) * game.stats.animalMult
         Card(tint: game.isActive(id) ? .green : .clear) {
             HStack(alignment: .top, spacing: 12) {
                 Text(spec.emoji)
