@@ -40,6 +40,7 @@ jobs:
             -destination 'generic/platform=iOS' \
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS='$(inherited) SIDELOAD' \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             build > build.log 2>&1
@@ -61,7 +62,10 @@ jobs:
       - name: Package IPA
         run: |
           APP="build/Build/Products/Release-iphoneos/GameFarm.app"
-          ls "$APP"
+          ls "$APP" "$APP/Frameworks" 2>/dev/null || true
+          if [ -d "$APP/Frameworks" ]; then
+            for f in "$APP"/Frameworks/*.framework; do ldid -S "$f/$(basename "$f" .framework)" || true; done
+          fi
           ldid -S "$APP/GameFarm"
           rm -rf Payload GameFarm.ipa
           mkdir Payload

@@ -14,7 +14,7 @@ struct MapView: View {
                 }
                 .padding(16)
             }
-            .sheetChrome("Карта", coins: game.save.coins)
+            .sheetChrome(tr("hud.map"), coins: game.save.coins)
         }
     }
 }
@@ -85,7 +85,7 @@ struct LocationCard: View {
             }
 
             if here {
-                Label("Ты здесь", systemImage: "mappin.circle.fill")
+                Label(tr("map.here"), systemImage: "mappin.circle.fill")
                     .font(.subheadline.bold())
                     .foregroundStyle(.green)
             } else if unlocked {
@@ -93,16 +93,16 @@ struct LocationCard: View {
                     game.travel(to: id)
                     onTravel()
                 } label: {
-                    Text("Перейти").font(.headline).frame(maxWidth: .infinity)
+                    Text(tr("map.go")).font(.headline).frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.glassProminent)
                 .controlSize(.large)
             } else {
                 Divider()
                 HStack {
-                    Text("Чтобы открыть").font(.subheadline.bold())
+                    Text(tr("map.toUnlock")).font(.subheadline.bold())
                     Spacer()
-                    Text("Ур. \(spec.level)")
+                    Text(tr("common.lvl", spec.level))
                         .font(.caption.bold())
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
@@ -117,7 +117,7 @@ struct LocationCard: View {
                         }
                     }
                 } label: {
-                    Text(levelOK ? "Открыть локацию" : "Нужен уровень \(spec.level)")
+                    Text(levelOK ? tr("map.unlock") : tr("common.needLevel", spec.level))
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                 }

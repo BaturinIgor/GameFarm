@@ -31,12 +31,12 @@ struct Quest: Codable, Identifiable, Equatable {
 
     var title: String {
         switch type {
-        case .gather: "Собери: \((kind?.name ?? "ресурсы").lowercased())"
-        case .harvest: "Добудь ресурсы \(target) раз"
-        case .sell: "Заработай продажей \(Fmt.n(target)) монет"
-        case .deposit: "Сдай на склад \(Fmt.n(target)) ресурсов"
-        case .tame: "Приручи или купи зверя"
-        case .treasure: target > 1 ? "Найди \(target) клада" : "Найди клад"
+        case .gather: tr("quest.gather", kind?.name ?? "")
+        case .harvest: tr("quest.harvest", Fmt.n(target))
+        case .sell: tr("quest.sell", Fmt.n(target))
+        case .deposit: tr("quest.deposit", Fmt.n(target))
+        case .tame: tr("quest.tame")
+        case .treasure: target > 1 ? tr("quest.treasures", target) : tr("quest.treasure")
         }
     }
 
@@ -94,79 +94,61 @@ struct Achievement: Identifiable {
     }
 
     let id: String
+    let family: String
     let icon: String
-    let title: String
-    let detail: String
     let metric: Metric
     let target: Int
     let coins: Int
     let talentPoints: Int
 
+    var title: String { tr("ach.\(id)") }
+    var detail: String { tr("ach.\(family).detail", Fmt.n(target)) }
+
     static let all: [Achievement] = {
         var list: [Achievement] = []
-        func family(_ key: String, _ icon: String, _ names: [String], _ detail: (Int) -> String,
-                    _ metric: Metric, _ targets: [Int], _ coins: [Int], points: [Int]) {
+        func family(_ key: String, _ icon: String, _ metric: Metric, _ targets: [Int], _ coins: [Int], points: [Int]) {
             for (i, target) in targets.enumerated() {
                 list.append(Achievement(
-                    id: "\(key)_\(i + 1)", icon: icon, title: names[min(i, names.count - 1)],
-                    detail: detail(target), metric: metric, target: target,
+                    id: "\(key)_\(i + 1)", family: key, icon: icon, metric: metric, target: target,
                     coins: coins[min(i, coins.count - 1)], talentPoints: points[min(i, points.count - 1)]
                 ))
             }
         }
-        family("wood", "🪓", ["Лесоруб", "Лесоруб II", "Лесоруб III", "Повелитель леса"],
-               { "Собери \(Fmt.n($0)) древесины" }, .gathered(.wood), [200, 2_000, 20_000, 100_000],
+        family("wood", "🪓", .gathered(.wood), [200, 2_000, 20_000, 100_000],
                [100, 1_000, 8_000, 30_000], points: [0, 0, 1, 1])
-        family("stone", "🪨", ["Каменщик", "Каменщик II", "Каменщик III"],
-               { "Собери \(Fmt.n($0)) камня" }, .gathered(.stone), [200, 2_000, 20_000],
+        family("stone", "🪨", .gathered(.stone), [200, 2_000, 20_000],
                [100, 1_000, 8_000], points: [0, 0, 1])
-        family("ore", "⛏️", ["Рудокоп", "Рудокоп II", "Рудокоп III"],
-               { "Добудь \(Fmt.n($0)) руды" }, .category(.ore), [100, 1_500, 15_000],
+        family("ore", "⛏️", .category(.ore), [100, 1_500, 15_000],
                [300, 3_000, 20_000], points: [0, 1, 1])
-        family("gem", "💎", ["Ювелир", "Ювелир II", "Ювелир III"],
-               { "Добудь \(Fmt.n($0)) самоцветов" }, .category(.gem), [20, 300, 3_000],
+        family("gem", "💎", .category(.gem), [20, 300, 3_000],
                [1_000, 10_000, 60_000], points: [0, 1, 1])
-        family("fish", "🎣", ["Рыбак", "Рыбак II", "Морской волк"],
-               { "Поймай \(Fmt.n($0)) рыбы" }, .gathered(.fish), [50, 800, 8_000],
+        family("fish", "🎣", .gathered(.fish), [50, 800, 8_000],
                [200, 3_000, 20_000], points: [0, 0, 1])
-        family("food", "🍎", ["Гурман", "Гурман II", "Шеф-повар"],
-               { "Собери \(Fmt.n($0)) еды" }, .category(.food), [300, 3_000, 30_000],
+        family("food", "🍎", .category(.food), [300, 3_000, 30_000],
                [150, 2_000, 15_000], points: [0, 0, 1])
-        family("farm", "🥚", ["Фермер", "Фермер II", "Агроном"],
-               { "Получи \(Fmt.n($0)) продуктов фермы" }, .category(.farm), [50, 600, 6_000],
+        family("farm", "🥚", .category(.farm), [50, 600, 6_000],
                [300, 3_000, 20_000], points: [0, 0, 1])
-        family("treasure", "🐚", ["Коллекционер", "Коллекционер II"],
-               { "Собери \(Fmt.n($0)) диковинок" }, .category(.treasure), [100, 2_000],
+        family("treasure", "🐚", .category(.treasure), [100, 2_000],
                [5_000, 50_000], points: [0, 1])
-        family("harvest", "💪", ["Трудяга", "Трудяга II", "Трудяга III", "Неутомимый"],
-               { "Добудь ресурсы \(Fmt.n($0)) раз" }, .harvests, [500, 5_000, 25_000, 100_000],
+        family("harvest", "💪", .harvests, [500, 5_000, 25_000, 100_000],
                [200, 2_000, 10_000, 40_000], points: [0, 1, 1, 1])
-        family("coins", "💰", ["Богач", "Магнат", "Олигарх"],
-               { "Заработай \(Fmt.n($0)) монет" }, .coinsEarned, [2_000, 100_000, 2_000_000],
+        family("coins", "💰", .coinsEarned, [2_000, 100_000, 2_000_000],
                [200, 5_000, 50_000], points: [0, 1, 1])
-        family("animals", "🐾", ["Друг зверей", "Зоопарк", "Ноев ковчег"],
-               { "Собери \($0) разных зверей" }, .animals, [3, 15, AnimalID.allCases.count],
+        family("animals", "🐾", .animals, [3, 15, AnimalID.allCases.filter { !$0.spec.isPremium }.count],
                [300, 5_000, 50_000], points: [0, 1, 2])
-        family("stars", "⭐", ["Звёздный", "Созвездие", "Галактика"],
-               { "Набери \($0) звёзд у зверей" }, .stars, [10, 50, 120],
+        family("stars", "⭐", .stars, [10, 50, 120],
                [500, 5_000, 30_000], points: [0, 1, 1])
-        family("locations", "🗺️", ["Путешественник", "Исследователь", "Покоритель мира"],
-               { "Открой \($0) локаций" }, .locations, [3, 6, LocationID.allCases.count],
+        family("locations", "🗺️", .locations, [3, 6, LocationID.allCases.count],
                [500, 5_000, 50_000], points: [0, 1, 2])
-        family("level", "🎖️", ["Новичок", "Опытный", "Ветеран", "Легенда"],
-               { "Достигни \($0) уровня" }, .level, [10, 25, 40, 60],
+        family("level", "🎖️", .level, [10, 25, 40, 60],
                [500, 4_000, 20_000, 100_000], points: [1, 1, 1, 2])
-        family("tools", "🛠️", ["Мастеровой", "Кузнец", "Мастер на все руки"],
-               { "Улучши все инструменты до \($0) ступени" }, .minTool, [3, 6, 8],
+        family("tools", "🛠️", .minTool, [3, 6, 8],
                [500, 8_000, 60_000], points: [0, 1, 2])
-        family("talents", "🌟", ["Ученик", "Знаток", "Мудрец"],
-               { "Изучи \($0) рангов талантов" }, .talents, [10, 35, 70],
+        family("talents", "🌟", .talents, [10, 35, 70],
                [300, 4_000, 30_000], points: [0, 1, 1])
-        family("quests", "📜", ["Исполнитель", "Помощник старосты", "Герой деревни"],
-               { "Выполни \($0) заданий" }, .quests, [10, 60, 250],
+        family("quests", "📜", .quests, [10, 60, 250],
                [500, 5_000, 40_000], points: [0, 1, 1])
-        family("chests", "🎁", ["Кладоискатель", "Охотник за кладами"],
-               { "Найди \($0) кладов" }, .treasures, [10, 100],
+        family("chests", "🎁", .treasures, [10, 100],
                [500, 10_000], points: [0, 1])
         return list
     }()

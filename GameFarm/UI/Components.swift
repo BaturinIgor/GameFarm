@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum GameSheet: String, Identifiable {
-    case storage, workshop, talents, animals, quests, map, level
+    case storage, workshop, talents, animals, quests, map, level, shop, wardrobe
     var id: String { rawValue }
 }
 
@@ -176,7 +176,7 @@ struct SheetCloseButton: View {
             Image(systemName: "xmark")
                 .font(.system(size: 15, weight: .bold))
         }
-        .accessibilityLabel("Закрыть")
+        .accessibilityLabel(tr("common.close"))
     }
 }
 

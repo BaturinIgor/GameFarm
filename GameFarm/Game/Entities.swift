@@ -220,6 +220,15 @@ final class PlayerNode: SKNode {
         }
     }
 
+    func setSkin(_ emoji: String) {
+        body.texture = Art.emoji(emoji, size: 56)
+        body.removeAction(forKey: "pop")
+        body.setScale(0.6)
+        let grow = SKAction.scale(to: 1, duration: 0.25)
+        grow.timingMode = .easeOut
+        body.run(grow, withKey: "pop")
+    }
+
     func swing(_ kind: ToolKind, toward target: CGPoint) {
         let dir: CGFloat = target.x >= position.x ? 1 : -1
         facing = dir

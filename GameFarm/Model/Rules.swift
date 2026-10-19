@@ -47,10 +47,10 @@ extension GameRules {
     static func rewards(at level: Int) -> [UnlockLine] {
         var lines: [UnlockLine] = []
         let points = talentPoints(at: level) - talentPoints(at: level - 1)
-        lines.append(UnlockLine(icon: "🌟", text: points > 1 ? "+\(points) очка таланта" : "+1 очко таланта"))
-        lines.append(UnlockLine(icon: "🪙", text: "+\(levelCoinReward(level)) монет"))
-        lines.append(UnlockLine(icon: "🎒", text: "+5 мест в рюкзаке"))
-        lines.append(UnlockLine(icon: "💪", text: "+2% к урону и +1% к цене продажи"))
+        lines.append(UnlockLine(icon: "🌟", text: tr("reward.talentPoints", points)))
+        lines.append(UnlockLine(icon: "🪙", text: tr("reward.coins", Fmt.n(levelCoinReward(level)))))
+        lines.append(UnlockLine(icon: "🎒", text: tr("reward.backpack")))
+        lines.append(UnlockLine(icon: "💪", text: tr("reward.power")))
         return lines
     }
 
@@ -58,20 +58,20 @@ extension GameRules {
     static func unlocks(at level: Int) -> [UnlockLine] {
         var lines: [UnlockLine] = []
         for id in LocationID.allCases where id.spec.level == level && level > 1 {
-            lines.append(UnlockLine(icon: id.spec.emoji, text: "Можно открыть локацию: \(id.spec.name)"))
+            lines.append(UnlockLine(icon: id.spec.emoji, text: tr("unlock.location", id.spec.name)))
         }
         for tool in ToolKind.upgradable {
             for tier in 2...ToolTier.maxTier where ToolTier.requiredLevel(tool, tier: tier) == level {
-                lines.append(UnlockLine(icon: tool.emoji, text: "В мастерской: \(ToolTier.name(tool, tier: tier))"))
+                lines.append(UnlockLine(icon: tool.emoji, text: tr("unlock.tool", ToolTier.name(tool, tier: tier))))
             }
         }
         for id in AnimalID.allCases {
             if case .shop(_, let need) = id.spec.source, need == level {
-                lines.append(UnlockLine(icon: id.spec.emoji, text: "В лавке: \(id.spec.name)"))
+                lines.append(UnlockLine(icon: id.spec.emoji, text: tr("unlock.animal", id.spec.name)))
             }
         }
         if let tier = TalentSpec.tierLevels.firstIndex(of: level), tier > 0 {
-            lines.append(UnlockLine(icon: "🌳", text: "Новый ряд талантов (ряд \(tier + 1))"))
+            lines.append(UnlockLine(icon: "🌳", text: tr("unlock.talentRow", tier + 1)))
         }
         return lines
     }
@@ -176,4 +176,5 @@ struct LevelUpInfo: Equatable {
 struct OfflineReport: Equatable {
     let duration: Double
     let items: [ResourceAmount]
+    var doubled = false
 }

@@ -24,6 +24,14 @@ struct SaveData: Codable {
     var claimed: [String] = []
     var bonusTalentPoints = 0
     var treasures = 0
+    var purchases: [String] = []
+    var granted: [String] = []
+    var skin: String = Skin.farmer.rawValue
+    var starterOfferUntil: Date?
+    var starterOffers = 0
+    var luckUntil: Date?
+    var luckReadyAt: Date?
+    var adsWatched = 0
 
     init() {}
 
@@ -31,6 +39,7 @@ struct SaveData: Codable {
         case level, xp, coins, storage, backpack, tools, talents, unlocked, current
         case animals, active, gathered, harvests, coinsEarned, lastSeen, tutorialDone
         case quests, questsDone, claimed, bonusTalentPoints, treasures
+        case purchases, granted, skin, starterOfferUntil, starterOffers, luckUntil, luckReadyAt, adsWatched
     }
 
     init(from decoder: Decoder) throws {
@@ -59,6 +68,14 @@ struct SaveData: Codable {
         claimed = try c.decodeIfPresent([String].self, forKey: .claimed) ?? []
         bonusTalentPoints = try c.decodeIfPresent(Int.self, forKey: .bonusTalentPoints) ?? 0
         treasures = try c.decodeIfPresent(Int.self, forKey: .treasures) ?? 0
+        purchases = try c.decodeIfPresent([String].self, forKey: .purchases) ?? []
+        granted = try c.decodeIfPresent([String].self, forKey: .granted) ?? []
+        skin = try c.decodeIfPresent(String.self, forKey: .skin) ?? Skin.farmer.rawValue
+        starterOfferUntil = try c.decodeIfPresent(Date.self, forKey: .starterOfferUntil)
+        starterOffers = try c.decodeIfPresent(Int.self, forKey: .starterOffers) ?? 0
+        luckUntil = try c.decodeIfPresent(Date.self, forKey: .luckUntil)
+        luckReadyAt = try c.decodeIfPresent(Date.self, forKey: .luckReadyAt)
+        adsWatched = try c.decodeIfPresent(Int.self, forKey: .adsWatched) ?? 0
 
         if !unlocked.contains(.meadow) { unlocked.insert(.meadow, at: 0) }
         if !unlocked.contains(current) { current = .meadow }
@@ -89,6 +106,14 @@ struct SaveData: Codable {
         try c.encode(claimed, forKey: .claimed)
         try c.encode(bonusTalentPoints, forKey: .bonusTalentPoints)
         try c.encode(treasures, forKey: .treasures)
+        try c.encode(purchases, forKey: .purchases)
+        try c.encode(granted, forKey: .granted)
+        try c.encode(skin, forKey: .skin)
+        try c.encodeIfPresent(starterOfferUntil, forKey: .starterOfferUntil)
+        try c.encode(starterOffers, forKey: .starterOffers)
+        try c.encodeIfPresent(luckUntil, forKey: .luckUntil)
+        try c.encodeIfPresent(luckReadyAt, forKey: .luckReadyAt)
+        try c.encode(adsWatched, forKey: .adsWatched)
     }
 
     private static func map<K: RawRepresentable & Hashable>(_ raw: [String: Int]?) -> [K: Int]? where K.RawValue == String {

@@ -6,30 +6,7 @@ enum ResourceCategory: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var title: String {
-        switch self {
-        case .wood: "Древесина"
-        case .stone: "Камень"
-        case .ore: "Руда"
-        case .gem: "Самоцветы"
-        case .food: "Еда"
-        case .farm: "С фермы"
-        case .treasure: "Диковинки"
-        }
-    }
-
-    /// "+15% к добыче дерева"
-    var genitive: String {
-        switch self {
-        case .wood: "дерева"
-        case .stone: "камня"
-        case .ore: "руды"
-        case .gem: "самоцветов"
-        case .food: "еды"
-        case .farm: "продуктов фермы"
-        case .treasure: "диковинок"
-        }
-    }
+    var title: String { tr("cat.\(rawValue)") }
 }
 
 enum ResourceKind: String, CaseIterable, Identifiable {
@@ -40,44 +17,7 @@ enum ResourceKind: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var name: String {
-        switch self {
-        case .wood: "Древесина"
-        case .bamboo: "Бамбук"
-        case .stone: "Камень"
-        case .clay: "Глина"
-        case .coal: "Уголь"
-        case .iron: "Железо"
-        case .gold: "Золото"
-        case .sulfur: "Сера"
-        case .obsidian: "Обсидиан"
-        case .ice: "Лёд"
-        case .diamond: "Алмазы"
-        case .crystal: "Кристаллы"
-        case .ruby: "Рубины"
-        case .berries: "Ягоды"
-        case .apples: "Яблоки"
-        case .mushrooms: "Грибы"
-        case .carrots: "Морковь"
-        case .herbs: "Травы"
-        case .fish: "Рыба"
-        case .cactus: "Кактусы"
-        case .coconut: "Кокосы"
-        case .banana: "Бананы"
-        case .pineapple: "Ананасы"
-        case .goldenApple: "Золотые яблоки"
-        case .egg: "Яйца"
-        case .milk: "Молоко"
-        case .wool: "Шерсть"
-        case .honey: "Мёд"
-        case .feather: "Перья"
-        case .shell: "Ракушки"
-        case .coral: "Кораллы"
-        case .pearl: "Жемчуг"
-        case .cloud: "Облачная вата"
-        case .stardust: "Звёздная пыль"
-        }
-    }
+    var name: String { tr("res.\(rawValue)") }
 
     /// nil - иконка рисуется кодом.
     var emoji: String? {
@@ -217,44 +157,47 @@ struct Cost {
 }
 
 enum Fmt {
-    /// 1234567 -> "1 234 567", большие числа сокращаются.
+    private static var formatters: [String: NumberFormatter] = [:]
+
+    private static func formatter() -> NumberFormatter {
+        let code = Lang.shared.code
+        if let f = formatters[code] { return f }
+        let f = NumberFormatter()
+        f.locale = Lang.shared.locale
+        f.numberStyle = .decimal
+        f.maximumFractionDigits = 0
+        formatters[code] = f
+        return f
+    }
+
+    /// Число с разделителями разрядов, большие числа сокращаются по правилам языка.
     static func n(_ value: Int) -> String {
-        if value >= 10_000_000 {
-            return short(Double(value) / 1_000_000) + " млн"
-        }
-        if value >= 100_000 {
-            return short(Double(value) / 1_000) + " тыс"
+        if abs(value) >= 100_000 {
+            return value.formatted(.number.notation(.compactName).precision(.fractionLength(0...1)).locale(Lang.shared.locale))
         }
         return grouped(value)
     }
 
     static func grouped(_ value: Int) -> String {
-        let digits = String(abs(value))
-        var out = ""
-        for (i, ch) in digits.reversed().enumerated() {
-            if i > 0 && i % 3 == 0 { out.append("\u{00A0}") }
-            out.append(ch)
-        }
-        return (value < 0 ? "-" : "") + String(out.reversed())
-    }
-
-    private static func short(_ v: Double) -> String {
-        let s = v >= 100 ? String(format: "%.0f", v) : String(format: "%.1f", v)
-        return s.replacingOccurrences(of: ".", with: ",")
+        formatter().string(from: NSNumber(value: value)) ?? String(value)
     }
 
     static func pct(_ v: Double) -> String {
         let p = v * 100
         if abs(p - p.rounded()) < 0.05 { return "\(Int(p.rounded()))%" }
-        return String(format: "%.1f%%", p).replacingOccurrences(of: ".", with: ",")
+        return decimal(p, digits: 1) + "%"
+    }
+
+    static func decimal(_ v: Double, digits: Int) -> String {
+        v.formatted(.number.precision(.fractionLength(digits)).locale(Lang.shared.locale))
     }
 
     static func seconds(_ s: Double) -> String {
-        if s < 60 { return "\(Int(s.rounded())) с" }
+        if s < 60 { return tr("time.sec", Int(s.rounded())) }
         let m = Int(s / 60)
-        if m < 60 { return "\(m) мин" }
+        if m < 60 { return tr("time.min", m) }
         let h = m / 60
         let rest = m % 60
-        return rest == 0 ? "\(h) ч" : "\(h) ч \(rest) мин"
+        return rest == 0 ? tr("time.hour", h) : tr("time.hourMin", h, rest)
     }
 }

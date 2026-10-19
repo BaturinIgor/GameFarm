@@ -2,20 +2,23 @@ import SwiftUI
 
 struct LevelView: View {
     @Environment(GameState.self) private var game
+    @Environment(Store.self) private var store
     @State private var confirmReset = false
+    @State private var showWardrobe = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
                     progressCard
+                    settingsCard
                     bonusesCard
                     upcomingCard
                     statsCard
                     Button(role: .destructive) {
                         confirmReset = true
                     } label: {
-                        Text("Начать игру заново")
+                        Text(tr("profile.reset"))
                             .font(.subheadline.bold())
                             .frame(maxWidth: .infinity)
                     }
@@ -24,11 +27,14 @@ struct LevelView: View {
                 }
                 .padding(16)
             }
-            .sheetChrome("Уровень", coins: game.save.coins)
-            .confirmationDialog("Удалить весь прогресс?", isPresented: $confirmReset, titleVisibility: .visible) {
-                Button("Удалить и начать заново", role: .destructive) { game.resetProgress() }
+            .sheetChrome(tr("profile.title"), coins: game.save.coins)
+            .sheet(isPresented: $showWardrobe) {
+                WardrobeView().environment(game)
+            }
+            .confirmationDialog(tr("profile.reset.confirm"), isPresented: $confirmReset, titleVisibility: .visible) {
+                Button(tr("profile.reset.action"), role: .destructive) { game.resetProgress() }
             } message: {
-                Text("Уровень, ресурсы, звери и таланты обнулятся. Отменить это нельзя.")
+                Text(tr("profile.reset.message"))
             }
         }
     }
@@ -47,37 +53,89 @@ struct LevelView: View {
                 }
                 .frame(width: 82, height: 82)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Уровень \(game.save.level)").font(.title3.bold())
+                    Text(tr("level.n", game.save.level)).font(.title3.bold())
                     if game.save.level < GameRules.maxLevel {
-                        Text("\(Fmt.n(game.save.xp)) из \(Fmt.n(game.xpToNext)) опыта")
+                        Text(tr("level.xpOf", Fmt.n(game.save.xp), Fmt.n(game.xpToNext)))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .monospacedDigit()
-                        Text("Опыт дают добыча, приручение зверей и открытие локаций")
+                        Text(tr("level.xpHint"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {
-                        Text("Достигнут максимальный уровень").font(.subheadline)
+                        Text(tr("level.maxReached")).font(.subheadline)
                     }
                 }
             }
         }
     }
 
+    private var settingsCard: some View {
+        Card {
+            HStack {
+                Label(tr("settings.language"), systemImage: "globe")
+                    .font(.subheadline.bold())
+                Spacer()
+                Picker(tr("settings.language"), selection: Binding(get: { Lang.shared.code }, set: { Lang.shared.set($0) })) {
+                    ForEach(Lang.options) { option in
+                        Text(option.name).tag(option.code)
+                    }
+                }
+                .pickerStyle(.menu)
+            }
+            Divider()
+            Button {
+                showWardrobe = true
+            } label: {
+                HStack {
+                    Text(game.currentSkin.emoji).font(.system(size: 26))
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(tr("wardrobe.title")).font(.subheadline.bold())
+                        Text(game.currentSkin.name).font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").foregroundStyle(.secondary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            Divider()
+            HStack {
+                if game.hasPro {
+                    Label(ProductID.pro.title, systemImage: "crown.fill")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(.purple)
+                }
+                Spacer()
+                Button(tr("shop.restore")) {
+                    Task { await store.restore() }
+                }
+                .font(.subheadline)
+            }
+            #if SIDELOAD
+            Button(role: .destructive) {
+                game.resetTestPurchases()
+            } label: {
+                Text(tr("settings.resetTest")).font(.caption)
+            }
+            #endif
+        }
+    }
+
     private var bonusesCard: some View {
         let s = game.stats
         return Card {
-            Text("Что сейчас даёт уровень и всё остальное").font(.headline)
-            statRow("💪", "Урон", "x" + String(format: "%.2f", s.damageMult).replacingOccurrences(of: ".", with: ","))
-            statRow("⚡", "Удар раз в", String(format: "%.2f с", s.hitInterval).replacingOccurrences(of: ".", with: ","))
-            statRow("🎒", "Рюкзак", "\(s.capacity) мест")
-            statRow("👟", "Скорость", "+\(Fmt.pct(s.speed / GameRules.baseSpeed - 1))")
-            statRow("🧺", "Ресурсы с добычи", "+\(Fmt.pct(s.yieldAll))")
-            statRow("📚", "Опыт", "+\(Fmt.pct(s.xpMult - 1))")
-            statRow("💰", "Цена продажи", "+\(Fmt.pct(s.sellMult - 1))")
-            statRow("🎯", "Шанс крита", Fmt.pct(s.critChance))
-            statRow("🌱", "Восстановление ресурсов", "x" + String(format: "%.2f", 1 / s.respawnMult).replacingOccurrences(of: ".", with: ","))
-            statRow("🌟", "Очки талантов", "\(game.talentPointsFree) свободно из \(game.talentPointsTotal)")
+            Text(tr("stats.title")).font(.headline)
+            statRow("💪", tr("stats.damage"), "x" + Fmt.decimal(s.damageMult, digits: 2))
+            statRow("⚡", tr("stats.hitEvery"), tr("stats.seconds", Fmt.decimal(s.hitInterval, digits: 2)))
+            statRow("🎒", tr("stats.backpack"), tr("stats.slots", s.capacity))
+            statRow("👟", tr("stats.speed"), "+\(Fmt.pct(s.speed / GameRules.baseSpeed - 1))")
+            statRow("🧺", tr("stats.yield"), "+\(Fmt.pct(s.yieldAll))")
+            statRow("📚", tr("stats.xp"), "+\(Fmt.pct(s.xpMult - 1))")
+            statRow("💰", tr("stats.sell"), "+\(Fmt.pct(s.sellMult - 1))")
+            statRow("🎯", tr("stats.crit"), Fmt.pct(s.critChance))
+            statRow("🌱", tr("stats.regrow"), "x" + Fmt.decimal(1 / s.respawnMult, digits: 2))
+            statRow("🌟", tr("stats.talentPoints"), tr("stats.freeOf", game.talentPointsFree, game.talentPointsTotal))
         }
     }
 
@@ -98,16 +156,16 @@ struct LevelView: View {
         let levels = start <= end ? Array(start...end) : []
         let items = levels.map { UpcomingLevel(level: $0, lines: GameRules.unlocks(at: $0)) }.filter { !$0.lines.isEmpty }
         return Card {
-            Text("Скоро откроется").font(.headline)
-            Text("Каждый уровень: +1 очко таланта, +5 мест в рюкзаке, +2% к урону, +1% к цене продажи и монеты")
+            Text(tr("upcoming.title")).font(.headline)
+            Text(tr("upcoming.each"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
             if items.isEmpty {
-                Text("Всё уже открыто").font(.subheadline)
+                Text(tr("upcoming.none")).font(.subheadline)
             }
             ForEach(items) { item in
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Уровень \(item.level)").font(.subheadline.bold())
+                    Text(tr("level.n", item.level)).font(.subheadline.bold())
                     ForEach(item.lines) { line in
                         HStack(spacing: 8) {
                             Text(line.icon).frame(width: 24)
@@ -126,13 +184,13 @@ struct LevelView: View {
             return n > 0 ? ResourceAmount(kind: kind, amount: n) : nil
         }
         return Card {
-            Text("Статистика").font(.headline)
-            statRow("⛏️", "Добыто раз", Fmt.n(game.save.harvests))
-            statRow("🪙", "Заработано монет", Fmt.n(game.save.coinsEarned))
-            statRow("🐾", "Зверей", "\(AnimalID.allCases.filter { game.stars($0) > 0 }.count) из \(AnimalID.allCases.count)")
-            statRow("🗺️", "Локаций", "\(game.save.unlocked.count) из \(LocationID.allCases.count)")
+            Text(tr("stats.statistics")).font(.headline)
+            statRow("⛏️", tr("stats.harvests"), Fmt.n(game.save.harvests))
+            statRow("🪙", tr("stats.coinsEarned"), Fmt.n(game.save.coinsEarned))
+            statRow("🐾", tr("stats.animals"), tr("common.ofN", AnimalID.allCases.filter { game.stars($0) > 0 }.count, AnimalID.allCases.count))
+            statRow("🗺️", tr("stats.locations"), tr("common.ofN", game.save.unlocked.count, LocationID.allCases.count))
             if !gathered.isEmpty {
-                Text("Собрано всего").font(.caption.bold()).foregroundStyle(.secondary)
+                Text(tr("stats.gathered")).font(.caption.bold()).foregroundStyle(.secondary)
                 FlowLayout(spacing: 6) {
                     ForEach(gathered) { item in
                         HStack(spacing: 4) {

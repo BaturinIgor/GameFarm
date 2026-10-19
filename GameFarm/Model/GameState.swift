@@ -17,6 +17,7 @@ final class GameState {
     var levelUp: LevelUpInfo?
     var offlineReport: OfflineReport?
     var treasureFound: Treasure?
+    var offerPopup = false
 
     @ObservationIgnored private var dirty = false
     @ObservationIgnored private var lastWrite = Date.distantPast
@@ -26,6 +27,7 @@ final class GameState {
         save = SaveFile.load()
         recalc()
         ensureQuests()
+        checkStarterOffer()
     }
 
     // MARK: Сохранение
@@ -45,8 +47,13 @@ final class GameState {
     }
 
     func resetProgress() {
+        let purchases = save.purchases
+        let granted = save.granted
         save = SaveData()
         save.tutorialDone = true
+        save.purchases = purchases
+        save.granted = granted
+        if owns(.starter) { save.animals[.lion] = 1 }
         encounter = nil
         backpackFull = false
         levelUp = nil
@@ -89,6 +96,7 @@ final class GameState {
         if save.level > from {
             recalc()
             levelUp = LevelUpInfo(from: levelUp?.from ?? from, to: save.level)
+            checkStarterOffer()
         }
         markDirty()
     }
@@ -108,7 +116,7 @@ final class GameState {
         guard amount > 0 else { return 0 }
         if stats.autoDeposit && backpackFree < amount {
             let moved = depositBackpack()
-            if moved > 0 { toast("🌀", "Портал отправил \(moved) ресурсов на склад") }
+            if moved > 0 { toast("🌀", tr("toast.portal", moved)) }
         }
         let n = min(amount, backpackFree)
         guard n > 0 else { return 0 }
@@ -260,7 +268,7 @@ final class GameState {
         pay(cost)
         save.tools[tool] = next
         recalc()
-        toast(tool.emoji, "Новый инструмент: \(ToolTier.name(tool, tier: next))")
+        toast(tool.emoji, tr("toast.newTool", ToolTier.name(tool, tier: next)))
         return true
     }
 
@@ -334,7 +342,7 @@ final class GameState {
         pay(cost)
         let bonus = Double.random(in: 0..<1) < stats.doubleStarChance ? 2 : 1
         addStar(id, count: bonus)
-        if bonus > 1 { toast("🌠", "Двойная звезда!") }
+        if bonus > 1 { toast("🌠", tr("toast.doubleStar")) }
         gainXP(GameRules.tameXP(save.level))
         return true
     }
@@ -346,9 +354,9 @@ final class GameState {
         if isNew {
             if save.active.count < GameRules.maxActiveAnimals {
                 save.active.append(id)
-                toast(id.spec.emoji, "\(id.spec.name) теперь с тобой")
+                toast(id.spec.emoji, tr("toast.animalJoined", id.spec.name))
             } else {
-                toast(id.spec.emoji, "\(id.spec.name) ждёт в загоне: все 5 мест заняты")
+                toast(id.spec.emoji, tr("toast.animalPen", id.spec.name))
             }
         } else {
             toast(id.spec.emoji, "\(id.spec.name): \(String(repeating: "★", count: stars(id)))")
@@ -383,7 +391,7 @@ final class GameState {
         guard !isUnlocked(id), save.level >= id.spec.level, canAfford(unlockCost(id)) else { return false }
         pay(unlockCost(id))
         save.unlocked.append(id)
-        toast(id.spec.emoji, "Открыта локация: \(id.spec.name)")
+        toast(id.spec.emoji, tr("toast.locationOpened", id.spec.name))
         gainXP(GameRules.unlockXP(id))
         markDirty()
         return true
@@ -401,11 +409,12 @@ final class GameState {
     /// Награда за клад зависит от уровня и открытых локаций.
     func openTreasure() -> Treasure {
         let level = save.level
-        let coins = Int(Double(40 + level * 25) * Double.random(in: 0.8...1.4))
+        let proBonus = hasPro ? 2.0 : 1.0
+        let coins = Int(Double(40 + level * 25) * Double.random(in: 0.8...1.4) * proBonus)
         var items: [ResourceAmount] = []
         let pool = gatherableKinds
         for kind in pool.shuffled().prefix(2) {
-            let n = max(1, Int(Double(20 + level * 3) / pow(Double(kind.price), 0.6) * Double.random(in: 0.7...1.3)))
+            let n = max(1, Int(Double(20 + level * 3) / pow(Double(kind.price), 0.6) * Double.random(in: 0.7...1.3) * proBonus))
             items.append(ResourceAmount(kind: kind, amount: n))
         }
         save.coins += coins
@@ -424,7 +433,7 @@ final class GameState {
 
     func ensureQuests() {
         save.quests.removeAll { $0.kind == nil && $0.type == .gather }
-        while save.quests.count < 3 {
+        while save.quests.count < questSlots {
             let quest = Quest.make(level: save.level, available: gatherableKinds,
                                    producers: stats.producers.map(\.kind), avoid: save.quests)
             save.quests.append(quest)
@@ -437,7 +446,7 @@ final class GameState {
             if type == .gather && save.quests[i].kind != kind { continue }
             save.quests[i].progress = min(save.quests[i].target, save.quests[i].progress + amount)
             if save.quests[i].done {
-                toast("📜", "Задание выполнено: забери награду")
+                toast("📜", tr("toast.questDone"))
             }
         }
     }
@@ -457,11 +466,17 @@ final class GameState {
         markDirty()
     }
 
+    var questSlots: Int { hasPro ? 4 : 3 }
+
     var rerollCost: Int { 15 * save.level }
 
-    func rerollQuest(_ id: UUID) {
-        guard let index = save.quests.firstIndex(where: { $0.id == id }), save.coins >= rerollCost else { return }
-        save.coins -= rerollCost
+    func rerollQuest(_ id: UUID, free: Bool = false) {
+        guard let index = save.quests.firstIndex(where: { $0.id == id }), free || save.coins >= rerollCost else { return }
+        if free {
+            save.adsWatched += 1
+        } else {
+            save.coins -= rerollCost
+        }
         var others = save.quests
         others.remove(at: index)
         save.quests[index] = Quest.make(level: save.level, available: gatherableKinds,
@@ -504,9 +519,108 @@ final class GameState {
         save.coinsEarned += achievement.coins
         save.bonusTalentPoints += achievement.talentPoints
         if achievement.talentPoints > 0 {
-            toast("🌟", "+\(achievement.talentPoints) очко таланта за достижение")
+            toast("🌟", tr("toast.achievementPoints", achievement.talentPoints))
         }
         markDirty()
+    }
+
+    // MARK: Покупки
+
+    func owns(_ product: ProductID) -> Bool { save.purchases.contains(product.rawValue) }
+
+    var hasPro: Bool { owns(.pro) }
+
+    /// Выдаёт покупку. Разовые награды (монеты, зверь) выдаются один раз даже при повторном восстановлении.
+    func grant(_ product: ProductID) {
+        if !owns(product) { save.purchases.append(product.rawValue) }
+        if !save.granted.contains(product.rawValue) {
+            save.granted.append(product.rawValue)
+            switch product {
+            case .starter:
+                save.coins += Premium.starterCoins
+                if stars(.lion) == 0 { addStar(.lion, count: 1) }
+                save.skin = Skin.robot.rawValue
+                save.starterOfferUntil = nil
+            case .pro:
+                save.skin = Skin.genie.rawValue
+            case .skins:
+                break
+            }
+            toast(product.emoji, tr("toast.purchased", product.title))
+        }
+        offerPopup = false
+        recalc()
+        ensureQuests()
+        saveNow()
+    }
+
+    #if SIDELOAD
+    func resetTestPurchases() {
+        save.purchases = []
+        if !isSkinUnlocked(currentSkin) { save.skin = Skin.farmer.rawValue }
+        recalc()
+        save.quests = Array(save.quests.prefix(questSlots))
+        saveNow()
+    }
+    #endif
+
+    var starterAvailable: Bool {
+        !owns(.starter) && (save.starterOfferUntil ?? .distantPast) > Date()
+    }
+
+    /// Открывает окно стартового набора на 48 часов: на 5 уровне и ещё раз на 15.
+    func checkStarterOffer() {
+        guard !owns(.starter), !starterAvailable else { return }
+        let due = (save.starterOffers == 0 && save.level >= Premium.starterLevel)
+            || (save.starterOffers == 1 && save.level >= Premium.starterSecondLevel)
+        guard due else { return }
+        save.starterOffers += 1
+        save.starterOfferUntil = Date().addingTimeInterval(Premium.starterWindow)
+        offerPopup = true
+        markDirty()
+    }
+
+    // MARK: Образы
+
+    var currentSkin: Skin { Skin(rawValue: save.skin) ?? .farmer }
+
+    func isSkinUnlocked(_ skin: Skin) -> Bool {
+        switch skin.unlock {
+        case .free: return true
+        case .level(let level): return save.level >= level
+        case .product(let product): return owns(product)
+        }
+    }
+
+    func selectSkin(_ skin: Skin) {
+        guard isSkinUnlocked(skin) else { return }
+        save.skin = skin.rawValue
+        markDirty()
+    }
+
+    // MARK: Награды за рекламу
+
+    var luckActive: Bool { (save.luckUntil ?? .distantPast) > Date() }
+
+    var luckReady: Bool { !luckActive && (save.luckReadyAt ?? .distantPast) <= Date() }
+
+    func activateLuck(fromAd: Bool) {
+        guard luckReady else { return }
+        let until = Date().addingTimeInterval(Premium.luckDuration)
+        save.luckUntil = until
+        save.luckReadyAt = until.addingTimeInterval(Premium.luckCooldown)
+        if fromAd { save.adsWatched += 1 }
+        toast("🍀", tr("toast.luck"))
+        markDirty()
+    }
+
+    /// Удваивает добычу зверей за время отсутствия.
+    func doubleOffline(fromAd: Bool) {
+        guard let report = offlineReport, !report.doubled else { return }
+        for item in report.items { addToStorage(item.kind, item.amount) }
+        if fromAd { save.adsWatched += 1 }
+        offlineReport = OfflineReport(duration: report.duration, items: report.items, doubled: true)
+        saveNow()
     }
 
     // MARK: Для сцены
@@ -607,7 +721,7 @@ final class GameState {
         s.spawnMult = (1 + 0.25 * r(.tamer)) * (1 + 0.2 * r(.tracker))
         s.storekeeperXP = Int(r(.storekeeper))
         s.discount = 1 - 0.07 * r(.thrift)
-        s.autoDeposit = r(.portal) > 0
+        s.autoDeposit = r(.portal) > 0 || hasPro
 
         s.animalMult = (1 + 0.12 * r(.beastBond) + 0.05 * r(.animalFriend)) * (r(.soul) > 0 ? 1.3 : 1)
         s.helperMult = (1 + 0.25 * r(.packLeader)) * (1 + 0.1 * r(.alpha))
@@ -617,7 +731,7 @@ final class GameState {
         s.helperYield = 1 + 0.15 * r(.beastLoot)
         s.producerMult = (1 + 0.2 * r(.nightShift)) * (1 + 0.1 * r(.herdsman))
         s.doubleProductChance = 0.08 * r(.rancher)
-        s.offlineHours = 6 + 2 * r(.pasture)
+        s.offlineHours = (hasPro ? Premium.proOfflineHours : 6) + 2 * r(.pasture)
         s.starStep = 0.25 + 0.05 * r(.starFood)
         s.doubleStarChance = 0.15 * r(.starHunter)
 
@@ -627,6 +741,7 @@ final class GameState {
         var xpBonus = 0.1 * r(.scholar) + 0.06 * r(.sage)
         var sellBonus = 0.08 * r(.trader)
         var capacity = Double(GameRules.capacity(at: save.level)) + 15 * r(.bigPack)
+            + (owns(.starter) ? Double(Premium.starterBackpack) : 0)
 
         for id in save.active {
             let m = s.starMultiplier(save.animals[id] ?? 1) * s.animalMult

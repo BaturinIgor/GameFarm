@@ -32,6 +32,12 @@ struct ContentView: View {
                     }
             }
 
+            if game.offerPopup && game.starterAvailable && game.levelUp == nil {
+                OfferPopup { sheet = .shop }
+                    .transition(.scale(scale: 0.8).combined(with: .opacity))
+                    .zIndex(11)
+            }
+
             if let info = game.levelUp {
                 LevelUpOverlay(info: info) {
                     withAnimation(.spring(duration: 0.3)) { game.levelUp = nil }
@@ -50,6 +56,7 @@ struct ContentView: View {
         .animation(.spring(duration: 0.4, bounce: 0.4), value: game.treasureFound)
         .animation(.spring(duration: 0.35), value: game.levelUp)
         .animation(.spring(duration: 0.35), value: game.offlineReport)
+        .animation(.spring(duration: 0.35), value: game.offerPopup)
         .sheet(item: $sheet) { which in
             Group {
                 switch which {
@@ -60,9 +67,13 @@ struct ContentView: View {
                 case .quests: QuestsView()
                 case .map: MapView { sheet = nil }
                 case .level: LevelView()
+                case .shop: ShopView()
+                case .wardrobe: WardrobeView()
                 }
             }
             .environment(game)
+            .environment(Store.shared)
+            .environment(Ads.shared)
             .presentationDragIndicator(.visible)
         }
     }
@@ -96,7 +107,7 @@ struct TreasureCard: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            Text("🎁 Клад!")
+            Text(tr("treasure.title"))
                 .font(.system(size: 22, weight: .heavy, design: .rounded))
             HStack(spacing: 10) {
                 HStack(spacing: 3) {
@@ -132,6 +143,10 @@ struct HUDView: View {
                 VStack(alignment: .trailing, spacing: 6) {
                     coinsPill
                     backpackPill
+                    HStack(spacing: 6) {
+                        LuckButton(style: .pill)
+                        shopPill
+                    }
                 }
             }
 
@@ -187,6 +202,11 @@ struct HUDView: View {
                         .contentTransition(.numericText())
                 }
                 .frame(width: 46, height: 46)
+                .overlay(alignment: .topTrailing) {
+                    if game.hasPro {
+                        Text("👑").font(.system(size: 14)).offset(x: 5, y: -7)
+                    }
+                }
                 VStack(alignment: .leading, spacing: 4) {
                     Text("\(game.save.current.spec.emoji) \(game.save.current.spec.name)")
                         .font(.system(size: 14, weight: .bold))
@@ -199,7 +219,7 @@ struct HUDView: View {
                             .animation(.easeOut(duration: 0.4), value: game.levelProgress)
                     }
                     .frame(width: 110, height: 5)
-                    Text(game.save.level >= GameRules.maxLevel ? "Максимальный уровень" : "\(Fmt.n(game.save.xp)) / \(Fmt.n(game.xpToNext)) опыта")
+                    Text(game.save.level >= GameRules.maxLevel ? tr("level.max") : tr("hud.xp", Fmt.n(game.save.xp), Fmt.n(game.xpToNext)))
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
@@ -253,14 +273,38 @@ struct HUDView: View {
         .animation(.spring(duration: 0.3, bounce: 0.5), value: game.backpackFull)
     }
 
+    private var shopPill: some View {
+        Button {
+            sheet = .shop
+        } label: {
+            HStack(spacing: 5) {
+                Text(game.starterAvailable ? "🎁" : "🛍️").font(.system(size: 15))
+                if game.starterAvailable, let until = game.save.starterOfferUntil {
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        Text(Countdown.text(until.timeIntervalSince(context.date)))
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(.orange)
+                    }
+                } else {
+                    Text(tr("shop.short")).font(.system(size: 12, weight: .bold))
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+        }
+        .buttonStyle(.plain)
+        .glassEffect(game.starterAvailable ? .regular.tint(Color.orange.opacity(0.35)).interactive() : .regular.interactive(), in: .capsule)
+    }
+
     private var bottomBar: some View {
         HStack(spacing: 6) {
-            HUDButton(icon: "📦", title: "Склад") { sheet = .storage }
-            HUDButton(icon: "🔨", title: "Мастерская", badge: workshopBadge) { sheet = .workshop }
-            HUDButton(icon: "🌟", title: "Таланты", badge: game.talentPointsFree) { sheet = .talents }
-            HUDButton(icon: "🐾", title: "Звери") { sheet = .animals }
-            HUDButton(icon: "📜", title: "Задания", badge: game.claimableQuests + game.claimableAchievements) { sheet = .quests }
-            HUDButton(icon: "🗺️", title: "Карта", badge: mapBadge) { sheet = .map }
+            HUDButton(icon: "📦", title: tr("hud.storage")) { sheet = .storage }
+            HUDButton(icon: "🔨", title: tr("hud.workshop"), badge: workshopBadge) { sheet = .workshop }
+            HUDButton(icon: "🌟", title: tr("hud.talents"), badge: game.talentPointsFree) { sheet = .talents }
+            HUDButton(icon: "🐾", title: tr("hud.animals")) { sheet = .animals }
+            HUDButton(icon: "📜", title: tr("hud.quests"), badge: game.claimableQuests + game.claimableAchievements) { sheet = .quests }
+            HUDButton(icon: "🗺️", title: tr("hud.map"), badge: mapBadge) { sheet = .map }
         }
     }
 
@@ -334,10 +378,10 @@ struct ToastView: View {
 struct TutorialCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Как играть").font(.headline)
-            Label("Веди пальцем по экрану, чтобы бегать", systemImage: "hand.draw")
-            Label("Подойди к ресурсу, и персонаж начнёт добывать сам", systemImage: "hammer")
-            Label("Полный рюкзак отнеси на склад 📦 в центре площадки", systemImage: "shippingbox")
+            Text(tr("tutorial.title")).font(.headline)
+            Label(tr("tutorial.move"), systemImage: "hand.draw")
+            Label(tr("tutorial.gather"), systemImage: "hammer")
+            Label(tr("tutorial.deposit"), systemImage: "shippingbox")
         }
         .font(.system(size: 13, weight: .medium))
         .padding(14)
@@ -372,9 +416,9 @@ struct EncounterCard: View {
             }
             Spacer(minLength: 0)
             if stars >= AnimalSpec.maxStars {
-                Text("Максимум").font(.caption.bold()).foregroundStyle(.secondary)
+                Text(tr("common.max")).font(.caption.bold()).foregroundStyle(.secondary)
             } else {
-                Button(stars > 0 ? "Ещё ★" : "Приручить", action: onTame)
+                Button(stars > 0 ? tr("tame.more") : tr("tame.action"), action: onTame)
                     .buttonStyle(.glassProminent)
                     .disabled(cost.map { !game.canAfford($0) } ?? true)
             }

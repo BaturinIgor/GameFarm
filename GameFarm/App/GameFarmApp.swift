@@ -9,6 +9,13 @@ struct GameFarmApp: App {
         WindowGroup {
             ContentView()
                 .environment(game)
+                .environment(Lang.shared)
+                .environment(Store.shared)
+                .environment(Ads.shared)
+                .task {
+                    Store.shared.start()
+                    Ads.shared.start()
+                }
                 .statusBarHidden()
                 .persistentSystemOverlays(.hidden)
         }

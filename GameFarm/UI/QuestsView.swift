@@ -13,9 +13,9 @@ struct QuestsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
-                    Picker("Раздел", selection: $tab) {
-                        Text("Задания").tag(Tab.quests)
-                        Text("Достижения").tag(Tab.achievements)
+                    Picker(tr("common.section"), selection: $tab) {
+                        Text(tr("hud.quests")).tag(Tab.quests)
+                        Text(tr("quests.achievements")).tag(Tab.achievements)
                     }
                     .pickerStyle(.segmented)
 
@@ -27,14 +27,14 @@ struct QuestsView: View {
                 .padding(16)
                 .animation(.spring(duration: 0.35), value: game.save.quests)
             }
-            .sheetChrome("Задания", coins: game.save.coins)
+            .sheetChrome(tr("hud.quests"), coins: game.save.coins)
         }
     }
 
     private var questsList: some View {
         VStack(spacing: 12) {
             HStack {
-                Text("Выполнено заданий: \(game.save.questsDone)")
+                Text(tr("quests.done", game.save.questsDone))
                     .font(.subheadline.bold())
                 Spacer()
             }
@@ -43,7 +43,7 @@ struct QuestsView: View {
                     .transition(.asymmetric(insertion: .scale(scale: 0.9).combined(with: .opacity),
                                             removal: .move(edge: .leading).combined(with: .opacity)))
             }
-            Text("Новое задание появляется сразу после получения награды. Неподходящее можно заменить за монеты.")
+            Text(tr("quests.hint"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -57,10 +57,10 @@ struct QuestsView: View {
         let done = all.filter { game.isClaimed($0) }
         return VStack(spacing: 10) {
             HStack {
-                Text("Получено \(done.count) из \(all.count)")
+                Text(tr("achievements.count", done.count, all.count))
                     .font(.subheadline.bold())
                 Spacer()
-                Text("+\(game.save.bonusTalentPoints) 🌟 от достижений")
+                Text(tr("achievements.points", game.save.bonusTalentPoints))
                     .font(.caption.bold())
                     .foregroundStyle(.secondary)
             }
@@ -124,21 +124,35 @@ struct QuestCard: View {
                     withAnimation(.spring(duration: 0.4)) { game.claimQuest(quest.id) }
                     UINotificationFeedbackGenerator().notificationOccurred(.success)
                 } label: {
-                    Text("Забрать награду").font(.headline).frame(maxWidth: .infinity)
+                    Text(tr("quests.claim")).font(.headline).frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.glassProminent)
                 .tint(.green)
                 .controlSize(.large)
             } else {
-                Button {
-                    withAnimation(.spring(duration: 0.4)) { game.rerollQuest(quest.id) }
-                } label: {
-                    Label("Заменить за \(Fmt.n(game.rerollCost)) 🪙", systemImage: "arrow.triangle.2.circlepath")
-                        .font(.footnote.bold())
-                        .frame(maxWidth: .infinity)
+                HStack(spacing: 8) {
+                    Button {
+                        withAnimation(.spring(duration: 0.4)) { game.rerollQuest(quest.id) }
+                    } label: {
+                        Label(tr("quests.reroll", Fmt.n(game.rerollCost)), systemImage: "arrow.triangle.2.circlepath")
+                            .font(.footnote.bold())
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(game.save.coins < game.rerollCost)
+                    Button {
+                        let id = quest.id
+                        Ads.shared.show {
+                            withAnimation(.spring(duration: 0.4)) { game.rerollQuest(id, free: true) }
+                        }
+                    } label: {
+                        Label(tr("quests.rerollFree"), systemImage: game.hasPro ? "crown.fill" : "play.rectangle.fill")
+                            .font(.footnote.bold())
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.green)
                 }
-                .buttonStyle(.bordered)
-                .disabled(game.save.coins < game.rerollCost)
             }
         }
         .padding(14)
@@ -196,7 +210,7 @@ struct AchievementRow: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 if claimed {
-                    Label("Получено", systemImage: "checkmark.seal.fill")
+                    Label(tr("achievements.earned"), systemImage: "checkmark.seal.fill")
                         .font(.caption.bold())
                         .foregroundStyle(.green)
                 } else if ready {
@@ -204,7 +218,7 @@ struct AchievementRow: View {
                         withAnimation(.spring(duration: 0.35)) { game.claim(achievement) }
                         UINotificationFeedbackGenerator().notificationOccurred(.success)
                     } label: {
-                        Text("Получить награду").font(.subheadline.bold()).frame(maxWidth: .infinity)
+                        Text(tr("achievements.claim")).font(.subheadline.bold()).frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.glassProminent)
                     .tint(.orange)

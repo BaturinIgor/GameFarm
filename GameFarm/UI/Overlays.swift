@@ -25,10 +25,10 @@ struct LevelUpOverlay: View {
                 Text("🎉").font(.system(size: 56))
                     .scaleEffect(appeared ? 1 : 0.4)
                     .rotationEffect(.degrees(appeared ? 0 : -30))
-                Text("Уровень \(info.to)!")
+                Text(tr("levelup.title", info.to))
                     .font(.system(size: 32, weight: .heavy, design: .rounded))
                 if info.to - info.from > 1 {
-                    Text("Сразу +\(info.to - info.from) уровня")
+                    Text(tr("levelup.multi", info.to - info.from))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -38,14 +38,14 @@ struct LevelUpOverlay: View {
                     }
                     if !lines.isEmpty {
                         Divider().padding(.vertical, 2)
-                        Text("Открылось").font(.caption.bold()).foregroundStyle(.secondary)
+                        Text(tr("levelup.unlocked")).font(.caption.bold()).foregroundStyle(.secondary)
                         ForEach(lines) { line in
                             row(line)
                         }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                Button("Отлично", action: onClose)
+                Button(tr("common.great"), action: onClose)
                     .buttonStyle(.glassProminent)
                     .controlSize(.large)
             }
@@ -78,9 +78,9 @@ struct OfflineOverlay: View {
                 .onTapGesture(perform: onClose)
             VStack(spacing: 14) {
                 Text("🏡").font(.system(size: 50))
-                Text("С возвращением!")
+                Text(tr("offline.title"))
                     .font(.system(size: 26, weight: .heavy, design: .rounded))
-                Text("Пока тебя не было \(Fmt.seconds(report.duration)), звери собрали:")
+                Text(tr("offline.text", Fmt.seconds(report.duration)))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -96,12 +96,34 @@ struct OfflineOverlay: View {
                         .background(Capsule().fill(Color.green.opacity(0.15)))
                     }
                 }
-                Text("Всё уже на складе")
+                Text(tr("offline.inStorage"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Button("Забрать", action: onClose)
+                if !report.doubled {
+                    Button {
+                        Ads.shared.show {
+                            withAnimation(.spring(duration: 0.4)) { GameState.shared.doubleOffline(fromAd: !GameState.shared.hasPro) }
+                            UINotificationFeedbackGenerator().notificationOccurred(.success)
+                        }
+                    } label: {
+                        Label(GameState.shared.hasPro ? tr("offline.double.pro") : tr("offline.double"),
+                              systemImage: GameState.shared.hasPro ? "crown.fill" : "play.rectangle.fill")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                    }
                     .buttonStyle(.glassProminent)
+                    .tint(.green)
                     .controlSize(.large)
+                }
+                if report.doubled {
+                    Button(tr("offline.collect"), action: onClose)
+                        .buttonStyle(.glassProminent)
+                        .controlSize(.large)
+                } else {
+                    Button(tr("offline.collect"), action: onClose)
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                }
             }
             .padding(22)
             .frame(maxWidth: 360)
@@ -150,3 +172,4 @@ struct ConfettiView: View {
         }
     }
 }
+

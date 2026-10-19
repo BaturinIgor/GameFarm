@@ -6,9 +6,9 @@ struct AnimalsView: View {
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .mine: "Мои"
-            case .shop: "Лавка"
-            case .wild: "Дикие"
+            case .mine: tr("animals.tab.mine")
+            case .shop: tr("animals.tab.shop")
+            case .wild: tr("animals.tab.wild")
             }
         }
     }
@@ -29,7 +29,7 @@ struct AnimalsView: View {
             ScrollView {
                 VStack(spacing: 14) {
                     slots
-                    Picker("Раздел", selection: $tab) {
+                    Picker(tr("common.section"), selection: $tab) {
                         ForEach(Tab.allCases) { t in Text(t.title).tag(t) }
                     }
                     .pickerStyle(.segmented)
@@ -38,8 +38,8 @@ struct AnimalsView: View {
                     case .mine:
                         if owned.isEmpty {
                             Card {
-                                Text("Пока никого нет").font(.headline)
-                                Text("Купи зверя в лавке или найди дикого в локации: он бродит с вопросиком над головой, а к нему ведёт розовая стрелка.")
+                                Text(tr("animals.empty")).font(.headline)
+                                Text(tr("animals.empty.hint"))
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
@@ -48,7 +48,7 @@ struct AnimalsView: View {
                     case .shop:
                         ForEach(shopAnimals) { AnimalRow(id: $0, mode: .shop) }
                     case .wild:
-                        Text("Дикие звери появляются в своих локациях. Подойди и приручи едой. Повторное приручение добавляет звезду.")
+                        Text(tr("animals.wild.hint"))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -57,13 +57,13 @@ struct AnimalsView: View {
                 }
                 .padding(16)
             }
-            .sheetChrome("Звери", coins: game.save.coins)
+            .sheetChrome(tr("hud.animals"), coins: game.save.coins)
         }
     }
 
     private var slots: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("С тобой \(game.save.active.count) из \(GameRules.maxActiveAnimals)")
+            Text(tr("animals.withYou", game.save.active.count, GameRules.maxActiveAnimals))
                 .font(.subheadline.bold())
             HStack(spacing: 8) {
                 ForEach(0..<GameRules.maxActiveAnimals, id: \.self) { i in
@@ -97,7 +97,7 @@ struct AnimalsView: View {
                     .disabled(id == nil)
                 }
             }
-            Text("Нажми на зверя в слоте, чтобы убрать его. Добавить можно на вкладке \"Мои\".")
+            Text(tr("animals.slots.hint"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -138,7 +138,7 @@ struct AnimalRow: View {
                             .foregroundStyle(.secondary)
                     }
                     if let location = spec.wildLocation {
-                        Text("Где найти: \(location.spec.emoji) \(location.spec.name)")
+                        Text(tr("animals.where", location.spec.emoji, location.spec.name))
                             .font(.caption.bold())
                             .foregroundStyle(game.isUnlocked(location) ? Color.primary : Color.orange)
                     }
@@ -158,7 +158,7 @@ struct AnimalRow: View {
             Button {
                 withAnimation(.spring(duration: 0.3)) { _ = game.toggleActive(id) }
             } label: {
-                Text(active ? "Убрать" : (full ? "Все 5 мест заняты" : "Взять с собой"))
+                Text(active ? tr("animals.remove") : (full ? tr("animals.full") : tr("animals.take")))
                     .font(.subheadline.bold())
                     .frame(maxWidth: .infinity)
             }
@@ -168,7 +168,7 @@ struct AnimalRow: View {
         case .shop:
             if let level = spec.shopLevel {
                 if stars >= AnimalSpec.maxStars {
-                    Label("Максимум звёзд", systemImage: "checkmark.seal.fill")
+                    Label(tr("animals.maxStars"), systemImage: "checkmark.seal.fill")
                         .font(.subheadline.bold())
                         .foregroundStyle(.green)
                 } else if let price = game.shopPrice(id) {
@@ -181,7 +181,7 @@ struct AnimalRow: View {
                         }
                     } label: {
                         HStack {
-                            Text(!levelOK ? "Нужен уровень \(level)" : (stars > 0 ? "Ещё звезда" : "Купить"))
+                            Text(!levelOK ? tr("common.needLevel", level) : (stars > 0 ? tr("animals.moreStar") : tr("common.buy")))
                             Spacer()
                             Text("🪙 \(Fmt.n(price))").monospacedDigit()
                         }
@@ -194,12 +194,12 @@ struct AnimalRow: View {
             }
         case .wild:
             if stars >= AnimalSpec.maxStars {
-                Label("Максимум звёзд", systemImage: "checkmark.seal.fill")
+                Label(tr("animals.maxStars"), systemImage: "checkmark.seal.fill")
                     .font(.subheadline.bold())
                     .foregroundStyle(.green)
             } else if let cost = game.tameCost(id) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(stars > 0 ? "Следующая звезда за приручение:" : "Приручить можно за:")
+                    Text(stars > 0 ? tr("animals.nextStarCost") : tr("animals.tameCost"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     CostView(cost: cost)

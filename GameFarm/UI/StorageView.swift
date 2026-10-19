@@ -12,9 +12,9 @@ struct StorageView: View {
                     }
                     if totalStored == 0 {
                         Card {
-                            Text("Склад пуст")
+                            Text(tr("storage.empty"))
                                 .font(.headline)
-                            Text("Добывай ресурсы и приноси их к складу 📦 в центре площадки. Ресурсы со склада можно продать за монеты.")
+                            Text(tr("storage.empty.hint"))
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
@@ -42,14 +42,14 @@ struct StorageView: View {
                             }
                         }
                     }
-                    Text("Цена продажи растёт с уровнем и талантом \"Торговец\".")
+                    Text(tr("storage.priceHint"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .padding(.top, 4)
                 }
                 .padding(16)
             }
-            .sheetChrome("Склад", coins: game.save.coins)
+            .sheetChrome(tr("hud.storage"), coins: game.save.coins)
         }
     }
 
@@ -58,7 +58,7 @@ struct StorageView: View {
     private var backpackCard: some View {
         Card(tint: .orange) {
             HStack {
-                Text("🎒 В рюкзаке")
+                Text(tr("storage.inBackpack"))
                     .font(.headline)
                 Spacer()
                 Text("\(game.backpackCount)/\(game.stats.capacity)")
@@ -77,7 +77,7 @@ struct StorageView: View {
                     .background(Capsule().fill(Color.orange.opacity(0.15)))
                 }
             }
-            Text("Отнеси их к складу 📦, чтобы продать. Для улучшений и локаций ресурсы из рюкзака тоже засчитываются.")
+            Text(tr("storage.backpackHint"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -95,7 +95,7 @@ struct StorageRow: View {
             ResourceIcon(kind: kind, size: 34)
             VStack(alignment: .leading, spacing: 2) {
                 Text(kind.name).font(.system(size: 15, weight: .semibold))
-                Text("\(Fmt.n(have)) шт  ·  \(price) 🪙 за шт")
+                Text(tr("storage.row", Fmt.n(have), price))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
@@ -105,7 +105,7 @@ struct StorageRow: View {
                 if have >= 10 {
                     sellButton("10", amount: 10)
                 }
-                sellButton(have >= 10 ? "Всё" : "Продать", amount: have)
+                sellButton(have >= 10 ? tr("storage.sellAll") : tr("storage.sell"), amount: have)
             }
         }
         .padding(.horizontal, 12)

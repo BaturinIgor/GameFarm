@@ -33,9 +33,7 @@ enum Weather {
 
 struct LocationSpec {
     let id: LocationID
-    let name: String
     let emoji: String
-    let blurb: String
     let level: Int
     let cost: Cost
     let size: CGSize
@@ -59,6 +57,9 @@ struct LocationSpec {
     var tint: UIColor? = nil
     var cloudShadows: Bool = true
     var critters: [String] = []
+
+    var name: String { tr("loc.\(id.rawValue)") }
+    var blurb: String { tr("loc.\(id.rawValue).blurb") }
 
     var basePoint: CGPoint { CGPoint(x: size.width / 2, y: 190) }
 
@@ -93,8 +94,7 @@ struct LocationSpec {
         let c = LocationSpec.color
         let list: [LocationSpec] = [
             LocationSpec(
-                id: .meadow, name: "Лесная поляна", emoji: "🌳",
-                blurb: "Дубы, ягоды, грибы и первые камни. Здесь всё начинается.",
+                id: .meadow, emoji: "🌳",
                 level: 1, cost: Cost(),
                 size: CGSize(width: 1400, height: 1900),
                 ground: c(126, 196, 96),
@@ -120,8 +120,7 @@ struct LocationSpec {
                 critters: ["🦋", "🐝"]
             ),
             LocationSpec(
-                id: .hills, name: "Каменные холмы", emoji: "⛰️",
-                blurb: "Ели, валуны, уголь и железо. Нужна кирка покрепче.",
+                id: .hills, emoji: "⛰️",
                 level: 4, cost: Cost(coins: 0, (.wood, 60), (.stone, 40), (.berries, 20)),
                 size: CGSize(width: 1500, height: 2000),
                 ground: c(150, 170, 104),
@@ -148,8 +147,7 @@ struct LocationSpec {
                 critters: ["🦋"]
             ),
             LocationSpec(
-                id: .lake, name: "Тихое озеро", emoji: "🏞️",
-                blurb: "Рыбалка, бамбук и яблони у воды.",
+                id: .lake, emoji: "🏞️",
                 level: 9, cost: Cost(coins: 300, (.wood, 200), (.stone, 150), (.coal, 40), (.carrots, 40)),
                 size: CGSize(width: 1600, height: 2100),
                 ground: c(108, 186, 120),
@@ -178,8 +176,7 @@ struct LocationSpec {
                 critters: ["🦋", "🐞"]
             ),
             LocationSpec(
-                id: .swamp, name: "Туманное болото", emoji: "🐸",
-                blurb: "Ивы, травы, глина и рыбные заводи в тумане.",
+                id: .swamp, emoji: "🐸",
                 level: 12, cost: Cost(coins: 800, (.wood, 300), (.iron, 40), (.fish, 40), (.bamboo, 30)),
                 size: CGSize(width: 1600, height: 2100),
                 ground: c(92, 124, 76),
@@ -209,8 +206,7 @@ struct LocationSpec {
                 critters: ["🦟", "🐌"]
             ),
             LocationSpec(
-                id: .desert, name: "Знойная пустыня", emoji: "🏜️",
-                blurb: "Пальмы, кактусы, оазис и золотые жилы.",
+                id: .desert, emoji: "🏜️",
                 level: 15, cost: Cost(coins: 2000, (.wood, 400), (.iron, 80), (.fish, 60), (.herbs, 40)),
                 size: CGSize(width: 1600, height: 2200),
                 ground: c(232, 204, 140),
@@ -238,8 +234,7 @@ struct LocationSpec {
                 critters: ["🦂"]
             ),
             LocationSpec(
-                id: .snow, name: "Снежные вершины", emoji: "🏔️",
-                blurb: "Снежные ели, лёд, подлёдная рыбалка и алмазы.",
+                id: .snow, emoji: "🏔️",
                 level: 22, cost: Cost(coins: 6000, (.iron, 200), (.gold, 60), (.coconut, 50), (.clay, 80)),
                 size: CGSize(width: 1600, height: 2200),
                 ground: c(232, 240, 248),
@@ -264,8 +259,7 @@ struct LocationSpec {
                 tint: UIColor(red: 0.4, green: 0.6, blue: 1, alpha: 0.06)
             ),
             LocationSpec(
-                id: .caves, name: "Кристальные пещеры", emoji: "🔮",
-                blurb: "Темно, светятся грибы, а в стенах растут кристаллы.",
+                id: .caves, emoji: "🔮",
                 level: 30, cost: Cost(coins: 15000, (.gold, 200), (.ice, 150), (.diamond, 15)),
                 size: CGSize(width: 1500, height: 2100),
                 ground: c(70, 64, 92),
@@ -292,8 +286,7 @@ struct LocationSpec {
                 cloudShadows: false
             ),
             LocationSpec(
-                id: .island, name: "Тропический остров", emoji: "🏝️",
-                blurb: "Бананы, ананасы, ракушки, кораллы и жемчуг в лагунах.",
+                id: .island, emoji: "🏝️",
                 level: 36, cost: Cost(coins: 25000, (.crystal, 40), (.diamond, 40), (.cactus, 150), (.coconut, 150)),
                 size: CGSize(width: 1700, height: 2200),
                 ground: c(240, 220, 160),
@@ -321,8 +314,7 @@ struct LocationSpec {
                 critters: ["🦋", "🐦"]
             ),
             LocationSpec(
-                id: .volcano, name: "Огненный вулкан", emoji: "🌋",
-                blurb: "Лава, сера, обсидиан и рубины. Здесь жарко.",
+                id: .volcano, emoji: "🌋",
                 level: 43, cost: Cost(coins: 50000, (.crystal, 60), (.coral, 40), (.pearl, 10), (.banana, 100)),
                 size: CGSize(width: 1600, height: 2200),
                 ground: c(74, 60, 58),
@@ -349,8 +341,7 @@ struct LocationSpec {
                 cloudShadows: true
             ),
             LocationSpec(
-                id: .sky, name: "Небесные острова", emoji: "☁️",
-                blurb: "Облака, золотые яблоки и звёздная пыль над миром.",
+                id: .sky, emoji: "☁️",
                 level: 50, cost: Cost(coins: 100000, (.obsidian, 100), (.ruby, 20), (.sulfur, 100), (.pineapple, 200)),
                 size: CGSize(width: 1600, height: 2200),
                 ground: c(196, 214, 250),

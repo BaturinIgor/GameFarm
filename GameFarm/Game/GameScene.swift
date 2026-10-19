@@ -40,7 +40,10 @@ final class GameScene: SKScene {
     private var wild: WildNode?
     private var treasure: TreasureNode?
     private var chest = SKNode()
+    private var chestTitle = SKLabelNode()
     private var houseCenter = CGPoint.zero
+    private var builtLanguage = ""
+    private var shownSkin = ""
 
     private var lastTime: TimeInterval = 0
     private var velocity = CGVector.zero
@@ -464,13 +467,15 @@ final class GameScene: SKScene {
         box.anchorPoint = CGPoint(x: 0.5, y: 0.1)
         chest.addChild(box)
         let title = SKLabelNode()
-        title.attributedText = NSAttributedString(string: "Склад", attributes: [
+        title.attributedText = NSAttributedString(string: tr("scene.storage"), attributes: [
             .font: UIFont.systemFont(ofSize: 13, weight: .heavy),
             .foregroundColor: UIColor.white,
             .strokeColor: UIColor.black.withAlphaComponent(0.6),
             .strokeWidth: -4
         ])
         title.position = CGPoint(x: 0, y: 46)
+        chestTitle = title
+        builtLanguage = Lang.shared.code
         chest.addChild(bobbing(title, height: 3, duration: 1.2))
         world.addChild(chest)
     }
@@ -487,6 +492,7 @@ final class GameScene: SKScene {
 
         let stats = game.stats
         syncCompanions()
+        syncLooks()
         if !transitioning {
             movePlayer(dt, stats)
             gather(dt, stats)
@@ -512,6 +518,28 @@ final class GameScene: SKScene {
         if saveTimer > 5 {
             saveTimer = 0
             game.saveIfNeeded()
+        }
+    }
+
+    /// Образ персонажа и подпись склада на текущем языке.
+    private func syncLooks() {
+        let skin = game.currentSkin
+        if shownSkin != skin.rawValue {
+            if !shownSkin.isEmpty {
+                Effects.scatter(Art.spark, count: 8, at: CGPoint(x: player.position.x, y: player.position.y + 24), in: world,
+                                size: 12, color: .white, spread: 36, rise: 20, additive: true)
+            }
+            shownSkin = skin.rawValue
+            player.setSkin(skin.emoji)
+        }
+        if builtLanguage != Lang.shared.code {
+            builtLanguage = Lang.shared.code
+            chestTitle.attributedText = NSAttributedString(string: tr("scene.storage"), attributes: [
+                .font: UIFont.systemFont(ofSize: 13, weight: .heavy),
+                .foregroundColor: UIColor.white,
+                .strokeColor: UIColor.black.withAlphaComponent(0.6),
+                .strokeWidth: -4
+            ])
         }
     }
 
@@ -656,7 +684,7 @@ final class GameScene: SKScene {
             if full {
                 if hintTimer <= 0 {
                     hintTimer = 2.5
-                    Effects.text("Рюкзак полон! Неси на склад", at: CGPoint(x: player.position.x, y: player.position.y + 70),
+                    Effects.text(tr("scene.backpackFullHint"), at: CGPoint(x: player.position.x, y: player.position.y + 70),
                                  in: world, color: UIColor(red: 1, green: 0.45, blue: 0.4, alpha: 1), size: 15)
                 }
                 return
@@ -665,7 +693,7 @@ final class GameScene: SKScene {
             hitTimer = stats.hitInterval
         } else if let spot = locked, hintTimer <= 0 {
             hintTimer = 2.5
-            Effects.text("Нужен \(spot.spec.tool.emoji) ур. \(spot.spec.tier)",
+            Effects.text(tr("scene.needTool", spot.spec.tool.emoji, spot.spec.tier),
                          at: CGPoint(x: spot.position.x, y: spot.position.y + spot.spec.barHeight + 10),
                          in: world, color: UIColor(red: 1, green: 0.85, blue: 0.4, alpha: 1), size: 15)
         }
@@ -677,7 +705,7 @@ final class GameScene: SKScene {
         if spot.alive && Double.random(in: 0..<1) < stats.doubleStrikeChance {
             run(.sequence([.wait(forDuration: 0.12), .run { [weak self, weak spot] in
                 guard let self, let spot, spot.alive else { return }
-                Effects.text("x2 удар", at: CGPoint(x: spot.position.x - 20, y: spot.position.y + 56), in: self.world,
+                Effects.text(tr("scene.doubleStrike"), at: CGPoint(x: spot.position.x - 20, y: spot.position.y + 56), in: self.world,
                              color: UIColor(red: 0.8, green: 0.9, blue: 1, alpha: 1), size: 13)
                 self.hitOnce(spot, self.game.stats)
             }]))
@@ -693,12 +721,12 @@ final class GameScene: SKScene {
         }
         if Double.random(in: 0..<1) < stats.shatterChance {
             damage = max(damage, spot.hp)
-            Effects.text("Раскол!", at: CGPoint(x: spot.position.x, y: spot.position.y + 46), in: world,
+            Effects.text(tr("scene.shatter"), at: CGPoint(x: spot.position.x, y: spot.position.y + 46), in: world,
                          color: UIColor(red: 0.6, green: 0.9, blue: 1, alpha: 1), size: 16)
         }
         if crit {
             shake = max(shake, 5)
-            Effects.text("Крит!", at: CGPoint(x: spot.position.x + 18, y: spot.position.y + 52), in: world,
+            Effects.text(tr("scene.crit"), at: CGPoint(x: spot.position.x + 18, y: spot.position.y + 52), in: world,
                          color: UIColor(red: 1, green: 0.6, blue: 0.2, alpha: 1), size: 17)
             heavyHaptic.impactOccurred(intensity: 0.7)
         }
@@ -738,6 +766,7 @@ final class GameScene: SKScene {
         let stats = game.stats
         let roll = Double.random(in: 0..<1)
         let multiplier = roll < stats.tripleChance ? 3 : (roll < stats.tripleChance + stats.doubleChance ? 2 : 1)
+        let luck = game.luckActive ? 2 : 1
         var gained: [(ResourceKind, Int)] = []
         for y in spot.spec.yields {
             guard Double.random(in: 0..<1) < y.chance else { continue }
@@ -745,7 +774,7 @@ final class GameScene: SKScene {
             if byHelper { raw *= stats.helperYield }
             var n = Int(raw)
             if Double.random(in: 0..<1) < raw - Double(n) { n += 1 }
-            n *= multiplier
+            n *= multiplier * luck
             if n > 0 { gained.append((y.kind, n)) }
         }
         if spot.spec.tool == .pickaxe && Double.random(in: 0..<1) < stats.gemChance {
@@ -769,7 +798,7 @@ final class GameScene: SKScene {
             if !byHelper { spawnLoot(item.0, count: min(item.1, 4), from: top) }
         }
         if !byHelper && shown.isEmpty && !gained.isEmpty {
-            Effects.text("Рюкзак полон!", at: top, in: world, color: UIColor(red: 1, green: 0.45, blue: 0.4, alpha: 1), size: 15)
+            Effects.text(tr("scene.backpackFull"), at: top, in: world, color: UIColor(red: 1, green: 0.45, blue: 0.4, alpha: 1), size: 15)
         }
         if multiplier > 1 && !shown.isEmpty {
             Effects.text("x\(multiplier)!", at: CGPoint(x: top.x - 36, y: top.y + 6), in: world,
@@ -872,7 +901,7 @@ final class GameScene: SKScene {
         guard moved > 0 else { return }
         depositCooldown = 0.6
         Effects.fly(kinds, from: player.position, to: chest.position, in: world)
-        Effects.text("+\(moved) на склад", at: CGPoint(x: chest.position.x, y: chest.position.y + 70), in: world,
+        Effects.text(tr("scene.deposited", moved), at: CGPoint(x: chest.position.x, y: chest.position.y + 70), in: world,
                      color: UIColor(red: 1, green: 0.9, blue: 0.5, alpha: 1), size: 16, delay: 0.3)
         chest.run(.sequence([.wait(forDuration: 0.4), .scaleX(to: 1.25, y: 0.85, duration: 0.07),
                              .scaleX(to: 0.92, y: 1.12, duration: 0.08), .scale(to: 1, duration: 0.1)]))
@@ -1069,7 +1098,7 @@ final class GameScene: SKScene {
         node.zPosition = zFor(point.y)
         world.addChild(node)
         wild = node
-        game.toast(chosen.spec.emoji, "Рядом бродит дикий зверь: \(chosen.spec.name). Иди по стрелке")
+        game.toast(chosen.spec.emoji, tr("toast.wild", chosen.spec.name))
     }
 
     /// Вызывается из интерфейса кнопкой "Приручить".
@@ -1105,7 +1134,7 @@ final class GameScene: SKScene {
             node.zPosition = zFor(point.y)
             world.addChild(node)
             treasure = node
-            game.toast("🎁", "Где-то появился клад! Иди по жёлтой стрелке")
+            game.toast("🎁", tr("toast.treasure"))
         }
     }
 

@@ -37,14 +37,14 @@ struct TalentsView: View {
             }
             .animation(.spring(duration: 0.3), value: selected)
             .onChange(of: branch) { _, _ in selected = nil }
-            .sheetChrome("Таланты", coins: game.save.coins)
-            .confirmationDialog("Сбросить все таланты?", isPresented: $confirmReset, titleVisibility: .visible) {
-                Button("Сбросить за \(Fmt.n(game.respecCost)) 🪙", role: .destructive) {
+            .sheetChrome(tr("hud.talents"), coins: game.save.coins)
+            .confirmationDialog(tr("talents.reset.confirm"), isPresented: $confirmReset, titleVisibility: .visible) {
+                Button(tr("talents.reset.action", Fmt.n(game.respecCost)), role: .destructive) {
                     game.resetTalents()
                     selected = nil
                 }
             } message: {
-                Text("Все очки вернутся, и их можно будет распределить заново.")
+                Text(tr("talents.reset.message"))
             }
         }
     }
@@ -87,9 +87,9 @@ struct TalentsView: View {
     private var header: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Свободно очков: \(game.talentPointsFree)")
+                Text(tr("talents.free", game.talentPointsFree))
                     .font(.headline)
-                Text("1 очко за уровень, бонусные за каждые 10 уровней и достижения")
+                Text(tr("talents.hint"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -131,7 +131,7 @@ struct TalentTreeCanvas: View {
         ZStack(alignment: .topLeading) {
             ForEach(Array(TalentSpec.tierLevels.enumerated()), id: \.offset) { item in
                 let reached = game.save.level >= item.element
-                Text("Ур.\n\(item.element)")
+                Text(tr("talents.rowLevel", item.element))
                     .font(.system(size: 11, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(reached ? Color.primary : Color.secondary)
@@ -234,18 +234,18 @@ struct TalentDetail: View {
                 Text(spec.emoji).font(.system(size: 30))
                 VStack(alignment: .leading, spacing: 1) {
                     Text(spec.name).font(.headline)
-                    Text("Ранг \(rank) из \(spec.maxRank)")
+                    Text(tr("talents.rank", rank, spec.maxRank))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
             }
             if rank > 0 {
-                Text("Сейчас: \(spec.effect(at: rank))")
+                Text(tr("talents.now", spec.effect(at: rank)))
                     .font(.subheadline)
             }
             if !maxed {
-                Text(rank > 0 ? "Дальше: \(spec.effect(at: rank + 1))" : spec.effect(at: 1))
+                Text(rank > 0 ? tr("talents.next", spec.effect(at: rank + 1)) : spec.effect(at: 1))
                     .font(.subheadline)
                     .foregroundStyle(rank > 0 ? Color.secondary : Color.primary)
             }
@@ -258,7 +258,7 @@ struct TalentDetail: View {
                         }
                     }
                 } label: {
-                    Text(game.talentPointsFree > 0 ? "Изучить за 1 очко" : "Нет свободных очков")
+                    Text(game.talentPointsFree > 0 ? tr("talents.learn") : tr("talents.noPoints"))
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                 }
@@ -278,10 +278,10 @@ struct TalentDetail: View {
         if !levelOK || !missing.isEmpty {
             VStack(alignment: .leading, spacing: 3) {
                 if !levelOK {
-                    Label("Нужен уровень \(spec.requiredLevel)", systemImage: "lock.fill")
+                    Label(tr("common.needLevel", spec.requiredLevel), systemImage: "lock.fill")
                 }
                 ForEach(missing, id: \.self) { parent in
-                    Label("Сначала изучи \"\(parent.spec.name)\"", systemImage: "arrow.up.circle")
+                    Label(tr("talents.needParent", parent.spec.name), systemImage: "arrow.up.circle")
                 }
             }
             .font(.caption.bold())

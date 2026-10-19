@@ -7,7 +7,7 @@ struct WorkshopView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
-                    Text("Чем лучше инструмент, тем сильнее удар и тем более ценные ресурсы можно добыть.")
+                    Text(tr("workshop.hint"))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -18,8 +18,8 @@ struct WorkshopView: View {
                         HStack(spacing: 10) {
                             Text("✋").font(.system(size: 30))
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Руки").font(.headline)
-                                Text("Ягоды, яблоки, грибы и морковь собираются без инструмента. Сила сбора растёт с уровнем и талантом \"Крепкие руки\".")
+                                Text(tr("tool.hand")).font(.headline)
+                                Text(tr("workshop.hands"))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -28,7 +28,7 @@ struct WorkshopView: View {
                 }
                 .padding(16)
             }
-            .sheetChrome("Мастерская", coins: game.save.coins)
+            .sheetChrome(tr("hud.workshop"), coins: game.save.coins)
         }
     }
 }
@@ -58,7 +58,7 @@ struct ToolCard: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(ToolTier.name(tool, tier: tier))
                         .font(.headline)
-                    Text("Ступень \(tier) из \(ToolTier.maxTier)  ·  сила \(String(format: "%.1f", ToolTier.power(tier)).replacingOccurrences(of: ".", with: ","))")
+                    Text(tr("workshop.tier", tier, ToolTier.maxTier, Fmt.decimal(ToolTier.power(tier), digits: 1)))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Text(tool.purpose)
@@ -69,7 +69,7 @@ struct ToolCard: View {
 
             let available = nodes(for: tier, exact: false)
             if !available.isEmpty {
-                Text("Добывает").font(.caption.bold()).foregroundStyle(.secondary)
+                Text(tr("workshop.gathers")).font(.caption.bold()).foregroundStyle(.secondary)
                 FlowLayout(spacing: 6) {
                     ForEach(available, id: \.self) { NodeChip(type: $0) }
                 }
@@ -80,10 +80,10 @@ struct ToolCard: View {
                 let needLevel = ToolTier.requiredLevel(tool, tier: next)
                 let levelOK = game.save.level >= needLevel
                 HStack {
-                    Text("Дальше: \(ToolTier.name(tool, tier: next))")
+                    Text(tr("talents.next", ToolTier.name(tool, tier: next)))
                         .font(.subheadline.bold())
                     Spacer()
-                    Text("Ур. \(needLevel)")
+                    Text(tr("common.lvl", needLevel))
                         .font(.caption.bold())
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
@@ -93,7 +93,7 @@ struct ToolCard: View {
                 let opens = nodes(for: next, exact: true)
                 if !opens.isEmpty {
                     HStack(spacing: 6) {
-                        Text("Откроет:").font(.caption).foregroundStyle(.secondary)
+                        Text(tr("workshop.opens")).font(.caption).foregroundStyle(.secondary)
                         FlowLayout(spacing: 6) {
                             ForEach(opens, id: \.self) { NodeChip(type: $0) }
                         }
@@ -107,7 +107,7 @@ struct ToolCard: View {
                         }
                     }
                 } label: {
-                    Text(levelOK ? "Улучшить" : "Нужен уровень \(needLevel)")
+                    Text(levelOK ? tr("workshop.upgrade") : tr("common.needLevel", needLevel))
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                 }
@@ -116,7 +116,7 @@ struct ToolCard: View {
                 .disabled(!levelOK || !game.canAfford(cost))
             } else {
                 Divider()
-                Label("Максимальная ступень", systemImage: "checkmark.seal.fill")
+                Label(tr("workshop.maxTier"), systemImage: "checkmark.seal.fill")
                     .font(.subheadline.bold())
                     .foregroundStyle(.green)
             }
