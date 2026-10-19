@@ -81,6 +81,7 @@ jobs:
             for f in "$APP"/Frameworks/*.framework; do ldid -S "$f/$(basename "$f" .framework)" || true; done
           fi
           ldid -S "$APP/GameFarm"
+          echo "::notice::Bundle: $(ls "$APP"/*.json 2>/dev/null | wc -l | tr -d ' ') language files, $(ls -d "$APP"/*.lproj 2>/dev/null | wc -l | tr -d ' ') lproj, frameworks: $(ls "$APP/Frameworks" 2>/dev/null | tr '\n' ' ')"
           rm -rf Payload GameFarm.ipa
           mkdir Payload
           cp -R "$APP" Payload/
