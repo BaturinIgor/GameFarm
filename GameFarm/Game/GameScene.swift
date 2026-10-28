@@ -276,12 +276,12 @@ final class GameScene: SKScene {
             let center = layout.center(Int(sx.rounded()), Int(sy.rounded()))
             for (i, name) in ["an_capybaraAlbino", "an_capybara"].enumerated() {
                 let frames = Sprites.frames(name, cell: 32)
-                guard frames.count >= 9 else { continue }
+                guard frames.count >= 20 else { continue }
                 let node = SKSpriteNode(texture: frames[0], size: CGSize(width: 64, height: 64))
                 node.position = CGPoint(x: center.x + CGFloat(i == 0 ? -26 : 30), y: center.y + CGFloat(i == 0 ? 6 : -10))
                 node.zPosition = 4
                 let idle = Array(frames[0..<9])
-                let look = Array(frames[9..<min(frames.count, 19)])
+                let look = Array(frames[10..<20])
                 node.run(.repeatForever(.sequence([
                     .animate(with: idle, timePerFrame: 0.18), .animate(with: idle, timePerFrame: 0.18),
                     .animate(with: look, timePerFrame: 0.16)

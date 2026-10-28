@@ -148,6 +148,7 @@ struct ProCard: View {
             Perk(icon: "🌀", text: tr("pro.autoDeposit"))
             Perk(icon: "📜", text: tr("pro.quest"))
             Perk(icon: "🎁", text: tr("pro.treasure"))
+            Perk(icon: "🎟️", text: tr("pro.tickets"))
             Perk(icon: "📺", text: tr("pro.noAds"))
             Perk(icon: "🧞", text: tr("pro.skin"))
             BuyButton(product: .pro, tint: .purple)

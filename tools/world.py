@@ -522,7 +522,7 @@ LOCATIONS = {
         size=(36, 44), biome="garden", seed=7, edge="hedge", trees=["tree_oak_big", "tree_cherry", "tree_peach"],
         land=[("rect", 0.1, 0.08, 0.9, 0.92), ("rect", 0.45, 0.0, 0.55, 0.2)],
         water=[("ellipse", 0.72, 0.68, 0.12, 0.08)],
-        base=(0.5, 0.82), bare=[("rect", 0.47, 0.12, 0.53, 0.86), ("rect", 0.18, 0.47, 0.82, 0.53),
+        base=(0.5, 0.7), bare=[("rect", 0.47, 0.12, 0.53, 0.86), ("rect", 0.18, 0.47, 0.82, 0.53),
                                 ("ellipse", 0.5, 0.5, 0.1, 0.08)],
         clusters=[C("appleTree", 4, 0.25, 0.75, 3), C("appleTree", 4, 0.25, 0.28, 3), C("goldenTree", 2, 0.78, 0.28, 2),
                   C("bush", 6, 0.36, 0.62, 3), C("beehive", 4, 0.82, 0.42, 2), C("fishSpot", 4, 0.72, 0.68, 0),
@@ -616,6 +616,7 @@ def gate_cells(g, side, pos):
 
 
 def astar(g, start, goal, cost):
+    """Путь по 8 направлениям: дороги получаются плавнее, чем по 4."""
     openq = [(0, start)]
     came = {start: None}
     best = {start: 0}
@@ -623,18 +624,24 @@ def astar(g, start, goal, cost):
         _, cur = heapq.heappop(openq)
         if cur == goal:
             break
-        for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)):
             n = (cur[0] + dc, cur[1] + dr)
             if not g.inside(*n):
                 continue
             k = cost(n)
             if k is None:
                 continue
+            if dc and dr:
+                # По диагонали - только если обе соседние клетки проходимы.
+                if cost((cur[0] + dc, cur[1])) is None or cost((cur[0], cur[1] + dr)) is None:
+                    continue
+                k *= 1.41
             nb = best[cur] + k
             if nb < best.get(n, 1e18):
                 best[n] = nb
                 came[n] = cur
-                heapq.heappush(openq, (nb + abs(n[0] - goal[0]) + abs(n[1] - goal[1]), n))
+                dx, dy = abs(n[0] - goal[0]), abs(n[1] - goal[1])
+                heapq.heappush(openq, (nb + max(dx, dy) + 0.41 * min(dx, dy), n))
     if goal not in came:
         return []
     path = []
@@ -642,7 +649,14 @@ def astar(g, start, goal, cost):
     while cur:
         path.append(cur)
         cur = came[cur]
-    return path[::-1]
+    path = path[::-1]
+    # Диагональный шаг дополняем клеткой сбоку, чтобы тропа не рвалась.
+    out = []
+    for i, p in enumerate(path):
+        if i and abs(p[0] - path[i - 1][0]) == 1 and abs(p[1] - path[i - 1][1]) == 1:
+            out.append((p[0], path[i - 1][1]))
+        out.append(p)
+    return out
 
 
 def generate(lid, spec):
