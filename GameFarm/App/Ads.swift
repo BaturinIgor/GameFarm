@@ -53,10 +53,10 @@ final class Ads: NSObject, FullScreenContentDelegate {
         }
         guard let ad, let root = Self.topController() else {
             #if SIDELOAD
-            GameState.shared.toast("🧪", tr("ads.testSkipped"))
+            GameState.shared.toast("px:potion", tr("ads.testSkipped"))
             reward()
             #else
-            GameState.shared.toast("📺", tr("ads.notReady"))
+            GameState.shared.toast("px:no_ads", tr("ads.notReady"))
             #endif
             Task { await load() }
             return

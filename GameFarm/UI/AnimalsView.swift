@@ -124,7 +124,7 @@ struct AnimalRow: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
                         Text(spec.name).font(.game(16))
-                        if game.isShiny(id) { Text("🌈").font(.system(size: 14)) }
+                        if game.isShiny(id) { PixelIcon(name: "rainbow", size: 16) }
                         Text(spec.role)
                             .font(.game(10, .bold))
                             .padding(.horizontal, 6)

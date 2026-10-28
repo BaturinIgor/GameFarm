@@ -99,7 +99,7 @@ struct ExpeditionPill: View {
     var body: some View {
         if let run = game.save.expedition, run.id == game.save.current {
             HStack(spacing: 8) {
-                Text(run.id?.spec.emoji ?? "🧭").font(.system(size: 18))
+                PixelIcon(name: "compass", size: 20)
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     let left = max(0, run.endsAt.timeIntervalSince(context.date))
                     Text(Countdown.text(left))
@@ -109,7 +109,7 @@ struct ExpeditionPill: View {
                         .outlined(Palette.outline, width: 1)
                 }
                 Button {
-                    Dialogs.shared.confirm(tr("exp.leave.confirm"), icon: "🧭", confirm: tr("exp.leave"), tone: .red) {
+                    Dialogs.shared.confirm(tr("exp.leave.confirm"), icon: "px:compass", confirm: tr("exp.leave"), tone: .red) {
                         game.finishExpedition()
                     }
                 } label: {
@@ -201,7 +201,7 @@ struct RoyalChestCard: View {
         .frame(maxWidth: 340)
         .gamePanel(fill: Palette.parchmentLight, frame: Palette.gold, radius: 18, border: 3)
         .overlay(alignment: .top) {
-            RibbonTitle(text: "👑 " + tr("garden.chestTitle"), tone: .gold, size: 17).offset(y: -16)
+            RibbonTitle(text: tr("garden.chestTitle"), tone: .gold, size: 17).offset(y: -16)
         }
         .frame(maxHeight: .infinity, alignment: .top)
         .padding(.top, 180)
@@ -279,7 +279,7 @@ struct BigMapOverlay: View {
                         .overlay(Capsule().strokeBorder(Palette.woodDark.opacity(0.35), lineWidth: 1))
                     }
                     HStack(spacing: 4) {
-                        Text("🏠").font(.system(size: 14))
+                        PixelIcon(name: "chest", size: 16)
                         Text(tr("hud.storage")).font(.game(12))
                     }
                     .padding(.horizontal, 8)
@@ -291,7 +291,7 @@ struct BigMapOverlay: View {
                             .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(Palette.gold)
                             .outlined(Palette.outline, width: 1)
-                        Text("🚪").font(.system(size: 14))
+                        PixelIcon(name: "door", size: 16)
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)

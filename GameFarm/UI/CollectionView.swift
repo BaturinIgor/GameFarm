@@ -9,8 +9,8 @@ struct CollectionView: View {
         ScrollView {
             VStack(spacing: 16) {
                 HStack(spacing: 10) {
-                    summary("🃏", tr("collection.cards", game.cardsOwned, CardID.allCases.count))
-                    summary("✨", tr("collection.done", ConstellationID.allCases.filter { game.isComplete($0) }.count,
+                    summary("px:cards", tr("collection.cards", game.cardsOwned, CardID.allCases.count))
+                    summary("px:spark", tr("collection.done", ConstellationID.allCases.filter { game.isComplete($0) }.count,
                                     ConstellationID.allCases.count))
                 }
                 Text(tr("collection.hint"))
@@ -26,7 +26,7 @@ struct CollectionView: View {
 
     private func summary(_ icon: String, _ text: String) -> some View {
         HStack(spacing: 6) {
-            Text(icon).font(.system(size: 20))
+            IconView(icon: icon, size: 22)
             Text(text).font(.game(14))
         }
         .frame(maxWidth: .infinity)

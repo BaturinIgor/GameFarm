@@ -208,7 +208,7 @@ struct EventVipCard: View {
     let event: EventID
 
     var body: some View {
-        ShopCard(title: "🌟 " + ProductID.eventPass.title, tone: .gold) {
+        ShopCard(title: ProductID.eventPass.title, tone: .gold) {
             HStack(spacing: 12) {
                 SkinIcon(skin: event.skin, size: 52)
                     .frame(width: 60, height: 60)

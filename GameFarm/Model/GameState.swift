@@ -62,6 +62,7 @@ final class GameState {
     @ObservationIgnored private var lastWrite = Date.distantPast
     @ObservationIgnored private var lastBackup = Date.distantPast
     @ObservationIgnored var lastSecondWind = Date.distantPast
+    @ObservationIgnored var lastStandAt = Date.distantPast
     @ObservationIgnored var lastPotion = Date.distantPast
     @ObservationIgnored var dungeonReturn: LocationID = .meadow
     @ObservationIgnored var lastChest: DungeonReport?
@@ -124,7 +125,7 @@ final class GameState {
         recalc()
         ensureQuests()
         SaveFile.write(save)
-        toast("💾", tr("backup.restored", save.level))
+        toast("px:scroll2", tr("backup.restored", save.level))
         SoundFX.play(.success)
     }
 
@@ -220,7 +221,7 @@ final class GameState {
         saveNow()
         if reward > 0 {
             SoundFX.play(.levelUp)
-            toast("✨", tr("rebirth.toast", reward))
+            toast("px:spark", tr("rebirth.toast", reward))
         }
     }
 
@@ -240,6 +241,15 @@ final class GameState {
 
     var talentPointsTotal: Int {
         GameRules.talentPoints(at: save.level) + save.bonusTalentPoints + legacyRank(.talent) * Int(LegacyPerk.talent.perRank)
+            + dungeonTalentPoints
+    }
+
+    /// Очко таланта за первую победу над каждым боссом подземелий (этажи 5 и 10).
+    var dungeonTalentPoints: Int {
+        DungeonID.allCases.reduce(0) { sum, id in
+            let best = dungeonBest(id)
+            return sum + (best >= 5 ? 1 : 0) + (best >= 10 ? 1 : 0)
+        }
     }
     var talentPointsSpent: Int { save.talents.values.reduce(0, +) }
     var talentPointsFree: Int { max(0, talentPointsTotal - talentPointsSpent) }
@@ -280,7 +290,7 @@ final class GameState {
         guard amount > 0 else { return 0 }
         if stats.autoDeposit && backpackFree < amount {
             let moved = depositBackpack()
-            if moved > 0 { toast("🌀", tr("toast.portal", moved)) }
+            if moved > 0 { toast("px:portal", tr("toast.portal", moved)) }
         }
         let n = min(amount, backpackFree)
         guard n > 0 else { return 0 }
@@ -452,7 +462,7 @@ final class GameState {
         save.tools[tool] = next
         recalc()
         SoundFX.play(.unlock)
-        toast(tool.emoji, tr("toast.newTool", ToolTier.name(tool, tier: next)))
+        toast("px:" + tool.icon, tr("toast.newTool", ToolTier.name(tool, tier: next)))
         return true
     }
 
@@ -527,7 +537,7 @@ final class GameState {
         pay(cost)
         let bonus = Double.random(in: 0..<1) < stats.doubleStarChance ? 2 : 1
         addStar(id, count: bonus)
-        if bonus > 1 { toast("🌠", tr("toast.doubleStar")) }
+        if bonus > 1 { toast("px:stardust", tr("toast.doubleStar")) }
         gainXP(GameRules.tameXP(save.level))
         return true
     }
@@ -540,12 +550,12 @@ final class GameState {
         if isNew {
             if save.active.count < GameRules.maxActiveAnimals {
                 save.active.append(id)
-                toast(id.spec.emoji, tr("toast.animalJoined", id.spec.name))
+                toast("an:" + id.rawValue, tr("toast.animalJoined", id.spec.name))
             } else {
-                toast(id.spec.emoji, tr("toast.animalPen", id.spec.name))
+                toast("an:" + id.rawValue, tr("toast.animalPen", id.spec.name))
             }
         } else {
-            toast(id.spec.emoji, "\(id.spec.name): \(String(repeating: "★", count: stars(id)))")
+            toast("an:" + id.rawValue, "\(id.spec.name): \(String(repeating: "★", count: stars(id)))")
         }
         recalc()
         markDirty()
@@ -634,10 +644,10 @@ final class GameState {
         refreshReachable()
         let fresh = LocationID.world.filter { reachable.contains($0) && !before.contains($0) }
         for loc in fresh {
-            toast(loc.spec.emoji, tr("toast.locationOpened", loc.spec.name))
+            toast("px:map", tr("toast.locationOpened", loc.spec.name))
             gainXP(GameRules.unlockXP(loc))
         }
-        if fresh.isEmpty { toast("🚪", tr("toast.gateOpened")) }
+        if fresh.isEmpty { toast("px:door", tr("toast.gateOpened")) }
         gatePrompt = nil
         SoundFX.play(.gateOpen)
         saveNow()
@@ -688,7 +698,7 @@ final class GameState {
         let n = hasPro ? 2 : 1
         save.tickets = min(Expedition.maxTickets, save.tickets + n)
         save.lastFreeTicket = Date()
-        toast("🎟️", tr("toast.ticket", n))
+        toast("px:ticket", tr("toast.ticket", n))
         SoundFX.play(.coin)
         saveNow()
     }
@@ -810,7 +820,7 @@ final class GameState {
             if type == .gather && save.quests[i].kind != kind { continue }
             save.quests[i].progress = min(save.quests[i].target, save.quests[i].progress + amount)
             if save.quests[i].done {
-                toast("📜", tr("toast.questDone"))
+                toast("px:quest", tr("toast.questDone"))
             }
         }
     }
@@ -887,7 +897,7 @@ final class GameState {
         save.coinsEarned += achievement.coins
         save.bonusTalentPoints += achievement.talentPoints
         if achievement.talentPoints > 0 {
-            toast("🌟", tr("toast.achievementPoints", achievement.talentPoints))
+            toast("px:star", tr("toast.achievementPoints", achievement.talentPoints))
         }
         markDirty()
     }
@@ -911,7 +921,7 @@ final class GameState {
             } else {
                 save.tickets += Expedition.ticketPack
             }
-            toast(product.emoji, tr("toast.purchased", product.title))
+            toast("px:chest_gold", tr("toast.purchased", product.title))
             saveNow()
             return
         }
@@ -935,7 +945,7 @@ final class GameState {
             case .tickets, .eventPass:
                 break
             }
-            toast(product.emoji, tr("toast.purchased", product.title))
+            toast("px:chest_gold", tr("toast.purchased", product.title))
             SoundFX.play(.purchase)
         }
         offerPopup = false
@@ -1026,7 +1036,7 @@ final class GameState {
         save.luckUntil = until
         save.luckReadyAt = until.addingTimeInterval(Premium.luckCooldown)
         if fromAd { save.adsWatched += 1 }
-        toast("🍀", tr("toast.luck"))
+        toast("px:clover", tr("toast.luck"))
         SoundFX.play(.luck)
         markDirty()
     }
@@ -1157,6 +1167,34 @@ final class GameState {
         s.starStep = 0.25 + 0.05 * r(.starFood)
         s.doubleStarChance = 0.15 * r(.starHunter)
 
+        // Огород
+        s.growMult = 1 / (1 + 0.06 * r(.greenThumb))
+        s.extraCropChance = 0.12 * r(.bigHarvest)
+        s.seedBackChance = 0.08 * r(.seedSaver)
+        s.waterMult = 1 + 0.15 * r(.rainmaker)
+        s.fertSaveChance = 0.12 * r(.composter)
+        s.fertExtra = Int(r(.deepRoots))
+        s.mealMult = 1 + 0.15 * r(.chef)
+        s.cookMult = 1 - 0.1 * r(.quickCook)
+        s.sellCategory[.crop, default: 0] += 0.1 * r(.marketDay)
+        s.seedMult = 1 - 0.1 * r(.seedTrader)
+        s.goldenHarvest = r(.goldenHarvest) > 0
+        s.harvestXPMult = r(.harvestMoon) > 0 ? 2 : 1
+
+        // Бой
+        let warlord = r(.warlord) > 0 ? 0.15 : 0
+        s.hpMult = (1 + 0.08 * r(.toughness)) * (1 + warlord)
+        s.weaponMult = (1 + 0.07 * r(.bladeMaster)) * (1 + warlord)
+        s.defenseBonus = 0.03 * r(.guard)
+        s.dodgeBonus = 0.02 * r(.evasion)
+        s.lifesteal = 0.02 * r(.vampirism)
+        s.potionBonus = 0.1 * r(.alchemist)
+        s.berserk = 0.12 * r(.berserk)
+        s.bossBonus = 0.08 * r(.bossSlayer)
+        s.lastStand = r(.lastStand) > 0
+        s.dungeonBonus = 0.1 * r(.delver)
+        s.regen = 0.005 * r(.regen)
+
         // Наследие: вечные бонусы за перерождения.
         func legacy(_ perk: LegacyPerk) -> Double { Double(legacyRank(perk)) * perk.perRank }
         s.yieldAll += legacy(.harvest)
@@ -1284,7 +1322,7 @@ extension GameState {
     }
 
     func seedCost(_ crop: CropID, count: Int) -> Int {
-        max(1, Int((Double(crop.spec.seedPrice * count) * stats.shopMult).rounded(.up)))
+        max(1, Int((Double(crop.spec.seedPrice * count) * stats.shopMult * stats.seedMult).rounded(.up)))
     }
 
     @discardableResult
@@ -1310,7 +1348,7 @@ extension GameState {
     func plant(_ index: Int, crop: CropID? = nil) -> Bool {
         guard let crop = crop ?? chosenSeed, seeds(crop) > 0, index < bedCount, bed(index).isEmpty else { return false }
         save.seeds[crop] = seeds(crop) - 1
-        let speed = isBuilt(.greenhouse) ? Garden.greenhouseSpeed : 1
+        let speed = (isBuilt(.greenhouse) ? Garden.greenhouseSpeed : 1) * stats.growMult
         setBed(index, Bed(crop: crop, plantedAt: Date(), speed: speed))
         gardenEvents.append(GardenEvent(bed: index, kind: .planted))
         SoundFX.play(.pick)
@@ -1366,7 +1404,7 @@ extension GameState {
         var b = bed(index)
         let now = Date()
         guard !b.isEmpty, !b.watered, !b.isRipe(at: now), let ready = b.readyAt else { return false }
-        b.boost += max(0, ready.timeIntervalSince(now)) * WateringCan.boost(save.canLevel)
+        b.boost += max(0, ready.timeIntervalSince(now)) * min(0.9, WateringCan.boost(save.canLevel) * stats.waterMult)
         b.watered = true
         setBed(index, b)
         return true
@@ -1411,8 +1449,10 @@ extension GameState {
         guard !b.isEmpty, b.fertilized != true, !b.isRipe(at: now), let ready = b.readyAt else { return false }
         b.boost += max(0, ready.timeIntervalSince(now)) * id.cut + (id.cut >= 1 ? 1 : 0)
         b.fertilized = true
-        b.extra = (b.extra ?? 0) + id.extra
-        save.fertilizers[id] = fertilizers(id) - 1
+        b.extra = (b.extra ?? 0) + id.extra + stats.fertExtra
+        if Double.random(in: 0..<1) >= stats.fertSaveChance {
+            save.fertilizers[id] = fertilizers(id) - 1
+        }
         setBed(index, b)
         gardenEvents.append(GardenEvent(bed: index, kind: .boosted))
         SoundFX.play(.success)
@@ -1451,7 +1491,7 @@ extension GameState {
         pay(cost)
         save.canLevel += 1
         SoundFX.play(.levelUp)
-        toast("💧", tr("toast.can", save.canLevel))
+        toast("px:watering_can", tr("toast.can", save.canLevel))
         saveNow()
     }
 
@@ -1460,12 +1500,15 @@ extension GameState {
         let b = bed(index)
         guard let crop = b.crop, b.isRipe(at: Date()) else { return nil }
         let spec = crop.spec
-        let amount = max(1, Int((Double(spec.yield) * stats.yieldMultiplier(for: spec.produce)).rounded())) + (b.extra ?? 0)
+        var amount = max(1, Int((Double(spec.yield) * stats.yieldMultiplier(for: spec.produce)).rounded())) + (b.extra ?? 0)
+        if Double.random(in: 0..<1) < stats.extraCropChance { amount += 1 }
         addToStorage(spec.produce, amount)
+        if Double.random(in: 0..<1) < stats.seedBackChance { save.seeds[crop, default: 0] += 1 }
+        if stats.goldenHarvest && Double.random(in: 0..<1) < 0.1 { addToStorage(.goldenApple, 1) }
         rollCard(for: spec.produce, chance: 0.05)
         setBed(index, Bed())
         save.cropsHarvested += 1
-        gainXP(spec.xp)
+        gainXP(Int(Double(spec.xp) * stats.harvestXPMult))
         return ResourceAmount(kind: spec.produce, amount: amount)
     }
 
@@ -1650,7 +1693,7 @@ extension GameState {
     /// Поспать: здоровье полностью восстанавливается.
     func rest() {
         healFull()
-        toast("😴", tr("toast.rest"))
+        toast("px:bed", tr("toast.rest"))
         SoundFX.play(.success)
     }
 
@@ -1682,7 +1725,7 @@ extension GameState {
         pay(cost)
         save.kitchenLevel += 1
         SoundFX.play(.levelUp)
-        toast("🍳", tr("toast.kitchen", save.kitchenLevel))
+        toast("px:dish_omelette", tr("toast.kitchen", save.kitchenLevel))
         saveNow()
     }
 
@@ -1729,7 +1772,7 @@ extension GameState {
 
     var cookSlots: Int { Kitchen.slots(save.kitchenLevel) }
 
-    func cookTime(_ dish: DishID) -> Double { dish.cookTime * Kitchen.speed(save.kitchenLevel) }
+    func cookTime(_ dish: DishID) -> Double { dish.cookTime * Kitchen.speed(save.kitchenLevel) * stats.cookMult }
 
     func dishes(_ dish: DishID) -> Int { save.dishes[dish] ?? 0 }
 
@@ -1771,7 +1814,7 @@ extension GameState {
         return save.meals.filter { $0.value > now }.map { ActiveMeal(dish: $0.key, until: $0.value) }.sorted { $0.until < $1.until }
     }
 
-    func mealDuration(_ dish: DishID) -> Double { dish.duration * (isBuilt(.basement) ? 1.5 : 1) }
+    func mealDuration(_ dish: DishID) -> Double { dish.duration * (isBuilt(.basement) ? 1.5 : 1) * stats.mealMult }
 
     /// Можно ли съесть: есть в запасах и есть свободное место (или это блюдо уже действует и продлится).
     func canEat(_ dish: DishID) -> Bool {
@@ -1783,7 +1826,7 @@ extension GameState {
     func eat(_ dish: DishID) -> Bool {
         guard dishes(dish) > 0 else { return false }
         guard canEat(dish) else {
-            toast("🍽️", tr("toast.mealsFull", mealSlots))
+            toast("px:dish_stew", tr("toast.mealsFull", mealSlots))
             return false
         }
         heal(0.4)
@@ -1793,7 +1836,7 @@ extension GameState {
         save.meals[dish] = min(start.addingTimeInterval(mealDuration(dish)), Date().addingTimeInterval(mealDuration(dish) * 3))
         recalc()
         SoundFX.play(.success)
-        toast(dish.emoji, tr("toast.meal", dish.name))
+        toast("px:" + dish.icon, tr("toast.meal", dish.name))
         saveNow()
         return true
     }
@@ -1848,14 +1891,14 @@ extension GameState {
 
 extension GameState {
     var maxHP: Double {
-        Hero.maxHP(level: save.level, armor: tier(.armor), helmet: tier(.helmet)) * (1 + gear.hpBonus)
+        Hero.maxHP(level: save.level, armor: tier(.armor), helmet: tier(.helmet)) * (1 + gear.hpBonus) * stats.hpMult
     }
 
     /// Доля урона, которую гасит шлем.
-    var defense: Double { min(0.6, Hero.defense(helmet: tier(.helmet)) + gear.defense) }
+    var defense: Double { min(0.65, Hero.defense(helmet: tier(.helmet)) + gear.defense + stats.defenseBonus) }
 
     /// Шанс увернуться от укуса.
-    var dodgeChance: Double { min(0.35, Hero.dodge(boots: tier(.boots)) + gear.dodge) }
+    var dodgeChance: Double { min(0.4, Hero.dodge(boots: tier(.boots)) + gear.dodge + stats.dodgeBonus) }
 
     var hpFraction: Double { min(1, max(0, hp / max(1, maxHP))) }
 
@@ -1876,7 +1919,13 @@ extension GameState {
         if next <= 0 && gear.secondWind && Date().timeIntervalSince(lastSecondWind) > 300 {
             lastSecondWind = Date()
             next = maxHP * 0.3
-            toast("💪", tr("toast.secondWind"))
+            toast("px:heart_plus", tr("toast.secondWind"))
+        }
+        // Последний рубеж (талант): раз в 3 минуты.
+        if next <= 0 && stats.lastStand && Date().timeIntervalSince(lastStandAt) > 180 {
+            lastStandAt = Date()
+            next = maxHP * 0.25
+            toast("px:heart_shield", tr("toast.lastStand"))
         }
         hp = next
         return dealt
@@ -1931,7 +1980,9 @@ extension GameState {
     func weaponDamage(boss: Bool = false) -> Double {
         let w = save.weapon
         let base = Hero.swordDamage(level: save.level, sword: max(1, weaponTier(w))) * w.mult
-        return base * stats.damageMult * stats.swordMult * (boss ? 1 + gear.bossDamage : 1)
+        let rage = hpFraction < 0.5 ? 1 + stats.berserk : 1
+        return base * stats.damageMult * stats.swordMult * stats.weaponMult * rage
+            * (boss ? 1 + gear.bossDamage + stats.bossBonus : 1)
     }
 
     func swordDamage() -> Double { weaponDamage() }
@@ -1952,7 +2003,7 @@ extension GameState {
         save.weapons[id] = weaponTier(id) + 1
         recalc()
         SoundFX.play(.unlock)
-        toast("⚔️", tr("toast.weaponUp", id.name, weaponTier(id)))
+        toast("px:sword", tr("toast.weaponUp", id.name, weaponTier(id)))
         saveNow()
     }
 
@@ -1961,7 +2012,7 @@ extension GameState {
         guard id != .forged else { return }
         if ownsWeapon(id) { return }
         save.weapons[id] = id.startTier
-        toast("⚔️", tr("toast.weaponNew", id.name))
+        toast("px:sword", tr("toast.weaponNew", id.name))
         markDirty()
     }
 
@@ -1984,7 +2035,7 @@ extension GameState {
         guard potionReady, hp < maxHP else { return }
         save.potions -= 1
         lastPotion = Date()
-        heal(Potion.heal)
+        heal(Potion.heal + stats.potionBonus)
         SoundFX.play(.success)
         markDirty()
     }
@@ -2024,7 +2075,7 @@ extension GameState {
         run.cleared = true
         dungeonRun = run
         SoundFX.play(.levelUp)
-        toast("🏆", tr("toast.floorCleared", run.floor))
+        toast("px:trophy", tr("toast.floorCleared", run.floor))
     }
 
     /// Сундук после этажа: монеты, эссенция, зелья, карта и, может быть, оружие босса.
@@ -2032,8 +2083,8 @@ extension GameState {
         guard var run = dungeonRun, run.cleared, !run.chestOpened else { return }
         let id = run.dungeon
         let first = run.floor > dungeonBest(id)
-        let coins = Dungeon.coins(id, floor: run.floor, first: first)
-        let essence = Dungeon.essence(id, floor: run.floor, first: first)
+        let coins = Int(Double(Dungeon.coins(id, floor: run.floor, first: first)) * (1 + stats.dungeonBonus))
+        let essence = Int((Double(Dungeon.essence(id, floor: run.floor, first: first)) * (1 + stats.dungeonBonus)).rounded())
         addCoins(coins)
         addToStorage(.essence, essence, counts: false)
         let potions = first ? 2 : (Double.random(in: 0..<1) < 0.3 ? 1 : 0)
@@ -2044,7 +2095,13 @@ extension GameState {
             weapon = id.weapon
         }
         randomCard()
-        if first { save.dungeonBest[id] = run.floor }
+        if first {
+            save.dungeonBest[id] = run.floor
+            if Dungeon.isBossFloor(run.floor) {
+                recalc()
+                toast("px:star", tr("toast.dungeonTalent"))
+            }
+        }
         run.chestOpened = true
         run.coins += coins
         run.essence += essence
@@ -2099,7 +2156,7 @@ extension GameState {
         ensureHunts()
         for i in save.hunts.indices where save.hunts[i].monster == kind && !save.hunts[i].done {
             save.hunts[i].progress += 1
-            if save.hunts[i].done { toast("⚔️", tr("toast.huntDone", kind.name)) }
+            if save.hunts[i].done { toast("px:sword", tr("toast.huntDone", kind.name)) }
         }
         markDirty()
         return (st.coins, added)
@@ -2174,12 +2231,12 @@ extension GameState {
         save.cards[card, default: 0] += 1
         let after = cardStars(card)
         if before == 0 {
-            toast("🃏", tr("toast.card", card.name))
+            toast("px:cards", tr("toast.card", card.name))
         } else if after > before {
-            toast("⭐", tr("toast.cardStar", card.name, after))
+            toast("px:star", tr("toast.cardStar", card.name, after))
         }
         if !wasComplete && isComplete(card.constellation) {
-            toast("✨", tr("toast.constellation", card.constellation.name))
+            toast("px:spark", tr("toast.constellation", card.constellation.name))
             SoundFX.play(.unlock)
         }
         recalc()
@@ -2229,14 +2286,14 @@ extension GameState {
         save.awaken[id] = awakenLevel(id) + 1
         recalc()
         SoundFX.play(.levelUp)
-        toast("🌟", tr("toast.awaken", id.spec.name, Awakening.title(awakenLevel(id))))
+        toast("px:star", tr("toast.awaken", id.spec.name, Awakening.title(awakenLevel(id))))
         saveNow()
     }
 
     func markShiny(_ id: AnimalID) {
         guard !save.shiny.contains(id) else { return }
         save.shiny.append(id)
-        toast("🌈", tr("toast.shiny", id.spec.name))
+        toast("px:rainbow", tr("toast.shiny", id.spec.name))
         recalc()
         markDirty()
     }
@@ -2275,7 +2332,7 @@ extension GameState {
         save.eventFree = []
         save.eventVip = []
         save.eventBonus = 0
-        if eventsOpen && !first { toast(run.event.emoji, tr("toast.eventStarted", run.event.name)) }
+        if eventsOpen && !first { toast("px:star", tr("toast.eventStarted", run.event.name)) }
         markDirty()
     }
 
@@ -2289,7 +2346,7 @@ extension GameState {
             if !save.eventFree.contains(t) { grantEventReward(Events.free(tier: t), event: event); any = true }
             if vip && !save.eventVip.contains(t) { grantEventReward(Events.vip(tier: t), event: event); any = true }
         }
-        if any { toast(event.emoji, tr("toast.eventLeftovers", event.name)) }
+        if any { toast("px:chest", tr("toast.eventLeftovers", event.name)) }
     }
 
     func canClaimEvent(_ tier: Int, vip: Bool) -> Bool {
@@ -2358,7 +2415,7 @@ extension GameState {
         save.eventBonus += n
         addCoins(Events.bonusCoins(level: save.level) * n)
         for _ in 0..<n { randomCard() }
-        toast("🎁", tr("toast.eventBonus", n))
+        toast("px:chest", tr("toast.eventBonus", n))
         markDirty()
     }
 
@@ -2379,14 +2436,14 @@ extension GameState {
                 addCoins(eventRewardCoins(1500))
             } else {
                 save.eventDecor.append(event.decor.rawValue)
-                toast("🏠", tr("toast.eventDecor", event.decor.name))
+                toast("px:stairs", tr("toast.eventDecor", event.decor.name))
             }
         case .skin:
             if save.eventSkins.contains(event.skin.rawValue) {
                 addCoins(eventRewardCoins(3000))
             } else {
                 save.eventSkins.append(event.skin.rawValue)
-                toast(event.skin.emoji, tr("toast.eventSkin", event.skin.name))
+                toast("skin:" + event.skin.rawValue, tr("toast.eventSkin", event.skin.name))
             }
         }
     }
@@ -2399,7 +2456,7 @@ extension GameState {
         save.eventPoints += n
         let after = eventTier
         if after > before {
-            toast(Events.current.event.emoji, tr("toast.eventTier", after))
+            toast("px:star", tr("toast.eventTier", after))
             SoundFX.play(.unlock)
         }
         markDirty()

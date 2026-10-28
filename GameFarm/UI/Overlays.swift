@@ -91,7 +91,7 @@ struct OfflineOverlay: View {
             Palette.dim.ignoresSafeArea()
                 .onTapGesture(perform: onClose)
             VStack(spacing: 14) {
-                Text("🏡").font(.system(size: 50))
+                PixelIcon(name: "bed", size: 54)
                     .padding(.top, 12)
                 Text(tr("offline.text", Fmt.seconds(report.duration)))
                     .font(.game(14, .semibold))

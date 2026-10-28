@@ -25,7 +25,7 @@ struct LegacyView: View {
 
     private var rebirthCard: some View {
         let reward = game.rebirthReward
-        return ShopCard(title: "✨ " + tr("rebirth.title"), tone: .purple) {
+        return ShopCard(title: tr("rebirth.title"), tone: .purple) {
             HStack {
                 Text(tr("rebirth.count", game.save.rebirths))
                     .font(.game(14))
@@ -61,7 +61,7 @@ struct LegacyView: View {
             .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ButtonTone.purple.base.opacity(0.5), lineWidth: 1.5))
             Button {
                 Dialogs.shared.confirm(tr("rebirth.confirm"), message: tr("rebirth.confirm.message", reward),
-                                       icon: "✨", confirm: tr("rebirth.action"), tone: .purple) {
+                                       icon: "px:spark", confirm: tr("rebirth.action"), tone: .purple) {
                     actions.close()
                     game.rebirth()
                 }

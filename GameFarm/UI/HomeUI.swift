@@ -61,7 +61,7 @@ struct HomeCard: View {
                 }
                 Spacer(minLength: 4)
                 Button {
-                    Dialogs.shared.confirm(tr("decor.remove", decor.name), message: tr("decor.remove.message"), icon: "🧹",
+                    Dialogs.shared.confirm(tr("decor.remove", decor.name), message: tr("decor.remove.message"), icon: "px:plan",
                                            confirm: tr("decor.remove.action"), tone: .red) {
                         game.removeDecor(at: slot)
                     }

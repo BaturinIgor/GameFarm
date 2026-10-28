@@ -81,7 +81,7 @@ final class Store {
         #if SIDELOAD
         try? await Task.sleep(for: .milliseconds(500))
         GameState.shared.grant(id)
-        GameState.shared.toast("🧪", tr("shop.testPurchase"))
+        GameState.shared.toast("px:potion", tr("shop.testPurchase"))
         #else
         if products[id.rawValue] == nil { await load() }
         guard let product = products[id.rawValue] else {
@@ -108,12 +108,12 @@ final class Store {
 
     func restore() async {
         #if SIDELOAD
-        GameState.shared.toast("🧪", tr("shop.testRestore"))
+        GameState.shared.toast("px:potion", tr("shop.testRestore"))
         #else
         do {
             try await AppStore.sync()
             await refresh()
-            GameState.shared.toast("✅", tr("shop.restored"))
+            GameState.shared.toast("px:trophy", tr("shop.restored"))
         } catch {
             errorMessage = error.localizedDescription
         }

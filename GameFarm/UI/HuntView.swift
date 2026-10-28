@@ -99,7 +99,7 @@ private struct HuntCard: View {
                         .foregroundStyle(.secondary)
                     HStack(spacing: 10) {
                         RewardTag(icon: AnyView(CoinIcon(size: 15)), text: Fmt.n(hunt.coins))
-                        RewardTag(icon: AnyView(Text("✨").font(.system(size: 13))), text: Fmt.n(hunt.xp))
+                        RewardTag(icon: AnyView(PixelIcon(name: "book", size: 15)), text: Fmt.n(hunt.xp))
                         if hunt.ticket { RewardTag(icon: AnyView(TicketIcon(size: 15)), text: "1") }
                     }
                 }

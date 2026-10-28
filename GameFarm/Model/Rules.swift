@@ -53,10 +53,10 @@ extension GameRules {
         var lines: [UnlockLine] = []
         let points = talentPoints(at: to) - talentPoints(at: from)
         let coins = to > from ? ((from + 1)...to).map(levelCoinReward).reduce(0, +) : 0
-        lines.append(UnlockLine(icon: "🌟", text: tr("reward.talentPoints", points)))
+        lines.append(UnlockLine(icon: "px:star", text: tr("reward.talentPoints", points)))
         lines.append(UnlockLine(icon: "🪙", text: tr("reward.coins", Fmt.n(coins))))
-        lines.append(UnlockLine(icon: "🎒", text: tr("reward.backpack")))
-        lines.append(UnlockLine(icon: "💪", text: tr("reward.power")))
+        lines.append(UnlockLine(icon: "px:bag", text: tr("reward.backpack")))
+        lines.append(UnlockLine(icon: "px:fist", text: tr("reward.power")))
         return lines
     }
 
@@ -64,29 +64,32 @@ extension GameRules {
     static func unlocks(at level: Int) -> [UnlockLine] {
         var lines: [UnlockLine] = []
         for id in LocationID.world where id.spec.level == level && level > 1 {
-            lines.append(UnlockLine(icon: id.spec.emoji, text: tr("unlock.location", id.spec.name)))
+            lines.append(UnlockLine(icon: "px:map", text: tr("unlock.location", id.spec.name)))
         }
         for tool in ToolKind.upgradable {
             for tier in 2...ToolTier.maxTier where ToolTier.requiredLevel(tool, tier: tier) == level {
-                lines.append(UnlockLine(icon: tool.emoji, text: tr("unlock.tool", ToolTier.name(tool, tier: tier))))
+                lines.append(UnlockLine(icon: "px:" + tool.icon, text: tr("unlock.tool", ToolTier.name(tool, tier: tier))))
             }
         }
         for id in AnimalID.allCases {
             if case .shop(_, let need) = id.spec.source, need == level {
-                lines.append(UnlockLine(icon: id.spec.emoji, text: tr("unlock.animal", id.spec.name)))
+                lines.append(UnlockLine(icon: "an:" + id.rawValue, text: tr("unlock.animal", id.spec.name)))
             }
         }
         for floor in HouseFloor.allCases where floor.level == level && level > 1 {
-            lines.append(UnlockLine(icon: "🏠", text: tr("unlock.floor", floor.title + " · " + floor.room)))
+            lines.append(UnlockLine(icon: "px:stairs", text: tr("unlock.floor", floor.title + " · " + floor.room)))
         }
         if level > 1 && Garden.beds(at: level) > Garden.beds(at: level - 1) {
-            lines.append(UnlockLine(icon: "🌱", text: tr("unlock.bed")))
+            lines.append(UnlockLine(icon: "px:sprout", text: tr("unlock.bed")))
         }
         for crop in CropID.allCases where crop.spec.level == level && level > 1 {
-            lines.append(UnlockLine(icon: crop.spec.produce.emoji ?? "🌱", text: tr("unlock.seed", crop.name)))
+            lines.append(UnlockLine(icon: "px:" + crop.seedIcon, text: tr("unlock.seed", crop.name)))
         }
         if let tier = TalentSpec.tierLevels.firstIndex(of: level), tier > 0 {
-            lines.append(UnlockLine(icon: "🌳", text: tr("unlock.talentRow", tier + 1)))
+            lines.append(UnlockLine(icon: "px:book", text: tr("unlock.talentRow", tier + 1)))
+        }
+        for dungeon in DungeonID.allCases where dungeon.level == level {
+            lines.append(UnlockLine(icon: "px:key", text: tr("unlock.dungeon", dungeon.name)))
         }
         return lines
     }
@@ -159,6 +162,30 @@ struct Stats {
     var animalMult = 1.0
     var producers: [Producer] = []
     var helpers: [Helper] = []
+    // Огород (таланты)
+    var growMult = 1.0
+    var extraCropChance = 0.0
+    var seedBackChance = 0.0
+    var waterMult = 1.0
+    var fertSaveChance = 0.0
+    var fertExtra = 0
+    var mealMult = 1.0
+    var cookMult = 1.0
+    var seedMult = 1.0
+    var goldenHarvest = false
+    var harvestXPMult = 1.0
+    // Бой (таланты)
+    var hpMult = 1.0
+    var weaponMult = 1.0
+    var defenseBonus = 0.0
+    var dodgeBonus = 0.0
+    var lifesteal = 0.0
+    var potionBonus = 0.0
+    var berserk = 0.0
+    var bossBonus = 0.0
+    var lastStand = false
+    var dungeonBonus = 0.0
+    var regen = 0.0
 
     func yieldMultiplier(for kind: ResourceKind) -> Double {
         1 + yieldAll + (yieldCategory[kind.category] ?? 0) + (yieldKind[kind] ?? 0)

@@ -95,7 +95,7 @@ struct QuestCard: View {
                         .fixedSize(horizontal: false, vertical: true)
                     HStack(spacing: 10) {
                         RewardTag(icon: AnyView(CoinIcon(size: 15)), text: Fmt.n(quest.coins))
-                        RewardTag(icon: AnyView(Text("✨").font(.system(size: 13))), text: Fmt.n(quest.xp))
+                        RewardTag(icon: AnyView(PixelIcon(name: "book", size: 15)), text: Fmt.n(quest.xp))
                     }
                 }
                 Spacer(minLength: 0)
@@ -180,7 +180,7 @@ struct AchievementRow: View {
                     Spacer()
                     HStack(spacing: 6) {
                         RewardTag(icon: AnyView(CoinIcon(size: 14)), text: Fmt.n(achievement.coins))
-                        if achievement.talentPoints > 0 { Text("🌟 +\(achievement.talentPoints)") }
+                        if achievement.talentPoints > 0 { RewardTag(icon: AnyView(PixelIcon(name: "star", size: 14)), text: "+\(achievement.talentPoints)") }
                     }
                     .font(.game(12, .semibold).bold())
                     .foregroundStyle(.secondary)

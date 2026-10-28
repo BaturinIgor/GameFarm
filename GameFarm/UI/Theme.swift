@@ -319,7 +319,7 @@ struct CoinIcon: View {
     var body: some View { PixelIcon(name: "coin", size: size, fallback: "🪙") }
 }
 
-/// Иконка по строке: "px:имя" - пиксельная иконка, монета - золотая из пака, иначе эмодзи.
+/// Иконка по строке: "px:имя" - пиксельная иконка, "res:" - ресурс, "an:" - зверь, монета - золотая из пака, иначе эмодзи.
 struct IconView: View {
     let icon: String
     var size: CGFloat = 20
@@ -331,6 +331,10 @@ struct IconView: View {
             PixelIcon(name: String(icon.dropFirst(3)), size: size)
         } else if icon.hasPrefix("res:"), let kind = ResourceKind(rawValue: String(icon.dropFirst(4))) {
             ResourceIcon(kind: kind, size: size)
+        } else if icon.hasPrefix("an:"), let id = AnimalID(rawValue: String(icon.dropFirst(3))) {
+            AnimalIcon(id: id, size: size)
+        } else if icon.hasPrefix("skin:"), let skin = Skin(rawValue: String(icon.dropFirst(5))) {
+            SkinIcon(skin: skin, size: size)
         } else {
             Text(icon).font(.system(size: size * 0.85))
         }
@@ -588,13 +592,13 @@ final class Dialogs {
 
     var current: Item?
 
-    func confirm(_ title: String, message: String = "", icon: String = "❓", confirm: String,
+    func confirm(_ title: String, message: String = "", icon: String = "px:quest", confirm: String,
                  tone: ButtonTone = .red, action: @escaping () -> Void) {
         current = Item(title: title, message: message, icon: icon, confirm: confirm, tone: tone,
                        cancel: tr("common.cancel"), action: action)
     }
 
-    func info(_ title: String, message: String, icon: String = "⚠️") {
+    func info(_ title: String, message: String, icon: String = "px:scroll2") {
         current = Item(title: title, message: message, icon: icon, confirm: tr("common.ok"), tone: .green,
                        cancel: nil, action: nil)
     }

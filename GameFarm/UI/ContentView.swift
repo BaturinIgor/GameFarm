@@ -363,7 +363,7 @@ struct HUDView: View {
                 }
                 .overlay(alignment: .topTrailing) {
                     if game.hasPro {
-                        Text("👑").font(.system(size: 14)).offset(x: 6, y: -8)
+                        PixelIcon(name: "crown", size: 16).offset(x: 6, y: -8)
                     }
                 }
                 VStack(alignment: .leading, spacing: 4) {
@@ -568,7 +568,7 @@ struct EncounterCard: View {
                     Text(spec.name).font(.game(16))
                     if stars > 0 { StarsView(stars: stars) }
                     if encounter.shiny {
-                        Text("🌈 " + tr("shiny.tag"))
+                        Text(tr("shiny.tag"))
                             .font(.game(10))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 6)

@@ -65,8 +65,9 @@ struct WorldMapGraph: View {
                     }
                     if !open && known {
                         let a = center(gate.a, in: size), b = center(gate.b, in: size)
-                        Text(game.canOpenGate(gate) ? "🔓" : "🔒")
-                            .font(.system(size: 12))
+                        Image(systemName: game.canOpenGate(gate) ? "lock.open.fill" : "lock.fill")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(game.canOpenGate(gate) ? Palette.good : Palette.woodDark)
                             .frame(width: 24, height: 24)
                             .background(Circle().fill(game.canOpenGate(gate) ? Palette.gold : Palette.parchmentLight))
                             .overlay(Circle().strokeBorder(Palette.outline, lineWidth: 1.5))
@@ -246,8 +247,8 @@ struct GateRow: View {
         VStack(alignment: .leading, spacing: 8) {
             PaperDivider()
             HStack(spacing: 6) {
-                Text(open ? "🚪" : "🔒")
-                Text(tr("gate.to", other.spec.emoji + " " + other.spec.name)).font(.game(14))
+                if open { PixelIcon(name: "door", size: 18) } else { Image(systemName: "lock.fill").foregroundStyle(Palette.woodDark) }
+                Text(tr("gate.to", other.spec.name)).font(.game(14))
                 Spacer()
                 if open {
                     Text(tr("gate.open.done")).font(.game(12)).foregroundStyle(Palette.good)
@@ -288,7 +289,7 @@ struct ExpeditionsCard: View {
     let onTravel: () -> Void
 
     var body: some View {
-        ShopCard(title: "🧭 " + tr("exp.title"), tone: .blue) {
+        ShopCard(title: tr("exp.title"), tone: .blue) {
             HStack(alignment: .top) {
                 Text(tr("exp.subtitle", Int(Expedition.duration / 60)))
                     .font(.game(12, .semibold))
@@ -353,7 +354,7 @@ struct GardenMapCard: View {
 
     var body: some View {
         let owned = game.owns(.garden)
-        ShopCard(title: "🏰 " + LocationID.garden.spec.name, tone: .gold) {
+        ShopCard(title: LocationID.garden.spec.name, tone: .gold) {
             Text(LocationID.garden.spec.blurb).font(.game(12, .semibold)).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             if owned {

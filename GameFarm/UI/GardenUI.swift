@@ -146,7 +146,7 @@ private struct BedTile: View {
                 if game.plant(index) {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 } else {
-                    game.toast("🌱", tr(game.totalSeeds == 0 ? "toast.noSeeds" : "beds.pick"))
+                    game.toast("px:sprout", tr(game.totalSeeds == 0 ? "toast.noSeeds" : "beds.pick"))
                 }
             }
         } label: {

@@ -12,7 +12,7 @@ struct PixelSprite: View {
                 .interpolation(.none)
                 .frame(width: image.size.width / 4 * scale, height: image.size.height / 4 * scale)
         } else {
-            Text("🪑").font(.system(size: 16 * scale))
+            PixelIcon(name: "plan", size: 16 * scale)
         }
     }
 }
@@ -400,7 +400,7 @@ struct PlaceCard: View {
             if kind == .hunter {
                 NPCPortrait(name: "guard", size: 52)
             } else {
-                Text(kind == .house ? "🏠" : "🐾").font(.system(size: 34))
+                PixelIcon(name: kind == .house ? "stairs" : "paw", size: 36)
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.game(15))
@@ -514,7 +514,7 @@ struct LoginRewardIcon: View {
                 Text("x\(n)").font(.game(11))
             case .chest(let tickets, let coins):
                 PixelIcon(name: "chest_gold", size: 28, fallback: "🎁")
-                Text("\(Fmt.n(coins)) +\(tickets)🎟️").font(.game(10))
+                Text("\(Fmt.n(coins)) +\(tickets)").font(.game(10))
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
             }
@@ -566,7 +566,7 @@ struct CalendarPopup: View {
             .frame(maxWidth: 380)
             .gamePanel()
             .overlay(alignment: .top) {
-                RibbonTitle(text: "📅 " + tr("house.calendar"), tone: .orange, size: 19)
+                RibbonTitle(text: tr("house.calendar"), tone: .orange, size: 19)
                     .padding(.horizontal, 24)
                     .offset(y: -18)
             }

@@ -1096,7 +1096,7 @@ final class GameScene: SKScene {
         eventCheckTimer = 1
         game.syncEvent()
         if spec.kind == .event, let here = loaded, !game.isUnlocked(here) {
-            game.toast("⏰", tr("toast.eventOver"))
+            game.toast("px:hourglass", tr("toast.eventOver"))
             game.leaveEvent()
         }
     }
@@ -1296,12 +1296,12 @@ final class GameScene: SKScene {
                 if chance(g.pearl) { gained.append((.pearl, 1)) }
                 if chance(g.coinChest) {
                     bonusCoins += 30 + game.save.level * 8
-                    game.toast("🧰", tr("toast.coinChest"))
+                    game.toast("px:chest", tr("toast.coinChest"))
                 }
                 if chance(g.giantFish) {
                     gained.append((.fish, 50))
                     bonusCoins += 500 + game.save.level * 40
-                    game.toast("🐋", tr("toast.giantFish"))
+                    game.toast("px:fish", tr("toast.giantFish"))
                     shake = max(shake, 8)
                 }
             default:
@@ -1617,7 +1617,7 @@ final class GameScene: SKScene {
         default: break
         }
         if Double.random(in: 0..<1) < gear.stun { foe.stun(1) }
-        let lifesteal = gear.lifesteal + (weapon == .royalSword ? 0.05 : 0)
+        let lifesteal = gear.lifesteal + stats.lifesteal + (weapon == .royalSword ? 0.05 : 0)
         if lifesteal > 0 { game.healAmount(damage * lifesteal) }
         // Шипы монстра ранят героя
         if foe.traits.contains(.thorns) && !fainting {
@@ -1718,8 +1718,8 @@ final class GameScene: SKScene {
                 game.heal(0.15)
             } else if sinceHurt > 6 {
                 game.heal(0.03)
-            } else if game.gear.combatRegen > 0 {
-                game.heal(game.gear.combatRegen)
+            } else if game.gear.combatRegen + stats.regen > 0 {
+                game.heal(game.gear.combatRegen + stats.regen)
             }
         }
         if game.hp <= 0 && !fainting { faint() }
@@ -1809,7 +1809,7 @@ final class GameScene: SKScene {
                 guard let self else { return }
                 if inDungeon {
                     self.game.healFull()
-                    self.game.toast("💫", tr("toast.dungeonLost"))
+                    self.game.toast("px:spark", tr("toast.dungeonLost"))
                     self.game.leaveDungeon()
                     return
                 }
@@ -1817,7 +1817,7 @@ final class GameScene: SKScene {
                 self.player.position = CGPoint(x: self.layout.base.x, y: self.layout.base.y - 56)
                 self.velocity = .zero
                 self.cam.position = self.clampedCamera(self.player.position)
-                self.game.toast("💫", lost > 0 ? tr("toast.fainted", lost) : tr("toast.faintedNoLoss"))
+                self.game.toast("px:spark", lost > 0 ? tr("toast.fainted", lost) : tr("toast.faintedNoLoss"))
             },
             .wait(forDuration: 0.3),
             .fadeAlpha(to: 0, duration: 0.5),
@@ -1887,14 +1887,14 @@ final class GameScene: SKScene {
             let top = CGPoint(x: layout.size.width / 2, y: layout.size.height - layout.cell * 7)
             add(id.boss, at: top, boss: true, traits: MonsterTrait.pick(Dungeon.bossTraits(floor: run.floor)))
             for p in points.prefix(2) { add(id.mobs.randomElement()!, at: p, boss: false, traits: []) }
-            game.toast("👑", tr("toast.bossWave", id.bossName))
+            game.toast("px:crown", tr("toast.bossWave", id.bossName))
             Sound.shared.play(.wildAppear)
             shake = max(shake, 6)
         } else {
             for p in points.prefix(Dungeon.monstersPerWave(floor: run.floor)) {
                 add(id.mobs.randomElement()!, at: p, boss: false, traits: MonsterTrait.pick(Dungeon.traits(floor: run.floor)))
             }
-            game.toast("⚔️", tr("toast.wave", n, run.waves))
+            game.toast("px:sword", tr("toast.wave", n, run.waves))
         }
     }
 
@@ -2154,7 +2154,7 @@ final class GameScene: SKScene {
     private func updateWanderer(_ dt: Double) {
         if let visit = game.wanderer, visit.until < Date() {
             game.dismissWanderer()
-            game.toast("🧳", tr("toast.wandererLeft"))
+            game.toast("px:bag", tr("toast.wandererLeft"))
         }
         if let visit = game.wanderer, visit.location == loaded {
             if wandererNode == nil, let point = randomOpenPoint(minFromPlayer: 220) {
@@ -2179,7 +2179,7 @@ final class GameScene: SKScene {
         if wandererTimer <= 0 {
             wandererTimer = Double.random(in: 360...600)
             game.spawnWanderer(at: here)
-            game.toast("🧳", tr("toast.wanderer"))
+            game.toast("px:bag", tr("toast.wanderer"))
         }
     }
 
@@ -2383,7 +2383,7 @@ final class GameScene: SKScene {
         node.zPosition = zFor(point.y)
         world.addChild(node)
         wild = node
-        game.toast(chosen.spec.emoji, tr("toast.wild", chosen.spec.name))
+        game.toast("an:" + chosen.rawValue, tr("toast.wild", chosen.spec.name))
         Sound.shared.play(.wildAppear)
     }
 
@@ -2422,7 +2422,7 @@ final class GameScene: SKScene {
             node.zPosition = zFor(point.y)
             world.addChild(node)
             treasure = node
-            game.toast("🎁", tr("toast.treasure"))
+            game.toast("px:chest", tr("toast.treasure"))
         }
     }
 

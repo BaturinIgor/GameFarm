@@ -39,37 +39,39 @@ struct TalentsView: View {
     }
 
     private var branchPicker: some View {
-        HStack(spacing: 6) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
             ForEach(TalentBranch.allCases) { b in
                 let active = b == branch
                 Button {
                     withAnimation(.spring(duration: 0.3)) { branch = b }
                 } label: {
-                    VStack(spacing: 2) {
-                        Text(b.emoji).font(.system(size: 20))
+                    HStack(spacing: 6) {
+                        PixelIcon(name: b.icon, size: 22)
                         Text(b.title)
-                            .font(.game(11, .bold))
+                            .font(.game(12, .bold))
                             .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                            .minimumScaleFactor(0.6)
+                        Spacer(minLength: 0)
                         Text("\(game.pointsSpent(in: b))")
                             .font(.game(10, .heavy))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 6)
+                            .padding(.vertical, 1)
                             .background(Capsule().fill(active ? Palette.woodDark : Palette.inkSoft.opacity(0.6)))
                     }
                     .foregroundStyle(active ? Color.white : Palette.ink)
                     .outlined(active ? Palette.outline : .clear, width: 1)
-                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 8)
                     .padding(.vertical, 7)
                     .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
                             .fill(active ? b.color : Palette.parchmentLight)
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
                             .strokeBorder(active ? Palette.outline : Palette.woodDark.opacity(0.4), lineWidth: active ? 2 : 1.5)
                     )
-                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.woodDark.opacity(0.3)).offset(y: 3))
+                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Palette.woodDark.opacity(0.3)).offset(y: 3))
                 }
                 .buttonStyle(.press)
             }
@@ -87,7 +89,7 @@ struct TalentsView: View {
             }
             Spacer()
             Button {
-                Dialogs.shared.confirm(tr("talents.reset.confirm"), message: tr("talents.reset.message"), icon: "🔄",
+                Dialogs.shared.confirm(tr("talents.reset.confirm"), message: tr("talents.reset.message"), icon: "px:hourglass",
                                        confirm: tr("talents.reset.action", Fmt.n(game.respecCost)), tone: .orange) {
                     game.resetTalents()
                     selected = nil
@@ -134,9 +136,10 @@ struct TalentTreeCanvas: View {
 
     var body: some View {
         let talents = branch.talents
-        let height = top + CGFloat(TalentSpec.tierLevels.count - 1) * rowHeight + 70
+        let rows = (talents.map { $0.spec.tier }.max() ?? 0) + 1
+        let height = top + CGFloat(rows - 1) * rowHeight + 70
         ZStack(alignment: .topLeading) {
-            ForEach(Array(TalentSpec.tierLevels.enumerated()), id: \.offset) { item in
+            ForEach(Array(TalentSpec.tierLevels.prefix(rows).enumerated()), id: \.offset) { item in
                 let reached = game.save.level >= item.element
                 Text(tr("talents.rowLevel", item.element))
                     .font(.game(11, .bold))
@@ -192,19 +195,27 @@ struct TalentNode: View {
         Button(action: action) {
             // Центр круга совпадает с точкой узла, подпись ранга висит под кругом и не сдвигает его.
             ZStack {
+                    // Медальон: тень, каменное кольцо цвета ветки, тёмная или светлая середина
                     Circle()
-                        .fill(Palette.woodDark.opacity(0.35))
+                        .fill(Palette.woodDark.opacity(0.4))
                         .offset(y: 3)
                     Circle()
-                        .fill(rank > 0 ? color.mix(with: .white, by: 0.55) : Palette.parchmentLight)
+                        .fill(LinearGradient(colors: rank > 0 ? [color.mix(with: .white, by: 0.25), color.mix(with: .black, by: 0.25)]
+                                                              : [Color(hex: 0x8A7A66), Color(hex: 0x5E5040)],
+                                             startPoint: .top, endPoint: .bottom))
                     Circle()
-                        .strokeBorder(rank > 0 ? color : Palette.woodDark.opacity(0.35), lineWidth: 4)
-                        .padding(2)
+                        .fill(RadialGradient(colors: rank > 0 ? [Color(hex: 0xFFF6DC), color.mix(with: .white, by: 0.6)]
+                                                              : [Color(hex: 0x4A4034), Color(hex: 0x2E2820)],
+                                             center: .center, startRadius: 2, endRadius: Self.radius))
+                        .padding(6)
+                    Circle()
+                        .strokeBorder(Palette.outline, lineWidth: 2)
+                        .padding(6)
                     Circle()
                         .strokeBorder(isSelected ? Palette.gold : Palette.outline, lineWidth: isSelected ? 3 : 2)
-                    Text(spec.emoji)
-                        .font(.system(size: 26))
+                    PixelIcon(name: spec.icon, size: 30)
                         .grayscale(available ? 0 : 1)
+                        .opacity(available || rank > 0 ? 1 : 0.7)
                     if !available {
                         Image(systemName: "lock.fill")
                             .font(.game(11, .bold))
@@ -251,7 +262,10 @@ struct TalentDetail: View {
         let maxed = rank >= spec.maxRank
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                Text(spec.emoji).font(.system(size: 30))
+                PixelIcon(name: spec.icon, size: 34)
+                    .padding(5)
+                    .background(Circle().fill(id.spec.branch.color.mix(with: .white, by: 0.6)))
+                    .overlay(Circle().strokeBorder(Palette.outline, lineWidth: 2))
                 VStack(alignment: .leading, spacing: 1) {
                     Text(spec.name).font(.game(16))
                     Text(tr("talents.rank", rank, spec.maxRank))

@@ -1,7 +1,29 @@
 import SwiftUI
 
+/// Вкладки склада.
+enum StorageTab: String, CaseIterable, Identifiable {
+    case materials, food, loot, rare
+
+    var id: String { rawValue }
+    var title: String { tr("storage.tab.\(rawValue)") }
+
+    var categories: [ResourceCategory] {
+        switch self {
+        case .materials: [.wood, .stone, .ore]
+        case .food: [.crop, .food, .farm]
+        case .loot: [.loot]
+        case .rare: [.gem, .treasure]
+        }
+    }
+}
+
 struct StorageView: View {
     @Environment(GameState.self) private var game
+    @State private var tab: StorageTab = .materials
+
+    private func kinds(_ tab: StorageTab) -> [ResourceKind] {
+        tab.categories.flatMap { ResourceKind.ordered(in: $0) }.filter { (game.save.storage[$0] ?? 0) > 0 }
+    }
 
     var body: some View {
         ScrollView {
@@ -9,31 +31,36 @@ struct StorageView: View {
                 if game.backpackCount > 0 {
                     backpackCard
                 }
-                if totalStored == 0 {
+                GameTabs(selection: $tab, items: StorageTab.allCases.map { ($0, $0.title) },
+                         badges: Dictionary(uniqueKeysWithValues: StorageTab.allCases.map { ($0, kinds($0).count) }))
+                let list = kinds(tab)
+                if list.isEmpty {
                     Card {
-                        Text(tr("storage.empty"))
+                        Text(totalStored == 0 ? tr("storage.empty") : tr("storage.tabEmpty"))
                             .font(.game(16))
                         Text(tr("storage.empty.hint"))
                             .font(.game(14, .semibold))
                             .foregroundStyle(.secondary)
                     }
-                }
-                ForEach(ResourceCategory.allCases) { category in
-                    let kinds = ResourceKind.ordered(in: category).filter { (game.save.storage[$0] ?? 0) > 0 }
-                    if !kinds.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            SectionTitle(text: category.title)
-                            VStack(spacing: 0) {
-                                ForEach(kinds) { kind in
-                                    StorageRow(kind: kind)
-                                    if kind != kinds.last {
-                                        PaperDivider().padding(.leading, 56)
+                } else {
+                    ForEach(tab.categories) { category in
+                        let rows = list.filter { $0.category == category }
+                        if !rows.isEmpty {
+                            VStack(alignment: .leading, spacing: 8) {
+                                if tab.categories.count > 1 { SectionTitle(text: category.title) }
+                                VStack(spacing: 0) {
+                                    ForEach(rows) { kind in
+                                        StorageRow(kind: kind)
+                                        if kind != rows.last {
+                                            PaperDivider().padding(.leading, 56)
+                                        }
                                     }
                                 }
+                                .listBox()
                             }
-                            .listBox()
                         }
                     }
+                    sellTabButton(list)
                 }
                 Text(tr("storage.priceHint"))
                     .font(.game(12, .semibold))
@@ -43,6 +70,26 @@ struct StorageView: View {
             .padding(16)
         }
         .sheetChrome(tr("hud.storage"), coins: game.save.coins)
+    }
+
+    /// Продать всё во вкладке, с подтверждением и суммой.
+    private func sellTabButton(_ list: [ResourceKind]) -> some View {
+        let total = list.reduce(0) { $0 + (game.save.storage[$1] ?? 0) * game.sellPrice($1) }
+        return Button {
+            Dialogs.shared.confirm(tr("storage.sellTab.confirm", tab.title), message: tr("storage.sellTab.message", Fmt.n(total)),
+                                   icon: "px:coins", confirm: tr("storage.sellAll"), tone: .green) {
+                withAnimation(.snappy) {
+                    for kind in list { game.sell(kind, game.save.storage[kind] ?? 0) }
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Text(tr("storage.sellTab"))
+                CoinIcon(size: 16)
+                Text(Fmt.n(total)).monospacedDigit()
+            }
+        }
+        .buttonStyle(.game(.wood, small: true, wide: true))
     }
 
     private var totalStored: Int { game.save.storage.values.reduce(0, +) }
