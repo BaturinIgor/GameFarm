@@ -575,6 +575,7 @@ final class GameState {
         case .expedition: return save.expedition?.id == id
         case .event: return eventsOpen && Events.current.event.location == id
         case .home: return id.floor.map { isBuilt($0) } ?? false
+        case .dungeon: return dungeonRun?.dungeon.location == id
         }
     }
 
