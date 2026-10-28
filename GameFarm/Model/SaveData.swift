@@ -40,6 +40,11 @@ struct SaveData: Codable {
     var expedition: ExpeditionRun?
     /// Обработанные покупки расходников (чтобы не выдать билеты дважды).
     var consumed: [String] = []
+    // Перерождение: всё ниже переживает сброс.
+    var rebirths = 0
+    var sparks = 0
+    var sparksEarned = 0
+    var legacy: [LegacyPerk: Int] = [:]
 
     init() {}
 
@@ -49,6 +54,7 @@ struct SaveData: Codable {
         case quests, questsDone, claimed, bonusTalentPoints, treasures
         case purchases, granted, skin, starterOfferUntil, starterOffers, luckUntil, luckReadyAt, adsWatched
         case openGates, tickets, lastFreeTicket, gardenChestAt, expedition, consumed
+        case rebirths, sparks, sparksEarned, legacy
     }
 
     init(from decoder: Decoder) throws {
@@ -95,6 +101,10 @@ struct SaveData: Codable {
         gardenChestAt = try c.decodeIfPresent(Date.self, forKey: .gardenChestAt)
         expedition = try? c.decodeIfPresent(ExpeditionRun.self, forKey: .expedition)
         consumed = try c.decodeIfPresent([String].self, forKey: .consumed) ?? []
+        rebirths = try c.decodeIfPresent(Int.self, forKey: .rebirths) ?? 0
+        sparks = try c.decodeIfPresent(Int.self, forKey: .sparks) ?? 0
+        sparksEarned = try c.decodeIfPresent(Int.self, forKey: .sparksEarned) ?? 0
+        legacy = try Self.map(c.decodeIfPresent([String: Int].self, forKey: .legacy)) ?? [:]
 
         if !unlocked.contains(.meadow) { unlocked.insert(.meadow, at: 0) }
         // Экспедиция и сад не открываются через список, туда попадают отдельно.
@@ -141,6 +151,10 @@ struct SaveData: Codable {
         try c.encodeIfPresent(gardenChestAt, forKey: .gardenChestAt)
         try c.encodeIfPresent(expedition, forKey: .expedition)
         try c.encode(consumed, forKey: .consumed)
+        try c.encode(rebirths, forKey: .rebirths)
+        try c.encode(sparks, forKey: .sparks)
+        try c.encode(sparksEarned, forKey: .sparksEarned)
+        try c.encode(Self.raw(legacy), forKey: .legacy)
     }
 
     private static func map<K: RawRepresentable & Hashable>(_ raw: [String: Int]?) -> [K: Int]? where K.RawValue == String {

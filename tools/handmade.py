@@ -42,6 +42,7 @@ MAT = {
     "gold": ("#9c4a00", "#ffc825", "#fff3b0"),
     "pink": ("#a8407a", "#e86aa8", "#ffb8dc"),
     "sand": ("#be7c60", "#e4a672", "#f6ca9f"),
+    "violet": ("#5a2a8a", "#a64dd6", "#e6b3ff"),
 }
 
 
@@ -517,6 +518,19 @@ def icons():
     for x, y in ((5, 7), (6, 7), (5, 8), (6, 8)):
         p[x, y] = hexc("#c42430")
     out["ticket"] = im
+
+    # Искра перерождения: четырёхлучевая звезда
+    c = icon_canvas()
+    poly = [(8, 0.5), (9.8, 6.2), (15.5, 8), (9.8, 9.8), (8, 15.5), (6.2, 9.8), (0.5, 8), (6.2, 6.2)]
+    for y in range(16):
+        for x in range(16):
+            if _inside(x + 0.5, y + 0.5, poly):
+                c.put(x, y, "violet")
+    im = c.render()
+    p = im.load()
+    for x, y in ((7, 6), (8, 6), (7, 7), (8, 7), (7, 8), (8, 8), (7, 9), (8, 9), (6, 7), (9, 7), (6, 8), (9, 8)):
+        p[x, y] = hexc("#ffffff")
+    out["spark"] = im
 
     # Свиток (задания)
     c = icon_canvas()

@@ -61,13 +61,63 @@ final class GameState {
         lastWrite = Date()
     }
 
-    func resetProgress() {
-        let purchases = save.purchases
-        let granted = save.granted
+    // MARK: Перерождение
+
+    func legacyRank(_ perk: LegacyPerk) -> Int { save.legacy[perk] ?? 0 }
+
+    /// Сколько искр даст перерождение прямо сейчас.
+    var rebirthReward: Int {
+        Rebirth.sparks(level: save.level, achievements: save.claimed.count, gates: save.openGates.count)
+    }
+
+    func canBuyLegacy(_ perk: LegacyPerk) -> Bool {
+        let rank = legacyRank(perk)
+        return rank < perk.maxRank && save.sparks >= perk.cost(rank: rank)
+    }
+
+    @discardableResult
+    func buyLegacy(_ perk: LegacyPerk) -> Bool {
+        guard canBuyLegacy(perk) else { return false }
+        let rank = legacyRank(perk)
+        save.sparks -= perk.cost(rank: rank)
+        save.legacy[perk] = rank + 1
+        if perk == .tools {
+            for tool in ToolKind.upgradable {
+                save.tools[tool] = max(tier(tool), min(ToolTier.maxTier, 1 + rank + 1))
+            }
+        }
+        recalc()
+        SoundFX.play(.unlock)
+        markDirty()
+        return true
+    }
+
+    /// Начать заново: уровень, ресурсы, звери, таланты и проходы обнуляются,
+    /// а покупки, билеты, искры и наследие остаются. За забег начисляются искры.
+    func rebirth() {
+        let old = save
+        let reward = rebirthReward
         save = SaveData()
         save.tutorialDone = true
-        save.purchases = purchases
-        save.granted = granted
+        save.purchases = old.purchases
+        save.granted = old.granted
+        save.consumed = old.consumed
+        save.tickets = max(old.tickets, 1)
+        save.lastFreeTicket = old.lastFreeTicket
+        save.gardenChestAt = old.gardenChestAt
+        save.starterOfferUntil = old.starterOfferUntil
+        save.starterOffers = old.starterOffers
+        save.luckUntil = old.luckUntil
+        save.luckReadyAt = old.luckReadyAt
+        save.adsWatched = old.adsWatched
+        save.skin = old.skin
+        save.legacy = old.legacy
+        save.rebirths = old.rebirths + (reward > 0 ? 1 : 0)
+        save.sparks = old.sparks + reward
+        save.sparksEarned = old.sparksEarned + reward
+        save.coins += legacyRank(.capital) * Int(LegacyPerk.capital.perRank)
+        let toolTier = min(ToolTier.maxTier, 1 + legacyRank(.tools))
+        for tool in ToolKind.upgradable { save.tools[tool] = toolTier }
         if owns(.starter) {
             save.animals[.duckHat] = 1
             save.active = [.duckHat]
@@ -78,9 +128,15 @@ final class GameState {
         levelUp = nil
         offlineReport = nil
         treasureFound = nil
+        expeditionReport = nil
         recalc()
+        if !isSkinUnlocked(currentSkin) { save.skin = Skin.farmer.rawValue }
         ensureQuests()
         saveNow()
+        if reward > 0 {
+            SoundFX.play(.levelUp)
+            toast("✨", tr("rebirth.toast", reward))
+        }
     }
 
     func finishTutorial() {
@@ -97,7 +153,9 @@ final class GameState {
         return min(1, Double(save.xp) / Double(max(1, xpToNext)))
     }
 
-    var talentPointsTotal: Int { GameRules.talentPoints(at: save.level) + save.bonusTalentPoints }
+    var talentPointsTotal: Int {
+        GameRules.talentPoints(at: save.level) + save.bonusTalentPoints + legacyRank(.talent) * Int(LegacyPerk.talent.perRank)
+    }
     var talentPointsSpent: Int { save.talents.values.reduce(0, +) }
     var talentPointsFree: Int { max(0, talentPointsTotal - talentPointsSpent) }
 
@@ -986,13 +1044,17 @@ final class GameState {
         s.starStep = 0.25 + 0.05 * r(.starFood)
         s.doubleStarChance = 0.15 * r(.starHunter)
 
-        var speedBonus = 0.07 * r(.swift) + 0.05 * r(.tailwind)
+        // Наследие: вечные бонусы за перерождения.
+        func legacy(_ perk: LegacyPerk) -> Double { Double(legacyRank(perk)) * perk.perRank }
+        s.yieldAll += legacy(.harvest)
+
+        var speedBonus = 0.07 * r(.swift) + 0.05 * r(.tailwind) + legacy(.boots)
         var critBonus = 0.05 * r(.crit)
-        var respawnBonus = 0.08 * r(.regrowth) + (r(.abundance) > 0 ? 0.5 : 0)
-        var xpBonus = 0.1 * r(.scholar) + 0.06 * r(.sage)
-        var sellBonus = 0.08 * r(.trader)
+        var respawnBonus = 0.08 * r(.regrowth) + (r(.abundance) > 0 ? 0.5 : 0) + legacy(.growth)
+        var xpBonus = 0.1 * r(.scholar) + 0.06 * r(.sage) + legacy(.wisdom)
+        var sellBonus = 0.08 * r(.trader) + legacy(.merchant)
         var capacity = Double(GameRules.capacity(at: save.level)) + 15 * r(.bigPack)
-            + (owns(.starter) ? Double(Premium.starterBackpack) : 0)
+            + (owns(.starter) ? Double(Premium.starterBackpack) : 0) + legacy(.pack)
 
         for id in save.active {
             let m = s.starMultiplier(save.animals[id] ?? 1) * s.animalMult

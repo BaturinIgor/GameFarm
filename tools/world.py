@@ -411,6 +411,7 @@ LOCATIONS = {
         land=[("ellipse", 0.5, 0.5, 0.44, 0.45), ("ellipse", 0.3, 0.3, 0.3, 0.25), ("ellipse", 0.72, 0.7, 0.26, 0.24)],
         water=[("ellipse", 0.76, 0.2, 0.09, 0.06), ("ellipse", 0.2, 0.7, 0.07, 0.06)],
         base=(0.5, 0.3), bare=[("ellipse", 0.3, 0.55, 0.06, 0.05)],
+        farm=dict(dx=5, dy=-1, cols=4, rows=3), stall=(-6, 3),
         clusters=[C("tree", 9, 0.22, 0.42, 5), C("tree", 8, 0.78, 0.55, 5), C("tree", 8, 0.32, 0.8, 5),
                   C("appleTree", 4, 0.66, 0.78, 3), C("bush", 6, 0.5, 0.5, 4), C("bush", 5, 0.8, 0.36, 3),
                   C("mushroom", 6, 0.14, 0.6, 3), C("rock", 6, 0.68, 0.24, 4), C("rock", 4, 0.4, 0.66, 3)],
@@ -744,6 +745,27 @@ def generate(lid, spec):
                 g.t[r][c] = LAND
                 g.ice[r][c] = False
 
+    # Огород и лавка у дома: место всегда суша, без ресурсов, декора и тропинок.
+    reserved = set()
+    farm_cells = []
+    if spec.get("farm"):
+        f = spec["farm"]
+        for j in range(f["rows"]):
+            for i in range(f["cols"]):
+                farm_cells.append((base[0] + f["dx"] + i, base[1] + f["dy"] + j))
+    stall_cell = None
+    if spec.get("stall"):
+        stall_cell = (base[0] + spec["stall"][0], base[1] + spec["stall"][1])
+    for c, r in farm_cells + ([stall_cell] if stall_cell else []):
+        for dr in range(-2, 3):
+            for dc in range(-2, 3):
+                cc, rr = c + dc, r + dr
+                if 2 <= cc < W - 2 and 2 <= rr < H - 2:
+                    if abs(dc) <= 1 and abs(dr) <= 1:
+                        g.t[rr][cc] = LAND
+                        g.ice[rr][cc] = False
+                    reserved.add((cc, rr))
+
     # Убираем одиночные клетки и диагональные стыки, которые плохо рисуются.
     for _ in range(3):
         for r in range(1, H - 1):
@@ -781,7 +803,7 @@ def generate(lid, spec):
         if g.t[r][c] != LAND:
             return None
         near_water = any(g.get(c + dc, r + dr) != LAND for dc in (-1, 0, 1) for dr in (-1, 0, 1))
-        return 1 + (6 if near_water else 0) + (noise.at(c * 2.3, r * 2.3) + 1) * 2.2
+        return 1 + (6 if near_water else 0) + (40 if (c, r) in reserved else 0) + (noise.at(c * 2.3, r * 2.3) + 1) * 2.2
 
     gate_targets = [gi["inner"] for gi in gate_info]
     trail_targets = []
@@ -822,7 +844,7 @@ def generate(lid, spec):
             if (c - base[0]) ** 2 * 0.8 + (r - base[1]) ** 2 <= 10:
                 path_cells.add((c, r))
     for c, r in path_cells:
-        if g.inside(c, r) and g.t[r][c] == LAND:
+        if g.inside(c, r) and g.t[r][c] == LAND and (c, r) not in reserved:
             g.bare[r][c] = True
     # Голая земля не должна касаться воды (иначе нет подходящих тайлов).
     for r in range(H):
@@ -862,6 +884,8 @@ def generate(lid, spec):
         cands = []
         for r in range(H):
             for c in range(W):
+                if (c, r) in reserved:
+                    continue
                 if node in WATER_NODES:
                     t = g.t[r][c]
                     if not (t == WATER or (sea and t == VOID)):
@@ -932,7 +956,7 @@ def generate(lid, spec):
 
     for r in range(H):
         for c in range(W):
-            if (c, r) not in reach or g.bare[r][c]:
+            if (c, r) not in reach or g.bare[r][c] or (c, r) in reserved:
                 continue
             if rng.random() < spec["decor"].get("props", 0):
                 p = cell_to_pt(g, c, r)
@@ -969,6 +993,8 @@ def generate(lid, spec):
     flat = []
     for r in range(H):
         for c in range(W):
+            if (c, r) in reserved:
+                continue
             p = cell_to_pt(g, c, r)
             if g.t[r][c] == LAND and not g.bare[r][c] and (spec["edge"] != "sea" or g.grass[r][c]):
                 if rng.random() < spec["decor"].get("flowers", 0):
@@ -987,7 +1013,8 @@ def generate(lid, spec):
                     if clear(q, 14):
                         props.append((rng.choice(["cattail", "cattail2", "reed"]), (round(q[0]), round(q[1])), 0))
 
-    return dict(grid=g, base=base, gates=gate_info, spots=spots, props=props, border=border, flat=flat, reach=reach)
+    return dict(grid=g, base=base, gates=gate_info, spots=spots, props=props, border=border, flat=flat, reach=reach,
+                farm=farm_cells, stall=stall_cell)
 
 
 def nearest_land(g, cell):
@@ -1156,7 +1183,10 @@ def export(lid, spec, gen):
         spots=[[n, p[0], p[1]] for n, p in gen["spots"]],
         props=[[n, p[0], p[1], fixed] for n, p, fixed in gen["props"]],
         border=[[n, p[0], p[1]] for n, p in gen["border"]],
+        farm=[cell_to_pt(g, c, r) for c, r in gen["farm"]],
     )
+    if gen["stall"]:
+        data["stall"] = cell_to_pt(g, *gen["stall"])
     with open(os.path.join(LAYOUTS, f"layout_{lid}.json"), "w") as f:
         json.dump(data, f, separators=(",", ":"))
 

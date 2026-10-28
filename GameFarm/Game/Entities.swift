@@ -378,9 +378,19 @@ final class CompanionNode: SKNode {
 final class WildNode: SKNode {
     let animal: AnimalID
     var life: Double
-    private let home: CGPoint
+    private var home: CGPoint
     private var goal: CGPoint
     private var wait: Double = 1
+    private var speed: CGFloat = 40
+    /// Прыжок в воду: сколько осталось и полная длительность.
+    private var hop: Double = 0
+    private let hopTime = 0.38
+    /// Утка или лебедь уже ушли в воду.
+    private(set) var diving = false
+    /// Можно ли выбрать эту точку целью: сцена знает, где суша и где вода.
+    var allows: (CGPoint, Bool) -> Bool = { _, _ in true }
+    /// Сцена показывает брызги, когда зверь плюхается в воду.
+    var onSplash: ((CGPoint) -> Void)?
     private let body: SKSpriteNode
     private let pixel: PixelAnimal?
 
@@ -428,28 +438,55 @@ final class WildNode: SKNode {
 
     func setSwimming(_ on: Bool) {
         guard let pixel, pixel.swimming != on else { return }
+        if on && diving && hop <= 0 {
+            hop = hopTime
+            onSplash?(position)
+        }
         pixel.swimming = on
+    }
+
+    /// Убегает в воду, если к нему подходят (утки и лебеди).
+    func dive(to point: CGPoint) {
+        guard !diving else { return }
+        diving = true
+        home = point
+        goal = point
+        speed = 115
+        wait = 0.8
     }
 
     func wander(_ dt: Double) {
         life -= dt
         wait -= dt
         let d = distance(position, goal)
-        let v = d >= 4 ? CGVector(dx: (goal.x - position.x) / d * 40, dy: (goal.y - position.y) / d * 40) : .zero
+        let v = d >= 4 ? CGVector(dx: (goal.x - position.x) / d * speed, dy: (goal.y - position.y) / d * speed) : .zero
         pixel?.update(velocity: v, dt: dt)
+        var lift: CGFloat = 0
+        if hop > 0 {
+            hop -= dt
+            lift = CGFloat(sin(.pi * max(0, hop) / hopTime)) * 16
+        }
         if d < 4 {
-            body.position.y += (0 - body.position.y) * 0.3
+            body.position.y += (lift - body.position.y) * 0.3
+            speed = 40
             if wait <= 0 {
-                let a = CGFloat.random(in: 0...(.pi * 2))
-                let r = CGFloat.random(in: 20...90)
-                goal = CGPoint(x: home.x + cos(a) * r, y: home.y + sin(a) * r)
+                // Новая цель рядом с домом: на воде для нырнувших, на суше для остальных.
+                for _ in 0..<6 {
+                    let a = CGFloat.random(in: 0...(.pi * 2))
+                    let r = CGFloat.random(in: 20...(diving ? 55 : 90))
+                    let p = CGPoint(x: home.x + cos(a) * r, y: home.y + sin(a) * r)
+                    if allows(p, diving) {
+                        goal = p
+                        break
+                    }
+                }
                 wait = Double.random(in: 1.5...3.5)
             }
         } else {
-            let step = min(d, CGFloat(40 * dt))
+            let step = min(d, speed * CGFloat(dt))
             position.x += (goal.x - position.x) / d * step
             position.y += (goal.y - position.y) / d * step
-            body.position.y = CGFloat(abs(sin(life * 12))) * (pixel == nil ? 4 : 1)
+            body.position.y = CGFloat(abs(sin(life * 12))) * (pixel == nil ? 4 : 1) + lift
             if pixel == nil, abs(goal.x - position.x) > 1 { body.xScale = goal.x > position.x ? -1 : 1 }
         }
     }

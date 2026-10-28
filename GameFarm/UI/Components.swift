@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum GameSheet: String, Identifiable {
-    case storage, workshop, talents, animals, quests, map, level, shop, wardrobe
+    case storage, workshop, talents, animals, quests, map, level, shop, wardrobe, legacy
     var id: String { rawValue }
 }
 

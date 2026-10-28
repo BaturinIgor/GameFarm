@@ -1230,6 +1230,27 @@ final class GameScene: SKScene {
         }
     }
 
+    /// Центр ближайшей клетки воды (не у самого берега) в пределах radius клеток.
+    private func nearestWater(to p: CGPoint, within radius: Int) -> CGPoint? {
+        let (col, row) = layout.colRow(p)
+        var best: CGPoint?
+        var bestD = CGFloat.greatestFiniteMagnitude
+        for r in (row - radius)...(row + radius) {
+            for c in (col - radius)...(col + radius) where layout.isWater(c, r) {
+                var wet = 0
+                for (dc, dr) in [(1, 0), (-1, 0), (0, 1), (0, -1)] where layout.isWater(c + dc, r + dr) { wet += 1 }
+                guard wet >= 3 else { continue }
+                let q = layout.center(c, r)
+                let d = distance(q, p)
+                if d < bestD {
+                    bestD = d
+                    best = q
+                }
+            }
+        }
+        return best
+    }
+
     /// Звери ходят только по суше, а утки и лебеди могут плавать.
     private func keepOnGround(_ point: CGPoint, swims: Bool, swimming: (Bool) -> Void) -> CGPoint {
         let (col, row) = layout.colRow(point)
@@ -1348,6 +1369,11 @@ final class GameScene: SKScene {
 
     private func updateWild(_ dt: Double, _ stats: Stats) {
         if let w = wild {
+            // Утки и лебеди прыгают в воду, когда к ним подходят.
+            if w.canSwim && !w.diving && distance(w.position, player.position) < 150,
+               let water = nearestWater(to: w.position, within: 6) {
+                w.dive(to: water)
+            }
             w.wander(dt)
             w.position = keepOnGround(w.position, swims: w.canSwim) { w.setSwimming($0) }
             w.zPosition = zFor(w.position.y)
@@ -1389,6 +1415,15 @@ final class GameScene: SKScene {
         }
         guard let point = randomOpenPoint(minFromPlayer: 240) else { return }
         let node = WildNode(animal: chosen, at: point, life: 160 * stats.spawnMult)
+        node.allows = { [layout] p, water in
+            let (c, r) = layout.colRow(p)
+            return water ? layout.isWater(c, r) : layout.walkable(c, r)
+        }
+        node.onSplash = { [weak self] p in
+            guard let self else { return }
+            Effects.ring(at: p, in: self.world, color: UIColor(red: 0.75, green: 0.92, blue: 1, alpha: 1), radius: 22)
+            SoundFX.play(.splash, volume: 0.7)
+        }
         node.zPosition = zFor(point.y)
         world.addChild(node)
         wild = node

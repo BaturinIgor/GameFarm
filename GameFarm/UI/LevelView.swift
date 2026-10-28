@@ -15,20 +15,34 @@ struct LevelView: View {
                 bonusesCard
                 upcomingCard
                 statsCard
-                Button {
-                    Dialogs.shared.confirm(tr("profile.reset.confirm"), message: tr("profile.reset.message"), icon: "🗑️",
-                                           confirm: tr("profile.reset.action"), tone: .red) {
-                        game.resetProgress()
-                    }
-                } label: {
-                    Text(tr("profile.reset"))
-                }
-                .buttonStyle(.game(.red, small: true, wide: true))
-                .padding(.top, 6)
+                rebirthCard
             }
             .padding(16)
         }
         .sheetChrome(tr("profile.title"), coins: game.save.coins)
+    }
+
+    private var rebirthCard: some View {
+        Card(tint: ButtonTone.purple.base) {
+            HStack(spacing: 12) {
+                PixelIcon(name: "spark", size: 36, fallback: "✨")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(tr("rebirth.title")).font(.game(16))
+                    Text(game.save.level >= Rebirth.minLevel ? tr("rebirth.short", game.rebirthReward)
+                                                           : tr("rebirth.locked", Rebirth.minLevel))
+                        .font(.game(12, .semibold))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 4)
+                SparkBadge(sparks: game.save.sparks)
+            }
+            Button {
+                actions.open(.legacy)
+            } label: {
+                Text(tr("legacy.open"))
+            }
+            .buttonStyle(.game(.purple, wide: true))
+        }
     }
 
     private var progressCard: some View {

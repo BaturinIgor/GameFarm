@@ -138,6 +138,7 @@ struct ContentView: View {
             case .level: LevelView()
             case .shop: ShopView()
             case .wardrobe: WardrobeView()
+            case .legacy: LegacyView()
             }
         }
         .environment(game)
@@ -146,7 +147,7 @@ struct ContentView: View {
     }
 
     private func open(_ which: GameSheet) {
-        returnTo = which == .wardrobe ? sheet : nil
+        returnTo = which == .wardrobe || which == .legacy ? sheet : nil
         sheet = which
     }
 

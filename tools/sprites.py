@@ -221,6 +221,11 @@ SKINS = {
     "zombie": dict(hair=(1, "Grey"), chest="OG_Shirt/Shirt_1_Brown", legs="OG_Pants/Pants_1_Green", feet="Brown", tone="green"),
     "knight": dict(helmet="Plate_Helmet_1/Plate_Helmet_1_Gold", chest="Plate_Chest/Plate_Chest_Gold",
                    legs="Plate_Legs/Plate_Legs_Gold", feet="Brown"),
+    # Торговцы (не образы игрока)
+    "merchant": dict(hair=(3, "Grey"), chest="Farmer_Shirt/Farmer_Shirt_1_Orange", legs="Farmer_Pants/Farmer_Pants_1_White_and_Brown",
+                     feet="Brown", hat="#c42430", tone="tan"),
+    "wanderer": dict(hair=(5, "Brown"), chest="Lumberjack_Shirt/Lumberjack_Shirt_1_Purple", legs="OG_Pants/Pants_1_Brown",
+                     feet="Brown", hat="#5b3fa0"),
 }
 
 _layer_cache = {}
@@ -460,6 +465,23 @@ save("sunflower", crop_opaque(cell(CROPS2, 5, 1)))
 save("pumpkin", crop_opaque(cell(CROPS, 5, 11)))
 save("cabbage", crop_opaque(cell(CROPS, 5, 15)))
 save("strawberry", crop_opaque(cell(CROPS2, 5, 7)))
+# Огород: стадии роста (4), мешочек семян и урожай для каждой культуры. Ряд листа - 32 пикселя.
+GARDEN_CROPS = {"wheat": 0, "tomato": 1, "carrot": 2, "eggplant": 3, "corn": 4, "pumpkin": 5, "cabbage": 7,
+                "chili": 9, "sunflower": 14, "potato": 16, "strawberry": 17, "grapes": 21}
+for crop_name, crop_row in GARDEN_CROPS.items():
+    y0 = crop_row * 32
+    for stage in range(4):
+        x0 = (2 + stage) * 16
+        save(f"crop_{crop_name}_{stage}", crop_opaque(CROPS.crop((x0, y0, x0 + 16, y0 + 32))))
+    save(f"ic_seed_{crop_name}", crop_opaque(CROPS.crop((16, y0, 32, y0 + 32))), anchor=[0.5, 0.5])
+    if crop_name != "carrot":
+        save(f"ic_{crop_name}", crop_opaque(CROPS.crop((96, y0, 112, y0 + 32))), anchor=[0.5, 0.5])
+save("soil", load("Tiles", "FarmLand", "FarmLand_Tile.png").crop((0, 0, 16, 16)), anchor=[0.5, 0.5])
+save("soil_wet", load("Tiles", "FarmLand", "FarmLand_Wet_Tile.png").crop((0, 0, 16, 16)), anchor=[0.5, 0.5])
+save("stall", crop_opaque(load("Buildings", "Buildings", "Unique_Buildings", "Stalls", "Market_Stalls.png").crop((0, 0, 48, 48))))
+save("stall_purple", crop_opaque(lum_map(load("Buildings", "Buildings", "Unique_Buildings", "Stalls", "Market_Stalls.png").crop((96, 0, 144, 48)),
+                                         ["#3b1f5e", "#6a3a9a", "#a66ad6", "#e0c0ff"], mask=lambda p: p[2] > p[0] + 30 and p[2] > p[1] + 10)))
+
 grapes = load("Crops", "Grapes_Bower.png")
 save("grapes", crop_opaque(grapes.crop((96, 80, 192, 160))))
 save("grapes_bare", crop_opaque(grapes.crop((0, 80, 96, 160))))
