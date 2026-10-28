@@ -92,6 +92,7 @@ struct Achievement: Identifiable {
         case quests
         case treasures
         case floors
+        case kills
     }
 
     let id: String
@@ -155,6 +156,8 @@ struct Achievement: Identifiable {
                [300, 3_000, 20_000], points: [0, 1, 1])
         family("house", "🏠", .floors, [2, 4],
                [1_000, 10_000], points: [1, 1])
+        family("kills", "⚔️", .kills, [20, 200, 2_000],
+               [300, 4_000, 30_000], points: [0, 1, 1])
         return list
     }()
 }

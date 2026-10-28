@@ -2,7 +2,7 @@ import SwiftUI
 
 struct QuestsView: View {
     enum Tab: String, CaseIterable, Identifiable {
-        case quests, achievements
+        case quests, hunts, achievements
         var id: String { rawValue }
     }
 
@@ -12,10 +12,12 @@ struct QuestsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
-                GameTabs(selection: $tab, items: [(Tab.quests, tr("hud.quests")), (Tab.achievements, tr("quests.achievements"))])
+                GameTabs(selection: $tab, items: [(Tab.quests, tr("hud.quests")), (Tab.hunts, tr("hunt.tab")),
+                                                  (Tab.achievements, tr("quests.achievements"))])
 
                 switch tab {
                 case .quests: questsList
+                case .hunts: HuntList()
                 case .achievements: achievementsList
                 }
             }

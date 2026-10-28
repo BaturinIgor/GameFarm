@@ -222,7 +222,9 @@ SKINS = {
     "zombie": dict(hair=(1, "Grey"), chest="OG_Shirt/Shirt_1_Brown", legs="OG_Pants/Pants_1_Green", feet="Brown", tone="green"),
     "knight": dict(helmet="Plate_Helmet_1/Plate_Helmet_1_Gold", chest="Plate_Chest/Plate_Chest_Gold",
                    legs="Plate_Legs/Plate_Legs_Gold", feet="Brown"),
-    # Торговцы (не образы игрока)
+    # Торговцы и стражник (не образы игрока)
+    "guard": dict(helmet="Plate_Helmet_1/Plate_Helmet_1_Iron", chest="Plate_Chest/Plate_Chest_Iron",
+                  legs="Plate_Legs/Plate_Legs_Iron", feet="Brown"),
     "merchant": dict(hair=(3, "Grey"), chest="Farmer_Shirt/Farmer_Shirt_1_Orange", legs="Farmer_Pants/Farmer_Pants_1_White_and_Brown",
                      feet="Brown", hat="#c42430", tone="tan"),
     "wanderer": dict(hair=(5, "Brown"), chest="Lumberjack_Shirt/Lumberjack_Shirt_1_Purple", legs="OG_Pants/Pants_1_Brown",
@@ -709,6 +711,33 @@ save("cloud_shadow2", crop_opaque(clouds.crop((64, 0, 128, 64))), anchor=[0.5, 0
 for name, im in handmade.sprites().items():
     save(name, im)
 
+# ================================================================ монстры (бесплатный набор того же стиля)
+
+FREE = os.path.join(SRC, "Cute_Fantasy_Free")
+slime = Image.open(os.path.join(FREE, "Enemies", "Slime_Green.png")).convert("RGBA")
+skeleton = Image.open(os.path.join(FREE, "Enemies", "Skeleton.png")).convert("RGBA")
+
+
+def slime_green_px(p):
+    return p[1] > p[0] + 20 and p[1] >= p[2]
+
+
+SLIMES = {
+    "green": None,
+    "blue": ["#0e1a40", "#1c3a8a", "#2f6fd0", "#6ab4ff", "#c8eaff"],
+    "purple": ["#24103a", "#4a2275", "#7a3ab8", "#b07ae6", "#e6c8ff"],
+    "red": ["#3a0e0e", "#7a1a1a", "#c42430", "#f5555d", "#ffc0b0"],
+    "ice": ["#1e3a4a", "#4a8aa8", "#8fd0ec", "#d8f4ff", "#ffffff"],
+    "gold": ["#3a2400", "#8a5a00", "#e8a810", "#ffd84a", "#fff4b0"],
+}
+for color, ramp in SLIMES.items():
+    sheet = slime if ramp is None else lum_map(slime, ramp, mask=slime_green_px)
+    save(f"mo_slime_{color}", sheet, anchor=foot_anchor(slime.crop((0, 0, 64, 64))))
+save("mo_skeleton", skeleton, anchor=foot_anchor(skeleton.crop((0, 0, 32, 32))))
+save("mo_skeleton_dark", lum_map(skeleton, ["#0e071b", "#262b44", "#3c4258", "#5a6988", "#8b9bb4"],
+                                 mask=lambda p: abs(p[0] - p[1]) < 16 and abs(p[1] - p[2]) < 20 and p[0] > 60),
+     anchor=foot_anchor(skeleton.crop((0, 0, 32, 32))))
+
 # ================================================================ дом: мебель и загон
 
 for name, im in interior.sprites().items():
@@ -759,7 +788,7 @@ for name in [n for n in manifest if n.startswith("an_")]:
 
 def pack_atlas(width=1024, pad=2):
     names = [n for n, e in manifest.items()
-             if "frame" not in e and not n.startswith(("an_", "ic_", "pl")) and os.path.exists(os.path.join(OUT, f"sp_{n}.png"))]
+             if "frame" not in e and not n.startswith(("an_", "ic_", "pl", "mo_")) and os.path.exists(os.path.join(OUT, f"sp_{n}.png"))]
     ims = {n: Image.open(os.path.join(OUT, f"sp_{n}.png")).convert("RGBA") for n in names}
     order = sorted(names, key=lambda n: (-ims[n].height, -ims[n].width, n))
     x = y = pad

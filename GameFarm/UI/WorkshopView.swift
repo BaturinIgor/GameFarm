@@ -56,7 +56,16 @@ struct ToolCard: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(ToolTier.name(tool, tier: tier))
                         .font(.game(16))
-                    Text(tr("workshop.tier", tier, ToolTier.maxTier, Fmt.decimal(ToolTier.power(tier), digits: 1)))
+                    Group {
+                        switch tool {
+                        case .armor:
+                            Text(tr("workshop.armor", tier, ToolTier.maxTier, Int(Hero.maxHP(level: game.save.level, armor: tier))))
+                        case .sword:
+                            Text(tr("workshop.sword", tier, ToolTier.maxTier, Int(game.swordDamage().rounded())))
+                        default:
+                            Text(tr("workshop.tier", tier, ToolTier.maxTier, Fmt.decimal(ToolTier.power(tier), digits: 1)))
+                        }
+                    }
                         .font(.game(12, .semibold))
                         .foregroundStyle(.secondary)
                     Text(tool.purpose)

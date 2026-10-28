@@ -2,7 +2,7 @@ import UIKit
 
 /// Группа ресурсов: для бонусов талантов и животных и для разделов склада.
 enum ResourceCategory: String, CaseIterable, Identifiable {
-    case wood, stone, ore, gem, food, crop, farm, treasure
+    case wood, stone, ore, gem, food, crop, farm, treasure, loot
 
     var id: String { rawValue }
 
@@ -16,6 +16,8 @@ enum ResourceKind: String, CaseIterable, Identifiable {
     case shell, coral, pearl, cloud, stardust
     // Огород
     case wheat, tomato, potato, strawberry, corn, cabbage, eggplant, pumpkin, sunflower, chili, grapes
+    // Трофеи с монстров
+    case slime, bone
 
     var id: String { rawValue }
 
@@ -61,6 +63,8 @@ enum ResourceKind: String, CaseIterable, Identifiable {
         case .sunflower: "🌻"
         case .chili: "🌶️"
         case .grapes: "🍇"
+        case .slime: "🟢"
+        case .bone: "🦴"
         }
     }
 
@@ -74,6 +78,7 @@ enum ResourceKind: String, CaseIterable, Identifiable {
         case .egg, .milk, .wool, .honey, .feather: .farm
         case .shell, .coral, .pearl, .cloud, .stardust: .treasure
         case .wheat, .tomato, .potato, .strawberry, .corn, .cabbage, .eggplant, .pumpkin, .sunflower, .chili, .grapes: .crop
+        case .slime, .bone: .loot
         }
     }
 
@@ -125,6 +130,8 @@ enum ResourceKind: String, CaseIterable, Identifiable {
         case .sunflower: 130
         case .chili: 110
         case .grapes: 210
+        case .slime: 6
+        case .bone: 14
         }
     }
 

@@ -232,8 +232,85 @@ def pen_sign():
     return im
 
 
+def quest_board():
+    c = Canvas(34, 34)
+    c.rect(4, 16, 6, 33, "furn")
+    c.rect(27, 16, 29, 33, "furn")
+    c.rect(1, 3, 32, 22, "furnlight")
+    c.rect(0, 1, 33, 3, "furn")
+    c.rect(4, 6, 12, 15, "paper")
+    c.rect(15, 5, 22, 13, "paper")
+    c.rect(24, 7, 30, 17, "paper")
+    c.rect(13, 15, 20, 20, "paper")
+    im = c.render()
+    p = im.load()
+    for x, y in ((8, 6), (18, 5), (27, 7), (16, 15)):
+        p[x, y] = hexc("#c42430")
+    for y in (8, 10, 12):
+        for x in range(5, 11):
+            if (x + y) % 3:
+                p[x, y] = hexc("#7a8299")
+    for y in (7, 9, 11):
+        for x in range(16, 21):
+            if (x + y) % 4:
+                p[x, y] = hexc("#7a8299")
+    # череп на объявлении об охоте
+    for x, y in ((26, 10), (27, 10), (28, 10), (26, 11), (28, 11), (27, 12)):
+        p[x, y] = hexc("#3c4258")
+    return im
+
+
+def slime_gel():
+    c = Canvas(16, 16)
+    c.ellipse(8, 10, 6.5, 4.5, "leaf")
+    c.disc(8, 6.5, 3.2, "leaf")
+    im = c.render()
+    p = im.load()
+    for x, y in ((6, 5), (7, 5), (5, 8)):
+        p[x, y] = hexc("#c8f0a0")
+    return im
+
+
+def bone():
+    c = Canvas(16, 16)
+    c.line(4, 12, 12, 4, "pillow", width=2.2)
+    for x, y in ((3, 11), (5, 13), (11, 3), (13, 5)):
+        c.disc(x, y, 1.6, "pillow")
+    return c.render()
+
+
+def armor():
+    c = Canvas(16, 16)
+    c.rect(3, 3, 12, 13, "metal")
+    c.rect(1, 3, 3, 7, "metal")
+    c.rect(12, 3, 14, 7, "metal")
+    im = c.render()
+    p = im.load()
+    for y in range(5, 13):
+        p[7, y] = hexc("#3c4258")
+    for x in range(5, 11):
+        p[x, 3] = hexc("#262b44")
+    return im
+
+
+def heart():
+    c = Canvas(16, 16)
+    c.disc(5.5, 6, 3.4, "red")
+    c.disc(10.5, 6, 3.4, "red")
+    poly = [(2.2, 7), (13.8, 7), (8, 14)]
+    from handmade import _inside
+    for y in range(16):
+        for x in range(16):
+            if _inside(x + 0.5, y + 0.5, poly):
+                c.put(x, y, "red")
+    im = c.render()
+    im.load()[5, 4] = hexc("#ffb0b8")
+    return im
+
+
 def sprites():
     return {
+        "quest_board": quest_board(),
         "bed": bed(),
         "wardrobe": wardrobe(),
         "bookshelf": bookshelf(),
@@ -256,4 +333,8 @@ def icons():
         "dish_juice": juice(),
         "dish_popcorn": popcorn(),
         "pen": pen_sign(),
+        "slime": slime_gel(),
+        "bone": bone(),
+        "tool_armor": armor(),
+        "heart": heart(),
     }

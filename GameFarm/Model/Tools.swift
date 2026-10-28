@@ -1,11 +1,13 @@
 import UIKit
 
 enum ToolKind: String, CaseIterable, Identifiable {
-    case hand, axe, pickaxe, rod
+    case hand, axe, pickaxe, rod, sword, armor
 
     var id: String { rawValue }
 
-    static let upgradable: [ToolKind] = [.axe, .pickaxe, .rod]
+    /// Инструменты добычи.
+    static let gathering: [ToolKind] = [.axe, .pickaxe, .rod]
+    static let upgradable: [ToolKind] = [.axe, .pickaxe, .rod, .sword, .armor]
 
     var emoji: String {
         switch self {
@@ -13,6 +15,8 @@ enum ToolKind: String, CaseIterable, Identifiable {
         case .axe: "🪓"
         case .pickaxe: "⛏️"
         case .rod: "🎣"
+        case .sword: "🗡️"
+        case .armor: "🛡️"
         }
     }
 
@@ -78,6 +82,20 @@ enum ToolTier {
         case (.rod, 6): Cost(coins: 25000, (.crystal, 15), (.fish, 500))
         case (.rod, 7): Cost(coins: 40000, (.sulfur, 40), (.pearl, 20), (.fish, 800))
         case (.rod, 8): Cost(coins: 90000, (.ruby, 15), (.pearl, 40), (.fish, 1500))
+        case (.sword, 2): Cost(coins: 60, (.wood, 30), (.slime, 8))
+        case (.sword, 3): Cost(coins: 300, (.iron, 20), (.slime, 30))
+        case (.sword, 4): Cost(coins: 1200, (.iron, 60), (.bone, 30))
+        case (.sword, 5): Cost(coins: 4000, (.gold, 30), (.bone, 60))
+        case (.sword, 6): Cost(coins: 12000, (.diamond, 6), (.slime, 150))
+        case (.sword, 7): Cost(coins: 30000, (.obsidian, 30), (.bone, 200))
+        case (.sword, 8): Cost(coins: 80000, (.ruby, 10), (.bone, 400))
+        case (.armor, 2): Cost(coins: 80, (.wool, 6), (.slime, 8))
+        case (.armor, 3): Cost(coins: 400, (.iron, 25), (.slime, 30))
+        case (.armor, 4): Cost(coins: 1500, (.iron, 80), (.bone, 30))
+        case (.armor, 5): Cost(coins: 5000, (.gold, 40), (.bone, 80))
+        case (.armor, 6): Cost(coins: 14000, (.diamond, 8), (.slime, 200))
+        case (.armor, 7): Cost(coins: 32000, (.obsidian, 40), (.bone, 250))
+        case (.armor, 8): Cost(coins: 85000, (.ruby, 12), (.bone, 500))
         default: Cost()
         }
     }

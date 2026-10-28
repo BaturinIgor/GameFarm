@@ -153,6 +153,7 @@ struct ContentView: View {
             case .house: HouseView()
             case .kitchen: KitchenView()
             case .calendar: CalendarView()
+            case .hunt: HuntView()
             }
         }
         .environment(game)
@@ -274,7 +275,13 @@ struct HUDView: View {
                 TraderCard(kind: trader) { sheet = trader == .stall ? .trader : .wanderer }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             } else if let place = game.placePrompt {
-                PlaceCard(kind: place) { sheet = place == .house ? .house : .animals }
+                PlaceCard(kind: place) {
+                    switch place {
+                    case .house: sheet = .house
+                    case .pen: sheet = .animals
+                    case .hunter: sheet = .hunt
+                    }
+                }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             } else if game.nearGarden {
                 BedsCard { sheet = .trader }
@@ -335,6 +342,14 @@ struct HUDView: View {
                                 : "\(Fmt.n(game.save.xp))/\(Fmt.n(game.xpToNext))")
                         .frame(width: 118)
                         .animation(.easeOut(duration: 0.4), value: game.levelProgress)
+                    if game.inCombat || game.hpFraction < 0.999 {
+                        HStack(spacing: 3) {
+                            PixelIcon(name: "heart", size: 14, fallback: "❤️")
+                            GameBar(value: game.hpFraction, tone: .red, height: 12, label: "\(Int(game.hp))")
+                                .frame(width: 101)
+                                .animation(.easeOut(duration: 0.25), value: game.hp)
+                        }
+                    }
                 }
                 .padding(.trailing, 6)
             }
@@ -413,7 +428,7 @@ struct HUDView: View {
             HUDButton(icon: "tool_hammer", fallback: "🔨", title: tr("hud.workshop"), badge: workshopBadge) { sheet = .workshop }
             HUDButton(icon: "stardust", fallback: "🌟", title: tr("hud.talents"), badge: game.talentPointsFree) { sheet = .talents }
             HUDButton(icon: "paw", fallback: "🐾", title: tr("hud.animals")) { sheet = .animals }
-            HUDButton(icon: "scroll", fallback: "📜", title: tr("hud.quests"), badge: game.claimableQuests + game.claimableAchievements) { sheet = .quests }
+            HUDButton(icon: "scroll", fallback: "📜", title: tr("hud.quests"), badge: game.claimableQuests + game.claimableAchievements + game.claimableHunts) { sheet = .quests }
             HUDButton(icon: "map", fallback: "🗺️", title: tr("hud.map"), badge: mapBadge) { sheet = .map }
         }
     }

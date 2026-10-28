@@ -7,7 +7,7 @@ struct SaveData: Codable {
     var coins = 30
     var storage: [ResourceKind: Int] = [:]
     var backpack: [ResourceKind: Int] = [:]
-    var tools: [ToolKind: Int] = [.axe: 1, .pickaxe: 1, .rod: 1]
+    var tools: [ToolKind: Int] = [.axe: 1, .pickaxe: 1, .rod: 1, .sword: 1, .armor: 1]
     var talents: [TalentID: Int] = [:]
     var unlocked: [LocationID] = [.meadow]
     var current: LocationID = .meadow
@@ -62,6 +62,10 @@ struct SaveData: Codable {
     var mealUntil: Date?
     var loginDay = 0
     var loginClaims = 0
+    // Охота
+    var hunts: [HuntContract] = []
+    var huntDay = 0
+    var kills = 0
 
     init() {}
 
@@ -74,6 +78,7 @@ struct SaveData: Codable {
         case rebirths, sparks, sparksEarned, legacy
         case beds, seeds, selectedSeed, cropsHarvested, dealsDay, dealsBought
         case houseFloors, decor, dishes, cooking, meal, mealUntil, loginDay, loginClaims
+        case hunts, huntDay, kills
     }
 
     init(from decoder: Decoder) throws {
@@ -143,6 +148,9 @@ struct SaveData: Codable {
         mealUntil = try c.decodeIfPresent(Date.self, forKey: .mealUntil)
         loginDay = try c.decodeIfPresent(Int.self, forKey: .loginDay) ?? 0
         loginClaims = try c.decodeIfPresent(Int.self, forKey: .loginClaims) ?? 0
+        hunts = (try? c.decodeIfPresent([HuntContract].self, forKey: .hunts)) ?? []
+        huntDay = try c.decodeIfPresent(Int.self, forKey: .huntDay) ?? 0
+        kills = try c.decodeIfPresent(Int.self, forKey: .kills) ?? 0
 
         if !unlocked.contains(.meadow) { unlocked.insert(.meadow, at: 0) }
         // Экспедиция и сад не открываются через список, туда попадают отдельно.
@@ -207,6 +215,9 @@ struct SaveData: Codable {
         try c.encodeIfPresent(mealUntil, forKey: .mealUntil)
         try c.encode(loginDay, forKey: .loginDay)
         try c.encode(loginClaims, forKey: .loginClaims)
+        try c.encode(hunts, forKey: .hunts)
+        try c.encode(huntDay, forKey: .huntDay)
+        try c.encode(kills, forKey: .kills)
     }
 
     private static func map<K: RawRepresentable & Hashable>(_ raw: [String: Int]?) -> [K: Int]? where K.RawValue == String {

@@ -135,6 +135,8 @@ struct LocationLayout {
     var stall: CGPoint?
     /// Загон для зверей (прямоугольник в точках сцены).
     var pen: CGRect?
+    /// Доска заказов и стражник.
+    var board: CGPoint?
 
     var size: CGSize { CGSize(width: CGFloat(cols) * cell, height: CGFloat(rows) * cell) }
 
@@ -240,6 +242,7 @@ struct LocationLayout {
         let farm: [[Double]]?
         let stall: [Double]?
         let pen: [Double]?
+        let board: [Double]?
     }
 
     private static func point(_ v: [Double]) -> CGPoint {
@@ -280,7 +283,8 @@ struct LocationLayout {
             border: raw.border.map { PropPlacement(name: $0.name, position: CGPoint(x: $0.x, y: $0.y), fixed: false) },
             farm: (raw.farm ?? []).map(point),
             stall: raw.stall.map(point),
-            pen: raw.pen.flatMap { v in v.count == 4 ? CGRect(x: v[0], y: v[1], width: v[2], height: v[3]) : nil }
+            pen: raw.pen.flatMap { v in v.count == 4 ? CGRect(x: v[0], y: v[1], width: v[2], height: v[3]) : nil },
+            board: raw.board.map(point)
         )
     }
 

@@ -64,6 +64,27 @@ final class GameScene: SKScene {
     private var penSignature: [AnimalID] = []
     private var penTimer: Double = 0
     private var doorPoint: CGPoint?
+    // Бой
+    private final class MonsterSlot {
+        let kind: MonsterKind
+        let level: Int
+        let point: CGPoint
+        var node: MonsterNode?
+        var respawn: Double
+
+        init(kind: MonsterKind, level: Int, point: CGPoint, respawn: Double) {
+            self.kind = kind
+            self.level = level
+            self.point = point
+            self.respawn = respawn
+        }
+    }
+    private var monsterSlots: [MonsterSlot] = []
+    private var petCooldowns: [ObjectIdentifier: Double] = [:]
+    private var regenTimer: Double = 0
+    private var sinceHurt: Double = 99
+    private var fainting = false
+    private var guardPoint: CGPoint?
     private var builtLanguage = ""
     private var shownSkin = ""
 
@@ -171,6 +192,10 @@ final class GameScene: SKScene {
         stallNode = nil
         wandererNode = nil
         penRect = .null
+        monsterSlots.removeAll()
+        petCooldowns.removeAll()
+        guardPoint = nil
+        game.setInCombat(false)
         penAnimals.removeAll()
         penSignature = []
         doorPoint = nil
@@ -218,6 +243,8 @@ final class GameScene: SKScene {
             world.addChild(spot)
             spots.append(spot)
         }
+
+        buildMonsters(id)
 
         player.removeAllActions()
         if let gateID = game.arrivalGate, let g = layout.gates.first(where: { $0.id == gateID }) {
@@ -664,6 +691,7 @@ final class GameScene: SKScene {
         if !transitioning {
             updateFarm(dt)
             updateWanderer(dt)
+            updateMonsters(dt, stats)
         }
         updateAmbient(dt)
         updateCamera(dt)
@@ -942,6 +970,13 @@ final class GameScene: SKScene {
         game.setBackpackFull(full)
         guard hitTimer <= 0 else { return }
 
+        // Монстр рядом: сначала бой, потом добыча.
+        if let foe = nearestMonster(within: CGFloat(stats.reach) + 26) {
+            strikeMonster(foe, stats)
+            hitTimer = stats.hitInterval
+            return
+        }
+
         var best: ResourceSpot?
         var bestDistance = CGFloat.greatestFiniteMagnitude
         var locked: ResourceSpot?
@@ -987,6 +1022,7 @@ final class GameScene: SKScene {
         case .pickaxe: Sound.shared.play(.mine)
         case .rod: Sound.shared.play(.splash, volume: 0.7)
         case .hand: Sound.shared.play(.pick)
+        case .sword, .armor: Sound.shared.play(.chop)
         }
         hitOnce(spot, stats)
         if spot.alive && Double.random(in: 0..<1) < stats.doubleStrikeChance {
@@ -1284,6 +1320,184 @@ final class GameScene: SKScene {
         }
     }
 
+    // MARK: Бой
+
+    /// Логова монстров в дальних частях локации.
+    private func buildMonsters(_ id: LocationID) {
+        guard spec.kind == .world else { return }
+        let level = Bestiary.level(in: id)
+        for (kind, count) in Bestiary.monsters(in: id) {
+            for _ in 0..<count {
+                guard let point = farPoint() else { continue }
+                monsterSlots.append(MonsterSlot(kind: kind, level: level, point: point, respawn: Double.random(in: 0.5...4)))
+            }
+        }
+    }
+
+    /// Случайная точка суши далеко от склада и проходов.
+    private func farPoint() -> CGPoint? {
+        for _ in 0..<120 {
+            let c = Int.random(in: 3..<max(4, layout.cols - 3))
+            let r = Int.random(in: 3..<max(4, layout.rows - 3))
+            guard layout.at(c, r) == .land || layout.at(c, r) == .path,
+                  layout.walkable(c - 1, r), layout.walkable(c + 1, r), layout.walkable(c, r - 1), layout.walkable(c, r + 1) else { continue }
+            let p = layout.center(c, r)
+            if distance(p, layout.base) < 520 { continue }
+            if gates.contains(where: { distance(p, $0.place.barrier) < 200 }) { continue }
+            if spots.contains(where: { distance(p, $0.position) < 50 }) { continue }
+            if monsterSlots.contains(where: { distance(p, $0.point) < 90 }) { continue }
+            return p
+        }
+        return nil
+    }
+
+    private func nearestMonster(within reach: CGFloat) -> MonsterNode? {
+        var best: MonsterNode?
+        var bestD = CGFloat.greatestFiniteMagnitude
+        for slot in monsterSlots {
+            guard let m = slot.node, m.alive else { continue }
+            let d = distance(m.position, player.position)
+            if d < reach && d < bestD { best = m; bestD = d }
+        }
+        return best
+    }
+
+    private func strikeMonster(_ foe: MonsterNode, _ stats: Stats) {
+        activeTime = max(activeTime, 1.2)
+        player.swing(.sword, toward: foe.position, interval: stats.hitInterval)
+        Sound.shared.play(.chop, volume: 0.8)
+        var damage = game.swordDamage()
+        var crit = false
+        if Double.random(in: 0..<1) < stats.critChance {
+            damage *= stats.critMult
+            crit = true
+            shake = max(shake, 4)
+            Effects.text(tr("scene.crit"), at: CGPoint(x: foe.position.x + 16, y: foe.position.y + 50), in: world,
+                         color: UIColor(red: 1, green: 0.6, blue: 0.2, alpha: 1), size: 16)
+        }
+        damageMonster(foe, damage, from: player.position, strong: crit)
+    }
+
+    private func damageMonster(_ foe: MonsterNode, _ damage: Double, from point: CGPoint, strong: Bool) {
+        Effects.chips(at: foe.position, color: foe.kind.isSlime ? UIColor(red: 0.5, green: 0.85, blue: 0.4, alpha: 1) : .white,
+                      in: world, count: strong ? 7 : 4)
+        guard foe.hit(damage, from: point) else { return }
+        let reward = game.noteKill(foe.kind, level: foe.level)
+        Effects.text("+\(reward.coins) 🪙", at: CGPoint(x: foe.position.x, y: foe.position.y + 58), in: world,
+                     color: UIColor(red: 1, green: 0.85, blue: 0.3, alpha: 1), size: 15)
+        if reward.loot > 0 {
+            Effects.gain(foe.kind.loot, reward.loot, at: CGPoint(x: foe.position.x, y: foe.position.y + 34), in: world, delay: 0.15)
+        }
+        Sound.shared.play(.rockBreak, volume: 0.7)
+        Sound.shared.play(.coin, volume: 0.6)
+        haptic.impactOccurred()
+        if let slot = monsterSlots.first(where: { $0.node === foe }) {
+            slot.node = nil
+            slot.respawn = Double.random(in: 35...55)
+        }
+    }
+
+    private func updateMonsters(_ dt: Double, _ stats: Stats) {
+        sinceHurt += dt
+        var combat = false
+        let walk: (CGPoint) -> Bool = { [layout] p in layout.walkable(p) }
+        for slot in monsterSlots {
+            guard let m = slot.node else {
+                slot.respawn -= dt
+                if slot.respawn <= 0 && distance(slot.point, player.position) > 260 {
+                    let node = MonsterNode(kind: slot.kind, level: slot.level, at: slot.point)
+                    node.zPosition = zFor(slot.point.y)
+                    world.addChild(node)
+                    slot.node = node
+                }
+                continue
+            }
+            // Далеко от камеры монстры стоят на месте.
+            guard abs(m.position.x - cam.position.x) < size.width && abs(m.position.y - cam.position.y) < size.height else { continue }
+            let bite = m.update(dt, hero: player.position, walkable: walk)
+            m.zPosition = zFor(m.position.y)
+            if distance(m.position, player.position) < MonsterNode.aggro { combat = true }
+            if bite && !fainting {
+                m.biteDone()
+                hurtHero(m.stats.damage, from: m.position)
+            }
+        }
+        game.setInCombat(combat)
+        updatePets(dt, stats)
+        // Здоровье: понемногу восстанавливается, у склада быстро.
+        regenTimer -= dt
+        if regenTimer <= 0 {
+            regenTimer = 1
+            if distance(player.position, layout.base) < CGFloat(stats.depositRadius) {
+                game.heal(0.15)
+            } else if sinceHurt > 6 {
+                game.heal(0.03)
+            }
+        }
+        if game.hp <= 0 && !fainting { faint() }
+    }
+
+    private func hurtHero(_ amount: Double, from point: CGPoint) {
+        sinceHurt = 0
+        game.hurtHero(amount)
+        shake = max(shake, 3)
+        player.run(.sequence([.fadeAlpha(to: 0.45, duration: 0.05), .fadeAlpha(to: 1, duration: 0.18)]))
+        Effects.text("-\(Int(amount.rounded()))", at: CGPoint(x: player.position.x, y: player.position.y + 64), in: world,
+                     color: UIColor(red: 1, green: 0.35, blue: 0.3, alpha: 1), size: 15)
+        Sound.shared.play(.crit, volume: 0.5)
+        heavyHaptic.impactOccurred(intensity: 0.6)
+    }
+
+    /// Питомцы рядом с героем тоже бьют монстров.
+    private func updatePets(_ dt: Double, _ stats: Stats) {
+        guard !companions.isEmpty, game.inCombat else { return }
+        for companion in companions {
+            let key = ObjectIdentifier(companion)
+            let left = (petCooldowns[key] ?? 0) - dt
+            petCooldowns[key] = left
+            guard left <= 0 else { continue }
+            var target: MonsterNode?
+            var bestD: CGFloat = 170
+            for slot in monsterSlots {
+                guard let m = slot.node, m.alive else { continue }
+                let d = distance(m.position, companion.position)
+                if d < bestD { bestD = d; target = m }
+            }
+            guard let foe = target else { continue }
+            petCooldowns[key] = 1.3
+            let stars = game.stars(companion.animal)
+            let damage = 3 * stats.starMultiplier(max(1, stars)) * stats.animalMult * (1 + 0.04 * Double(game.save.level))
+            Effects.burst(at: CGPoint(x: foe.position.x, y: foe.position.y + 16), emoji: "💥", in: world)
+            damageMonster(foe, damage, from: companion.position, strong: false)
+        }
+    }
+
+    /// Здоровье кончилось: герой просыпается у склада.
+    private func faint() {
+        fainting = true
+        touch = nil
+        joystick.end()
+        fader.removeAllActions()
+        fader.isHidden = false
+        fader.run(.sequence([
+            .fadeAlpha(to: 1, duration: 0.5),
+            .run { [weak self] in
+                guard let self else { return }
+                let lost = self.game.faint()
+                self.player.position = CGPoint(x: self.layout.base.x, y: self.layout.base.y - 56)
+                self.velocity = .zero
+                self.cam.position = self.clampedCamera(self.player.position)
+                self.game.toast("💫", lost > 0 ? tr("toast.fainted", lost) : tr("toast.faintedNoLoss"))
+            },
+            .wait(forDuration: 0.3),
+            .fadeAlpha(to: 0, duration: 0.5),
+            .run { [weak self] in
+                self?.fader.isHidden = true
+                self?.fainting = false
+            }
+        ]))
+    }
+
     // MARK: Огород и торговцы
 
     /// Грядки, пугало и лавка у дома (есть только на поляне).
@@ -1302,6 +1516,27 @@ final class GameScene: SKScene {
             node.refresh(bed: game.bed(node.index), unlocked: node.index < game.bedCount, now: now)
         }
         if let rect = layout.pen { buildPen(rect) }
+        if let point = layout.board {
+            if let board = Sprites.node("quest_board", x: point.x + 22, y: point.y) {
+                board.zPosition = zFor(point.y)
+                world.addChild(board)
+            }
+            let frames = Sprites.frames("pl_guard", cell: 64)
+            if frames.count >= 6 {
+                let npc = SKSpriteNode(texture: frames[0], size: CGSize(width: 64 * Sprites.scale, height: 64 * Sprites.scale))
+                npc.anchorPoint = Sprites.anchor("pl")
+                npc.position = CGPoint(x: point.x - 34, y: point.y - 4)
+                npc.zPosition = zFor(point.y - 4)
+                npc.run(.repeatForever(.animate(with: Array(frames[0..<6]), timePerFrame: 1.0 / 6)))
+                world.addChild(npc)
+            }
+            let sign = SignArt.sign(title: "⚔️ " + tr("hunt.title"), tag: .none, royal: false)
+            sign.position = CGPoint(x: point.x, y: point.y + 92)
+            sign.zPosition = 300
+            world.addChild(bobbing(sign, height: 3, duration: 1.3))
+            obstacles.append((CGPoint(x: point.x + 22, y: point.y + 8), 26))
+            guardPoint = point
+        }
         if let point = layout.stall {
             let node = TraderNode(kind: .stall, title: "🛒 " + tr("trader.title"))
             node.position = point
@@ -1386,6 +1621,8 @@ final class GameScene: SKScene {
     private func updatePlaces() {
         if let door = doorPoint, distance(door, player.position) < 46 {
             game.setPlacePrompt(.house)
+        } else if let point = guardPoint, distance(point, player.position) < 90 {
+            game.setPlacePrompt(.hunter)
         } else if !penRect.isNull, penRect.insetBy(dx: -40, dy: -40).contains(player.position) {
             game.setPlacePrompt(.pen)
         } else {

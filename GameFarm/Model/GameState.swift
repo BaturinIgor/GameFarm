@@ -34,6 +34,10 @@ final class GameState {
     private(set) var placePrompt: PlaceKind?
     /// Показать календарь наград при запуске.
     var loginPopup = false
+    /// Здоровье героя (не сохраняется: после запуска герой здоров).
+    private(set) var hp: Double = 100
+    /// Рядом монстры: показываем сердечки.
+    private(set) var inCombat = false
     /// Локации, куда можно дойти через открытые проходы.
     private(set) var reachable: Set<LocationID> = [.meadow]
     /// Через какие ворота персонаж пришёл в локацию (сцена ставит его к ним).
@@ -348,6 +352,7 @@ final class GameState {
         case .rod: base = ToolTier.power(effectiveTier(.rod)) * s.handMult
         case .axe: base = ToolTier.power(effectiveTier(.axe)) * (1 + s.woodBonus)
         case .pickaxe: base = ToolTier.power(effectiveTier(.pickaxe)) * (1 + s.stoneBonus)
+        case .sword, .armor: base = 1
         }
         if spec.tier >= 5 { base *= 1 + s.highTierBonus }
         return base * s.damageMult
@@ -773,11 +778,12 @@ final class GameState {
         case .stars: return save.animals.values.reduce(0, +)
         case .locations: return save.unlocked.count
         case .level: return save.level
-        case .minTool: return ToolKind.upgradable.map { tier($0) }.min() ?? 1
+        case .minTool: return ToolKind.gathering.map { tier($0) }.min() ?? 1
         case .talents: return talentPointsSpent
         case .quests: return save.questsDone
         case .treasures: return save.treasures
         case .floors: return save.houseFloors.count
+        case .kills: return save.kills
         }
     }
 
@@ -1323,7 +1329,7 @@ extension GameState {
 }
 
 enum PlaceKind: Equatable {
-    case house, pen
+    case house, pen, hunter
 }
 
 // MARK: Дом
@@ -1421,6 +1427,7 @@ extension GameState {
 
     func eat(_ dish: DishID) {
         guard dishes(dish) > 0 else { return }
+        heal(0.4)
         save.dishes[dish] = dishes(dish) - 1
         save.meal = dish
         save.mealUntil = Date().addingTimeInterval(dish.duration * (isBuilt(.basement) ? 1.5 : 1))
@@ -1471,6 +1478,115 @@ extension GameState {
         save.loginDay = dayIndex
         save.loginClaims += 1
         SoundFX.play(.treasure)
+        saveNow()
+    }
+}
+
+// MARK: Бой и охота
+
+extension GameState {
+    var maxHP: Double { Hero.maxHP(level: save.level, armor: tier(.armor)) }
+
+    var hpFraction: Double { min(1, max(0, hp / max(1, maxHP))) }
+
+    func setInCombat(_ value: Bool) {
+        if inCombat != value { inCombat = value }
+    }
+
+    /// Урон герою. Возвращает true, если здоровье кончилось.
+    @discardableResult
+    func hurtHero(_ amount: Double) -> Bool {
+        hp = max(0, min(hp, maxHP) - amount)
+        return hp <= 0
+    }
+
+    /// Лечит на долю от максимума.
+    func heal(_ fraction: Double) {
+        let next = min(maxHP, hp + maxHP * fraction)
+        if abs(next - hp) > 0.01 { hp = next }
+    }
+
+    func healFull() {
+        if hp != maxHP { hp = maxHP }
+    }
+
+    /// Герой упал без сил: просыпается у склада, теряет треть рюкзака.
+    func faint() -> Int {
+        var lost = 0
+        for (kind, n) in save.backpack {
+            let drop = n * 3 / 10
+            if drop > 0 {
+                save.backpack[kind] = n - drop
+                lost += drop
+            }
+        }
+        hp = maxHP * 0.5
+        markDirty()
+        return lost
+    }
+
+    func swordDamage() -> Double {
+        Hero.swordDamage(level: save.level, sword: tier(.sword)) * stats.damageMult
+    }
+
+    /// Монстр побеждён: опыт, монеты, трофеи, заказы стражника.
+    func noteKill(_ kind: MonsterKind, level: Int) -> (coins: Int, loot: Int) {
+        let st = MonsterStats(kind: kind, level: level)
+        save.kills += 1
+        addCoins(st.coins)
+        let loot = Int.random(in: 1...(kind == .slimeGold ? 4 : 2))
+        let added = inExpedition ? addToStorage(kind.loot, loot) : addToBackpack(kind.loot, loot)
+        gainXP(st.xp)
+        ensureHunts()
+        for i in save.hunts.indices where save.hunts[i].monster == kind && !save.hunts[i].done {
+            save.hunts[i].progress += 1
+            if save.hunts[i].done { toast("⚔️", tr("toast.huntDone", kind.name)) }
+        }
+        markDirty()
+        return (st.coins, added)
+    }
+
+    private var huntToday: Int {
+        Int(Calendar.current.startOfDay(for: Date()).timeIntervalSince1970 / 86_400)
+    }
+
+    var nextHuntsAt: Date {
+        let start = Calendar.current.startOfDay(for: Date())
+        return Calendar.current.date(byAdding: .day, value: 1, to: start) ?? start.addingTimeInterval(86_400)
+    }
+
+    /// Три заказа на день: монстры из уже открытых локаций.
+    func ensureHunts() {
+        guard save.huntDay != huntToday || save.hunts.isEmpty else { return }
+        save.huntDay = huntToday
+        var kinds: [MonsterKind] = []
+        for id in save.unlocked where id.spec.kind == .world {
+            for (kind, _) in Bestiary.monsters(in: id) where !kinds.contains(kind) { kinds.append(kind) }
+        }
+        if kinds.isEmpty { kinds = [.slimeGreen] }
+        var rng = DayRandom(seed: huntToday * 131 + save.level)
+        var made: [HuntContract] = []
+        for i in 0..<3 {
+            let kind = rng.pick(kinds)
+            let target = [5, 8, 12][i]
+            let level = Bestiary.home(of: kind).map { Bestiary.level(in: $0) }.min() ?? 3
+            let st = MonsterStats(kind: kind, level: level)
+            made.append(HuntContract(monster: kind, target: target, coins: st.coins * target * 3,
+                                     xp: st.xp * target, ticket: i == 2))
+        }
+        save.hunts = made
+        markDirty()
+    }
+
+    var claimableHunts: Int { save.hunts.filter(\.done).count }
+
+    func claimHunt(_ id: UUID) {
+        guard let i = save.hunts.firstIndex(where: { $0.id == id }), save.hunts[i].done else { return }
+        let hunt = save.hunts.remove(at: i)
+        addCoins(hunt.coins)
+        if hunt.ticket { save.tickets += 1 }
+        gainXP(hunt.xp)
+        SoundFX.play(.success)
         saveNow()
     }
 }

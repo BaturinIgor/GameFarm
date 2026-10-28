@@ -262,6 +262,7 @@ final class PlayerNode: SKNode {
             case .pickaxe: pixel.act(.pickaxe, dx: dx, dy: dy, duration: duration)
             case .hand: pixel.act(.hoe, dx: dx, dy: dy, duration: duration)
             case .rod: pixel.act(.fish, dx: dx, dy: dy, duration: max(duration, 0.4))
+            case .sword, .armor: pixel.act(.axe, dx: dx, dy: dy, duration: duration)
             }
             return
         }

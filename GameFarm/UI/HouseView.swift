@@ -507,31 +507,66 @@ struct MealPill: View {
     }
 }
 
-/// Карточка у двери дома или у загона.
+/// Карточка у двери дома, у загона или у стражника.
 struct PlaceCard: View {
     @Environment(GameState.self) private var game
     let kind: PlaceKind
     let onOpen: () -> Void
 
+    private var title: String {
+        switch kind {
+        case .house: tr("house.title")
+        case .pen: tr("pen.title")
+        case .hunter: tr("hunt.guard")
+        }
+    }
+
+    private var subtitle: String {
+        switch kind {
+        case .house: tr("house.hint")
+        case .pen: tr("pen.count", AnimalID.allCases.filter { game.stars($0) > 0 }.count)
+        case .hunter: tr("hunt.hint")
+        }
+    }
+
+    private var button: String {
+        switch kind {
+        case .house: tr("house.enter")
+        case .pen: tr("hud.animals")
+        case .hunter: tr("hunt.open")
+        }
+    }
+
+    private var badge: Int {
+        switch kind {
+        case .house: (game.canClaimLogin || game.save.cooking.contains { $0.readyAt <= Date() }) ? 1 : 0
+        case .pen: 0
+        case .hunter: game.claimableHunts
+        }
+    }
+
     var body: some View {
         HStack(spacing: 12) {
-            Text(kind == .house ? "🏠" : "🐾").font(.system(size: 34))
+            if kind == .hunter {
+                NPCPortrait(name: "guard", size: 52)
+            } else {
+                Text(kind == .house ? "🏠" : "🐾").font(.system(size: 34))
+            }
             VStack(alignment: .leading, spacing: 2) {
-                Text(kind == .house ? tr("house.title") : tr("pen.title")).font(.game(15))
-                Text(kind == .house ? tr("house.hint")
-                                    : tr("pen.count", AnimalID.allCases.filter { game.stars($0) > 0 }.count))
+                Text(title).font(.game(15))
+                Text(subtitle)
                     .font(.game(12, .semibold))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 4)
             Button(action: onOpen) {
-                Text(kind == .house ? tr("house.enter") : tr("hud.animals"))
+                Text(button)
             }
-            .buttonStyle(.game(kind == .house ? .orange : .green))
+            .buttonStyle(.game(kind == .house ? .orange : (kind == .hunter ? .red : .green)))
             .overlay(alignment: .topTrailing) {
-                if kind == .house && (game.canClaimLogin || game.save.cooking.contains { $0.readyAt <= Date() }) {
-                    CountBadge(count: 1).offset(x: 6, y: -8)
+                if badge > 0 {
+                    CountBadge(count: badge).offset(x: 6, y: -8)
                 }
             }
         }
