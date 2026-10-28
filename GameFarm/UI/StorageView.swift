@@ -31,8 +31,7 @@ struct StorageView: View {
                 if game.backpackCount > 0 {
                     backpackCard
                 }
-                GameTabs(selection: $tab, items: StorageTab.allCases.map { ($0, $0.title) },
-                         badges: Dictionary(uniqueKeysWithValues: StorageTab.allCases.map { ($0, kinds($0).count) }))
+                GameTabs(selection: $tab, items: StorageTab.allCases.map { ($0, $0.title) })
                 let list = kinds(tab)
                 if list.isEmpty {
                     Card {

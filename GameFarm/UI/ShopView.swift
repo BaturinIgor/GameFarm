@@ -71,7 +71,7 @@ struct ShopView: View {
         .overlay {
             if let detail {
                 OfferDetail(product: detail) { withAnimation(.spring(duration: 0.3)) { self.detail = nil } }
-                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    .transition(.opacity)
             }
         }
         .animation(.spring(duration: 0.3), value: detail)
@@ -384,6 +384,7 @@ struct OfferDetail: View {
                     .offset(y: -18)
             }
             .padding(24)
+            .popIn()
         }
     }
 }
@@ -672,6 +673,7 @@ struct OfferPopup: View {
                     .offset(y: -18)
             }
             .padding(24)
+            .popIn()
         }
         .onChange(of: game.owns(.starter)) { _, owned in
             if owned { close() }

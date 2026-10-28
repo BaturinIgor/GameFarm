@@ -45,7 +45,7 @@ enum ProductID: String, CaseIterable, Identifiable {
         case .pro: "$4.99"
         case .skins: "$2.99"
         case .garden: "$3.99"
-        case .tickets: "$0.99"
+        case .tickets: "$1.99"
         case .eventPass: "$2.99"
         }
     }

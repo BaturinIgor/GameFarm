@@ -121,6 +121,7 @@ struct ExpeditionPill: View {
             .padding(.trailing, 6)
             .padding(.vertical, 5)
             .woodPill(radius: 16)
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
 }
@@ -167,6 +168,7 @@ struct ExpeditionReportOverlay: View {
                     .offset(y: -18)
             }
             .padding(24)
+            .popIn()
         }
     }
 }
@@ -320,6 +322,7 @@ struct BigMapOverlay: View {
                     .offset(y: -18)
             }
             .padding(20)
+            .popIn()
         }
     }
 }

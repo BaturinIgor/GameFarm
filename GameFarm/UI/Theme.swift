@@ -442,12 +442,25 @@ struct GameTabs<T: Hashable>: View {
                 Button {
                     selection = item.0
                 } label: {
-                    Text(item.1)
-                        .font(.game(13))
-                        .foregroundStyle(on ? Color.white : Palette.inkSoft)
-                        .outlined(on ? Palette.woodDark : .clear, width: 1)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
+                    HStack(spacing: 4) {
+                        Text(item.1)
+                            .font(.game(13))
+                            .foregroundStyle(on ? Color.white : Palette.inkSoft)
+                            .outlined(on ? Palette.woodDark : .clear, width: 1)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
+                        // Счётчик внутри вкладки, чтобы рамка его не перекрывала
+                        if let n = badges[item.0], n > 0 {
+                            Text(n > 99 ? "99+" : "\(n)")
+                                .font(.game(10))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 5)
+                                .frame(minWidth: 18, minHeight: 18)
+                                .background(Capsule().fill(ButtonTone.red.base))
+                                .overlay(Capsule().strokeBorder(Palette.outline, lineWidth: 1.2))
+                                .fixedSize()
+                        }
+                    }
                         .padding(.vertical, 8)
                         .frame(maxWidth: .infinity)
                         .background(
@@ -460,11 +473,6 @@ struct GameTabs<T: Hashable>: View {
                                 .strokeBorder(on ? Palette.outline : .clear, lineWidth: 1.5)
                         )
                         .contentShape(Rectangle())
-                        .overlay(alignment: .topTrailing) {
-                            if let n = badges[item.0], n > 0 {
-                                CountBadge(count: n).scaleEffect(0.85).offset(x: 4, y: -8)
-                            }
-                        }
                 }
                 .buttonStyle(.plain)
             }
@@ -620,11 +628,29 @@ struct DialogView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 38)
                 if !item.message.isEmpty {
-                    Text(item.message)
-                        .font(.game(14, .semibold))
-                        .foregroundStyle(Palette.inkSoft)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
+                    let lines = item.message.components(separatedBy: "\n")
+                    if lines.count > 1 {
+                        // Несколько строк: список с точками, выровненный по левому краю
+                        VStack(alignment: .leading, spacing: 6) {
+                            ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                    Circle().fill(Palette.goldDark).frame(width: 6, height: 6).offset(y: -2)
+                                    Text(line)
+                                        .font(.game(14, .semibold))
+                                        .foregroundStyle(Palette.inkSoft)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                    Spacer(minLength: 0)
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        Text(item.message)
+                            .font(.game(14, .semibold))
+                            .foregroundStyle(Palette.inkSoft)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 HStack(spacing: 10) {
                     if let cancel = item.cancel {
@@ -655,8 +681,27 @@ struct DialogView: View {
                     .offset(y: -31)
             }
             .padding(24)
+            .popIn()
         }
     }
+}
+
+// MARK: Всплывающие окна
+
+/// Окно появляется с лёгким увеличением, а затемнение вокруг него только проявляется,
+/// чтобы края затемнения не было видно во время анимации.
+struct PopIn: ViewModifier {
+    @State private var shown = false
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(shown ? 1 : 0.88)
+            .onAppear { withAnimation(.spring(duration: 0.32, bounce: 0.3)) { shown = true } }
+    }
+}
+
+extension View {
+    func popIn() -> some View { modifier(PopIn()) }
 }
 
 // MARK: Списки

@@ -219,6 +219,8 @@ final class GameScene: SKScene {
         case "void": backgroundColor = spec.dark ? UIColor(white: 0.03, alpha: 1) : UIColor(red: 0.66, green: 0.83, blue: 1, alpha: 1)
         default: backgroundColor = spec.ground
         }
+        // Вокруг комнат дома темнота, а не небо
+        if spec.kind == .home { backgroundColor = UIColor(red: 0.09, green: 0.06, blue: 0.04, alpha: 1) }
 
         let groundTexture: SKTexture
         if let tex = Sprites.ground(id) {
@@ -1479,7 +1481,8 @@ final class GameScene: SKScene {
     // MARK: Животные
 
     private func syncCompanions() {
-        let ids = game.save.active
+        // Звери ждут во дворе: домой за героем не заходят.
+        let ids = spec.kind == .home ? [] : game.save.active
         guard ids != companionSignature, loaded != nil else { return }
         companionSignature = ids
         companions.removeAll { companion in

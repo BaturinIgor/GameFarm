@@ -36,6 +36,7 @@ struct DungeonPill: View {
             .padding(.trailing, 6)
             .padding(.vertical, 5)
             .woodPill(radius: 16, tint: Color(hex: run.dungeon.colors.1))
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
 }
@@ -139,6 +140,7 @@ struct DungeonReportOverlay: View {
             .overlay(alignment: .top) {
                 RibbonTitle(text: report.dungeon.name, tone: report.won ? .gold : .red, size: 18).offset(y: -16)
             }
+            .popIn()
         }
     }
 }

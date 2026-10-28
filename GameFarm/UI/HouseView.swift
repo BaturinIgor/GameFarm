@@ -159,6 +159,7 @@ struct DecorPicker: View {
             .frame(maxWidth: 380)
             .gamePanel()
             .padding(20)
+            .popIn()
         }
     }
 }
@@ -429,21 +430,70 @@ struct PlaceCard: View {
 // MARK: Календарь
 
 struct CalendarView: View {
+    enum Tab { case rewards, events }
+
     @Environment(GameState.self) private var game
+    @Environment(\.gameActions) private var actions
+    @State private var tab: Tab = .rewards
 
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
-                Text(tr("calendar.hint"))
-                    .font(.game(13, .semibold))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                CalendarGrid()
-                ClaimLoginButton()
+                GameTabs(selection: $tab, items: [(Tab.rewards, tr("calendar.tab.rewards")), (Tab.events, tr("calendar.tab.events"))],
+                         badges: [.rewards: game.canClaimLogin ? 1 : 0])
+                if tab == .rewards {
+                    Text(tr("calendar.hint"))
+                        .font(.game(13, .semibold))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                    CalendarGrid()
+                    ClaimLoginButton()
+                } else {
+                    EventSchedule { actions.open(.events) }
+                }
             }
             .padding(16)
         }
         .sheetChrome(tr("house.calendar"), coins: game.save.coins)
+    }
+}
+
+/// Расписание ивентов: что идёт сейчас и что будет дальше.
+struct EventSchedule: View {
+    @Environment(GameState.self) private var game
+    let onOpen: () -> Void
+
+    var body: some View {
+        let run = Events.current
+        VStack(spacing: 12) {
+            Card(tint: Color(hex: run.event.colors.0)) {
+                HStack(spacing: 10) {
+                    PixelIcon(name: run.event.icon, size: 34)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(tr("calendar.eventNow")).font(.game(11, .semibold)).foregroundStyle(.secondary)
+                        Text(run.event.name).font(.game(16))
+                        TimelineView(.periodic(from: .now, by: 30)) { context in
+                            Label(tr("shop.endsIn", Countdown.long(run.end.timeIntervalSince(context.date))), systemImage: "clock")
+                                .font(.game(11))
+                                .foregroundStyle(Palette.inkSoft)
+                        }
+                    }
+                    Spacer(minLength: 0)
+                }
+                if game.eventsOpen {
+                    Button(tr("calendar.openEvent"), action: onOpen)
+                        .buttonStyle(.game(.orange, small: true, wide: true))
+                } else {
+                    Label(tr("common.needLevel", Events.minLevel), systemImage: "lock.fill")
+                        .font(.game(12))
+                        .foregroundStyle(ButtonTone.orange.lip)
+                }
+            }
+            SectionTitle(text: tr("calendar.eventsNext"))
+            ForEach(Events.upcoming(4)) { next in
+                UpcomingEventCard(run: next)
+            }
+        }
     }
 }
 
@@ -571,6 +621,7 @@ struct CalendarPopup: View {
                     .offset(y: -18)
             }
             .padding(20)
+            .popIn()
         }
     }
 }

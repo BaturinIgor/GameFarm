@@ -27,12 +27,36 @@ struct ExpeditionReport: Equatable {
 }
 
 enum Expedition {
-    /// Сколько длится вылазка.
+    /// Базовая длительность вылазки.
     static let duration: TimeInterval = 4 * 60
+
+    /// Сколько билетов стоит вылазка: чем ценнее место, тем дороже.
+    static func cost(_ id: LocationID) -> Int {
+        switch id {
+        case .treasureIsland: return 2
+        case .luckyMeadow: return 3
+        default: return 1
+        }
+    }
+
+    /// Дорогие вылазки длятся дольше: на каждый билет сверху ещё минута.
+    static func duration(_ id: LocationID) -> TimeInterval {
+        duration + Double(cost(id) - 1) * 60
+    }
     /// Бесплатный билет раз в сутки.
     static let freeTicketEvery: TimeInterval = 20 * 3600
     static let maxTickets = 9
     static let ticketPack = 5
+
+    /// Иконка экспедиции в списке.
+    static func icon(_ id: LocationID) -> String {
+        switch id {
+        case .goldMine: return "gold"
+        case .treasureIsland: return "chest_gold"
+        case .luckyMeadow: return "goldenApple"
+        default: return "compass"
+        }
+    }
 
     /// Чем особенна каждая экспедиция.
     static func perk(_ id: LocationID) -> String {
@@ -43,8 +67,8 @@ enum Expedition {
     static func yieldBonus(_ id: LocationID) -> Double {
         switch id {
         case .goldMine: return 1.5
-        case .treasureIsland: return 1.5
-        case .luckyMeadow: return 2
+        case .treasureIsland: return 2
+        case .luckyMeadow: return 3
         default: return 1
         }
     }

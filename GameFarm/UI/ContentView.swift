@@ -52,7 +52,7 @@ struct ContentView: View {
 
             if game.offerPopup && game.starterAvailable && game.levelUp == nil {
                 OfferPopup { open(.shop) }
-                    .transition(.scale(scale: 0.8).combined(with: .opacity))
+                    .transition(.opacity)
                     .zIndex(11)
             }
 
@@ -60,7 +60,7 @@ struct ContentView: View {
                 BigMapOverlay(player: scene.playerPosition,
                               onWorldMap: { game.bigMap = false; open(.map) },
                               onClose: { game.bigMap = false })
-                    .transition(.scale(scale: 0.9).combined(with: .opacity))
+                    .transition(.opacity)
                     .zIndex(14)
             }
 
@@ -88,7 +88,7 @@ struct ContentView: View {
                 DungeonReportOverlay(report: report) {
                     withAnimation(.spring(duration: 0.3)) { game.dungeonReport = nil }
                 }
-                .transition(.scale(scale: 0.8).combined(with: .opacity))
+                .transition(.opacity)
                 .zIndex(18)
             }
 
@@ -96,7 +96,7 @@ struct ContentView: View {
                 ExpeditionReportOverlay(report: report) {
                     withAnimation(.spring(duration: 0.3)) { game.expeditionReport = nil }
                 }
-                .transition(.scale(scale: 0.8).combined(with: .opacity))
+                .transition(.opacity)
                 .zIndex(18)
             }
 
@@ -104,13 +104,13 @@ struct ContentView: View {
                 LevelUpOverlay(info: info) {
                     withAnimation(.spring(duration: 0.3)) { game.levelUp = nil }
                 }
-                .transition(.scale(scale: 0.8).combined(with: .opacity))
+                .transition(.opacity)
                 .zIndex(20)
             } else if let report = game.offlineReport {
                 OfflineOverlay(report: report) {
                     withAnimation(.spring(duration: 0.3)) { game.offlineReport = nil }
                 }
-                .transition(.scale(scale: 0.8).combined(with: .opacity))
+                .transition(.opacity)
                 .zIndex(19)
             }
 
@@ -118,7 +118,7 @@ struct ContentView: View {
                 CalendarPopup {
                     withAnimation(.spring(duration: 0.3)) { game.loginPopup = false }
                 }
-                .transition(.scale(scale: 0.85).combined(with: .opacity))
+                .transition(.opacity)
                 .zIndex(17)
             }
 
@@ -126,7 +126,7 @@ struct ContentView: View {
                 DialogView(item: item) {
                     withAnimation(.spring(duration: 0.25)) { dialogs.current = nil }
                 }
-                .transition(.scale(scale: 0.9).combined(with: .opacity))
+                .transition(.opacity)
                 .zIndex(30)
                 .id(item.id)
             }
@@ -276,6 +276,7 @@ struct HUDView: View {
                 }
             }
 
+            // Плашки локации прижаты вправо, чтобы не закрывать мини-карту слева
             ExpeditionPill()
             EventMapPill { sheet = .events }
             DungeonPill()
@@ -343,7 +344,7 @@ struct HUDView: View {
             sheet = .level
         } label: {
             HStack(spacing: 9) {
-                ZStack(alignment: .bottomLeading) {
+                ZStack(alignment: .bottomTrailing) {
                     SkinIcon(skin: game.currentSkin, size: 40)
                         .frame(width: 46, height: 46)
                         .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.parchment))
@@ -359,20 +360,22 @@ struct HUDView: View {
                         .background(Capsule().fill(LinearGradient(colors: [ButtonTone.orange.top, ButtonTone.orange.base],
                                                                   startPoint: .top, endPoint: .bottom)))
                         .overlay(Capsule().strokeBorder(Palette.outline, lineWidth: 2))
-                        .offset(x: -7, y: 7)
+                        .offset(x: 8, y: 5)
                 }
+                .padding(.trailing, 4)
                 .overlay(alignment: .topTrailing) {
                     if game.hasPro {
                         PixelIcon(name: "crown", size: 16).offset(x: 6, y: -8)
                     }
                 }
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("\(game.save.current.spec.emoji) \(game.save.current.spec.name)")
+                    Text(game.save.current.spec.name)
                         .font(.game(13))
                         .foregroundStyle(.white)
                         .outlined(Palette.outline, width: 1)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                        .minimumScaleFactor(0.5)
+                        .frame(width: 118, alignment: .leading)
                     GameBar(value: game.levelProgress, tone: .gold, height: 14,
                             label: game.save.level >= GameRules.maxLevel ? tr("level.max")
                                 : "\(Fmt.n(game.save.xp))/\(Fmt.n(game.xpToNext))")

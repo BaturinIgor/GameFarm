@@ -67,6 +67,7 @@ struct LevelUpOverlay: View {
                     .offset(y: -20)
             }
             .padding(24)
+            .popIn()
         }
         .onAppear {
             UINotificationFeedbackGenerator().notificationOccurred(.success)
@@ -135,6 +136,7 @@ struct OfflineOverlay: View {
                     .offset(y: -18)
             }
             .padding(24)
+            .popIn()
         }
     }
 }

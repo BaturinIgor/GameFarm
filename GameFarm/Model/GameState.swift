@@ -706,9 +706,10 @@ final class GameState {
     /// Уйти в экспедицию по билету. Возвращаемся туда, откуда ушли.
     @discardableResult
     func startExpedition(_ id: LocationID) -> Bool {
-        guard id.spec.kind == .expedition, save.expedition == nil, save.tickets > 0 else { return false }
-        save.tickets -= 1
-        save.expedition = ExpeditionRun(location: id.rawValue, endsAt: Date().addingTimeInterval(Expedition.duration),
+        let price = Expedition.cost(id)
+        guard id.spec.kind == .expedition, save.expedition == nil, save.tickets >= price else { return false }
+        save.tickets -= price
+        save.expedition = ExpeditionRun(location: id.rawValue, endsAt: Date().addingTimeInterval(Expedition.duration(id)),
                                         returnTo: save.current.rawValue)
         if backpackCount > 0 { depositBackpack() }
         arrivalGate = nil
@@ -1554,7 +1555,7 @@ extension GameState {
 
         // Ресурсы за билет в экспедицию
         let b = rng.pick(pool)
-        let m = max(8, (220 + 20 * level) / max(1, b.price))
+        let m = max(20, (700 + 60 * level) / max(1, b.price))
         deals.append(TradeDeal(id: 1, give: [ResourceAmount(kind: b, amount: m)], coinsPrice: 0, reward: .ticket))
 
         // Набор семян за полцены
@@ -1595,7 +1596,7 @@ extension GameState {
     func spawnWanderer(at location: LocationID) {
         var rng = DayRandom(seed: Int(Date().timeIntervalSince1970) / 60)
         let level = save.level
-        var offers: [WandererOffer] = [WandererOffer(id: 0, goods: .ticket, price: 250 + 25 * level)]
+        var offers: [WandererOffer] = [WandererOffer(id: 0, goods: .ticket, price: 800 + 80 * level)]
         let crops = CropID.allCases.filter { $0.spec.level <= level + 4 }
         let crop = rng.pick(Array(crops.suffix(4)))
         offers.append(WandererOffer(id: 1, goods: .seeds(crop, 6), price: max(10, Int(Double(crop.spec.seedPrice * 6) * 0.6))))

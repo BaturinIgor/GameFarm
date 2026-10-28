@@ -18,6 +18,16 @@ enum EventID: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// Пиксельная иконка ивента.
+    var icon: String {
+        switch self {
+        case .harvestFest: "pumpkin"
+        case .slimeNight: "slime"
+        case .winterTale: "chest_gold"
+        case .beachParty: "shell"
+        }
+    }
+
     /// Карта ивента.
     var location: LocationID {
         switch self {

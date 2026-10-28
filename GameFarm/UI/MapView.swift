@@ -291,7 +291,7 @@ struct ExpeditionsCard: View {
     var body: some View {
         ShopCard(title: tr("exp.title"), tone: .blue) {
             HStack(alignment: .top) {
-                Text(tr("exp.subtitle", Int(Expedition.duration / 60)))
+                Text(tr("exp.subtitle2"))
                     .font(.game(12, .semibold))
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 8)
@@ -319,12 +319,16 @@ struct ExpeditionsCard: View {
                 }
             }
             ForEach(LocationID.expeditions) { id in
+                let price = Expedition.cost(id)
                 HStack(spacing: 12) {
-                    Text(id.spec.emoji).font(.system(size: 34))
+                    PixelIcon(name: Expedition.icon(id), size: 36)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(id.spec.name).font(.game(14, .semibold).bold())
                         Text(Expedition.perk(id)).font(.game(12, .semibold)).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
+                        Text(tr("exp.minutes", Int(Expedition.duration(id) / 60)))
+                            .font(.game(11))
+                            .foregroundStyle(Palette.inkSoft)
                     }
                     Spacer(minLength: 0)
                     Button {
@@ -332,11 +336,12 @@ struct ExpeditionsCard: View {
                     } label: {
                         HStack(spacing: 3) {
                             Text(tr("exp.go"))
+                            Text("\(price)")
                             TicketIcon(size: 14)
                         }
                     }
-                    .buttonStyle(.game(.green, small: true))
-                    .disabled(game.save.tickets <= 0 || game.save.expedition != nil)
+                    .buttonStyle(.game(price >= 3 ? .orange : .green, small: true))
+                    .disabled(game.save.tickets < price || game.save.expedition != nil)
                 }
                 .padding(10)
                 .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.parchmentDeep.opacity(0.55)))

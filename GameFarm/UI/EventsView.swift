@@ -71,7 +71,7 @@ private struct EventBanner: View {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 6) {
-                        Text(event.emoji).font(.system(size: 28))
+                        PixelIcon(name: event.icon, size: 30)
                         Text(event.name)
                             .gameTitle(21, outline: Palette.outline)
                             .lineLimit(2)
@@ -169,7 +169,7 @@ private struct EventProgressCard: View {
         let have = points - from
         Card {
             HStack(spacing: 10) {
-                Text(Events.current.event.emoji).font(.system(size: 30))
+                PixelIcon(name: Events.current.event.icon, size: 32)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(tr("event.tier", tier, Events.tiers)).font(.game(16))
                     Text(tr("event.points", Fmt.n(points))).font(.game(12, .semibold)).foregroundStyle(.secondary)
@@ -400,7 +400,7 @@ private struct BonusRow: View {
 }
 
 /// Анонс следующего ивента.
-private struct UpcomingEventCard: View {
+struct UpcomingEventCard: View {
     let run: EventRun
 
     var body: some View {
@@ -415,7 +415,7 @@ private struct UpcomingEventCard: View {
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Palette.outline.opacity(0.7), lineWidth: 2))
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("\(event.emoji) \(event.name)").font(.game(15))
+                    HStack(spacing: 6) { PixelIcon(name: event.icon, size: 20); Text(event.name).font(.game(15)) }
                     Text(event.blurb)
                         .font(.game(11, .semibold))
                         .foregroundStyle(.secondary)
@@ -446,7 +446,7 @@ struct EventMapCard: View {
     var body: some View {
         let run = Events.current
         let event = run.event
-        ShopCard(title: event.emoji + " " + tr("event.title"), tone: .orange) {
+        ShopCard(title: tr("event.title"), tone: .orange) {
             HStack(spacing: 12) {
                 PixelSprite(name: event.preview, scale: 1.6).frame(width: 44, height: 44)
                 VStack(alignment: .leading, spacing: 3) {
@@ -497,7 +497,7 @@ struct EventHUDPill: View {
             let run = Events.current
             Button(action: action) {
                 HStack(spacing: 5) {
-                    Text(run.event.emoji).font(.system(size: 17))
+                    PixelIcon(name: run.event.icon, size: 18)
                     TimelineView(.periodic(from: .now, by: 30)) { context in
                         Text(Countdown.short(run.end.timeIntervalSince(context.date)))
                             .font(.game(12))
@@ -544,7 +544,7 @@ struct EventMapPill: View {
             HStack(spacing: 8) {
                 Button(action: onOpen) {
                     HStack(spacing: 6) {
-                        Text(Events.current.event.emoji).font(.system(size: 18))
+                        PixelIcon(name: Events.current.event.icon, size: 20)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(tr("event.tier", tier, Events.tiers))
                                 .font(.game(11))
@@ -568,6 +568,7 @@ struct EventMapPill: View {
             .padding(.trailing, 6)
             .padding(.vertical, 5)
             .woodPill(radius: 16)
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
 }
