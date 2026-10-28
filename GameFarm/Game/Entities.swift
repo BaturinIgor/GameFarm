@@ -381,7 +381,7 @@ final class WildNode: SKNode {
     private var home: CGPoint
     private var goal: CGPoint
     private var wait: Double = 1
-    private var speed: CGFloat = 40
+    private var moveSpeed: CGFloat = 40
     /// Прыжок в воду: сколько осталось и полная длительность.
     private var hop: Double = 0
     private let hopTime = 0.38
@@ -451,7 +451,7 @@ final class WildNode: SKNode {
         diving = true
         home = point
         goal = point
-        speed = 115
+        moveSpeed = 115
         wait = 0.8
     }
 
@@ -459,7 +459,7 @@ final class WildNode: SKNode {
         life -= dt
         wait -= dt
         let d = distance(position, goal)
-        let v = d >= 4 ? CGVector(dx: (goal.x - position.x) / d * speed, dy: (goal.y - position.y) / d * speed) : .zero
+        let v = d >= 4 ? CGVector(dx: (goal.x - position.x) / d * moveSpeed, dy: (goal.y - position.y) / d * moveSpeed) : .zero
         pixel?.update(velocity: v, dt: dt)
         var lift: CGFloat = 0
         if hop > 0 {
@@ -468,7 +468,7 @@ final class WildNode: SKNode {
         }
         if d < 4 {
             body.position.y += (lift - body.position.y) * 0.3
-            speed = 40
+            moveSpeed = 40
             if wait <= 0 {
                 // Новая цель рядом с домом: на воде для нырнувших, на суше для остальных.
                 for _ in 0..<6 {
@@ -483,7 +483,7 @@ final class WildNode: SKNode {
                 wait = Double.random(in: 1.5...3.5)
             }
         } else {
-            let step = min(d, speed * CGFloat(dt))
+            let step = min(d, moveSpeed * CGFloat(dt))
             position.x += (goal.x - position.x) / d * step
             position.y += (goal.y - position.y) / d * step
             body.position.y = CGFloat(abs(sin(life * 12))) * (pixel == nil ? 4 : 1) + lift
