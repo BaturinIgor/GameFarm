@@ -124,6 +124,7 @@ struct AnimalRow: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
                         Text(spec.name).font(.game(16))
+                        if game.isShiny(id) { Text("🌈").font(.system(size: 14)) }
                         Text(spec.role)
                             .font(.game(10, .bold))
                             .padding(.horizontal, 6)
@@ -131,7 +132,20 @@ struct AnimalRow: View {
                             .background(Capsule().fill(Palette.parchmentDeep))
                             .overlay(Capsule().strokeBorder(Palette.woodDark.opacity(0.35), lineWidth: 1))
                     }
-                    if stars > 0 { StarsView(stars: stars) }
+                    if stars > 0 {
+                        HStack(spacing: 6) {
+                            StarsView(stars: stars)
+                            if game.awakenLevel(id) > 0 {
+                                Text(Awakening.title(game.awakenLevel(id)))
+                                    .font(.game(10))
+                                    .foregroundStyle(Palette.ink)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 1)
+                                    .background(Capsule().fill(Color(hex: Awakening.colorHex(game.awakenLevel(id)))))
+                                    .overlay(Capsule().strokeBorder(Palette.outline, lineWidth: 1))
+                            }
+                        }
+                    }
                     ForEach(Array(spec.effects.enumerated()), id: \.offset) { item in
                         Text(item.element.text(multiplier: multiplier))
                             .font(.game(12, .semibold))
@@ -153,6 +167,21 @@ struct AnimalRow: View {
     private func actions(spec: AnimalSpec, stars: Int) -> some View {
         switch mode {
         case .mine:
+            if let cost = game.awakenCost(id) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(tr("awaken.next", Awakening.title(game.awakenLevel(id) + 1)))
+                        .font(.game(12))
+                        .foregroundStyle(ButtonTone.purple.lip)
+                    CostView(cost: cost)
+                    Button {
+                        withAnimation(.spring(duration: 0.35)) { game.awakenAnimal(id) }
+                    } label: {
+                        Label(tr("awaken.action"), systemImage: "sparkles")
+                    }
+                    .buttonStyle(.game(.purple, small: true, wide: true))
+                    .disabled(!game.canAwaken(id))
+                }
+            }
             let active = game.isActive(id)
             let full = game.save.active.count >= GameRules.maxActiveAnimals
             Button {

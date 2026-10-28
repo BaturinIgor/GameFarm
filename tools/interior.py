@@ -308,6 +308,17 @@ def heart():
     return im
 
 
+def cards_icon():
+    c = Canvas(16, 16)
+    c.rect(2, 4, 9, 14, "paper")
+    c.rect(6, 1, 13, 11, "blanketblue")
+    im = c.render()
+    p = im.load()
+    for x, y in ((9, 4), (9, 5), (8, 6), (9, 6), (10, 6), (9, 7), (8, 8), (10, 8)):
+        p[x, y] = hexc("#ffc825")
+    return im
+
+
 def sprites():
     return {
         "quest_board": quest_board(),
@@ -337,4 +348,5 @@ def icons():
         "bone": bone(),
         "tool_armor": armor(),
         "heart": heart(),
+        "cards": cards_icon(),
     }

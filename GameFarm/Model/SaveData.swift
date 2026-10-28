@@ -66,6 +66,10 @@ struct SaveData: Codable {
     var hunts: [HuntContract] = []
     var huntDay = 0
     var kills = 0
+    // Коллекция
+    var cards: [CardID: Int] = [:]
+    var awaken: [AnimalID: Int] = [:]
+    var shiny: [AnimalID] = []
 
     init() {}
 
@@ -79,6 +83,7 @@ struct SaveData: Codable {
         case beds, seeds, selectedSeed, cropsHarvested, dealsDay, dealsBought
         case houseFloors, decor, dishes, cooking, meal, mealUntil, loginDay, loginClaims
         case hunts, huntDay, kills
+        case cards, awaken, shiny
     }
 
     init(from decoder: Decoder) throws {
@@ -151,6 +156,13 @@ struct SaveData: Codable {
         hunts = (try? c.decodeIfPresent([HuntContract].self, forKey: .hunts)) ?? []
         huntDay = try c.decodeIfPresent(Int.self, forKey: .huntDay) ?? 0
         kills = try c.decodeIfPresent(Int.self, forKey: .kills) ?? 0
+        cards = try Self.map(c.decodeIfPresent([String: Int].self, forKey: .cards)) ?? [:]
+        var awakenMap: [AnimalID: Int] = [:]
+        for (key, value) in try c.decodeIfPresent([String: Int].self, forKey: .awaken) ?? [:] {
+            if let id = AnimalID.from(key) { awakenMap[id] = value }
+        }
+        awaken = awakenMap
+        shiny = (try c.decodeIfPresent([String].self, forKey: .shiny) ?? []).compactMap { AnimalID.from($0) }
 
         if !unlocked.contains(.meadow) { unlocked.insert(.meadow, at: 0) }
         // Экспедиция и сад не открываются через список, туда попадают отдельно.
@@ -218,6 +230,9 @@ struct SaveData: Codable {
         try c.encode(hunts, forKey: .hunts)
         try c.encode(huntDay, forKey: .huntDay)
         try c.encode(kills, forKey: .kills)
+        try c.encode(Self.raw(cards), forKey: .cards)
+        try c.encode(Self.raw(awaken), forKey: .awaken)
+        try c.encode(shiny.map(\.rawValue), forKey: .shiny)
     }
 
     private static func map<K: RawRepresentable & Hashable>(_ raw: [String: Int]?) -> [K: Int]? where K.RawValue == String {

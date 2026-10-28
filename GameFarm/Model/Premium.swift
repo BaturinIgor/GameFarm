@@ -62,6 +62,7 @@ enum SkinUnlock {
     case free
     case level(Int)
     case product(ProductID)
+    case constellation(ConstellationID)
 }
 
 /// Образы персонажа. Только внешний вид, на силу не влияют.
@@ -70,6 +71,7 @@ enum Skin: String, CaseIterable, Identifiable {
     case robot, genie
     case wizard, ninja, vampire, astronaut, princess, prince, superhero, merperson, fairy, zombie
     case knight
+    case harvester, ranger, miner, sailor, shepherd, hunter, stargazer
 
     var id: String { rawValue }
 
@@ -96,6 +98,13 @@ enum Skin: String, CaseIterable, Identifiable {
         case .fairy: "🧚"
         case .zombie: "🧟"
         case .knight: "⚔️"
+        case .harvester: "🌾"
+        case .ranger: "🏹"
+        case .miner: "⛏️"
+        case .sailor: "⚓"
+        case .shepherd: "🐑"
+        case .hunter: "🗡️"
+        case .stargazer: "🔭"
         }
     }
 
@@ -112,6 +121,13 @@ enum Skin: String, CaseIterable, Identifiable {
         case .robot: .product(.starter)
         case .genie: .product(.pro)
         case .knight: .product(.garden)
+        case .harvester: .constellation(.harvest)
+        case .ranger: .constellation(.forest)
+        case .miner: .constellation(.depths)
+        case .sailor: .constellation(.sea)
+        case .shepherd: .constellation(.beasts)
+        case .hunter: .constellation(.monsters)
+        case .stargazer: .constellation(.sky)
         default: .product(.skins)
         }
     }

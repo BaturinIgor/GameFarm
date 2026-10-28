@@ -154,6 +154,7 @@ struct ContentView: View {
             case .kitchen: KitchenView()
             case .calendar: CalendarView()
             case .hunt: HuntView()
+            case .collection: CollectionView()
             }
         }
         .environment(game)
@@ -423,12 +424,13 @@ struct HUDView: View {
     }
 
     private var bottomBar: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 5) {
             HUDButton(icon: "chest", fallback: "📦", title: tr("hud.storage")) { sheet = .storage }
             HUDButton(icon: "tool_hammer", fallback: "🔨", title: tr("hud.workshop"), badge: workshopBadge) { sheet = .workshop }
             HUDButton(icon: "stardust", fallback: "🌟", title: tr("hud.talents"), badge: game.talentPointsFree) { sheet = .talents }
             HUDButton(icon: "paw", fallback: "🐾", title: tr("hud.animals")) { sheet = .animals }
             HUDButton(icon: "scroll", fallback: "📜", title: tr("hud.quests"), badge: game.claimableQuests + game.claimableAchievements + game.claimableHunts) { sheet = .quests }
+            HUDButton(icon: "cards", fallback: "🃏", title: tr("hud.collection")) { sheet = .collection }
             HUDButton(icon: "map", fallback: "🗺️", title: tr("hud.map"), badge: mapBadge) { sheet = .map }
         }
     }
@@ -530,6 +532,14 @@ struct EncounterCard: View {
                 HStack(spacing: 6) {
                     Text(spec.name).font(.game(16))
                     if stars > 0 { StarsView(stars: stars) }
+                    if encounter.shiny {
+                        Text("🌈 " + tr("shiny.tag"))
+                            .font(.game(10))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(ButtonTone.purple.base))
+                    }
                 }
                 Text(spec.effects.first?.text(multiplier: game.stats.starMultiplier(max(1, stars + 1)) * game.stats.animalMult) ?? "")
                     .font(.game(12, .semibold))

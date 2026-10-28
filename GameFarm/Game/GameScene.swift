@@ -85,6 +85,7 @@ final class GameScene: SKScene {
     private var sinceHurt: Double = 99
     private var fainting = false
     private var guardPoint: CGPoint?
+    private var lookTimer = 0
     private var builtLanguage = ""
     private var shownSkin = ""
 
@@ -721,6 +722,16 @@ final class GameScene: SKScene {
 
     /// Образ персонажа, круг склада, подписи на текущем языке, состояние ворот.
     private func syncLooks() {
+        lookTimer -= 1
+        if lookTimer <= 0 {
+            lookTimer = 30
+            for companion in companions {
+                companion.setLook(awaken: game.awakenLevel(companion.animal), shiny: game.isShiny(companion.animal))
+            }
+            for animal in penAnimals {
+                animal.node.setLook(awaken: game.awakenLevel(animal.node.animal), shiny: game.isShiny(animal.node.animal))
+            }
+        }
         let ringScale = CGFloat(game.stats.depositRadius) / depositBuiltRadius
         for node in depositRing where abs(node.xScale - ringScale) > 0.001 && node.action(forKey: "grow") == nil {
             node.run(.scale(to: ringScale, duration: 0.3), withKey: "grow")
@@ -1115,7 +1126,10 @@ final class GameScene: SKScene {
         var shown: [(ResourceKind, Int)] = []
         for (kind, n) in gained {
             let added = byHelper || direct ? game.addToStorage(kind, n) : game.addToBackpack(kind, n)
-            if added > 0 { shown.append((kind, added)) }
+            if added > 0 {
+                shown.append((kind, added))
+                if !byHelper { game.rollCard(for: kind) }
+            }
         }
         let coins = game.registerHarvest(xp: spot.spec.xp)
         if spot.spec.type == .treasureChest {
@@ -1295,6 +1309,9 @@ final class GameScene: SKScene {
         }
         companions.sort { a, b in
             (ids.firstIndex(of: a.animal) ?? 0) < (ids.firstIndex(of: b.animal) ?? 0)
+        }
+        for companion in companions {
+            companion.setLook(awaken: game.awakenLevel(companion.animal), shiny: game.isShiny(companion.animal))
         }
     }
 
@@ -1881,7 +1898,7 @@ final class GameScene: SKScene {
             w.zPosition = zFor(w.position.y)
             let d = distance(w.position, player.position)
             if d < 80 {
-                game.setEncounter(Encounter(animal: w.animal))
+                game.setEncounter(Encounter(animal: w.animal, shiny: w.shiny))
             } else if d > 104 {
                 game.setEncounter(nil)
             }
@@ -1917,6 +1934,7 @@ final class GameScene: SKScene {
         }
         guard let point = randomOpenPoint(minFromPlayer: 240) else { return }
         let node = WildNode(animal: chosen, at: point, life: 160 * stats.spawnMult)
+        if Double.random(in: 0..<1) < Shiny.chance { node.makeShiny() }
         node.allows = { [layout] p, water in
             let (c, r) = layout.colRow(p)
             return water ? layout.isWater(c, r) : layout.walkable(c, r)
@@ -1936,6 +1954,7 @@ final class GameScene: SKScene {
     /// Вызывается из интерфейса кнопкой "Приручить".
     func tameNearby() {
         guard let w = wild, game.tame(w.animal) else { return }
+        if w.shiny { game.markShiny(w.animal) }
         Effects.hearts(at: w.position, in: world)
         Effects.ring(at: w.position, in: world, color: UIColor(red: 1, green: 0.5, blue: 0.7, alpha: 1), radius: 34)
         w.removeFromParent()

@@ -149,6 +149,7 @@ struct Stats {
     var helperTierBonus = 0
     var helperYield = 1.0
     var producerMult = 1.0
+    var swordMult = 1.0
     var doubleProductChance = 0.0
     var offlineHours = 6.0
     var starStep = 0.25
@@ -170,6 +171,7 @@ struct Stats {
 
 struct Encounter: Equatable {
     let animal: AnimalID
+    var shiny = false
 }
 
 struct Toast: Identifiable, Equatable {

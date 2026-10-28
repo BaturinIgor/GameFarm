@@ -128,6 +128,8 @@ final class GameState {
         save.legacy = old.legacy
         save.loginDay = old.loginDay
         save.loginClaims = old.loginClaims
+        save.cards = old.cards
+        save.shiny = old.shiny
         save.rebirths = old.rebirths + (reward > 0 ? 1 : 0)
         save.sparks = old.sparks + reward
         save.sparksEarned = old.sparksEarned + reward
@@ -455,6 +457,7 @@ final class GameState {
     }
 
     private func addStar(_ id: AnimalID, count: Int) {
+        if let card = CardID.forAnimal(id), Double.random(in: 0..<1) < 0.35 { gainCard(card) }
         let isNew = stars(id) == 0
         save.animals[id] = min(AnimalSpec.maxStars, stars(id) + count)
         progressQuests(.tame, amount: 1)
@@ -644,6 +647,7 @@ final class GameState {
     /// Время вышло (или игрок ушёл сам): показываем итог и возвращаемся.
     func finishExpedition() {
         guard let run = save.expedition else { return }
+        randomCard()
         if backpackCount > 0 { depositBackpack() }
         if let id = run.id {
             expeditionReport = ExpeditionReport(location: id, items: run.items, coins: run.coins)
@@ -688,6 +692,7 @@ final class GameState {
 
     /// Награда за клад зависит от уровня и открытых локаций.
     func openTreasure() -> Treasure {
+        if Double.random(in: 0..<1) < 0.35 { randomCard() }
         let level = save.level
         let proBonus = hasPro ? 2.0 : 1.0
         let coins = Int(Double(40 + level * 25) * Double.random(in: 0.8...1.4) * proBonus)
@@ -900,6 +905,7 @@ final class GameState {
         case .free: return true
         case .level(let level): return save.level >= level
         case .product(let product): return owns(product)
+        case .constellation(let c): return isComplete(c)
         }
     }
 
@@ -1073,12 +1079,27 @@ final class GameState {
         s.yieldAll += cozy
         let meal = activeMeal?.buff ?? MealBuff()
         s.yieldAll += meal.yield
+        // Созвездия
+        let cHarvest = constellationBonus(.harvest)
+        let cForest = constellationBonus(.forest)
+        let cDepths = constellationBonus(.depths)
+        let cSea = constellationBonus(.sea)
+        s.yieldCategory[.crop, default: 0] += cHarvest
+        s.yieldCategory[.wood, default: 0] += cForest
+        s.yieldCategory[.food, default: 0] += cForest
+        s.yieldCategory[.stone, default: 0] += cDepths
+        s.yieldCategory[.ore, default: 0] += cDepths
+        s.yieldCategory[.gem, default: 0] += cDepths
+        s.yieldKind[.fish, default: 0] += cSea
+        s.yieldCategory[.treasure, default: 0] += cSea
+        s.swordMult = 1 + constellationBonus(.monsters)
+        s.animalMult *= 1 + constellationBonus(.beasts)
         if isBuilt(.upper) { s.offlineHours += 2 }
 
         var speedBonus = 0.07 * r(.swift) + 0.05 * r(.tailwind) + legacy(.boots)
         var critBonus = 0.05 * r(.crit)
         var respawnBonus = 0.08 * r(.regrowth) + (r(.abundance) > 0 ? 0.5 : 0) + legacy(.growth)
-        var xpBonus = 0.1 * r(.scholar) + 0.06 * r(.sage) + legacy(.wisdom) + cozy + meal.xp
+        var xpBonus = 0.1 * r(.scholar) + 0.06 * r(.sage) + legacy(.wisdom) + cozy + meal.xp + constellationBonus(.sky)
         var sellBonus = 0.08 * r(.trader) + legacy(.merchant) + meal.sell
         speedBonus += meal.speed
         critBonus += meal.crit
@@ -1087,7 +1108,7 @@ final class GameState {
             + (owns(.starter) ? Double(Premium.starterBackpack) : 0) + legacy(.pack)
 
         for id in save.active {
-            let m = s.starMultiplier(save.animals[id] ?? 1) * s.animalMult
+            let m = s.starMultiplier(save.animals[id] ?? 1) * s.animalMult * animalBoost(id)
             for effect in id.spec.effects {
                 switch effect {
                 case .xp(let v): xpBonus += v * m
@@ -1206,6 +1227,7 @@ extension GameState {
         let spec = crop.spec
         let amount = max(1, Int((Double(spec.yield) * stats.yieldMultiplier(for: spec.produce)).rounded()))
         addToStorage(spec.produce, amount)
+        rollCard(for: spec.produce, chance: 0.05)
         setBed(index, Bed())
         save.cropsHarvested += 1
         gainXP(spec.xp)
@@ -1474,6 +1496,7 @@ extension GameState {
         case .chest(let tickets, let coins):
             save.tickets += tickets
             addCoins(coins)
+            randomCard()
         }
         save.loginDay = dayIndex
         save.loginClaims += 1
@@ -1526,7 +1549,7 @@ extension GameState {
     }
 
     func swordDamage() -> Double {
-        Hero.swordDamage(level: save.level, sword: tier(.sword)) * stats.damageMult
+        Hero.swordDamage(level: save.level, sword: tier(.sword)) * stats.damageMult * stats.swordMult
     }
 
     /// Монстр побеждён: опыт, монеты, трофеи, заказы стражника.
@@ -1537,6 +1560,7 @@ extension GameState {
         let loot = Int.random(in: 1...(kind == .slimeGold ? 4 : 2))
         let added = inExpedition ? addToStorage(kind.loot, loot) : addToBackpack(kind.loot, loot)
         gainXP(st.xp)
+        rollCard(for: kind)
         ensureHunts()
         for i in save.hunts.indices where save.hunts[i].monster == kind && !save.hunts[i].done {
             save.hunts[i].progress += 1
@@ -1588,6 +1612,98 @@ extension GameState {
         gainXP(hunt.xp)
         SoundFX.play(.success)
         saveNow()
+    }
+}
+
+// MARK: Коллекция
+
+extension GameState {
+    func cardCount(_ card: CardID) -> Int { save.cards[card] ?? 0 }
+
+    func cardStars(_ card: CardID) -> Int { Cards.stars(count: cardCount(card)) }
+
+    func isComplete(_ c: ConstellationID) -> Bool { c.cards.allSatisfy { cardCount($0) > 0 } }
+
+    func minStars(_ c: ConstellationID) -> Int { c.cards.map { cardStars($0) }.min() ?? 0 }
+
+    func constellationBonus(_ c: ConstellationID) -> Double {
+        isComplete(c) ? ConstellationID.bonus(minStars: minStars(c)) : 0
+    }
+
+    var cardsOwned: Int { CardID.allCases.filter { cardCount($0) > 0 }.count }
+
+    /// Новая карта (или копия, которая поднимает звёзды).
+    func gainCard(_ card: CardID) {
+        let wasComplete = isComplete(card.constellation)
+        let before = cardStars(card)
+        save.cards[card, default: 0] += 1
+        let after = cardStars(card)
+        if before == 0 {
+            toast("🃏", tr("toast.card", card.name))
+        } else if after > before {
+            toast("⭐", tr("toast.cardStar", card.name, after))
+        }
+        if !wasComplete && isComplete(card.constellation) {
+            toast("✨", tr("toast.constellation", card.constellation.name))
+            SoundFX.play(.unlock)
+        }
+        recalc()
+        markDirty()
+    }
+
+    /// Шанс карты при добыче ресурса.
+    func rollCard(for kind: ResourceKind, chance: Double = 0.012) {
+        guard let card = CardID.forResource(kind), Double.random(in: 0..<1) < chance else { return }
+        gainCard(card)
+    }
+
+    func rollCard(for monster: MonsterKind) {
+        guard let card = CardID.forMonster(monster), Double.random(in: 0..<1) < 0.05 else { return }
+        gainCard(card)
+    }
+
+    func randomCard() {
+        if let card = CardID.allCases.randomElement() { gainCard(card) }
+    }
+
+    // MARK: Пробуждение и редкие окраски
+
+    func awakenLevel(_ id: AnimalID) -> Int { save.awaken[id] ?? 0 }
+
+    func isShiny(_ id: AnimalID) -> Bool { save.shiny.contains(id) }
+
+    /// Сила зверя от пробуждения и редкой окраски.
+    func animalBoost(_ id: AnimalID) -> Double {
+        Awakening.multiplier(awakenLevel(id)) * (isShiny(id) ? 1 + Shiny.bonus : 1)
+    }
+
+    func awakenCost(_ id: AnimalID) -> Cost? {
+        let next = awakenLevel(id) + 1
+        guard stars(id) >= AnimalSpec.maxStars, next <= Awakening.maxLevel else { return nil }
+        return Awakening.cost(level: next)
+    }
+
+    func canAwaken(_ id: AnimalID) -> Bool {
+        guard let cost = awakenCost(id) else { return false }
+        return canAfford(cost)
+    }
+
+    func awakenAnimal(_ id: AnimalID) {
+        guard canAwaken(id), let cost = awakenCost(id) else { return }
+        pay(cost)
+        save.awaken[id] = awakenLevel(id) + 1
+        recalc()
+        SoundFX.play(.levelUp)
+        toast("🌟", tr("toast.awaken", id.spec.name, Awakening.title(awakenLevel(id))))
+        saveNow()
+    }
+
+    func markShiny(_ id: AnimalID) {
+        guard !save.shiny.contains(id) else { return }
+        save.shiny.append(id)
+        toast("🌈", tr("toast.shiny", id.spec.name))
+        recalc()
+        markDirty()
     }
 }
 

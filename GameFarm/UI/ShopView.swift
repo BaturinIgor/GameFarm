@@ -352,6 +352,7 @@ private struct SkinTile: View {
         case .free: return ""
         case .level(let level): return tr("common.lvl", level)
         case .product(let product): return product.title
+        case .constellation(let c): return "✨ " + c.name
         }
     }
 

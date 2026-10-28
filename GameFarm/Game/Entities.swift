@@ -331,6 +331,29 @@ final class CompanionNode: SKNode {
         pixel.swimming = on
     }
 
+    private var aura: SKSpriteNode?
+    private(set) var lookKey = ""
+
+    /// Пробуждение даёт ауру (бронза, серебро, золото), редкая окраска перекрашивает зверя.
+    func setLook(awaken: Int, shiny: Bool) {
+        let key = "\(awaken)|\(shiny)"
+        guard key != lookKey else { return }
+        lookKey = key
+        aura?.removeFromParent()
+        aura = nil
+        if awaken > 0 {
+            let hex = Awakening.colorHex(awaken)
+            let color = UIColor(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255,
+                                blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
+            let glow = glowSprite(color, size: 64 + CGFloat(awaken) * 10, y: 12, alpha: 0.35 + 0.1 * CGFloat(awaken))
+            glow.zPosition = -1
+            insertChild(glow, at: 0)
+            aura = glow
+        }
+        body.color = Shiny.tint
+        body.colorBlendFactor = shiny ? 0.45 : 0
+    }
+
     /// Плавно двигается к точке с разгоном и подпрыгивает при ходьбе.
     func move(toward point: CGPoint, dt: Double, speed: Double, stopAt: CGFloat = 8) {
         let dx = point.x - position.x
@@ -391,6 +414,17 @@ final class WildNode: SKNode {
     private let hopTime = 0.38
     /// Утка или лебедь уже ушли в воду.
     private(set) var diving = false
+    /// Редкая окраска.
+    private(set) var shiny = false
+
+    func makeShiny() {
+        shiny = true
+        body.color = Shiny.tint
+        body.colorBlendFactor = 0.45
+        let glow = glowSprite(UIColor(red: 1, green: 0.6, blue: 1, alpha: 1), size: 110, y: 16, alpha: 0.5)
+        glow.zPosition = -1
+        addChild(glow)
+    }
     /// Можно ли выбрать эту точку целью: сцена знает, где суша и где вода.
     var allows: (CGPoint, Bool) -> Bool = { _, _ in true }
     /// Сцена показывает брызги, когда зверь плюхается в воду.
