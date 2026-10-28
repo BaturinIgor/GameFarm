@@ -71,6 +71,9 @@ struct HuntList: View {
                     Text(tr("hunt.empty")).font(.game(14, .semibold))
                 }
             }
+            if game.claimableHunts >= 2 {
+                ClaimAllButton(count: game.claimableHunts) { game.claimAllHunts() }
+            }
             ForEach(game.save.hunts) { HuntCard(hunt: $0) }
             Text(tr("hunt.tip"))
                 .font(.game(11, .semibold))

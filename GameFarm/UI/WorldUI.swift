@@ -128,6 +128,7 @@ struct ExpeditionPill: View {
 
 /// Итог экспедиции.
 struct ExpeditionReportOverlay: View {
+    @Environment(GameState.self) private var game
     let report: ExpeditionReport
     let onClose: () -> Void
 
@@ -155,8 +156,31 @@ struct ExpeditionReportOverlay: View {
                     }
                     Text(tr("offline.inStorage")).font(.game(12, .semibold)).foregroundStyle(.secondary)
                 }
-                Button(tr("common.great"), action: onClose)
-                    .buttonStyle(.game(.green, wide: true))
+                // Ещё одна вылазка туда же, если хватает билетов и карт
+                let id = report.location
+                let price = Expedition.cost(id)
+                let maps = Expedition.maps(id)
+                HStack(spacing: 8) {
+                    if game.save.tickets >= price && game.save.maps >= maps {
+                        Button {
+                            onClose()
+                            game.startExpedition(id)
+                        } label: {
+                            HStack(spacing: 3) {
+                                Text(tr("exp.again"))
+                                Text("\(price)")
+                                TicketIcon(size: 14)
+                                if maps > 0 {
+                                    Text("\(maps)")
+                                    PixelIcon(name: "tmap", size: 14)
+                                }
+                            }
+                        }
+                        .buttonStyle(.game(.orange, small: true, wide: true))
+                    }
+                    Button(tr("common.great"), action: onClose)
+                        .buttonStyle(.game(.green, small: true, wide: true))
+                }
             }
             .foregroundStyle(Palette.ink)
             .padding(22)

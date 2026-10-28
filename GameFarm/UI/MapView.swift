@@ -318,7 +318,7 @@ struct LocationCard: View {
                     Text(tr("map.go"))
                 }
                 .buttonStyle(.game(.green, wide: true))
-                .disabled(game.save.expedition != nil)
+                .disabled(game.save.expedition != nil || game.dungeonRun != nil)
             }
 
             // Проходы этой локации
@@ -450,7 +450,7 @@ struct ExpeditionsCard: View {
                         }
                     }
                     .buttonStyle(.game(maps > 0 ? .purple : (price >= 3 ? .orange : .green), small: true))
-                    .disabled(game.save.tickets < price || game.save.maps < maps || game.save.expedition != nil)
+                    .disabled(game.save.tickets < price || game.save.maps < maps || game.save.expedition != nil || game.dungeonRun != nil)
                 }
                 .padding(10)
                 .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.parchmentDeep.opacity(0.55)))

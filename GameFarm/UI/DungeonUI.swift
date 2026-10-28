@@ -18,6 +18,17 @@ struct DungeonPill: View {
                         .foregroundStyle(run.cleared ? Palette.gold : Color.white.opacity(0.9))
                         .outlined(Palette.outline, width: 1)
                 }
+                if run.cleared && game.canGoDeeper {
+                    Button {
+                        game.goDeeper()
+                    } label: {
+                        HStack(spacing: 3) {
+                            Text(tr("dungeon.deeper"))
+                            Image(systemName: "arrow.down.right").font(.system(size: 11, weight: .black))
+                        }
+                    }
+                    .buttonStyle(.game(.green, small: true))
+                }
                 Button {
                     if run.cleared {
                         game.leaveDungeon()
@@ -30,7 +41,7 @@ struct DungeonPill: View {
                 } label: {
                     Text(tr("dungeon.leave"))
                 }
-                .buttonStyle(.game(run.cleared ? .green : .red, small: true))
+                .buttonStyle(.game(run.cleared ? .wood : .red, small: true))
             }
             .padding(.leading, 12)
             .padding(.trailing, 6)
@@ -95,6 +106,7 @@ struct PotionButton: View {
 
 /// Итог забега.
 struct DungeonReportOverlay: View {
+    @Environment(GameState.self) private var game
     let report: DungeonReport
     let onClose: () -> Void
 
@@ -132,8 +144,29 @@ struct DungeonReportOverlay: View {
                     .padding(10)
                     .listBox(radius: 12)
                 }
-                Button(tr("common.great"), action: onClose)
-                    .buttonStyle(.game(.green, wide: true))
+                // Сразу в бой: следующий этаж после победы или ещё раз этот же
+                let next = report.floor + 1
+                HStack(spacing: 8) {
+                    if report.won && next <= Dungeon.floors && game.canEnter(report.dungeon, floor: next) {
+                        Button {
+                            onClose()
+                            game.startDungeon(report.dungeon, floor: next)
+                        } label: {
+                            Text(tr("dungeon.floorN", next))
+                        }
+                        .buttonStyle(.game(.green, small: true, wide: true))
+                    } else if game.canEnter(report.dungeon, floor: report.floor) {
+                        Button {
+                            onClose()
+                            game.startDungeon(report.dungeon, floor: report.floor)
+                        } label: {
+                            Text(tr("dungeon.retry"))
+                        }
+                        .buttonStyle(.game(.orange, small: true, wide: true))
+                    }
+                    Button(tr("common.great"), action: onClose)
+                        .buttonStyle(.game(.wood, small: true, wide: true))
+                }
             }
             .foregroundStyle(Palette.ink)
             .padding(.horizontal, 20)

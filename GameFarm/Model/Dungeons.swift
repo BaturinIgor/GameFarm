@@ -114,6 +114,15 @@ struct DungeonRun: Equatable {
     var kills = 0
     var coins = 0
     var essence = 0
+
+    init(dungeon: DungeonID, floor: Int, waves: Int, kills: Int = 0, coins: Int = 0, essence: Int = 0) {
+        self.dungeon = dungeon
+        self.floor = floor
+        self.waves = waves
+        self.kills = kills
+        self.coins = coins
+        self.essence = essence
+    }
 }
 
 /// Итог забега для окна после выхода.

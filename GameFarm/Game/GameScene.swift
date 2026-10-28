@@ -173,9 +173,14 @@ final class GameScene: SKScene {
     }
 
     private func build(_ id: LocationID) {
+        let wasEvent = loaded?.spec.kind == .event
         loaded = id
         loadedVersion = game.mapVersion
         spec = id.spec
+        // Обморок мог прерваться сменой локации (например, из подземелья): начинаем с чистого листа
+        fainting = false
+        // Усиления ивента включаются и выключаются вместе с его картой
+        if wasEvent != (spec.kind == .event) { game.recalc() }
         layout = id.layout
         world.removeAllChildren()
         spots.removeAll()
@@ -700,7 +705,8 @@ final class GameScene: SKScene {
         let dt = lastTime == 0 ? 1.0 / 60 : min(currentTime - lastTime, 1.0 / 20)
         lastTime = currentTime
 
-        if !transitioning && (loaded != game.save.current || (spec.kind == .event && loadedVersion != game.mapVersion)) {
+        if !transitioning && (loaded != game.save.current
+                              || ((spec.kind == .event || spec.kind == .dungeon) && loadedVersion != game.mapVersion)) {
             transition(to: game.save.current)
         }
 
@@ -1703,7 +1709,7 @@ final class GameScene: SKScene {
         haptic.impactOccurred()
         if let slot = monsterSlots.first(where: { $0.node === foe }) {
             slot.node = nil
-            slot.respawn = spec.kind == .dungeon ? .greatestFiniteMagnitude : Double.random(in: 35...55)
+            slot.respawn = spec.kind == .dungeon || foe.boss ? .greatestFiniteMagnitude : Double.random(in: 35...55)
         }
         return result
     }

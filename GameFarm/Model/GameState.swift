@@ -125,6 +125,10 @@ final class GameState {
         levelUp = nil
         offlineReport = nil
         expeditionReport = nil
+        dungeonRun = nil
+        lastChest = nil
+        syncEvent()
+        mapVersion += 1
         recalc()
         ensureQuests()
         SaveFile.write(save)
@@ -197,6 +201,13 @@ final class GameState {
         save.eventSeen = old.eventSeen
         save.eventDecor = old.eventDecor
         save.eventSkins = old.eventSkins
+        save.eventStage = old.eventStage
+        save.eventProgress = old.eventProgress
+        save.eventBest = old.eventBest
+        save.eventBoons = old.eventBoons
+        save.eventChoice = old.eventChoice
+        dungeonRun = nil
+        lastChest = nil
         save.bestLevel = max(old.bestLevel, old.level)
         save.potions = old.potions
         save.dungeonBest = old.dungeonBest
@@ -686,7 +697,7 @@ final class GameState {
 
     /// Быстрый переход по карте: появляемся у склада.
     func travel(to id: LocationID) {
-        guard isUnlocked(id), save.current != id, save.expedition == nil else { return }
+        guard isUnlocked(id), save.current != id, save.expedition == nil, dungeonRun == nil else { return }
         let wasEvent = save.current.spec.kind == .event
         arrivalGate = nil
         save.current = id
@@ -725,7 +736,7 @@ final class GameState {
     func startExpedition(_ id: LocationID) -> Bool {
         let price = Expedition.cost(id)
         let maps = Expedition.maps(id)
-        guard id.spec.kind == .expedition, save.expedition == nil, save.tickets >= price, save.maps >= maps else { return false }
+        guard id.spec.kind == .expedition, save.expedition == nil, dungeonRun == nil, save.tickets >= price, save.maps >= maps else { return false }
         save.tickets -= price
         save.maps -= maps
         save.expedition = ExpeditionRun(location: id.rawValue, endsAt: Date().addingTimeInterval(Expedition.duration(id)),
@@ -735,6 +746,7 @@ final class GameState {
         save.current = id
         encounter = nil
         gatePrompt = nil
+        recalc()
         saveNow()
         return true
     }
@@ -767,6 +779,7 @@ final class GameState {
         save.current = isUnlocked(home) ? home : .meadow
         encounter = nil
         gatePrompt = nil
+        recalc()
         SoundFX.play(.success)
         saveNow()
     }
@@ -863,6 +876,19 @@ final class GameState {
         save.quests.insert(fresh, at: min(index, save.quests.count))
         gainXP(quest.xp)
         markDirty()
+    }
+
+    /// Забрать все выполненные задания разом.
+    func claimAllQuests() {
+        for quest in save.quests where quest.done { claimQuest(quest.id) }
+    }
+
+    func claimAllAchievements() {
+        for achievement in Achievement.all where canClaim(achievement) { claim(achievement) }
+    }
+
+    func claimAllHunts() {
+        for hunt in save.hunts where hunt.done { claimHunt(hunt.id) }
     }
 
     var questSlots: Int { hasPro ? 4 : 3 }
@@ -2169,6 +2195,31 @@ extension GameState {
         saveNow()
     }
 
+    /// Следующий этаж открыт: можно идти дальше, не выходя из подземелья.
+    var canGoDeeper: Bool {
+        guard let run = dungeonRun, run.cleared, run.floor < Dungeon.floors else { return false }
+        return save.level >= run.dungeon.level
+    }
+
+    /// Сразу на следующий этаж: сундук открывается сам, добыча забега копится дальше.
+    func goDeeper() {
+        guard canGoDeeper, var run = dungeonRun else { return }
+        if !run.chestOpened {
+            openDungeonChest()
+            run = dungeonRun ?? run
+        }
+        let next = DungeonRun(dungeon: run.dungeon, floor: run.floor + 1, waves: Dungeon.waves(floor: run.floor + 1),
+                              kills: run.kills, coins: run.coins, essence: run.essence)
+        dungeonRun = next
+        lastChest = nil
+        bossInfo = nil
+        heal(0.35)
+        mapVersion += 1
+        toast("px:stairs", tr("toast.deeper", next.floor))
+        SoundFX.play(.unlock)
+        markDirty()
+    }
+
     /// Выйти из подземелья: через портал после победы или раньше (тогда награды за этаж нет).
     func leaveDungeon() {
         guard let run = dungeonRun else { return }
@@ -2409,6 +2460,15 @@ extension GameState {
         guard tier > 0 else { return }
         let vip = save.vipKeys.contains(key)
         var any = false
+        // Бонусные сундуки после последней ступени тоже не пропадают
+        let extra = save.eventPoints - Events.total
+        let chests = extra >= Events.bonusEvery ? extra / Events.bonusEvery - save.eventBonus : 0
+        if chests > 0 {
+            save.eventBonus += chests
+            addCoins(Events.bonusCoins(level: save.level) * chests)
+            for _ in 0..<chests { randomCard() }
+            any = true
+        }
         for t in 1...tier {
             if !save.eventFree.contains(t) { grantEventReward(Events.free(tier: t), event: event); any = true }
             if vip && !save.eventVip.contains(t) { grantEventReward(Events.vip(tier: t), event: event); any = true }
@@ -2649,6 +2709,7 @@ extension GameState {
 
     /// Отправиться на карту ивента.
     func goToEvent() {
+        guard dungeonRun == nil else { return }
         syncEvent()
         travel(to: Events.current.event.location)
         recalc()

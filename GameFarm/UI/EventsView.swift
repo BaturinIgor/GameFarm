@@ -561,6 +561,15 @@ struct EventMapPill: View {
                         }
                     }
                     .buttonStyle(.press)
+                    if game.eventStageCleared && game.save.eventChoice.isEmpty {
+                        // Не нужно бежать к порталу: следующий этап одной кнопкой
+                        Button {
+                            game.enterEventPortal()
+                        } label: {
+                            Text(tr("event.next"))
+                        }
+                        .buttonStyle(.game(.green, small: true))
+                    }
                     Button {
                         game.leaveEvent()
                     } label: {

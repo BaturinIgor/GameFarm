@@ -36,6 +36,9 @@ struct QuestsView: View {
                     .font(.game(14, .semibold).bold())
                 Spacer()
             }
+            if game.claimableQuests >= 2 {
+                ClaimAllButton(count: game.claimableQuests) { game.claimAllQuests() }
+            }
             ForEach(game.save.quests) { quest in
                 QuestCard(quest: quest)
                     .transition(.asymmetric(insertion: .scale(scale: 0.9).combined(with: .opacity),
@@ -61,6 +64,9 @@ struct QuestsView: View {
                 Text(tr("achievements.points", game.save.bonusTalentPoints))
                     .font(.game(12, .semibold).bold())
                     .foregroundStyle(.secondary)
+            }
+            if ready.count >= 2 {
+                ClaimAllButton(count: ready.count) { game.claimAllAchievements() }
             }
             ForEach(ready) { AchievementRow(achievement: $0) }
             ForEach(open) { AchievementRow(achievement: $0) }
@@ -216,5 +222,22 @@ struct AchievementRow: View {
                 .strokeBorder(ready ? ButtonTone.orange.base : Palette.woodDark.opacity(0.4), lineWidth: ready ? 2.5 : 1.5)
         )
         .opacity(claimed ? 0.7 : 1)
+    }
+}
+
+
+/// Кнопка "Забрать всё", когда наград несколько.
+struct ClaimAllButton: View {
+    let count: Int
+    let action: () -> Void
+
+    var body: some View {
+        Button {
+            withAnimation(.spring(duration: 0.35)) { action() }
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        } label: {
+            Text(tr("common.claimAll", count))
+        }
+        .buttonStyle(.game(.green, wide: true))
     }
 }
