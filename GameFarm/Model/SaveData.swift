@@ -147,7 +147,12 @@ enum SaveFile {
         guard let data = try? Data(contentsOf: url) else { return SaveData() }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .secondsSince1970
-        return (try? decoder.decode(SaveData.self, from: data)) ?? SaveData()
+        if let save = try? decoder.decode(SaveData.self, from: data) { return save }
+        // Файл не прочитался: сохраняем копию, чтобы следующая запись не уничтожила прогресс насовсем.
+        let backup = url.deletingLastPathComponent()
+            .appendingPathComponent("gamefarm-save.broken-\(Int(Date().timeIntervalSince1970)).json")
+        try? data.write(to: backup, options: .atomic)
+        return SaveData()
     }
 
     static func write(_ save: SaveData) {

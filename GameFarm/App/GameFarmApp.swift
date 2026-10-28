@@ -19,13 +19,17 @@ struct GameFarmApp: App {
                 .statusBarHidden()
                 .persistentSystemOverlays(.hidden)
         }
-        .onChange(of: scenePhase) { _, phase in
+        .onChange(of: scenePhase) { old, phase in
             switch phase {
             case .active:
                 game.applyOfflineProgress()
-            case .inactive, .background:
+            case .background:
                 game.saveNow()
-            @unknown default:
+            case .inactive where old == .active:
+                game.saveNow()
+            default:
+                // Переход из фона в inactive не должен затирать время ухода,
+                // иначе офлайн-добыча считается от нуля.
                 break
             }
         }

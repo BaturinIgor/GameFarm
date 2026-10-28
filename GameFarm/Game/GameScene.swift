@@ -42,6 +42,9 @@ final class GameScene: SKScene {
     private var chest = SKNode()
     private var chestTitle = SKLabelNode()
     private var houseCenter = CGPoint.zero
+    /// Круг склада и радиус, с которым он нарисован: талант может его увеличить.
+    private var depositRing: [SKNode] = []
+    private var depositBuiltRadius: CGFloat = 1
     private var builtLanguage = ""
     private var shownSkin = ""
 
@@ -446,6 +449,8 @@ final class GameScene: SKScene {
         dashed.zPosition = 2
         dashed.run(.repeatForever(.rotate(byAngle: .pi * 2, duration: 30)))
         world.addChild(dashed)
+        depositRing = [zone, dashed]
+        depositBuiltRadius = max(radius, 1)
 
         houseCenter = CGPoint(x: base.x - 34, y: base.y + 18)
         let houseShadow = shadowSprite(90)
@@ -542,6 +547,10 @@ final class GameScene: SKScene {
 
     /// Образ персонажа и подпись склада на текущем языке.
     private func syncLooks() {
+        let ringScale = CGFloat(game.stats.depositRadius) / depositBuiltRadius
+        for node in depositRing where abs(node.xScale - ringScale) > 0.001 && node.action(forKey: "grow") == nil {
+            node.run(.scale(to: ringScale, duration: 0.3), withKey: "grow")
+        }
         let skin = game.currentSkin
         if shownSkin != skin.rawValue {
             if !shownSkin.isEmpty {
@@ -753,6 +762,8 @@ final class GameScene: SKScene {
         if stats.quake {
             var shook = false
             for other in spots where other !== spot && other.alive && game.canHarvest(other.spec) {
+                // С полным рюкзаком сотрясение не ломает соседние точки впустую.
+                guard stats.autoDeposit || game.backpackFree > 0 else { break }
                 if distance(other.position, spot.position) < CGFloat(stats.quakeRadius) {
                     apply(damage * stats.quakePower, to: other, byHelper: false, strong: false)
                     shook = true

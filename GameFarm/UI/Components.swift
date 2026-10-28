@@ -158,6 +158,8 @@ struct CoinsBadge: View {
             Text(Fmt.n(coins))
                 .font(.system(.subheadline, design: .rounded).weight(.bold))
                 .monospacedDigit()
+                .lineLimit(1)
+                .fixedSize()
                 .contentTransition(.numericText())
         }
         .padding(.horizontal, 10)
@@ -186,7 +188,9 @@ extension View {
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) { CoinsBadge(coins: coins) }
+                // fixedSize: иначе панель iOS 26 сжимает бейдж и обрезает сумму.
+                ToolbarItem(placement: .topBarLeading) { CoinsBadge(coins: coins).fixedSize() }
+                    .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .topBarTrailing) { SheetCloseButton() }
             }
             .background(Color(uiColor: .systemGroupedBackground))

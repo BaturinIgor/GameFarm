@@ -28,6 +28,8 @@ final class GameState {
         recalc()
         ensureQuests()
         checkStarterOffer()
+        // На холодном старте фаза .active может прийти раньше, чем её начнут слушать.
+        applyOfflineProgress()
     }
 
     // MARK: Сохранение
@@ -53,7 +55,10 @@ final class GameState {
         save.tutorialDone = true
         save.purchases = purchases
         save.granted = granted
-        if owns(.starter) { save.animals[.lion] = 1 }
+        if owns(.starter) {
+            save.animals[.lion] = 1
+            save.active = [.lion]
+        }
         encounter = nil
         backpackFull = false
         levelUp = nil
@@ -493,7 +498,7 @@ final class GameState {
             return save.gathered.filter { $0.key.category == category }.values.reduce(0, +)
         case .harvests: return save.harvests
         case .coinsEarned: return save.coinsEarned
-        case .animals: return save.animals.count
+        case .animals: return save.animals.keys.filter { !$0.spec.isPremium }.count
         case .stars: return save.animals.values.reduce(0, +)
         case .locations: return save.unlocked.count
         case .level: return save.level
@@ -554,6 +559,16 @@ final class GameState {
         saveNow()
     }
 
+    /// Покупку вернули: убираем её, образ сбрасываем, если он был из неё.
+    func revoke(_ product: ProductID) {
+        guard owns(product) else { return }
+        save.purchases.removeAll { $0 == product.rawValue }
+        if !isSkinUnlocked(currentSkin) { save.skin = Skin.farmer.rawValue }
+        recalc()
+        save.quests = Array(save.quests.prefix(questSlots))
+        saveNow()
+    }
+
     #if SIDELOAD
     func resetTestPurchases() {
         save.purchases = []
@@ -601,6 +616,20 @@ final class GameState {
     // MARK: Награды за рекламу
 
     var luckActive: Bool { (save.luckUntil ?? .distantPast) > Date() }
+
+    /// Если часы на телефоне перевели назад, таймеры могли улететь далеко в будущее. Сбрасываем такие.
+    func repairTimers() {
+        let now = Date()
+        if let ready = save.luckReadyAt, ready.timeIntervalSince(now) > Premium.luckDuration + Premium.luckCooldown + 60 {
+            save.luckUntil = nil
+            save.luckReadyAt = nil
+            markDirty()
+        }
+        if let until = save.starterOfferUntil, until.timeIntervalSince(now) > Premium.starterWindow + 60 {
+            save.starterOfferUntil = now.addingTimeInterval(Premium.starterWindow)
+            markDirty()
+        }
+    }
 
     var luckReady: Bool { !luckActive && (save.luckReadyAt ?? .distantPast) <= Date() }
 
@@ -656,6 +685,7 @@ final class GameState {
     // MARK: Пока игры не было
 
     func applyOfflineProgress() {
+        repairTimers()
         let elapsed = min(Date().timeIntervalSince(save.lastSeen), stats.offlineHours * 3600)
         save.lastSeen = Date()
         guard elapsed > 90 else { return }

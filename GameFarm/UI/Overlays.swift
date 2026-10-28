@@ -33,7 +33,7 @@ struct LevelUpOverlay: View {
                         .foregroundStyle(.secondary)
                 }
                 VStack(alignment: .leading, spacing: 8) {
-                    ForEach(GameRules.rewards(at: info.to)) { line in
+                    ForEach(GameRules.rewards(from: info.from, to: info.to)) { line in
                         row(line)
                     }
                     if !lines.isEmpty {

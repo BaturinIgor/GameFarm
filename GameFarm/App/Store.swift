@@ -61,8 +61,13 @@ final class Store {
     }
 
     private func apply(_ transaction: Transaction) {
-        guard transaction.revocationDate == nil, let id = ProductID(rawValue: transaction.productID) else { return }
-        GameState.shared.grant(id)
+        guard let id = ProductID(rawValue: transaction.productID) else { return }
+        if transaction.revocationDate != nil {
+            // Покупку вернули через Apple: забираем то, что она давала.
+            GameState.shared.revoke(id)
+        } else {
+            GameState.shared.grant(id)
+        }
     }
 
     func buy(_ id: ProductID) async {
@@ -101,9 +106,13 @@ final class Store {
         #if SIDELOAD
         GameState.shared.toast("🧪", tr("shop.testRestore"))
         #else
-        try? await AppStore.sync()
-        await refresh()
-        GameState.shared.toast("✅", tr("shop.restored"))
+        do {
+            try await AppStore.sync()
+            await refresh()
+            GameState.shared.toast("✅", tr("shop.restored"))
+        } catch {
+            errorMessage = error.localizedDescription
+        }
         #endif
     }
 }

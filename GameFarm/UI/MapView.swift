@@ -65,7 +65,7 @@ struct LocationCard: View {
                 .frame(maxWidth: 230, alignment: .leading)
                 .padding(10)
             }
-            .frame(height: 104)
+            .frame(minHeight: 104)
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .saturation(unlocked ? 1 : 0.55)
 

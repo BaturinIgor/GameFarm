@@ -125,6 +125,18 @@ struct TalentTreeCanvas: View {
         return CGPoint(x: left + columnWidth * (CGFloat(spec.column) + 0.5), y: top + CGFloat(spec.tier) * rowHeight)
     }
 
+    /// Линия между талантами идёт от края круга до края круга, а не через центр.
+    private func edgePoints(from a: CGPoint, to b: CGPoint) -> (CGPoint, CGPoint) {
+        let dx = b.x - a.x
+        let dy = b.y - a.y
+        let d = max(hypot(dx, dy), 1)
+        let r = TalentNode.radius + 3
+        guard d > r * 2 else { return (a, a) }
+        let ux = dx / d
+        let uy = dy / d
+        return (CGPoint(x: a.x + ux * r, y: a.y + uy * r), CGPoint(x: b.x - ux * r, y: b.y - uy * r))
+    }
+
     var body: some View {
         let talents = branch.talents
         let height = top + CGFloat(TalentSpec.tierLevels.count - 1) * rowHeight + 70
@@ -146,9 +158,10 @@ struct TalentTreeCanvas: View {
             ForEach(talents) { id in
                 ForEach(id.spec.parents, id: \.self) { parent in
                     let active = game.rank(parent) > 0
+                    let ends = edgePoints(from: position(parent.spec), to: position(id.spec))
                     Path { path in
-                        path.move(to: position(parent.spec))
-                        path.addLine(to: position(id.spec))
+                        path.move(to: ends.0)
+                        path.addLine(to: ends.1)
                     }
                     .stroke(active ? branch.color : Color.secondary.opacity(0.3),
                             style: StrokeStyle(lineWidth: active ? 4 : 3, lineCap: .round, dash: active ? [] : [6, 6]))
@@ -173,6 +186,8 @@ struct TalentNode: View {
     let isSelected: Bool
     let action: () -> Void
 
+    static let radius: CGFloat = 30
+
     var body: some View {
         let spec = id.spec
         let rank = game.rank(id)
@@ -180,8 +195,8 @@ struct TalentNode: View {
         let learnable = game.canLearn(id)
         let maxed = rank >= spec.maxRank
         Button(action: action) {
-            VStack(spacing: 4) {
-                ZStack {
+            // Центр круга совпадает с точкой узла, подпись ранга висит под кругом и не сдвигает его.
+            ZStack {
                     Circle()
                         .fill(rank > 0 ? color.opacity(0.25) : Color(uiColor: .secondarySystemGroupedBackground))
                     Circle()
@@ -205,16 +220,19 @@ struct TalentNode: View {
                             .offset(x: 20, y: -20)
                     }
                 }
-                .frame(width: 60, height: 60)
+                .frame(width: Self.radius * 2, height: Self.radius * 2)
                 .shadow(color: rank > 0 ? color.opacity(0.4) : .clear, radius: 8)
-
-                Text("\(rank)/\(spec.maxRank)")
-                    .font(.system(size: 11, weight: .heavy, design: .rounded))
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 2)
-                    .background(Capsule().fill(maxed ? color : Color.secondary.opacity(0.18)))
-                    .foregroundStyle(maxed ? Color.white : Color.primary)
-            }
+                .overlay(alignment: .bottom) {
+                    Text("\(rank)/\(spec.maxRank)")
+                        .font(.system(size: 11, weight: .heavy, design: .rounded))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(maxed ? color : Color(uiColor: .secondarySystemGroupedBackground)))
+                        .overlay(Capsule().strokeBorder(maxed ? Color.clear : Color.secondary.opacity(0.25), lineWidth: 1))
+                        .foregroundStyle(maxed ? Color.white : Color.primary)
+                        .fixedSize()
+                        .offset(y: 20)
+                }
             .opacity(available ? 1 : 0.55)
         }
         .buttonStyle(.plain)

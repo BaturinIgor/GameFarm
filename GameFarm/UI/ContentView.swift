@@ -211,6 +211,7 @@ struct HUDView: View {
                     Text("\(game.save.current.spec.emoji) \(game.save.current.spec.name)")
                         .font(.system(size: 14, weight: .bold))
                         .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                     ZStack(alignment: .leading) {
                         Capsule().fill(Color.primary.opacity(0.12))
                         Capsule()

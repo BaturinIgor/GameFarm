@@ -45,10 +45,16 @@ struct UnlockLine: Identifiable {
 extension GameRules {
     /// Что даёт достижение уровня.
     static func rewards(at level: Int) -> [UnlockLine] {
+        rewards(from: level - 1, to: level)
+    }
+
+    /// Награды за все уровни сразу, если игрок прыгнул через несколько.
+    static func rewards(from: Int, to: Int) -> [UnlockLine] {
         var lines: [UnlockLine] = []
-        let points = talentPoints(at: level) - talentPoints(at: level - 1)
+        let points = talentPoints(at: to) - talentPoints(at: from)
+        let coins = to > from ? ((from + 1)...to).map(levelCoinReward).reduce(0, +) : 0
         lines.append(UnlockLine(icon: "🌟", text: tr("reward.talentPoints", points)))
-        lines.append(UnlockLine(icon: "🪙", text: tr("reward.coins", Fmt.n(levelCoinReward(level)))))
+        lines.append(UnlockLine(icon: "🪙", text: tr("reward.coins", Fmt.n(coins))))
         lines.append(UnlockLine(icon: "🎒", text: tr("reward.backpack")))
         lines.append(UnlockLine(icon: "💪", text: tr("reward.power")))
         return lines
