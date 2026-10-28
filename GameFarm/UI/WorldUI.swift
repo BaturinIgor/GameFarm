@@ -51,7 +51,7 @@ struct GateCard: View {
                     .scaledToFill()
                     .frame(width: 52, height: 52)
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay(Text(target.spec.emoji).font(.system(size: 24)))
+                    .overlay(PixelIcon(name: target.icon, size: 26))
                     .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Palette.outline, lineWidth: 2))
                 VStack(alignment: .leading, spacing: 6) {
                     Text(tr("gate.to", target.spec.name)).font(.game(16))
@@ -139,7 +139,7 @@ struct ExpeditionReportOverlay: View {
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
             VStack(spacing: 14) {
-                Text(report.location.spec.emoji).font(.system(size: 50))
+                PixelIcon(name: report.location.icon, size: 54)
                     .padding(.top, 12)
                 Text(report.location.spec.name).font(.game(15)).foregroundStyle(.secondary)
                 if report.items.isEmpty && report.coins == 0 {
@@ -317,7 +317,7 @@ struct BigMapOverlay: View {
             .frame(maxWidth: 400)
             .gamePanel()
             .overlay(alignment: .top) {
-                RibbonTitle(text: "\(id.spec.emoji) \(id.spec.name)", tone: .green, size: 18)
+                RibbonTitle(text: id.spec.name, tone: .green, size: 18)
                     .padding(.horizontal, 24)
                     .offset(y: -18)
             }

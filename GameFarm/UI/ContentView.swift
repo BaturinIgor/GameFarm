@@ -211,7 +211,7 @@ struct LocationBanner: View {
     var body: some View {
         let spec = id.spec
         VStack(spacing: 6) {
-            Text(spec.emoji).font(.system(size: 40))
+            PixelIcon(name: id.icon, size: 44)
             RibbonTitle(text: spec.name, tone: .green, size: 24)
             Text(spec.blurb)
                 .font(.game(13, .bold))

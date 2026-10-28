@@ -2498,6 +2498,7 @@ extension GameState {
         case .sparks(let n):
             save.sparks += n
             save.sparksEarned += n
+        case .maps(let n): save.maps += n
         case .decor:
             if save.eventDecor.contains(event.decor.rawValue) {
                 addCoins(eventRewardCoins(1500))

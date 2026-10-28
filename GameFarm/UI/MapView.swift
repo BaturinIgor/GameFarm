@@ -215,7 +215,7 @@ struct WorldMapGraph: View {
                         .saturation(unlocked ? 1 : 0)
                         .opacity(unlocked ? 1 : 0.6)
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    Text(spec.emoji).font(.system(size: 24))
+                    PixelIcon(name: id.icon, size: 26)
                         .saturation(unlocked ? 1 : 0)
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .strokeBorder(here ? Palette.gold : (isSelected ? Color.white : Palette.outline),
@@ -273,7 +273,7 @@ struct LocationCard: View {
 
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
-                Text(spec.emoji).font(.system(size: 40))
+                PixelIcon(name: id.icon, size: 44)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         Text(spec.name).font(.game(16))
@@ -360,7 +360,7 @@ struct GateRow: View {
             }
             if !open && known {
                 if gate.group != nil {
-                    let names = WorldGraph.bundle(gate).map { "\($0.a.spec.emoji)↔\($0.b.spec.emoji)" }.joined(separator: "  ")
+                    let names = WorldGraph.bundle(gate).map { "\($0.a.spec.name) - \($0.b.spec.name)" }.joined(separator: "  ")
                     Text(tr("gate.bundle", names)).font(.game(12, .semibold)).foregroundStyle(.secondary)
                 }
                 if game.reachable.contains(gate.a) && game.reachable.contains(gate.b) {

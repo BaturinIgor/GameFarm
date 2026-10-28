@@ -152,7 +152,7 @@ struct AnimalRow: View {
                             .foregroundStyle(.secondary)
                     }
                     if let location = spec.wildLocation {
-                        Text(tr("animals.where", location.spec.emoji, location.spec.name))
+                        Text(tr("animals.where", "", location.spec.name).replacingOccurrences(of: "  ", with: " "))
                             .font(.game(12, .semibold).bold())
                             .foregroundStyle(game.isUnlocked(location) ? Palette.ink : ButtonTone.orange.lip)
                     }

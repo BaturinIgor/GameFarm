@@ -30,6 +30,40 @@ enum LocationID: String, CaseIterable, Identifiable {
     /// Этаж дома для этой локации (если это дом).
     var floor: HouseFloor? { HouseFloor.allCases.first { $0.location == self } }
 
+    /// Пиксельная иконка локации для карты и окон.
+    var icon: String {
+        switch self {
+        case .meadow: "apples"
+        case .hills: "stone"
+        case .lake: "fish"
+        case .swamp: "mushrooms"
+        case .desert: "cactus"
+        case .snow: "ice"
+        case .caves: "crystal"
+        case .island: "coconut"
+        case .volcano: "obsidian"
+        case .sky: "cloud"
+        case .ashPlains: "sulfur"
+        case .amberWoods: "goldenApple"
+        case .fireCanyon: "ruby"
+        case .starMeadows: "stardust"
+        case .frostSpires: "diamond"
+        case .crystalReef: "pearl"
+        case .garden: "crown"
+        case .goldMine: "gold"
+        case .treasureIsland: "chest_gold"
+        case .luckyMeadow: "clover"
+        case .crystalCaves: "gem"
+        case .skyIsles: "stardust"
+        case .harvestFest: "pumpkin"
+        case .slimeNight: "slime"
+        case .winterTale: "chest_gold"
+        case .beachParty: "shell"
+        case .homeGround, .homeUpper, .homeBasement, .homeAttic, .homeGreenhouse: "stairs"
+        case .dSlime, .dCrypt, .dOrc, .dFrost, .dFire: "skull"
+        }
+    }
+
     /// На какой планете локация.
     var planet: PlanetID {
         switch self {

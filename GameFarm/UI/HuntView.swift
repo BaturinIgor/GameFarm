@@ -94,7 +94,7 @@ private struct HuntCard: View {
                     .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Palette.outline.opacity(0.6), lineWidth: 2))
                 VStack(alignment: .leading, spacing: 3) {
                     Text(tr("hunt.kill", hunt.target, hunt.monster.name)).font(.game(15))
-                    Text(Bestiary.home(of: hunt.monster).map { $0.spec.emoji + " " + $0.spec.name }.joined(separator: ", "))
+                    Text(Bestiary.home(of: hunt.monster).map { $0.spec.name }.joined(separator: ", "))
                         .font(.game(11, .semibold))
                         .foregroundStyle(.secondary)
                     HStack(spacing: 10) {

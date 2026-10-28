@@ -254,6 +254,7 @@ enum Events {
         case dish(Int)
         case cards(Int)
         case sparks(Int)
+        case maps(Int)
         case decor
         case skin
     }
@@ -271,7 +272,7 @@ enum Events {
         case 9: .seeds(6)
         case 10: .decor
         case 11: .coins(700)
-        case 12: .dish(2)
+        case 12: .maps(1)
         case 13: .tickets(1)
         case 14: .cards(2)
         case 15: .sparks(1)
@@ -293,7 +294,7 @@ enum Events {
         case 6: .coins(900)
         case 7: .tickets(2)
         case 8: .seeds(10)
-        case 9: .cards(2)
+        case 9: .maps(1)
         case 10: .sparks(2)
         case 11: .coins(1500)
         case 12: .dish(3)
@@ -302,7 +303,7 @@ enum Events {
         case 15: .sparks(2)
         case 16: .coins(2500)
         case 17: .tickets(3)
-        case 18: .cards(3)
+        case 18: .maps(2)
         case 19: .sparks(3)
         default: .skin
         }

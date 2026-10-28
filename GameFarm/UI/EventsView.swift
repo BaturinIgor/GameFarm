@@ -350,6 +350,9 @@ struct EventRewardIcon: View {
             case .sparks(let n):
                 PixelIcon(name: "spark", size: 26, fallback: "✨")
                 amount("x\(n)")
+            case .maps(let n):
+                PixelIcon(name: "tmap", size: 26)
+                amount("x\(n)")
             case .decor:
                 PixelSprite(name: event.decor.sprite, scale: 1.4)
                     .frame(height: 44)
