@@ -594,7 +594,7 @@ final class GameState {
 
     func isUnlocked(_ id: LocationID) -> Bool {
         switch id.spec.kind {
-        case .world: return reachable.contains(id)
+        case .world: return id.planet == .home ? reachable.contains(id) : save.level >= max(id.planet.level, id.spec.level)
         case .garden: return owns(.garden)
         case .expedition: return save.expedition?.id == id
         case .event: return eventsOpen && Events.current.event.location == id

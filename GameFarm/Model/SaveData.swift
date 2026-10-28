@@ -236,7 +236,8 @@ struct SaveData: Codable {
 
         if !unlocked.contains(.meadow) { unlocked.insert(.meadow, at: 0) }
         // Экспедиция и сад не открываются через список, туда попадают отдельно.
-        if current.spec.kind == .world && !unlocked.contains(current) { current = .meadow }
+        if current.spec.kind == .world && current.planet == .home && !unlocked.contains(current) { current = .meadow }
+        if current.planet != .home && level < current.spec.level { current = .meadow }
         if current.spec.kind == .expedition && expedition == nil { current = .meadow }
         // Ивент закончился, пока игра была закрыта: возвращаемся домой.
         if current.spec.kind == .event && Events.current.event.location != current { current = .meadow }

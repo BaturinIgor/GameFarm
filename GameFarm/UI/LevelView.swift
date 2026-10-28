@@ -7,6 +7,7 @@ struct LevelView: View {
     @Environment(\.gameActions) private var actions
     @State private var musicOn = Sound.shared.musicOn
     @State private var sfxOn = Sound.shared.sfxOn
+    @AppStorage("settings.batterySaver") private var batterySaver = false
 
     var body: some View {
         ScrollView {
@@ -114,6 +115,13 @@ struct LevelView: View {
             }
             .toggleStyle(GameToggleStyle())
             .onChange(of: sfxOn) { _, on in Sound.shared.sfxOn = on }
+            Toggle(isOn: $batterySaver) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Label(tr("settings.battery"), systemImage: "battery.75percent").font(.game(14))
+                    Text(tr("settings.battery.hint")).font(.game(11, .semibold)).foregroundStyle(.secondary)
+                }
+            }
+            .toggleStyle(GameToggleStyle())
             PaperDivider()
             Button {
                 actions.open(.wardrobe)

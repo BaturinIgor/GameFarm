@@ -7,15 +7,24 @@ struct MapView: View {
     let onTravel: () -> Void
     var onShop: () -> Void = {}
     @State private var selected: LocationID?
+    @State private var planet: PlanetID = .home
 
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                WorldMapGraph(selected: $selected)
-                if let id = selected ?? Optional(game.save.current), id.spec.kind == .world {
-                    LocationCard(id: id, onTravel: onTravel)
-                        .id(id)
-                        .transition(.opacity)
+                PlanetPicker(planet: $planet)
+                if planet == .home {
+                    WorldMapGraph(selected: $selected)
+                    if let id = selected ?? Optional(game.save.current), id.spec.kind == .world, id.planet == .home {
+                        LocationCard(id: id, onTravel: onTravel)
+                            .id(id)
+                            .transition(.opacity)
+                    }
+                } else {
+                    PlanetCard(planet: planet)
+                    ForEach(planet.locations) { id in
+                        LocationCard(id: id, onTravel: onTravel)
+                    }
                 }
                 EventMapCard(onTravel: onTravel, onOpen: { actions.open(.events) })
                 ExpeditionsCard(onTravel: onTravel)
@@ -25,6 +34,95 @@ struct MapView: View {
             .animation(.spring(duration: 0.3), value: selected)
         }
         .sheetChrome(tr("hud.map"), coins: game.save.coins)
+        .onAppear { planet = game.save.current.planet }
+    }
+}
+
+/// Выбор планеты над картой мира.
+struct PlanetPicker: View {
+    @Environment(GameState.self) private var game
+    @Binding var planet: PlanetID
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(PlanetID.allCases) { p in
+                let open = game.save.level >= p.level
+                let on = p == planet
+                Button {
+                    withAnimation(.snappy) { planet = p }
+                } label: {
+                    VStack(spacing: 4) {
+                        PlanetBall(planet: p, size: 40)
+                            .grayscale(open ? 0 : 0.9)
+                            .opacity(open ? 1 : 0.6)
+                        Text(p.name)
+                            .font(.game(12))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                        if !open {
+                            Label(tr("common.lvl", p.level), systemImage: "lock.fill")
+                                .font(.game(10))
+                                .foregroundStyle(Palette.inkSoft)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(on ? Color(hex: p.colors.0).opacity(0.35) : Palette.parchmentLight))
+                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(on ? Palette.outline : Palette.woodDark.opacity(0.35), lineWidth: on ? 2.5 : 1.5))
+                }
+                .buttonStyle(.press)
+            }
+        }
+    }
+}
+
+/// Нарисованная планета: шар с полосами и светом.
+struct PlanetBall: View {
+    let planet: PlanetID
+    let size: CGFloat
+
+    var body: some View {
+        ZStack {
+            Circle().fill(RadialGradient(colors: [Color(hex: planet.colors.0), Color(hex: planet.colors.1)],
+                                         center: UnitPoint(x: 0.35, y: 0.3), startRadius: 1, endRadius: size * 0.7))
+            // полосы материков
+            Capsule().fill(Color.white.opacity(0.18)).frame(width: size * 0.7, height: size * 0.12).offset(y: -size * 0.12)
+            Capsule().fill(Color.black.opacity(0.12)).frame(width: size * 0.5, height: size * 0.1).offset(x: size * 0.08, y: size * 0.16)
+            Circle().strokeBorder(Palette.outline, lineWidth: 2)
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+    }
+}
+
+/// Описание дальней планеты.
+struct PlanetCard: View {
+    @Environment(GameState.self) private var game
+    let planet: PlanetID
+
+    var body: some View {
+        let open = game.save.level >= planet.level
+        HStack(spacing: 14) {
+            PlanetBall(planet: planet, size: 64)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(planet.name).font(.game(18))
+                Text(planet.blurb)
+                    .font(.game(12, .semibold))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if !open {
+                    Label(tr("common.needLevel", planet.level), systemImage: "lock.fill")
+                        .font(.game(12))
+                        .foregroundStyle(ButtonTone.orange.lip)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Color(hex: planet.colors.1).opacity(0.15)))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Color(hex: planet.colors.1), lineWidth: 2.5))
     }
 }
 
@@ -208,6 +306,10 @@ struct LocationCard: View {
                 Label(tr("map.here"), systemImage: "mappin.circle.fill")
                     .font(.game(14))
                     .foregroundStyle(Palette.good)
+            } else if !unlocked && id.planet != .home {
+                Label(tr("common.needLevel", spec.level), systemImage: "lock.fill")
+                    .font(.game(13))
+                    .foregroundStyle(ButtonTone.orange.lip)
             } else if unlocked {
                 Button {
                     game.travel(to: id)

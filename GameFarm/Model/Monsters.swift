@@ -165,6 +165,12 @@ enum Bestiary {
         case .island: [(.slimeBlue, 3), (.slimeGold, 1), (.orcRogue, 1)]
         case .volcano: [(.slimeRed, 4), (.skeletonDark, 2), (.orcShaman, 1)]
         case .sky: [(.slimePurple, 3), (.slimeGold, 2), (.skelKnight, 1)]
+        case .ashPlains: [(.slimeRed, 4), (.orcShaman, 2), (.skeletonDark, 2)]
+        case .amberWoods: [(.orc, 3), (.orcRogue, 2), (.orcWarrior, 1)]
+        case .fireCanyon: [(.skelKnight, 2), (.slimeRed, 3), (.orcWarrior, 2)]
+        case .starMeadows: [(.slimePurple, 3), (.slimeGold, 2), (.skelMage, 2)]
+        case .frostSpires: [(.slimeIce, 4), (.skelKnight, 2), (.orcWarrior, 1)]
+        case .crystalReef: [(.slimeBlue, 4), (.orcShaman, 2), (.slimeGold, 1)]
         default: []
         }
     }

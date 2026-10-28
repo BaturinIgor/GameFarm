@@ -751,13 +751,23 @@ final class GameScene: SKScene {
     }
 
     /// 60 кадров, пока игрок двигается или добывает, и 30, когда всё стоит или открыто меню.
+    private var saverCheck = 0
+    private var batterySaver = false
+
     private func adaptFrameRate(_ dt: Double) {
         if touch != nil || hypot(velocity.dx, velocity.dy) > 4 || transitioning {
             activeTime = 1.2
         } else {
             activeTime -= dt
         }
-        let want = windowOpen ? 30 : (activeTime > 0 ? 60 : 30)
+        // Под окном меню сцену почти не видно: 20 кадров хватает. В режиме экономии - не больше 30.
+        saverCheck -= 1
+        if saverCheck <= 0 {
+            saverCheck = 90
+            batterySaver = UserDefaults.standard.bool(forKey: "settings.batterySaver")
+        }
+        let top = batterySaver ? 30 : 60
+        let want = windowOpen ? 20 : (activeTime > 0 ? top : 30)
         if let view, view.preferredFramesPerSecond != want {
             view.preferredFramesPerSecond = want
         }

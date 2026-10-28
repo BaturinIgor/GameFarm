@@ -7,6 +7,8 @@ enum LocationKind {
 
 enum LocationID: String, CaseIterable, Identifiable {
     case meadow, hills, lake, swamp, desert, snow, caves, island, volcano, sky
+    // Другие планеты
+    case ashPlains, amberWoods, fireCanyon, starMeadows, frostSpires, crystalReef
     case garden
     case goldMine, treasureIsland, luckyMeadow, crystalCaves, skyIsles
     case harvestFest, slimeNight, winterTale, beachParty
@@ -17,7 +19,8 @@ enum LocationID: String, CaseIterable, Identifiable {
     var spec: LocationSpec { LocationSpec.table[self]! }
     var layout: LocationLayout { LocationLayout.get(self) }
 
-    static var world: [LocationID] { allCases.filter { $0.spec.kind == .world } }
+    /// Локации родной планеты (карта мира с проходами).
+    static var world: [LocationID] { allCases.filter { $0.spec.kind == .world && $0.planet == .home } }
     static var expeditions: [LocationID] { allCases.filter { $0.spec.kind == .expedition } }
     static var events: [LocationID] { allCases.filter { $0.spec.kind == .event } }
 
@@ -26,6 +29,43 @@ enum LocationID: String, CaseIterable, Identifiable {
 
     /// Этаж дома для этой локации (если это дом).
     var floor: HouseFloor? { HouseFloor.allCases.first { $0.location == self } }
+
+    /// На какой планете локация.
+    var planet: PlanetID {
+        switch self {
+        case .ashPlains, .amberWoods, .fireCanyon: .ember
+        case .starMeadows, .frostSpires, .crystalReef: .azure
+        default: .home
+        }
+    }
+}
+
+/// Планеты: родная с картой мира и две дальние, которые открываются в конце игры.
+enum PlanetID: String, CaseIterable, Identifiable {
+    case home, ember, azure
+
+    var id: String { rawValue }
+    var name: String { tr("planet.\(rawValue)") }
+    var blurb: String { tr("planet.\(rawValue).blurb") }
+
+    /// С какого уровня можно лететь.
+    var level: Int {
+        switch self {
+        case .home: 1
+        case .ember: 45
+        case .azure: 54
+        }
+    }
+
+    var locations: [LocationID] { LocationID.allCases.filter { $0.planet == self && $0.spec.kind == .world } }
+
+    var colors: (UInt32, UInt32) {
+        switch self {
+        case .home: (0x7CC86A, 0x2E6B3A)
+        case .ember: (0xFF9A4A, 0x7A1A0E)
+        case .azure: (0xA8B4FF, 0x2A2A7A)
+        }
+    }
 }
 
 /// Частицы в воздухе.
@@ -127,6 +167,33 @@ struct LocationSpec {
                          wild: [.goldenGoose, .swan], weather: .stars,
                          tint: UIColor(red: 1, green: 0.7, blue: 0.9, alpha: 0.05), critters: ["🦋", "🕊️"],
                          music: .sky, ambience: .wind),
+            // Планета Эмбер
+            LocationSpec(id: .ashPlains, emoji: "🔥", level: 45,
+                         ground: c(90, 44, 30), path: c(110, 60, 44), water: c(255, 122, 31),
+                         wild: [.goldenGoose], weather: .embers,
+                         tint: UIColor(red: 1, green: 0.3, blue: 0.1, alpha: 0.08),
+                         music: .volcano, ambience: .fire, footstep: .footstepStone, lava: true),
+            LocationSpec(id: .amberWoods, emoji: "🍂", level: 47,
+                         ground: c(160, 90, 26), path: c(184, 124, 72), wild: [.goose, .goldenGoose], weather: .leaves,
+                         tint: UIColor(red: 1, green: 0.55, blue: 0.15, alpha: 0.06), critters: ["🦋"],
+                         music: .meadow, ambience: .birds),
+            LocationSpec(id: .fireCanyon, emoji: "🏜️", level: 49,
+                         ground: c(180, 90, 52), path: c(212, 122, 72), wild: [.goldenGoose], weather: .embers,
+                         tint: UIColor(red: 1, green: 0.4, blue: 0.2, alpha: 0.05),
+                         music: .volcano, ambience: .wind, footstep: .footstepSand),
+            // Планета Лазурь
+            LocationSpec(id: .starMeadows, emoji: "✨", level: 54,
+                         ground: c(62, 62, 154), path: c(138, 138, 240), water: c(95, 80, 200),
+                         wild: [.swan, .goldenGoose], weather: .stars,
+                         tint: UIColor(red: 0.6, green: 0.6, blue: 1, alpha: 0.06), critters: ["🦋"],
+                         music: .sky, ambience: .wind),
+            LocationSpec(id: .frostSpires, emoji: "❄️", level: 56,
+                         ground: c(154, 170, 224), path: c(208, 220, 255), water: c(168, 208, 236),
+                         wild: [.swan], weather: .snow, music: .snow, ambience: .wind, footstep: .footstepSnow),
+            LocationSpec(id: .crystalReef, emoji: "🐚", level: 58,
+                         ground: c(228, 166, 114), path: c(240, 200, 150), water: c(26, 138, 180),
+                         wild: [.swan, .duck], weather: .spray, critters: ["🐦"],
+                         music: .island, ambience: .waves, footstep: .footstepSand),
             LocationSpec(id: .garden, emoji: "👑", level: 1, kind: .garden,
                          ground: c(51, 152, 75), path: c(200, 188, 174),
                          wild: [], weather: .petals, critters: ["🦋", "🐝", "🦋"],

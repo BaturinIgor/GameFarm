@@ -6,8 +6,10 @@ enum GameRules {
     static let baseSpeed = 165.0
     static let baseReach: Double = 46
 
+    /// Опыт до следующего уровня. Кривая мягче к середине игры: уровень 10 примерно за час,
+    /// 30 - за 15 часов активной игры, дальше помогают перерождения и наследие.
     static func xpToNext(_ level: Int) -> Int {
-        Int((20 * pow(Double(level), 1.6)).rounded())
+        Int((22 * pow(Double(level), 1.5)).rounded())
     }
 
     /// Очки талантов, полученные к уровню: по одному за уровень и бонусное каждые 10 уровней.
@@ -63,7 +65,10 @@ extension GameRules {
     /// Что открывается ровно на этом уровне.
     static func unlocks(at level: Int) -> [UnlockLine] {
         var lines: [UnlockLine] = []
-        for id in LocationID.world where id.spec.level == level && level > 1 {
+        for planet in PlanetID.allCases where planet != .home && planet.level == level {
+            lines.append(UnlockLine(icon: "px:telescope", text: tr("unlock.planet", planet.name)))
+        }
+        for id in LocationID.allCases where id.spec.kind == .world && id.spec.level == level && level > 1 {
             lines.append(UnlockLine(icon: "px:map", text: tr("unlock.location", id.spec.name)))
         }
         for tool in ToolKind.upgradable {
