@@ -80,7 +80,7 @@ struct AnimalsView: View {
                                 .strokeBorder(id == nil ? Color.secondary.opacity(0.3) : Color.green.opacity(0.6),
                                               style: StrokeStyle(lineWidth: 1.5, dash: id == nil ? [5, 4] : []))
                             if let id {
-                                Text(id.spec.emoji).font(.system(size: 30))
+                                AnimalIcon(id: id, size: 40)
                                 Image(systemName: "xmark.circle.fill")
                                     .font(.system(size: 14))
                                     .foregroundStyle(.secondary)
@@ -117,8 +117,7 @@ struct AnimalRow: View {
         let multiplier = game.stats.starMultiplier(max(1, stars)) * game.stats.animalMult
         Card(tint: game.isActive(id) ? .green : .clear) {
             HStack(alignment: .top, spacing: 12) {
-                Text(spec.emoji)
-                    .font(.system(size: 38))
+                AnimalIcon(id: id, size: 46)
                     .frame(width: 58, height: 58)
                     .background(Circle().fill(Color.secondary.opacity(0.1)))
                     .opacity(stars == 0 && mode == .wild ? 0.6 : 1)

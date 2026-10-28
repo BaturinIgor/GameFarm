@@ -5,14 +5,21 @@ enum ProductID: String, CaseIterable, Identifiable {
     case starter = "com.personal.gamefarm.starter"
     case pro = "com.personal.gamefarm.pro"
     case skins = "com.personal.gamefarm.skins"
+    case garden = "com.personal.gamefarm.garden"
+    case tickets = "com.personal.gamefarm.tickets5"
 
     var id: String { rawValue }
+
+    /// Расходуемая покупка: её можно купить снова.
+    var consumable: Bool { self == .tickets }
 
     var key: String {
         switch self {
         case .starter: "starter"
         case .pro: "pro"
         case .skins: "skins"
+        case .garden: "garden"
+        case .tickets: "tickets"
         }
     }
 
@@ -23,6 +30,8 @@ enum ProductID: String, CaseIterable, Identifiable {
         case .starter: "🎁"
         case .pro: "👑"
         case .skins: "🎭"
+        case .garden: "🏰"
+        case .tickets: "🎟️"
         }
     }
 
@@ -32,6 +41,8 @@ enum ProductID: String, CaseIterable, Identifiable {
         case .starter: "$1.99"
         case .pro: "$4.99"
         case .skins: "$2.99"
+        case .garden: "$3.99"
+        case .tickets: "$0.99"
         }
     }
 }
@@ -58,6 +69,7 @@ enum Skin: String, CaseIterable, Identifiable {
     case farmer, farmerWoman, farmerMan, builder, cowboy, detective, elf, rockstar
     case robot, genie
     case wizard, ninja, vampire, astronaut, princess, prince, superhero, merperson, fairy, zombie
+    case knight
 
     var id: String { rawValue }
 
@@ -83,6 +95,7 @@ enum Skin: String, CaseIterable, Identifiable {
         case .merperson: "🧜"
         case .fairy: "🧚"
         case .zombie: "🧟"
+        case .knight: "⚔️"
         }
     }
 
@@ -98,6 +111,7 @@ enum Skin: String, CaseIterable, Identifiable {
         case .rockstar: .level(50)
         case .robot: .product(.starter)
         case .genie: .product(.pro)
+        case .knight: .product(.garden)
         default: .product(.skins)
         }
     }

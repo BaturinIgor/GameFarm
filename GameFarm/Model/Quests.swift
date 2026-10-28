@@ -134,11 +134,11 @@ struct Achievement: Identifiable {
                [200, 2_000, 10_000, 40_000], points: [0, 1, 1, 1])
         family("coins", "💰", .coinsEarned, [2_000, 100_000, 2_000_000],
                [200, 5_000, 50_000], points: [0, 1, 1])
-        family("animals", "🐾", .animals, [3, 15, AnimalID.allCases.filter { !$0.spec.isPremium }.count],
+        family("animals", "🐾", .animals, [3, 8, AnimalID.allCases.filter { !$0.spec.isPremium }.count],
                [300, 5_000, 50_000], points: [0, 1, 2])
         family("stars", "⭐", .stars, [10, 50, 120],
                [500, 5_000, 30_000], points: [0, 1, 1])
-        family("locations", "🗺️", .locations, [3, 6, LocationID.allCases.count],
+        family("locations", "🗺️", .locations, [3, 6, LocationID.world.count],
                [500, 5_000, 50_000], points: [0, 1, 2])
         family("level", "🎖️", .level, [10, 25, 40, 60],
                [500, 4_000, 20_000, 100_000], points: [1, 1, 1, 2])

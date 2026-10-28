@@ -32,6 +32,14 @@ struct SaveData: Codable {
     var luckUntil: Date?
     var luckReadyAt: Date?
     var adsWatched = 0
+    /// Открытые проходы между локациями.
+    var openGates: [String] = []
+    var tickets = 1
+    var lastFreeTicket: Date?
+    var gardenChestAt: Date?
+    var expedition: ExpeditionRun?
+    /// Обработанные покупки расходников (чтобы не выдать билеты дважды).
+    var consumed: [String] = []
 
     init() {}
 
@@ -40,6 +48,7 @@ struct SaveData: Codable {
         case animals, active, gathered, harvests, coinsEarned, lastSeen, tutorialDone
         case quests, questsDone, claimed, bonusTalentPoints, treasures
         case purchases, granted, skin, starterOfferUntil, starterOffers, luckUntil, luckReadyAt, adsWatched
+        case openGates, tickets, lastFreeTicket, gardenChestAt, expedition, consumed
     }
 
     init(from decoder: Decoder) throws {
@@ -52,10 +61,14 @@ struct SaveData: Codable {
         backpack = try Self.map(c.decodeIfPresent([String: Int].self, forKey: .backpack)) ?? d.backpack
         tools = try Self.map(c.decodeIfPresent([String: Int].self, forKey: .tools)) ?? d.tools
         talents = try Self.map(c.decodeIfPresent([String: Int].self, forKey: .talents)) ?? d.talents
-        animals = try Self.map(c.decodeIfPresent([String: Int].self, forKey: .animals)) ?? d.animals
+        animals = Self.animals(try c.decodeIfPresent([String: Int].self, forKey: .animals))
         gathered = try Self.map(c.decodeIfPresent([String: Int].self, forKey: .gathered)) ?? d.gathered
         unlocked = try Self.list(c.decodeIfPresent([String].self, forKey: .unlocked)) ?? d.unlocked
-        active = try Self.list(c.decodeIfPresent([String].self, forKey: .active)) ?? d.active
+        var seenActive: [AnimalID] = []
+        for raw in try c.decodeIfPresent([String].self, forKey: .active) ?? [] {
+            if let id = AnimalID.from(raw), !seenActive.contains(id) { seenActive.append(id) }
+        }
+        active = seenActive
         if let raw = try c.decodeIfPresent(String.self, forKey: .current), let id = LocationID(rawValue: raw) {
             current = id
         }
@@ -76,9 +89,17 @@ struct SaveData: Codable {
         luckUntil = try c.decodeIfPresent(Date.self, forKey: .luckUntil)
         luckReadyAt = try c.decodeIfPresent(Date.self, forKey: .luckReadyAt)
         adsWatched = try c.decodeIfPresent(Int.self, forKey: .adsWatched) ?? 0
+        openGates = try c.decodeIfPresent([String].self, forKey: .openGates) ?? []
+        tickets = try c.decodeIfPresent(Int.self, forKey: .tickets) ?? d.tickets
+        lastFreeTicket = try c.decodeIfPresent(Date.self, forKey: .lastFreeTicket)
+        gardenChestAt = try c.decodeIfPresent(Date.self, forKey: .gardenChestAt)
+        expedition = try? c.decodeIfPresent(ExpeditionRun.self, forKey: .expedition)
+        consumed = try c.decodeIfPresent([String].self, forKey: .consumed) ?? []
 
         if !unlocked.contains(.meadow) { unlocked.insert(.meadow, at: 0) }
-        if !unlocked.contains(current) { current = .meadow }
+        // Экспедиция и сад не открываются через список, туда попадают отдельно.
+        if current.spec.kind == .world && !unlocked.contains(current) { current = .meadow }
+        if current.spec.kind == .expedition && expedition == nil { current = .meadow }
         for tool in ToolKind.upgradable where tools[tool] == nil { tools[tool] = 1 }
         active = active.filter { animals[$0] != nil }
     }
@@ -114,6 +135,12 @@ struct SaveData: Codable {
         try c.encodeIfPresent(luckUntil, forKey: .luckUntil)
         try c.encodeIfPresent(luckReadyAt, forKey: .luckReadyAt)
         try c.encode(adsWatched, forKey: .adsWatched)
+        try c.encode(openGates, forKey: .openGates)
+        try c.encode(tickets, forKey: .tickets)
+        try c.encodeIfPresent(lastFreeTicket, forKey: .lastFreeTicket)
+        try c.encodeIfPresent(gardenChestAt, forKey: .gardenChestAt)
+        try c.encodeIfPresent(expedition, forKey: .expedition)
+        try c.encode(consumed, forKey: .consumed)
     }
 
     private static func map<K: RawRepresentable & Hashable>(_ raw: [String: Int]?) -> [K: Int]? where K.RawValue == String {
@@ -121,6 +148,16 @@ struct SaveData: Codable {
         var out: [K: Int] = [:]
         for (key, value) in raw {
             if let k = K(rawValue: key) { out[k] = value }
+        }
+        return out
+    }
+
+    /// Звери из старых версий переходят в новых; если двое стали одним, берём больше звёзд.
+    private static func animals(_ raw: [String: Int]?) -> [AnimalID: Int] {
+        var out: [AnimalID: Int] = [:]
+        for (key, stars) in raw ?? [:] {
+            guard let id = AnimalID.from(key) else { continue }
+            out[id] = max(out[id] ?? 0, min(AnimalSpec.maxStars, stars))
         }
         return out
     }

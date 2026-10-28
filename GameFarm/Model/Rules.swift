@@ -63,7 +63,7 @@ extension GameRules {
     /// Что открывается ровно на этом уровне.
     static func unlocks(at level: Int) -> [UnlockLine] {
         var lines: [UnlockLine] = []
-        for id in LocationID.allCases where id.spec.level == level && level > 1 {
+        for id in LocationID.world where id.spec.level == level && level > 1 {
             lines.append(UnlockLine(icon: id.spec.emoji, text: tr("unlock.location", id.spec.name)))
         }
         for tool in ToolKind.upgradable {

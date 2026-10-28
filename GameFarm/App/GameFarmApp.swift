@@ -13,6 +13,7 @@ struct GameFarmApp: App {
                 .environment(Store.shared)
                 .environment(Ads.shared)
                 .task {
+                    Sound.shared.start()
                     Store.shared.start()
                     Ads.shared.start()
                 }
@@ -23,8 +24,10 @@ struct GameFarmApp: App {
             switch phase {
             case .active:
                 game.applyOfflineProgress()
+                Sound.shared.resumeAll()
             case .background:
                 game.saveNow()
+                Sound.shared.pauseAll()
             case .inactive where old == .active:
                 game.saveNow()
             default:

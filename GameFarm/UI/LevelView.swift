@@ -5,6 +5,8 @@ struct LevelView: View {
     @Environment(Store.self) private var store
     @State private var confirmReset = false
     @State private var showWardrobe = false
+    @State private var musicOn = Sound.shared.musicOn
+    @State private var sfxOn = Sound.shared.sfxOn
 
     var body: some View {
         NavigationStack {
@@ -83,6 +85,15 @@ struct LevelView: View {
                 }
                 .pickerStyle(.menu)
             }
+            Divider()
+            Toggle(isOn: $musicOn) {
+                Label(tr("settings.music"), systemImage: "music.note").font(.subheadline.bold())
+            }
+            .onChange(of: musicOn) { _, on in Sound.shared.musicOn = on }
+            Toggle(isOn: $sfxOn) {
+                Label(tr("settings.sounds"), systemImage: "speaker.wave.2.fill").font(.subheadline.bold())
+            }
+            .onChange(of: sfxOn) { _, on in Sound.shared.sfxOn = on }
             Divider()
             Button {
                 showWardrobe = true
@@ -188,7 +199,7 @@ struct LevelView: View {
             statRow("⛏️", tr("stats.harvests"), Fmt.n(game.save.harvests))
             statRow("🪙", tr("stats.coinsEarned"), Fmt.n(game.save.coinsEarned))
             statRow("🐾", tr("stats.animals"), tr("common.ofN", AnimalID.allCases.filter { game.stars($0) > 0 }.count, AnimalID.allCases.count))
-            statRow("🗺️", tr("stats.locations"), tr("common.ofN", game.save.unlocked.count, LocationID.allCases.count))
+            statRow("🗺️", tr("stats.locations"), tr("common.ofN", game.save.unlocked.count, LocationID.world.count))
             if !gathered.isEmpty {
                 Text(tr("stats.gathered")).font(.caption.bold()).foregroundStyle(.secondary)
                 FlowLayout(spacing: 6) {

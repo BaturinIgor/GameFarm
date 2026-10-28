@@ -19,6 +19,8 @@ struct ShopView: View {
                         StarterCard()
                     }
                     ProCard()
+                    GardenCard()
+                    TicketsCard()
                     SkinsCard(showWardrobe: $showWardrobe)
                     FreeCard()
                     Button {
@@ -118,7 +120,7 @@ struct StarterCard: View {
                     .background(Capsule().fill(Color.red))
                     .foregroundStyle(.white)
             }
-            Perk(icon: "🦁", text: tr("starter.lion"))
+            Perk(icon: "🦆", text: tr("starter.duck"))
             Perk(icon: "🪙", text: tr("starter.coins", Fmt.n(Premium.starterCoins)))
             Perk(icon: "🎒", text: tr("starter.backpack", Premium.starterBackpack))
             Perk(icon: "🤖", text: tr("starter.skin"))
@@ -157,6 +159,55 @@ struct ProCard: View {
                                      startPoint: .topLeading, endPoint: .bottomTrailing))
         )
         .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Color.purple.opacity(0.5), lineWidth: 2))
+    }
+}
+
+struct GardenCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("🏰 " + ProductID.garden.title)
+                .font(.title3.bold())
+            Text(tr("garden.subtitle"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Perk(icon: "🍒", text: tr("garden.trees"))
+            Perk(icon: "🍯", text: tr("garden.bees"))
+            Perk(icon: "👑", text: tr("garden.chest"))
+            Perk(icon: "🦫", text: tr("garden.capybara", Fmt.pct(RoyalGarden.capybaraYield)))
+            Perk(icon: "⚔️", text: tr("garden.skin"))
+            BuyButton(product: .garden, tint: .orange)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(LinearGradient(colors: [Color.yellow.opacity(0.28), Color.green.opacity(0.2)],
+                                     startPoint: .topLeading, endPoint: .bottomTrailing))
+        )
+        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Color.orange.opacity(0.55), lineWidth: 2))
+    }
+}
+
+struct TicketsCard: View {
+    @Environment(GameState.self) private var game
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("🎟️ " + ProductID.tickets.title)
+                    .font(.title3.bold())
+                Spacer()
+                HStack(spacing: 4) {
+                    TicketIcon(size: 18)
+                    Text("\(game.save.tickets)").font(.subheadline.bold()).monospacedDigit()
+                }
+            }
+            Text(tr("tickets.subtitle", Expedition.ticketPack))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            BuyButton(product: .tickets, tint: .yellow)
+        }
+        .padding(16)
+        .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Color(uiColor: .secondarySystemGroupedBackground)))
     }
 }
 

@@ -49,6 +49,7 @@ enum Art {
     // MARK: Иконки ресурсов
 
     static func icon(_ kind: ResourceKind) -> UIImage {
+        if let pixel = Sprites.icon(kind) { return pixel }
         if let e = kind.emoji { return emojiImage(e, size: 64) }
         switch kind {
         case .crystal: return crystalImage(size: 64)
@@ -210,7 +211,9 @@ enum Art {
     }
 
     static func iconTexture(_ kind: ResourceKind) -> SKTexture {
-        texture("iconTex|\(kind.rawValue)") { icon(kind) }
+        let tex = texture("iconTex|\(kind.rawValue)") { icon(kind) }
+        if Sprites.icon(kind) != nil { tex.filteringMode = .nearest }
+        return tex
     }
 
     // MARK: Руды и кристаллы

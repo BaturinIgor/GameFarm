@@ -62,6 +62,10 @@ final class Store {
 
     private func apply(_ transaction: Transaction) {
         guard let id = ProductID(rawValue: transaction.productID) else { return }
+        if id.consumable {
+            if transaction.revocationDate == nil { GameState.shared.grant(id, transaction: String(transaction.id)) }
+            return
+        }
         if transaction.revocationDate != nil {
             // Покупку вернули через Apple: забираем то, что она давала.
             GameState.shared.revoke(id)

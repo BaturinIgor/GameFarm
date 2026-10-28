@@ -29,9 +29,13 @@ final class GameScene: SKScene {
     private var weather: SKEmitterNode?
 
     private var spec: LocationSpec = LocationID.meadow.spec
+    private var layout: LocationLayout = LocationID.meadow.layout
     private var loaded: LocationID?
     private var spots: [ResourceSpot] = []
-    private var ponds: [(center: CGPoint, radius: CGFloat)] = []
+    private var gates: [GateNode] = []
+    /// Неподвижные препятствия: дом, фонтан (центр и радиус).
+    private var obstacles: [(center: CGPoint, radius: CGFloat)] = []
+    private var houseRect = CGRect.zero
     private var companions: [CompanionNode] = []
     private var companionSignature: [AnimalID] = []
     private var critters: [CritterNode] = []
@@ -40,11 +44,9 @@ final class GameScene: SKScene {
     private var wild: WildNode?
     private var treasure: TreasureNode?
     private var chest = SKNode()
+    private var chestBox: SKSpriteNode?
     private var chestTitle = SKLabelNode()
-    private var houseCenter = CGPoint.zero
-    /// Круг склада и радиус, с которым он нарисован: талант может его увеличить.
-    private var depositRing: [SKNode] = []
-    private var depositBuiltRadius: CGFloat = 1
+    private var royalChest: SKNode?
     private var builtLanguage = ""
     private var shownSkin = ""
 
@@ -57,6 +59,8 @@ final class GameScene: SKScene {
     private var saveTimer: Double = 0
     private var depositCooldown: Double = 0
     private var dustTimer: Double = 0
+    private var stepTimer: Double = 0
+    private var gateCheckTimer: Double = 0
     private var shake: CGFloat = 0
     private var producerTimers: [AnimalID: Double] = [:]
     private var transitioning = false
@@ -65,9 +69,9 @@ final class GameScene: SKScene {
     private let heavyHaptic = UIImpactFeedbackGenerator(style: .medium)
 
     private static let slots: [CGPoint] = [
-        CGPoint(x: -40, y: -28), CGPoint(x: 40, y: -28), CGPoint(x: -68, y: 6), CGPoint(x: 68, y: 6), CGPoint(x: 0, y: -56)
+        CGPoint(x: -36, y: -24), CGPoint(x: 36, y: -24), CGPoint(x: -60, y: 6), CGPoint(x: 60, y: 6), CGPoint(x: 0, y: -48)
     ]
-    private let playerRadius: CGFloat = 13
+    private let playerRadius: CGFloat = 11
 
     override init(size: CGSize) {
         super.init(size: size)
@@ -105,14 +109,17 @@ final class GameScene: SKScene {
     // MARK: Построение локации
 
     private func zFor(_ y: CGFloat) -> CGFloat {
-        100 + (spec.size.height - y) / spec.size.height * 100
+        100 + (layout.size.height - y) / max(1, layout.size.height) * 100
     }
 
     private func build(_ id: LocationID) {
         loaded = id
         spec = id.spec
+        layout = id.layout
         world.removeAllChildren()
         spots.removeAll()
+        gates.removeAll()
+        obstacles.removeAll()
         companions.removeAll()
         companionSignature = []
         critters.removeAll()
@@ -120,57 +127,52 @@ final class GameScene: SKScene {
         loot.removeAll()
         wild = nil
         treasure = nil
+        royalChest = nil
         wildArrow.isHidden = true
         treasureArrow.isHidden = true
         game.setEncounter(nil)
-        backgroundColor = spec.patches.last ?? spec.ground
+        game.setGatePrompt(nil)
 
-        let placements = WorldLayout.spots(spec)
-        let groundTexture = SKTexture(image: WorldArt.ground(spec, spots: placements))
-        let ground = SKSpriteNode(texture: groundTexture, size: spec.size)
+        switch layout.edge {
+        case "sea", "lava": backgroundColor = spec.water
+        case "void": backgroundColor = spec.dark ? UIColor(white: 0.03, alpha: 1) : UIColor(red: 0.66, green: 0.83, blue: 1, alpha: 1)
+        default: backgroundColor = spec.ground
+        }
+
+        let groundTexture: SKTexture
+        if let tex = Sprites.ground(id) {
+            groundTexture = tex
+        } else {
+            groundTexture = SKTexture(image: WorldArt.fallbackGround(layout, spec))
+            groundTexture.filteringMode = .nearest
+        }
+        let ground = SKSpriteNode(texture: groundTexture, size: layout.size)
         ground.anchorPoint = .zero
         ground.zPosition = 0
         world.addChild(ground)
 
-        for decor in WorldLayout.decorations(spec, avoiding: placements) {
-            let node: SKSpriteNode
-            if let name = Sprites.decor(decor.emoji), let pixel = Sprites.node(name, scale: 2, x: decor.position.x, y: decor.position.y - decor.size * 0.3) {
-                node = pixel
-            } else {
-                node = SKSpriteNode(texture: Art.emoji(decor.emoji, size: 32), size: CGSize(width: decor.size, height: decor.size))
-                node.position = decor.position
-            }
-            node.alpha = decor.alpha
-            node.zPosition = 1
-            world.addChild(node)
-        }
-        for decor in WorldLayout.border(spec) {
-            let node: SKSpriteNode
-            if let art = Sprites.border(decor.emoji),
-               let pixel = Sprites.node(art.name, scale: art.scale * decor.size / 64, x: decor.position.x, y: decor.position.y - decor.size * 0.4) {
-                node = pixel
-            } else {
-                node = SKSpriteNode(texture: Art.emoji(decor.emoji, size: 72), size: CGSize(width: decor.size, height: decor.size))
-                node.position = decor.position
-            }
-            node.zPosition = zFor(decor.position.y)
-            world.addChild(node)
-        }
-
-        ponds = spec.ponds.filter { !$0.frozen }.map { (center: spec.point($0.x, $0.y), radius: $0.radius) }
-        decoratePonds()
+        buildBorder()
+        buildProps()
+        decorateWater()
         buildBase()
+        buildGates()
+        if id == .garden { buildGarden() }
 
-        for placement in placements {
+        for placement in layout.spots {
             let spot = ResourceSpot(type: placement.type)
             spot.position = placement.position
-            spot.zPosition = zFor(placement.position.y)
+            spot.zPosition = placement.type.spec.tool == .rod ? 3 : zFor(placement.position.y)
             world.addChild(spot)
             spots.append(spot)
         }
 
         player.removeAllActions()
-        player.position = CGPoint(x: spec.basePoint.x, y: spec.basePoint.y - 70)
+        if let gateID = game.arrivalGate, let g = layout.gates.first(where: { $0.id == gateID }) {
+            player.position = g.inner
+        } else {
+            player.position = CGPoint(x: layout.base.x, y: layout.base.y - 56)
+        }
+        game.arrivalGate = nil
         velocity = .zero
         world.addChild(player)
         syncCompanions()
@@ -180,75 +182,137 @@ final class GameScene: SKScene {
         wildTimer = Double.random(in: 14...24)
         treasureTimer = Double.random(in: 30...50)
         game.showBanner(id)
+        Sound.shared.playMusic(spec.music)
+        Sound.shared.playAmbience(spec.ambience)
     }
 
-    private func decoratePonds() {
-        for pond in spec.ponds {
-            let c = spec.point(pond.x, pond.y)
-            let lava = spec.id == .volcano
-            if !pond.frozen && !lava {
-                for i in 0..<3 {
-                    let a = CGFloat(i) * 2.1 + 0.4
-                    let emoji = spec.id == .sky ? "⭐" : (i == 0 ? "🪷" : "🍃")
-                    let lily = SKSpriteNode(texture: Art.emoji(emoji, size: 32), size: CGSize(width: 22, height: 22))
-                    lily.position = CGPoint(x: c.x + cos(a) * pond.radius * 0.55, y: c.y + sin(a) * pond.radius * 0.5)
-                    lily.zPosition = 2
-                    let turn = SKAction.rotate(byAngle: 0.15, duration: 2)
-                    turn.timingMode = .easeInEaseOut
-                    lily.run(.repeatForever(.sequence([turn, turn.reversed()])))
-                    world.addChild(lily)
-                }
+    /// Деревья и камни за краем карты.
+    private func buildBorder() {
+        for item in layout.border {
+            let node: SKSpriteNode
+            if let pixel = Sprites.node(item.name, x: item.position.x, y: item.position.y) {
+                node = pixel
+            } else {
+                let emoji = layout.edge == "dunes" ? "🪨" : "🌳"
+                node = SKSpriteNode(texture: Art.emoji(emoji, size: 72), size: CGSize(width: 58, height: 58))
+                node.anchorPoint = CGPoint(x: 0.5, y: 0.1)
+                node.position = item.position
             }
-            // Блики на воде или пузыри лавы
-            let count = Int(pond.radius / 18)
-            for _ in 0..<count {
-                let a = CGFloat.random(in: 0...(.pi * 2))
-                let r = sqrt(CGFloat.random(in: 0...1)) * pond.radius * 0.85
-                let p = CGPoint(x: c.x + cos(a) * r, y: c.y + sin(a) * r)
-                if lava {
-                    let bubble = SKSpriteNode(texture: Art.dot, size: CGSize(width: 10, height: 10))
-                    bubble.color = UIColor(red: 1, green: 0.85, blue: 0.3, alpha: 1)
-                    bubble.colorBlendFactor = 1
-                    bubble.position = p
-                    bubble.zPosition = 2
-                    bubble.alpha = 0
-                    bubble.run(.sequence([.wait(forDuration: Double.random(in: 0...3)), .repeatForever(.sequence([
-                        .group([.fadeIn(withDuration: 0.2), .scale(to: 1.4, duration: 0.8)]),
-                        .group([.fadeOut(withDuration: 0.15), .scale(to: 2, duration: 0.15)]),
-                        .scale(to: 0.5, duration: 0),
-                        .wait(forDuration: Double.random(in: 0.8...2.5))
-                    ]))]))
-                    world.addChild(bubble)
-                } else {
-                    let glint = SKSpriteNode(texture: Art.spark, size: CGSize(width: 12, height: 12))
-                    glint.position = p
-                    glint.zPosition = 2
-                    glint.blendMode = .add
-                    glint.alpha = 0
-                    glint.run(.sequence([.wait(forDuration: Double.random(in: 0...3)), .repeatForever(.sequence([
-                        .group([.fadeAlpha(to: 0.8, duration: 0.4), .scale(to: 1.3, duration: 0.4)]),
-                        .group([.fadeOut(withDuration: 0.6), .scale(to: 0.6, duration: 0.6)]),
-                        .wait(forDuration: Double.random(in: 1...3))
-                    ]))]))
-                    world.addChild(glint)
-                }
-            }
-            if lava {
-                let glow = glowSprite(UIColor(red: 1, green: 0.45, blue: 0.1, alpha: 1), size: pond.radius * 2.8, alpha: 0.45)
-                glow.position = c
-                glow.zPosition = 3
-                world.addChild(glow)
+            node.zPosition = zFor(item.position.y)
+            world.addChild(node)
+        }
+    }
+
+    /// Крупный декор: кусты, брёвна, камыши, фонтан.
+    private func buildProps() {
+        for item in layout.props {
+            guard let node = Sprites.animated(item.name, fps: 8, x: item.position.x, y: item.position.y) else { continue }
+            let flat = item.name.hasPrefix("lily")
+            node.zPosition = flat ? 2 : zFor(item.position.y)
+            world.addChild(node)
+            if item.fixed {
+                obstacles.append((item.position, 30))
             }
         }
+    }
+
+    /// Блики на воде, пузыри лавы и кувшинки.
+    private func decorateWater() {
+        var cells = layout.waterCells
+        guard !cells.isEmpty else { return }
+        cells.shuffle()
+        let lava = spec.lava
+        for (c, r) in cells.prefix(min(40, cells.count / 3 + 1)) {
+            let p = layout.center(c, r)
+            if lava {
+                let bubble = SKSpriteNode(texture: Art.dot, size: CGSize(width: 9, height: 9))
+                bubble.color = UIColor(red: 1, green: 0.85, blue: 0.3, alpha: 1)
+                bubble.colorBlendFactor = 1
+                bubble.position = p
+                bubble.zPosition = 2
+                bubble.alpha = 0
+                bubble.run(.sequence([.wait(forDuration: Double.random(in: 0...3)), .repeatForever(.sequence([
+                    .group([.fadeIn(withDuration: 0.2), .scale(to: 1.4, duration: 0.8)]),
+                    .group([.fadeOut(withDuration: 0.15), .scale(to: 2, duration: 0.15)]),
+                    .scale(to: 0.5, duration: 0),
+                    .wait(forDuration: Double.random(in: 0.8...2.5))
+                ]))]))
+                world.addChild(bubble)
+            } else {
+                let glint = SKSpriteNode(texture: Art.spark, size: CGSize(width: 10, height: 10))
+                glint.position = p
+                glint.zPosition = 2
+                glint.blendMode = .add
+                glint.alpha = 0
+                glint.run(.sequence([.wait(forDuration: Double.random(in: 0...3)), .repeatForever(.sequence([
+                    .group([.fadeAlpha(to: 0.7, duration: 0.4), .scale(to: 1.3, duration: 0.4)]),
+                    .group([.fadeOut(withDuration: 0.6), .scale(to: 0.6, duration: 0.6)]),
+                    .wait(forDuration: Double.random(in: 1...3))
+                ]))]))
+                world.addChild(glint)
+            }
+        }
+    }
+
+    private func buildGates() {
+        let stone = spec.dark || layout.edge == "void" || spec.lava || id(is: .snow)
+        for place in layout.gates {
+            guard let gate = WorldGraph.gate(place.id) else { continue }
+            let node = GateNode(gate: gate, place: place, open: game.isGateOpen(gate.id), cell: layout.cell, stone: stone)
+            node.zPosition = zFor(place.barrier.y - layout.cell)
+            world.addChild(node)
+            gates.append(node)
+        }
+    }
+
+    private func id(is location: LocationID) -> Bool { loaded == location }
+
+    /// Сад: капибары в пруду и королевский сундук.
+    private func buildGarden() {
+        let water = layout.waterCells
+        if !water.isEmpty {
+            let sx = water.map { CGFloat($0.0) }.reduce(0, +) / CGFloat(water.count)
+            let sy = water.map { CGFloat($0.1) }.reduce(0, +) / CGFloat(water.count)
+            let center = layout.center(Int(sx.rounded()), Int(sy.rounded()))
+            for (i, name) in ["an_capybaraAlbino", "an_capybara"].enumerated() {
+                let frames = Sprites.frames(name, cell: 32)
+                guard frames.count >= 9 else { continue }
+                let node = SKSpriteNode(texture: frames[0], size: CGSize(width: 64, height: 64))
+                node.position = CGPoint(x: center.x + CGFloat(i == 0 ? -26 : 30), y: center.y + CGFloat(i == 0 ? 6 : -10))
+                node.zPosition = 4
+                let idle = Array(frames[0..<9])
+                let look = Array(frames[9..<min(frames.count, 19)])
+                node.run(.repeatForever(.sequence([
+                    .animate(with: idle, timePerFrame: 0.18), .animate(with: idle, timePerFrame: 0.18),
+                    .animate(with: look, timePerFrame: 0.16)
+                ])))
+                if i == 1 { node.xScale = -1 }
+                world.addChild(node)
+            }
+        }
+        let point = CGPoint(x: layout.base.x - 110, y: layout.base.y - 20)
+        let node = SKNode()
+        node.position = point
+        node.zPosition = zFor(point.y)
+        if let box = Sprites.node("chest_royal_anim") {
+            node.addChild(glowSprite(UIColor(red: 1, green: 0.8, blue: 0.3, alpha: 1), size: 90, y: 14, alpha: 0.45))
+            node.addChild(box)
+        } else {
+            node.addChild(emojiSprite("👑", 36, y: 18))
+        }
+        world.addChild(node)
+        royalChest = node
+        obstacles.append((point, 16))
     }
 
     private func addAtmosphere() {
         // Тени облаков
         if spec.cloudShadows && !spec.dark {
             for _ in 0..<5 {
-                let shadow = SKSpriteNode(texture: Art.cloudShadow, size: CGSize(width: CGFloat.random(in: 520...760), height: CGFloat.random(in: 320...440)))
-                shadow.position = CGPoint(x: CGFloat.random(in: 0...spec.size.width), y: CGFloat.random(in: 0...spec.size.height))
-                shadow.alpha = spec.id == .volcano ? 0.16 : 0.09
+                let tex = Sprites.texture("cloud_shadow") ?? Art.cloudShadow
+                let shadow = SKSpriteNode(texture: tex, size: CGSize(width: CGFloat.random(in: 420...620), height: CGFloat.random(in: 300...420)))
+                shadow.position = CGPoint(x: CGFloat.random(in: 0...layout.size.width), y: CGFloat.random(in: 0...layout.size.height))
+                shadow.alpha = spec.lava ? 0.14 : 0.08
                 shadow.zPosition = 450
                 world.addChild(shadow)
                 cloudShadows.append(shadow)
@@ -259,8 +323,7 @@ final class GameScene: SKScene {
         for emoji in spec.critters {
             for _ in 0..<3 {
                 let critter = CritterNode(emoji: emoji, flier: !groundCritters.contains(emoji))
-                critter.position = CGPoint(x: CGFloat.random(in: 100...(spec.size.width - 100)),
-                                           y: CGFloat.random(in: 260...(spec.size.height - 100)))
+                critter.position = randomOpenPoint(minFromPlayer: 0) ?? layout.base
                 critter.zPosition = groundCritters.contains(emoji) ? 99 : 420
                 world.addChild(critter)
                 critters.append(critter)
@@ -305,7 +368,7 @@ final class GameScene: SKScene {
             e.particleColorBlendFactor = 0
             e.particleBirthRate = 1.6
             e.particleLifetime = 10
-            e.particleSize = CGSize(width: 11, height: 11)
+            e.particleSize = CGSize(width: 10, height: 10)
             e.particleScaleRange = 0.5
             e.particleSpeed = 22
             e.emissionAngle = -.pi / 2.4
@@ -315,17 +378,22 @@ final class GameScene: SKScene {
             e.particleAlpha = 0.85
             e.particleAlphaSpeed = -0.06
         case .leaves:
-            e.particleTexture = Art.emoji("🍂", size: 24)
+            if let leaf = Sprites.texture("fx_leaf_birch") {
+                e.particleTexture = leaf
+                e.particleSize = CGSize(width: 12, height: 12)
+            } else {
+                e.particleTexture = Art.emoji("🍂", size: 24)
+                e.particleSize = CGSize(width: 12, height: 12)
+            }
             e.particleColorBlendFactor = 0
             e.particleBirthRate = 1.4
             e.particleLifetime = 9
-            e.particleSize = CGSize(width: 12, height: 12)
             e.particleScaleRange = 0.4
             e.particleSpeed = 30
             e.emissionAngle = -.pi / 3
             e.emissionAngleRange = 0.5
             e.particleRotationSpeed = 1.5
-            e.particleAlpha = 0.85
+            e.particleAlpha = 0.9
             e.particleAlphaSpeed = -0.07
         case .pollen:
             e.particleTexture = Art.dot
@@ -370,7 +438,7 @@ final class GameScene: SKScene {
             e.particleColor = .white
             e.particleBirthRate = 16
             e.particleLifetime = 10
-            e.particleSize = CGSize(width: 6, height: 6)
+            e.particleSize = CGSize(width: 5, height: 5)
             e.particleScaleRange = 0.7
             e.particleSpeed = 36
             e.particleSpeedRange = 14
@@ -432,14 +500,13 @@ final class GameScene: SKScene {
     }
 
     private func buildBase() {
-        let base = spec.basePoint
+        let base = layout.base
         let radius = CGFloat(game.stats.depositRadius)
         let zone = SKShapeNode(circleOfRadius: radius)
         zone.position = base
         zone.fillColor = UIColor.white.withAlphaComponent(0.07)
         zone.strokeColor = .clear
         zone.zPosition = 2
-        zone.name = "depositZone"
         world.addChild(zone)
         let dashed = SKShapeNode(path: CGPath(ellipseIn: CGRect(x: -radius, y: -radius, width: radius * 2, height: radius * 2), transform: nil)
             .copy(dashingWithPhase: 0, lengths: [14, 10]))
@@ -452,56 +519,61 @@ final class GameScene: SKScene {
         depositRing = [zone, dashed]
         depositBuiltRadius = max(radius, 1)
 
-        houseCenter = CGPoint(x: base.x - 34, y: base.y + 18)
-        let houseShadow = shadowSprite(90)
-        houseShadow.position = houseCenter
-        houseShadow.zPosition = 3
-        world.addChild(houseShadow)
-        let house: SKSpriteNode
-        var chimney = CGPoint(x: houseCenter.x + 18, y: houseCenter.y + 78)
-        if let pixel = Sprites.node("house", scale: 1.05, x: houseCenter.x, y: houseCenter.y - 14) {
-            house = pixel
-            houseShadow.isHidden = true
-            chimney = CGPoint(x: houseCenter.x + pixel.size.width * 0.23, y: houseCenter.y - 14 + pixel.size.height * 0.82)
+        // Дом стоит слева сверху от площадки склада. В экспедиции вместо дома палатка.
+        let houseName = spec.kind == .expedition ? "tent" : "house"
+        let houseFoot = CGPoint(x: base.x - 60, y: base.y + 34)
+        if let house = Sprites.node(houseName, x: houseFoot.x, y: houseFoot.y) {
+            house.zPosition = zFor(houseFoot.y)
+            world.addChild(house)
+            let w = house.size.width * 0.84
+            houseRect = CGRect(x: houseFoot.x - w / 2, y: houseFoot.y, width: w, height: min(46, house.size.height * 0.3))
+            if houseName == "house", let smoke = Sprites.animated("smoke_anim", fps: 6, x: houseFoot.x + house.size.width * 0.17,
+                                                                  y: houseFoot.y + house.size.height * 0.86) {
+                smoke.zPosition = 300
+                smoke.alpha = 0.8
+                world.addChild(smoke)
+            }
         } else {
-            house = SKSpriteNode(texture: Art.emoji("🏡", size: 96), size: CGSize(width: 86, height: 86))
+            let house = SKSpriteNode(texture: Art.emoji(spec.kind == .expedition ? "⛺" : "🏡", size: 96), size: CGSize(width: 80, height: 80))
             house.anchorPoint = CGPoint(x: 0.5, y: 0.12)
-            house.position = CGPoint(x: houseCenter.x, y: houseCenter.y - 6)
+            house.position = houseFoot
+            house.zPosition = zFor(houseFoot.y)
+            world.addChild(house)
+            houseRect = CGRect(x: houseFoot.x - 30, y: houseFoot.y, width: 60, height: 30)
         }
-        house.zPosition = zFor(houseCenter.y)
-        world.addChild(house)
-        let smoke = SKSpriteNode(texture: Art.puff, size: CGSize(width: 18, height: 18))
-        smoke.position = chimney
-        smoke.zPosition = 300
-        smoke.alpha = 0
-        smoke.run(.repeatForever(.sequence([
-            .group([.fadeAlpha(to: 0.5, duration: 0.3), .scale(to: 1, duration: 0.3)]),
-            .group([.moveBy(x: 14, y: 40, duration: 2), .fadeOut(withDuration: 2), .scale(to: 2.4, duration: 2)]),
-            .moveBy(x: -14, y: -40, duration: 0),
-            .scale(to: 0.6, duration: 0),
-            .wait(forDuration: 0.3)
-        ])))
-        world.addChild(smoke)
 
         chest = SKNode()
-        chest.position = CGPoint(x: base.x + 40, y: base.y - 6)
+        chest.position = CGPoint(x: base.x + 40, y: base.y - 4)
         chest.zPosition = zFor(chest.position.y)
-        chest.addChild(shadowSprite(40))
-        let box = SKSpriteNode(texture: Art.emoji("📦", size: 56), size: CGSize(width: 40, height: 40))
-        box.anchorPoint = CGPoint(x: 0.5, y: 0.1)
-        chest.addChild(box)
+        if let box = Sprites.node("chest_anim") {
+            chestBox = box
+            chest.addChild(box)
+        } else {
+            chest.addChild(shadowSprite(40))
+            let box = SKSpriteNode(texture: Art.emoji("📦", size: 56), size: CGSize(width: 40, height: 40))
+            box.anchorPoint = CGPoint(x: 0.5, y: 0.1)
+            chest.addChild(box)
+            chestBox = nil
+        }
         let title = SKLabelNode()
-        title.attributedText = NSAttributedString(string: tr("scene.storage"), attributes: [
+        title.attributedText = storageTitle()
+        title.position = CGPoint(x: 0, y: 40)
+        chestTitle = title
+        builtLanguage = Lang.shared.code
+        chest.addChild(bobbing(title, height: 3, duration: 1.2))
+        world.addChild(chest)
+    }
+
+    private var depositRing: [SKNode] = []
+    private var depositBuiltRadius: CGFloat = 1
+
+    private func storageTitle() -> NSAttributedString {
+        NSAttributedString(string: tr("scene.storage"), attributes: [
             .font: UIFont.systemFont(ofSize: 13, weight: .heavy),
             .foregroundColor: UIColor.white,
             .strokeColor: UIColor.black.withAlphaComponent(0.6),
             .strokeWidth: -4
         ])
-        title.position = CGPoint(x: 0, y: 46)
-        chestTitle = title
-        builtLanguage = Lang.shared.code
-        chest.addChild(bobbing(title, height: 3, duration: 1.2))
-        world.addChild(chest)
     }
 
     // MARK: Цикл
@@ -522,6 +594,9 @@ final class GameScene: SKScene {
             gather(dt, stats)
             checkBase(dt, stats)
             checkTreasure()
+            checkGates(dt)
+            checkRoyalChest()
+            checkExpedition()
         }
         for spot in spots where spot.tick(dt) {
             if distance(spot.position, player.position) < 500 {
@@ -545,7 +620,7 @@ final class GameScene: SKScene {
         }
     }
 
-    /// Образ персонажа и подпись склада на текущем языке.
+    /// Образ персонажа, круг склада, подписи на текущем языке, состояние ворот.
     private func syncLooks() {
         let ringScale = CGFloat(game.stats.depositRadius) / depositBuiltRadius
         for node in depositRing where abs(node.xScale - ringScale) > 0.001 && node.action(forKey: "grow") == nil {
@@ -562,12 +637,12 @@ final class GameScene: SKScene {
         }
         if builtLanguage != Lang.shared.code {
             builtLanguage = Lang.shared.code
-            chestTitle.attributedText = NSAttributedString(string: tr("scene.storage"), attributes: [
-                .font: UIFont.systemFont(ofSize: 13, weight: .heavy),
-                .foregroundColor: UIColor.white,
-                .strokeColor: UIColor.black.withAlphaComponent(0.6),
-                .strokeWidth: -4
-            ])
+            chestTitle.attributedText = storageTitle()
+        }
+        for gate in gates {
+            gate.syncLanguage()
+            let open = game.isGateOpen(gate.gate.id)
+            if open != gate.isOpen { gate.setOpen(open, animated: true) }
         }
     }
 
@@ -576,6 +651,7 @@ final class GameScene: SKScene {
         touch = nil
         joystick.end()
         fader.removeAllActions()
+        Sound.shared.play(.whoosh)
         let fadeIn = SKAction.fadeAlpha(to: 1, duration: 0.3)
         fadeIn.timingMode = .easeIn
         let fadeOut = SKAction.fadeAlpha(to: 0, duration: 0.45)
@@ -622,7 +698,21 @@ final class GameScene: SKScene {
             dustTimer = 0.17
             let dustColor = spec.dark ? UIColor(white: 0.7, alpha: 1) : spec.path
             Effects.puff(at: CGPoint(x: player.position.x - velocity.dx * 0.04, y: player.position.y + 2), in: world,
-                         color: dustColor, size: 18, z: player.zPosition - 0.5)
+                         color: dustColor, size: 16, z: player.zPosition - 0.5)
+        }
+        stepTimer -= dt * Double(ratio)
+        if ratio > 0.3 && stepTimer <= 0 {
+            stepTimer = 0.3
+            Sound.shared.play(stepSound())
+        }
+    }
+
+    private func stepSound() -> SFX {
+        let (c, r) = layout.colRow(player.position)
+        switch layout.at(c, r) {
+        case .ice: return .footstepSnow
+        case .path: return spec.footstep == .footstepGrass ? .footstepSand : spec.footstep
+        default: return spec.footstep
         }
     }
 
@@ -634,34 +724,63 @@ final class GameScene: SKScene {
         return CGPoint(x: center.x + (p.x - center.x) * k, y: center.y + (p.y - center.y) * k)
     }
 
+    /// Выталкивает круг из прямоугольника.
+    private func push(_ p: CGPoint, outOf rect: CGRect, radius: CGFloat) -> CGPoint {
+        let q = CGPoint(x: min(max(p.x, rect.minX), rect.maxX), y: min(max(p.y, rect.minY), rect.maxY))
+        let d = distance(p, q)
+        if d >= radius { return p }
+        if d > 0.01 {
+            return CGPoint(x: q.x + (p.x - q.x) / d * radius, y: q.y + (p.y - q.y) / d * radius)
+        }
+        // Центр внутри прямоугольника: выходим через ближайшую сторону.
+        let left = p.x - rect.minX, right = rect.maxX - p.x, bottom = p.y - rect.minY, top = rect.maxY - p.y
+        let m = min(left, right, bottom, top)
+        if m == left { return CGPoint(x: rect.minX - radius, y: p.y) }
+        if m == right { return CGPoint(x: rect.maxX + radius, y: p.y) }
+        if m == bottom { return CGPoint(x: p.x, y: rect.minY - radius) }
+        return CGPoint(x: p.x, y: rect.maxY + radius)
+    }
+
     private func resolve(_ point: CGPoint, radius: CGFloat) -> CGPoint {
         var p = point
-        for pond in ponds {
-            p = push(p, from: pond.center, minDistance: pond.radius + radius)
+        for _ in 0..<2 {
+            let (c0, r0) = layout.colRow(p)
+            for dr in -1...1 {
+                for dc in -1...1 where !layout.walkable(c0 + dc, r0 + dr) {
+                    p = push(p, outOf: layout.rect(c0 + dc, r0 + dr), radius: radius)
+                }
+            }
         }
         for spot in spots where spot.isSolid {
             if abs(spot.position.x - p.x) > 60 || abs(spot.position.y - p.y) > 60 { continue }
             p = push(p, from: spot.position, minDistance: spot.spec.radius + radius)
         }
-        p = push(p, from: houseCenter, minDistance: 30 + radius)
-        p.x = max(28, min(spec.size.width - 28, p.x))
-        p.y = max(28, min(spec.size.height - 28, p.y))
+        for gate in gates where !gate.isOpen {
+            p = push(p, outOf: gate.blockRect, radius: radius)
+        }
+        for obstacle in obstacles {
+            p = push(p, from: obstacle.center, minDistance: obstacle.radius + radius)
+        }
+        p = push(p, outOf: houseRect, radius: radius)
+        p.x = max(radius, min(layout.size.width - radius, p.x))
+        p.y = max(radius, min(layout.size.height - radius, p.y))
         return p
     }
 
     private func clampedCamera(_ target: CGPoint) -> CGPoint {
         let halfW = size.width / 2
         let halfH = size.height / 2
+        let world = layout.size
         var p = target
-        if spec.size.width > size.width {
-            p.x = max(halfW - 40, min(spec.size.width - halfW + 40, p.x))
+        if world.width > size.width {
+            p.x = max(halfW, min(world.width - halfW, p.x))
         } else {
-            p.x = spec.size.width / 2
+            p.x = world.width / 2
         }
-        if spec.size.height > size.height {
-            p.y = max(halfH - 60, min(spec.size.height - halfH + 60, p.y))
+        if world.height > size.height {
+            p.y = max(halfH - 40, min(world.height - halfH + 40, p.y))
         } else {
-            p.y = spec.size.height / 2
+            p.y = world.height / 2
         }
         return p
     }
@@ -682,12 +801,68 @@ final class GameScene: SKScene {
         cam.position = p
     }
 
+    // MARK: Ворота
+
+    private func checkGates(_ dt: Double) {
+        gateCheckTimer -= dt
+        var near: String?
+        for gate in gates {
+            if gate.isOpen {
+                if gate.passed(player.position) {
+                    game.walk(through: gate.gate.id)
+                    return
+                }
+            } else if gateCheckTimer <= 0 {
+                let d = distance(player.position, gate.place.barrier)
+                if d < layout.cell * 3.2 { near = gate.gate.id }
+            }
+        }
+        if gateCheckTimer <= 0 {
+            gateCheckTimer = 0.2
+            game.setGatePrompt(near)
+        }
+    }
+
+    // MARK: Экспедиция и сад
+
+    private var finishing = false
+
+    private func checkExpedition() {
+        guard let run = game.save.expedition, run.id == loaded else {
+            finishing = false
+            return
+        }
+        if Date() >= run.endsAt && !finishing {
+            finishing = true
+            game.finishExpedition()
+        }
+    }
+
+    private func checkRoyalChest() {
+        guard let chest = royalChest else { return }
+        let ready = game.gardenChestReady
+        if chest.action(forKey: "ready") == nil && ready {
+            chest.run(.repeatForever(.sequence([.scale(to: 1.08, duration: 0.5), .scale(to: 1, duration: 0.5)])), withKey: "ready")
+        } else if !ready {
+            chest.removeAction(forKey: "ready")
+            chest.setScale(1)
+        }
+        guard ready, distance(chest.position, player.position) < 50 else { return }
+        game.openGardenChest()
+        Effects.scatter(Art.emoji("🪙", size: 32), count: 14, at: CGPoint(x: chest.position.x, y: chest.position.y + 20), in: world,
+                        size: 18, spread: 70, rise: 50, duration: 0.9)
+        Effects.ring(at: chest.position, in: world, color: UIColor(red: 1, green: 0.85, blue: 0.3, alpha: 1), radius: 50)
+        player.celebrate()
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+    }
+
     // MARK: Добыча
 
     private func gather(_ dt: Double, _ stats: Stats) {
         hitTimer -= dt
         hintTimer -= dt
-        let full = !stats.autoDeposit && game.backpackFree <= 0
+        let direct = game.inExpedition
+        let full = !stats.autoDeposit && !direct && game.backpackFree <= 0
         game.setBackpackFull(full)
         guard hitTimer <= 0 else { return }
 
@@ -714,6 +889,7 @@ final class GameScene: SKScene {
                     hintTimer = 2.5
                     Effects.text(tr("scene.backpackFullHint"), at: CGPoint(x: player.position.x, y: player.position.y + 70),
                                  in: world, color: UIColor(red: 1, green: 0.45, blue: 0.4, alpha: 1), size: 15)
+                    Sound.shared.play(.error)
                 }
                 return
             }
@@ -728,7 +904,13 @@ final class GameScene: SKScene {
     }
 
     private func strike(_ spot: ResourceSpot, _ stats: Stats) {
-        player.swing(spot.spec.tool, toward: spot.position)
+        player.swing(spot.spec.tool, toward: spot.position, interval: stats.hitInterval)
+        switch spot.spec.tool {
+        case .axe: Sound.shared.play(.chop)
+        case .pickaxe: Sound.shared.play(.mine)
+        case .rod: Sound.shared.play(.splash, volume: 0.7)
+        case .hand: Sound.shared.play(.pick)
+        }
         hitOnce(spot, stats)
         if spot.alive && Double.random(in: 0..<1) < stats.doubleStrikeChance {
             run(.sequence([.wait(forDuration: 0.12), .run { [weak self, weak spot] in
@@ -757,13 +939,14 @@ final class GameScene: SKScene {
             Effects.text(tr("scene.crit"), at: CGPoint(x: spot.position.x + 18, y: spot.position.y + 52), in: world,
                          color: UIColor(red: 1, green: 0.6, blue: 0.2, alpha: 1), size: 17)
             heavyHaptic.impactOccurred(intensity: 0.7)
+            Sound.shared.play(.crit, volume: 0.8)
         }
         apply(damage, to: spot, byHelper: false, strong: crit)
         if stats.quake {
             var shook = false
             for other in spots where other !== spot && other.alive && game.canHarvest(other.spec) {
                 // С полным рюкзаком сотрясение не ломает соседние точки впустую.
-                guard stats.autoDeposit || game.backpackFree > 0 else { break }
+                guard stats.autoDeposit || game.inExpedition || game.backpackFree > 0 else { break }
                 if distance(other.position, spot.position) < CGFloat(stats.quakeRadius) {
                     apply(damage * stats.quakePower, to: other, byHelper: false, strong: false)
                     shook = true
@@ -797,10 +980,12 @@ final class GameScene: SKScene {
         let roll = Double.random(in: 0..<1)
         let multiplier = roll < stats.tripleChance ? 3 : (roll < stats.tripleChance + stats.doubleChance ? 2 : 1)
         let luck = game.luckActive ? 2 : 1
+        let direct = game.inExpedition
+        let bonus = direct ? Expedition.yieldBonus(spec.id) : 1
         var gained: [(ResourceKind, Int)] = []
         for y in spot.spec.yields {
             guard Double.random(in: 0..<1) < y.chance else { continue }
-            var raw = Double(Int.random(in: y.min...y.max)) * stats.yieldMultiplier(for: y.kind)
+            var raw = Double(Int.random(in: y.min...y.max)) * stats.yieldMultiplier(for: y.kind) * bonus
             if byHelper { raw *= stats.helperYield }
             var n = Int(raw)
             if Double.random(in: 0..<1) < raw - Double(n) { n += 1 }
@@ -816,10 +1001,18 @@ final class GameScene: SKScene {
 
         var shown: [(ResourceKind, Int)] = []
         for (kind, n) in gained {
-            let added = byHelper ? game.addToStorage(kind, n) : game.addToBackpack(kind, n)
+            let added = byHelper || direct ? game.addToStorage(kind, n) : game.addToBackpack(kind, n)
             if added > 0 { shown.append((kind, added)) }
         }
         let coins = game.registerHarvest(xp: spot.spec.xp)
+        if spot.spec.type == .treasureChest {
+            let bonusCoins = 40 + game.save.level * 12
+            game.addCoins(bonusCoins)
+            game.noteExpeditionCoins(bonusCoins)
+            Effects.text("+\(bonusCoins) 🪙", at: CGPoint(x: spot.position.x, y: spot.position.y + 70), in: world,
+                         color: UIColor(red: 1, green: 0.85, blue: 0.3, alpha: 1), size: 17)
+            Sound.shared.play(.coinBig)
+        }
 
         let top = CGPoint(x: spot.position.x, y: spot.position.y + min(70, spot.spec.barHeight))
         for (i, item) in shown.enumerated() {
@@ -835,13 +1028,17 @@ final class GameScene: SKScene {
                          color: UIColor(red: 0.5, green: 1, blue: 0.5, alpha: 1), size: 18)
         }
         if coins > 0 {
+            game.noteExpeditionCoins(coins)
             Effects.text("+\(coins) 🪙", at: CGPoint(x: top.x + 38, y: top.y - 4), in: world,
                          color: UIColor(red: 1, green: 0.85, blue: 0.3, alpha: 1), size: 14, delay: 0.15)
+            Sound.shared.play(.coin, volume: 0.5)
         }
 
         let regrow = Double.random(in: 0..<1) < stats.regrowChance
         let from = byHelper ? (companions.first(where: { $0.target === spot })?.position ?? player.position) : player.position
-        spot.deplete(respawnIn: regrow ? 1.2 : spot.spec.respawn * stats.respawnMult, from: from)
+        var respawn = spot.spec.respawn * stats.respawnMult
+        if direct { respawn *= Expedition.respawnMult }
+        spot.deplete(respawnIn: regrow ? 1.2 : respawn, from: from)
         depletionEffects(spot)
         if !byHelper { haptic.impactOccurred(intensity: 0.6) }
     }
@@ -850,23 +1047,29 @@ final class GameScene: SKScene {
         let p = spot.position
         switch spot.style {
         case .fall:
-            let leaf = spot.spec.type == .ashTree ? "🔥" : (spot.spec.type == .snowPine ? "❄️" : "🍃")
+            Sound.shared.play(.treeFall, volume: 0.8)
+            let leafName = spot.spec.type == .snowPine || spot.spec.type == .pine ? "fx_needle" :
+                (spot.spec.type == .skyTree ? "fx_leaf_birch" : "fx_leaf")
+            let leafTex = Sprites.texture(leafName)
+            let emoji = spot.spec.type == .ashTree ? "🔥" : (spot.spec.type == .snowPine ? "❄️" : "🍃")
             run(.sequence([.wait(forDuration: 0.42), .run { [weak self] in
                 guard let self else { return }
                 let side: CGFloat = spot.position.x >= self.player.position.x ? 30 : -30
-                Effects.scatter(Art.emoji(leaf, size: 24), count: 6, at: CGPoint(x: p.x + side, y: p.y + 10), in: self.world,
-                                size: 13, spread: 46, rise: 12)
-                Effects.puff(at: CGPoint(x: p.x + side, y: p.y), in: self.world, color: self.spec.path, size: 40, z: spot.zPosition + 1)
+                Effects.scatter(leafTex ?? Art.emoji(emoji, size: 24), count: 6, at: CGPoint(x: p.x + side, y: p.y + 10), in: self.world,
+                                size: 12, spread: 46, rise: 12)
+                Effects.puff(at: CGPoint(x: p.x + side, y: p.y), in: self.world, color: self.spec.path, size: 36, z: spot.zPosition + 1)
                 self.shake = max(self.shake, 2.5)
             }]))
         case .crumble:
+            Sound.shared.play(.rockBreak, volume: 0.8)
             Effects.scatter(Art.dot, count: 8, at: CGPoint(x: p.x, y: p.y + 16), in: world, size: 6,
                             color: spot.spec.chip, spread: 44, rise: 20)
-            Effects.puff(at: p, in: world, color: UIColor(white: 0.8, alpha: 1), size: 46, z: spot.zPosition + 1)
+            Effects.puff(at: p, in: world, color: UIColor(white: 0.8, alpha: 1), size: 40, z: spot.zPosition + 1)
         case .pop:
             Effects.scatter(Art.spark, count: 5, at: CGPoint(x: p.x, y: p.y + 14), in: world, size: 11,
                             color: .white, spread: 30, rise: 18, additive: true, duration: 0.45)
         case .splash:
+            Sound.shared.play(.splash)
             Effects.scatter(Art.dot, count: 9, at: p, in: world, size: 5, color: spot.spec.chip, spread: 30, rise: 26, duration: 0.5)
             Effects.ring(at: p, in: world, color: UIColor.white.withAlphaComponent(0.7), radius: 20)
         case .fade:
@@ -917,6 +1120,7 @@ final class GameScene: SKScene {
         }
         if finished {
             loot.removeAll { $0.age < 0 }
+            Sound.shared.play(.pickup, volume: 0.45)
         }
     }
 
@@ -925,21 +1129,27 @@ final class GameScene: SKScene {
     private func checkBase(_ dt: Double, _ stats: Stats) {
         depositCooldown -= dt
         guard depositCooldown <= 0, game.backpackCount > 0 else { return }
-        guard distance(player.position, spec.basePoint) < CGFloat(stats.depositRadius) else { return }
+        guard distance(player.position, layout.base) < CGFloat(stats.depositRadius) else { return }
         let kinds = ResourceKind.allCases.filter { (game.save.backpack[$0] ?? 0) > 0 }
         let moved = game.depositBackpack()
         guard moved > 0 else { return }
         depositCooldown = 0.6
         Effects.fly(kinds, from: player.position, to: chest.position, in: world)
-        Effects.text(tr("scene.deposited", moved), at: CGPoint(x: chest.position.x, y: chest.position.y + 70), in: world,
+        Effects.text(tr("scene.deposited", moved), at: CGPoint(x: chest.position.x, y: chest.position.y + 64), in: world,
                      color: UIColor(red: 1, green: 0.9, blue: 0.5, alpha: 1), size: 16, delay: 0.3)
-        chest.run(.sequence([.wait(forDuration: 0.4), .scaleX(to: 1.25, y: 0.85, duration: 0.07),
-                             .scaleX(to: 0.92, y: 1.12, duration: 0.08), .scale(to: 1, duration: 0.1)]))
+        let frames = Sprites.strip("chest_anim")
+        if let box = chestBox, frames.count > 1 {
+            box.run(.sequence([.animate(with: frames, timePerFrame: 0.05), .wait(forDuration: 0.4),
+                               .animate(with: frames.reversed(), timePerFrame: 0.05)]))
+        }
+        chest.run(.sequence([.wait(forDuration: 0.4), .scaleX(to: 1.2, y: 0.88, duration: 0.07),
+                             .scaleX(to: 0.94, y: 1.1, duration: 0.08), .scale(to: 1, duration: 0.1)]))
         run(.sequence([.wait(forDuration: 0.45), .run { [weak self] in
             guard let self else { return }
-            Effects.scatter(Art.spark, count: 6, at: CGPoint(x: self.chest.position.x, y: self.chest.position.y + 30), in: self.world,
+            Effects.scatter(Art.spark, count: 6, at: CGPoint(x: self.chest.position.x, y: self.chest.position.y + 26), in: self.world,
                             size: 12, color: UIColor(red: 1, green: 0.9, blue: 0.4, alpha: 1), spread: 34, rise: 24, additive: true)
         }]))
+        Sound.shared.play(.deposit)
         haptic.impactOccurred(intensity: 0.9)
         game.saveNow()
     }
@@ -978,7 +1188,7 @@ final class GameScene: SKScene {
     private func updateCompanions(_ dt: Double, _ stats: Stats) {
         var helpers: [AnimalID: Helper] = [:]
         for h in stats.helpers { helpers[h.animal] = h }
-        let followSpeed = max(stats.speed * 1.05, 170)
+        let followSpeed = max(stats.speed * 1.05, 160)
         for (i, companion) in companions.enumerated() {
             let offset = Self.slots[i % Self.slots.count]
             let slot = CGPoint(x: player.position.x + offset.x, y: player.position.y + offset.y)
@@ -1019,7 +1229,7 @@ final class GameScene: SKScene {
         }
         let reach = target.spec.radius + 16
         if distance(c.position, target.position) > reach + 4 {
-            c.move(toward: target.position, dt: dt, speed: max(followSpeed, 190), stopAt: reach)
+            c.move(toward: target.position, dt: dt, speed: max(followSpeed, 180), stopAt: reach)
         } else {
             c.move(toward: c.position, dt: dt, speed: 0)
             c.hitTimer -= dt * stats.helperSpeed
@@ -1040,8 +1250,9 @@ final class GameScene: SKScene {
                 let n = Double.random(in: 0..<1) < stats.doubleProductChance ? 2 : 1
                 game.addToStorage(producer.kind, n)
                 if let c = companions.first(where: { $0.animal == producer.animal }) {
-                    Effects.gain(producer.kind, n, at: CGPoint(x: c.position.x, y: c.position.y + 46), in: world, small: true)
+                    Effects.gain(producer.kind, n, at: CGPoint(x: c.position.x, y: c.position.y + 40), in: world, small: true)
                     c.cheer()
+                    if producer.animal == .duck || producer.animal == .duckHat { Sound.shared.play(.quack, volume: 0.6) }
                 }
             } else {
                 producerTimers[producer.animal] = t
@@ -1053,17 +1264,17 @@ final class GameScene: SKScene {
 
     private func updateAmbient(_ dt: Double) {
         for critter in critters {
-            critter.update(dt, bounds: spec.size)
+            critter.update(dt, bounds: layout.size)
             if critter.zPosition < 400 { critter.zPosition = zFor(critter.position.y) }
         }
         for shadow in cloudShadows {
             shadow.position.x += CGFloat(16 * dt)
             shadow.position.y += CGFloat(5 * dt)
-            if shadow.position.x - shadow.size.width / 2 > spec.size.width {
+            if shadow.position.x - shadow.size.width / 2 > layout.size.width {
                 shadow.position.x = -shadow.size.width / 2
-                shadow.position.y = CGFloat.random(in: 0...spec.size.height)
+                shadow.position.y = CGFloat.random(in: 0...layout.size.height)
             }
-            if shadow.position.y - shadow.size.height / 2 > spec.size.height {
+            if shadow.position.y - shadow.size.height / 2 > layout.size.height {
                 shadow.position.y = -shadow.size.height / 2
             }
         }
@@ -1072,12 +1283,16 @@ final class GameScene: SKScene {
     // MARK: Дикие звери
 
     private func randomOpenPoint(minFromPlayer: CGFloat) -> CGPoint? {
-        for _ in 0..<40 {
-            let p = CGPoint(x: CGFloat.random(in: 120...(spec.size.width - 120)),
-                            y: CGFloat.random(in: 280...(spec.size.height - 120)))
+        for _ in 0..<60 {
+            let c = Int.random(in: 2..<max(3, layout.cols - 2))
+            let r = Int.random(in: 2..<max(3, layout.rows - 2))
+            guard layout.at(c, r) == .land || layout.at(c, r) == .path else { continue }
+            // Не у самого края: все соседи тоже проходимы.
+            guard layout.walkable(c - 1, r), layout.walkable(c + 1, r), layout.walkable(c, r - 1), layout.walkable(c, r + 1) else { continue }
+            let p = layout.center(c, r)
             if distance(p, player.position) < minFromPlayer { continue }
-            if ponds.contains(where: { distance(p, $0.center) < $0.radius + 50 }) { continue }
-            if spots.contains(where: { distance(p, $0.position) < 50 }) { continue }
+            if spots.contains(where: { distance(p, $0.position) < 44 }) { continue }
+            if gates.contains(where: { distance(p, $0.place.barrier) < 120 }) { continue }
             return p
         }
         return nil
@@ -1086,11 +1301,12 @@ final class GameScene: SKScene {
     private func updateWild(_ dt: Double, _ stats: Stats) {
         if let w = wild {
             w.wander(dt)
+            if !layout.walkable(w.position) { w.position = resolve(w.position, radius: 8) }
             w.zPosition = zFor(w.position.y)
             let d = distance(w.position, player.position)
-            if d < 85 {
+            if d < 80 {
                 game.setEncounter(Encounter(animal: w.animal))
-            } else if d > 110 {
+            } else if d > 104 {
                 game.setEncounter(nil)
             }
             if w.life <= 0 {
@@ -1100,7 +1316,7 @@ final class GameScene: SKScene {
             }
             return
         }
-        guard !transitioning else { return }
+        guard !transitioning, !spec.wild.isEmpty else { return }
         wildTimer -= dt * stats.spawnMult
         if wildTimer <= 0 {
             wildTimer = Double.random(in: 45...80)
@@ -1123,12 +1339,13 @@ final class GameScene: SKScene {
             roll -= weights[i]
             if roll <= 0 { chosen = id; break }
         }
-        guard let point = randomOpenPoint(minFromPlayer: 260) else { return }
+        guard let point = randomOpenPoint(minFromPlayer: 240) else { return }
         let node = WildNode(animal: chosen, at: point, life: 160 * stats.spawnMult)
         node.zPosition = zFor(point.y)
         world.addChild(node)
         wild = node
         game.toast(chosen.spec.emoji, tr("toast.wild", chosen.spec.name))
+        Sound.shared.play(.wildAppear)
     }
 
     /// Вызывается из интерфейса кнопкой "Приручить".
@@ -1140,6 +1357,7 @@ final class GameScene: SKScene {
         wild = nil
         game.setEncounter(nil)
         player.celebrate()
+        Sound.shared.play(.tame)
         UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
 
@@ -1155,7 +1373,7 @@ final class GameScene: SKScene {
             }
             return
         }
-        guard !transitioning else { return }
+        guard !transitioning, spec.kind != .expedition else { return }
         treasureTimer -= dt * stats.spawnMult
         if treasureTimer <= 0 {
             treasureTimer = Double.random(in: 60...110)
@@ -1169,7 +1387,7 @@ final class GameScene: SKScene {
     }
 
     private func checkTreasure() {
-        guard let t = treasure, distance(t.position, player.position) < 46 else { return }
+        guard let t = treasure, distance(t.position, player.position) < 42 else { return }
         treasure = nil
         let reward = game.openTreasure()
         let p = t.position
@@ -1182,6 +1400,7 @@ final class GameScene: SKScene {
         t.run(.sequence([.scale(to: 1.4, duration: 0.12), .group([.fadeOut(withDuration: 0.2), .scale(to: 0.2, duration: 0.2)]), .removeFromParent()]))
         shake = max(shake, 4)
         player.celebrate()
+        Sound.shared.play(.treasure)
         UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
 
@@ -1189,8 +1408,8 @@ final class GameScene: SKScene {
 
     private func updateArrows() {
         let capacity = Double(game.stats.capacity)
-        let wantBase = game.backpackFull || (game.backpackCount > 0 && Double(game.backpackCount) >= capacity * 0.85)
-        place(baseArrow, target: wantBase ? spec.basePoint : nil)
+        let wantBase = !game.inExpedition && (game.backpackFull || (game.backpackCount > 0 && Double(game.backpackCount) >= capacity * 0.85))
+        place(baseArrow, target: wantBase ? layout.base : nil)
         place(wildArrow, target: wild?.position)
         place(treasureArrow, target: treasure?.position)
         darkness?.position = CGPoint(x: player.position.x - cam.position.x, y: player.position.y + 20 - cam.position.y)

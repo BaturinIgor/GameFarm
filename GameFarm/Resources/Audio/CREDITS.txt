@@ -1,0 +1,100 @@
+GameFarm audio credits
+======================
+
+All source audio is public domain (CC0 1.0 Universal). Attribution is not required but is given here with thanks.
+
+Sources
+-------
+- Kenney audio packs by Kenney (www.kenney.nl), CC0 1.0: https://kenney.nl
+    - Impact Sounds:    https://kenney.nl/assets/impact-sounds
+    - RPG Audio:        https://kenney.nl/assets/rpg-audio
+    - Interface Sounds: https://kenney.nl/assets/interface-sounds
+- Ninja Adventure - Asset Pack by Pixel-boy (music and sounds), CC0 1.0:
+    https://pixel-boy.itch.io/ninja-adventure-asset-pack
+
+Processing: converted to AAC .m4a (SFX and ambience mono 64 kbps, music stereo 96 kbps, 44.1 kHz),
+leading silence and silent tails trimmed, SFX level-matched (peak / short-term loudness),
+music loudness-matched to about -18 LUFS. Ambience loops were trimmed and given a crossfade at the loop point.
+Files marked "mix" were layered from the listed sources. amb_fire is synthesized (no source file).
+
+Output file -> source
+---------------------
+sfx_chop_0.m4a           <- Kenney Impact Sounds/impactWood_medium_000.ogg
+sfx_chop_1.m4a           <- Kenney Impact Sounds/impactWood_medium_001.ogg
+sfx_chop_2.m4a           <- Kenney Impact Sounds/impactWood_medium_002.ogg
+sfx_chop_3.m4a           <- Kenney Impact Sounds/impactWood_medium_003.ogg
+sfx_chop_4.m4a           <- Kenney Impact Sounds/impactWood_medium_004.ogg
+sfx_mine_0.m4a           <- Kenney Impact Sounds/impactMining_000.ogg
+sfx_mine_1.m4a           <- Kenney Impact Sounds/impactMining_001.ogg
+sfx_mine_2.m4a           <- Kenney Impact Sounds/impactMining_002.ogg
+sfx_mine_3.m4a           <- Kenney Impact Sounds/impactMining_003.ogg
+sfx_mine_4.m4a           <- Kenney Impact Sounds/impactMining_004.ogg
+sfx_pick_0.m4a           <- Ninja Adventure/Audio/Sounds/Elemental/Grass.wav
+sfx_pick_1.m4a           <- Ninja Adventure/Audio/Sounds/Elemental/Grass2.wav
+sfx_splash_0.m4a         <- Ninja Adventure/Audio/Sounds/Elemental/Water1.wav
+sfx_splash_1.m4a         <- Ninja Adventure/Audio/Sounds/Elemental/Water4.wav
+sfx_splash_2.m4a         <- Ninja Adventure/Audio/Sounds/Elemental/Water9.wav
+sfx_treeFall_0.m4a       <- mix: Kenney RPG Audio/creak1.ogg (rate 1.0) + Kenney Impact Sounds/impactWood_heavy_000.ogg + impactSoft_heavy_000.ogg (slowed)
+sfx_treeFall_1.m4a       <- mix: Kenney RPG Audio/creak1.ogg (rate 0.88) + Kenney Impact Sounds/impactWood_heavy_002.ogg + impactSoft_heavy_001.ogg (slowed)
+sfx_rockBreak_0.m4a      <- mix: Kenney Impact Sounds/impactMining_002.ogg (rate 0.8) + impactMining_004.ogg (rate 0.9) + impactSoft_heavy_000.ogg (slowed)
+sfx_rockBreak_1.m4a      <- mix: Kenney Impact Sounds/impactMining_001.ogg (rate 0.75) + impactMining_003.ogg (rate 0.85) + impactSoft_heavy_001.ogg (slowed)
+sfx_coin_0.m4a           <- Ninja Adventure/Audio/Sounds/Bonus/Coin.wav
+sfx_coin_1.m4a           <- Ninja Adventure/Audio/Sounds/Bonus/Coin2.wav
+sfx_coin_2.m4a           <- Ninja Adventure/Audio/Sounds/Bonus/Coin3.wav
+sfx_coinBig_0.m4a        <- mix: Ninja Adventure/Audio/Sounds/Bonus/Gold1.wav + Kenney RPG Audio/handleCoins.ogg
+sfx_pickup_0.m4a         <- Kenney Interface Sounds/pluck_001.ogg
+sfx_pickup_1.m4a         <- Kenney Interface Sounds/pluck_002.ogg
+sfx_deposit_0.m4a        <- Kenney RPG Audio/dropLeather.ogg
+sfx_deposit_1.m4a        <- Kenney Interface Sounds/drop_002.ogg
+sfx_levelUp_0.m4a        <- Ninja Adventure/Audio/Jingles/LevelUp1.wav
+sfx_success_0.m4a        <- Ninja Adventure/Audio/Jingles/Success2.wav
+sfx_treasure_0.m4a       <- Ninja Adventure/Audio/Jingles/Secret1.wav
+sfx_unlock_0.m4a         <- Ninja Adventure/Audio/Jingles/Secret2.wav
+sfx_purchase_0.m4a       <- mix: Kenney Interface Sounds/confirmation_001.ogg + Kenney RPG Audio/handleCoins.ogg
+sfx_tap_0.m4a            <- Kenney Interface Sounds/click_001.ogg
+sfx_tap_1.m4a            <- Kenney Interface Sounds/click_002.ogg
+sfx_open_0.m4a           <- Kenney Interface Sounds/open_001.ogg
+sfx_close_0.m4a          <- Kenney Interface Sounds/close_001.ogg
+sfx_error_0.m4a          <- Kenney Interface Sounds/error_001.ogg
+sfx_tame_0.m4a           <- Ninja Adventure/Audio/Sounds/Magic & Skill/Heal.wav
+sfx_wildAppear_0.m4a     <- Ninja Adventure/Audio/Sounds/Alert/Alert.wav
+sfx_luck_0.m4a           <- Ninja Adventure/Audio/Sounds/Bonus/PowerUp1.wav
+sfx_whoosh_0.m4a         <- Ninja Adventure/Audio/Sounds/Whoosh & Slash/Whoosh.wav
+sfx_gateOpen_0.m4a       <- mix: Kenney Impact Sounds/impactSoft_heavy_001.ogg (slowed) + Ninja Adventure/Audio/Sounds/Magic & Skill/Spirit.wav
+sfx_crit_0.m4a           <- Ninja Adventure/Audio/Sounds/Hit & Impact/Hit2.wav
+sfx_quack_0.m4a          <- Ninja Adventure/Audio/Sounds/Creature/Duck.wav
+sfx_footstepGrass_0.m4a  <- Kenney Impact Sounds/footstep_grass_000.ogg
+sfx_footstepGrass_1.m4a  <- Kenney Impact Sounds/footstep_grass_001.ogg
+sfx_footstepGrass_2.m4a  <- Kenney Impact Sounds/footstep_grass_002.ogg
+sfx_footstepGrass_3.m4a  <- Kenney Impact Sounds/footstep_grass_003.ogg
+sfx_footstepGrass_4.m4a  <- Kenney Impact Sounds/footstep_grass_004.ogg
+sfx_footstepSnow_0.m4a   <- Kenney Impact Sounds/footstep_snow_000.ogg
+sfx_footstepSnow_1.m4a   <- Kenney Impact Sounds/footstep_snow_001.ogg
+sfx_footstepSnow_2.m4a   <- Kenney Impact Sounds/footstep_snow_002.ogg
+sfx_footstepSnow_3.m4a   <- Kenney Impact Sounds/footstep_snow_003.ogg
+sfx_footstepSnow_4.m4a   <- Kenney Impact Sounds/footstep_snow_004.ogg
+sfx_footstepStone_0.m4a  <- Kenney Impact Sounds/footstep_concrete_000.ogg
+sfx_footstepStone_1.m4a  <- Kenney Impact Sounds/footstep_concrete_001.ogg
+sfx_footstepStone_2.m4a  <- Kenney Impact Sounds/footstep_concrete_002.ogg
+sfx_footstepStone_3.m4a  <- Kenney Impact Sounds/footstep_concrete_003.ogg
+sfx_footstepStone_4.m4a  <- Kenney Impact Sounds/footstep_concrete_004.ogg
+sfx_footstepSand_0.m4a   <- Kenney Impact Sounds/footstep_carpet_000.ogg
+sfx_footstepSand_1.m4a   <- Kenney Impact Sounds/footstep_carpet_001.ogg
+sfx_footstepSand_2.m4a   <- Kenney Impact Sounds/footstep_carpet_003.ogg
+amb_river.m4a            <- Ninja Adventure/Audio/Sounds/Ambient/River.wav (trimmed, loop crossfade)
+amb_wind.m4a             <- Ninja Adventure/Audio/Sounds/Ambient/Wind.wav (trimmed, loop crossfade)
+amb_waves.m4a            <- Ninja Adventure/Audio/Sounds/Ambient/Wave.wav (trimmed, loop crossfade)
+amb_fire.m4a             <- procedurally generated campfire crackle (no source file)
+amb_birds.m4a            <- Ninja Adventure/Audio/Sounds/Creature/Bird.wav chirps arranged at random pitch/timing into a loop
+mus_meadow.m4a           <- Ninja Adventure/Audio/Musics/31 - Sunny.ogg (gain +0.8 dB)
+mus_hills.m4a            <- Ninja Adventure/Audio/Musics/35 - Adventure.ogg (gain +1.8 dB)
+mus_lake.m4a             <- Ninja Adventure/Audio/Musics/18 - Aquatic.ogg (gain +6.0 dB)
+mus_swamp.m4a            <- Ninja Adventure/Audio/Musics/13 - Mystical.ogg (gain -4.8 dB)
+mus_desert.m4a           <- Ninja Adventure/Audio/Musics/12 - Temple.ogg (gain -2.9 dB)
+mus_snow.m4a             <- Ninja Adventure/Audio/Musics/22 - Dream.ogg (gain +3.0 dB)
+mus_caves.m4a            <- Ninja Adventure/Audio/Musics/2 - The Cave.ogg (gain -3.1 dB)
+mus_island.m4a           <- Ninja Adventure/Audio/Musics/39 - Boat.ogg (gain +4.6 dB)
+mus_volcano.m4a          <- Ninja Adventure/Audio/Musics/21 - Dungeon.ogg (gain -0.7 dB)
+mus_sky.m4a              <- Ninja Adventure/Audio/Musics/19 - Ascension.ogg (gain +7.6 dB)
+mus_garden.m4a           <- Ninja Adventure/Audio/Musics/33 - Calm Village.ogg (gain +0.7 dB)
+mus_expedition.m4a       <- Ninja Adventure/Audio/Musics/20 - Good Time.ogg (gain +2.4 dB)

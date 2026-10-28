@@ -4,9 +4,7 @@ import UIKit
 /// Пиксельный вид точек добычи. Для типов без спрайтов возвращает nil,
 /// и тогда NodeArt рисует эмодзи.
 enum PixelNodeArt {
-    private static let s = Sprites.scale
-
-    /// Лёгкое «дыхание» кроны: дерево чуть тянется вверх от основания.
+    /// Лёгкое "дыхание" кроны: дерево чуть тянется вверх от основания.
     private static func breathe(_ node: SKSpriteNode) -> SKSpriteNode {
         let up = SKAction.scaleY(to: 1.025, duration: Double.random(in: 1.6...2.2))
         let down = SKAction.scaleY(to: 1, duration: Double.random(in: 1.6...2.2))
@@ -25,7 +23,7 @@ enum PixelNodeArt {
     }
 
     private static func pulse(_ node: SKNode) -> SKNode {
-        node.run(.repeatForever(.sequence([.scale(to: 1.1, duration: 0.8), .scale(to: 1, duration: 0.8)])))
+        node.run(.repeatForever(.sequence([.scale(to: 1.08, duration: 0.8), .scale(to: 1, duration: 0.8)])))
         return node
     }
 
@@ -34,145 +32,170 @@ enum PixelNodeArt {
         let alive = SKNode()
         let dead = SKNode()
 
-        /// Дерево: крона, при желании тень, свечение и пень своего цвета.
-        func tree(_ name: String, scale: CGFloat, shadow: CGFloat? = nil, stump: UIColor? = nil,
-                  glow: UIColor? = nil, glowAlpha: CGFloat = 0.45, deadName: String? = nil) -> Bool {
-            guard let crown = Sprites.node(name, scale: scale) else { return false }
-            if let glow { alive.addChild(glowSprite(glow, size: 130, y: 44, alpha: glowAlpha)) }
-            if let shadow { alive.addChild(shadowSprite(shadow)) }
+        func add(_ parent: SKNode, _ name: String, x: CGFloat = 0, y: CGFloat = 0) -> SKSpriteNode? {
+            guard let node = Sprites.node(name, x: x, y: y) else { return nil }
+            parent.addChild(node)
+            return node
+        }
+
+        /// Дерево: крона, при желании свечение, и пень или голое дерево после рубки.
+        func tree(_ name: String, dead deadName: String, glow: UIColor? = nil, glowAlpha: CGFloat = 0.4) -> Bool {
+            guard let crown = Sprites.node(name) else { return false }
+            if let glow { alive.addChild(glowSprite(glow, size: crown.size.width * 1.6, y: crown.size.height * 0.5, alpha: glowAlpha)) }
             alive.addChild(breathe(crown))
-            if let deadName, let bare = Sprites.node(deadName, scale: scale) {
-                if let shadow { dead.addChild(shadowSprite(shadow)) }
-                dead.addChild(bare)
-            } else if let stumpNode = Sprites.node("stump", scale: s) {
-                dead.addChild(tinted(stumpNode, stump, 0.5))
-            }
+            _ = add(dead, deadName)
             return true
         }
 
-        /// Камень или руда: спрайт и россыпь камешков после добычи.
-        func ore(_ name: String, scale: CGFloat = 2.8, rubble: UIColor? = nil, glow: UIColor? = nil, glowAlpha: CGFloat = 0.3) -> Bool {
-            guard let rock = Sprites.node(name, scale: scale) else { return false }
-            if let glow { alive.addChild(glowSprite(glow, size: 84, y: 18, alpha: glowAlpha)) }
+        /// Руда: глыба и камешек рядом, после добычи - щебень.
+        func ore(_ name: String, chunk: String?, glow: UIColor? = nil, glowAlpha: CGFloat = 0.3) -> Bool {
+            guard let rock = Sprites.node(name, x: -4, y: 0) else { return false }
+            if let glow { alive.addChild(glowSprite(glow, size: 76, y: 14, alpha: glowAlpha)) }
+            if let chunk, let small = Sprites.node(chunk, x: 13, y: -3) {
+                alive.addChild(small)
+            }
             alive.addChild(rock)
-            if let pebbles = Sprites.node("pebbles", scale: s) {
-                pebbles.alpha = 0.9
-                dead.addChild(tinted(pebbles, rubble, 0.6))
-            }
+            _ = add(dead, "rubble")
             return true
         }
 
-        /// Камень с кристаллом спереди.
-        func gemRock(_ gem: String, base: String, glow: UIColor, rubble: UIColor? = nil) -> Bool {
-            guard let rock = Sprites.node(base, scale: 2.6, x: -7, y: 2),
-                  let crystal = Sprites.node(gem, scale: 2.3, x: 9, y: -3) else { return false }
-            alive.addChild(glowSprite(glow, size: 90, y: 20, alpha: 0.4))
-            alive.addChild(rock)
-            alive.addChild(pulse(crystal))
-            if let pebbles = Sprites.node("pebbles", scale: s) {
-                dead.addChild(tinted(pebbles, rubble, 0.6))
-            }
+        /// Рыба под водой: анимированная тень и круги.
+        func fish(_ name: String, glow: UIColor? = nil) -> Bool {
+            guard let shadow = Sprites.animated(name, fps: 8) else { return false }
+            shadow.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+            if let glow { alive.addChild(glowSprite(glow, size: 56, y: 0, alpha: 0.45)) }
+            alive.addChild(shadow)
+            let ripple = sprite(Art.ripple, CGSize(width: 40, height: 20))
+            ripple.alpha = 0.5
+            ripple.run(.repeatForever(.sequence([.scale(to: 1.15, duration: 1), .scale(to: 0.9, duration: 1)])))
+            alive.addChild(ripple)
+            let calm = sprite(Art.ripple, CGSize(width: 30, height: 15))
+            calm.alpha = 0.25
+            dead.addChild(calm)
             return true
-        }
-
-        func dirt() {
-            dead.addChild(sprite(Art.dirt, CGSize(width: 30, height: 14)))
         }
 
         let purple = UIColor(red: 0.62, green: 0.42, blue: 1, alpha: 1)
         var ok = true
         switch type {
         case .tree:
-            ok = tree("oak", scale: 1.4)
+            ok = tree(Bool.random() ? "tree_oak" : "tree_fruit", dead: "stump_oak")
         case .pine:
-            ok = tree("pine", scale: 1.05, shadow: 46)
+            ok = tree("tree_spruce", dead: "stump_spruce")
         case .snowPine:
-            ok = tree("pine_frost", scale: 1.05, shadow: 46, stump: UIColor(red: 0.85, green: 0.92, blue: 1, alpha: 1))
+            ok = tree("tree_frost", dead: "stump_frost")
         case .glowTree:
-            ok = tree("oak_glow", scale: 1.45, stump: purple, glow: purple)
+            ok = tree("tree_glow", dead: "stump_oak", glow: purple, glowAlpha: 0.45)
         case .willow:
-            ok = tree("oak_willow", scale: 1.5)
+            ok = tree("tree_willow", dead: "stump_fruit")
         case .ashTree:
-            ok = tree("ash", scale: 0.85, shadow: 48, stump: UIColor(white: 0.2, alpha: 1),
-                      glow: UIColor(red: 1, green: 0.4, blue: 0.1, alpha: 1), glowAlpha: 0.3)
+            ok = tree("tree_ash", dead: "stump_ash", glow: UIColor(red: 1, green: 0.4, blue: 0.1, alpha: 1), glowAlpha: 0.25)
         case .skyTree:
-            ok = tree("oak_sky", scale: 1.5, stump: UIColor(red: 0.8, green: 0.88, blue: 1, alpha: 1),
-                      glow: UIColor(red: 0.7, green: 0.85, blue: 1, alpha: 1), glowAlpha: 0.5)
+            ok = tree("tree_sky", dead: "stump_birch", glow: UIColor(red: 0.75, green: 0.85, blue: 1, alpha: 1), glowAlpha: 0.4)
         case .appleTree:
-            ok = tree("oak_apple", scale: 1.4, deadName: "oak")
+            ok = tree(["tree_apple", "tree_apple", "tree_cherry", "tree_peach", "tree_pear"].randomElement()!, dead: "tree_apple_bare")
         case .goldenTree:
-            ok = tree("oak_golden", scale: 1.45, glow: ResourceKind.goldenApple.oreColor, glowAlpha: 0.4, deadName: "oak_golden_bare")
+            ok = tree("tree_golden", dead: "tree_golden_bare", glow: ResourceKind.goldenApple.oreColor, glowAlpha: 0.35)
+        case .palm:
+            ok = tree("palm", dead: "stump_fruit")
+        case .bananaPalm:
+            ok = tree("palm_banana", dead: "stump_fruit")
+        case .bamboo:
+            ok = tree("bamboo", dead: "sprout")
+        case .cactus:
+            ok = tree("cactus", dead: "sprout")
         case .bush:
-            guard let full = Sprites.node("bush", scale: 1.05), let empty = Sprites.node("bush_empty", scale: 0.95) else { return nil }
-            alive.addChild(full)
-            empty.alpha = 0.85
-            dead.addChild(empty)
+            guard add(alive, "bush_berry") != nil else { return nil }
+            _ = add(dead, "bush")
+        case .cloudBush:
+            guard add(alive, "bush_cloud_star") != nil else { return nil }
+            _ = add(dead, "bush_cloud")
+        case .grapeVine:
+            guard add(alive, "grapes") != nil else { return nil }
+            _ = add(dead, "grapes_bare")
+        case .beehive:
+            guard add(alive, "beehive_full") != nil else { return nil }
+            _ = add(dead, "beehive")
+            let bees = Array(Sprites.frames("an_bee", cell: 16).prefix(4))
+            if let first = bees.first {
+                for i in 0..<2 {
+                    let bee = SKSpriteNode(texture: first, size: CGSize(width: 16, height: 16))
+                    bee.run(.repeatForever(.animate(with: bees, timePerFrame: 0.06)))
+                    let r: CGFloat = 16 + CGFloat(i) * 6
+                    let circle = SKAction.customAction(withDuration: 3 + Double(i)) { node, t in
+                        let a = t / CGFloat(3 + i) * .pi * 2 + CGFloat(i) * 2
+                        node.position = CGPoint(x: cos(a) * r, y: 30 + sin(a) * r * 0.4)
+                        node.xScale = -sin(a) >= 0 ? -1 : 1
+                    }
+                    bee.run(.repeatForever(circle))
+                    alive.addChild(bee)
+                }
+            }
+        case .treasureChest:
+            guard let box = Sprites.node("chest_gold_anim") else { return nil }
+            alive.addChild(glowSprite(UIColor(red: 1, green: 0.85, blue: 0.3, alpha: 1), size: 70, y: 12, alpha: 0.4))
+            alive.addChild(box)
+            let open = Sprites.strip("chest_gold_anim")
+            if let last = open.last, let node = Sprites.node("chest_gold_anim") {
+                node.texture = last
+                dead.addChild(node)
+            }
         case .mushroom:
-            guard let a = Sprites.node("mushroom", scale: s, x: -6, y: 0),
-                  let b = Sprites.node("mushroom", scale: 2, x: 9, y: -3) else { return nil }
-            alive.addChild(a)
-            alive.addChild(b)
-            dirt()
+            guard add(alive, "mushroom_red", x: -5) != nil else { return nil }
+            _ = add(alive, "mushroom_tiny_red", x: 8, y: -3)
         case .glowShroom:
             let cyan = UIColor(red: 0.35, green: 0.95, blue: 1, alpha: 1)
-            guard let a = Sprites.node("mushroom", scale: s, x: -6, y: 0),
-                  let b = Sprites.node("mushroom", scale: 2, x: 9, y: -3) else { return nil }
-            alive.addChild(glowSprite(cyan, size: 72, y: 12, alpha: 0.6))
-            alive.addChild(tinted(a, cyan, 0.65))
-            alive.addChild(tinted(b, cyan, 0.65))
-            dirt()
+            alive.addChild(glowSprite(cyan, size: 60, y: 10, alpha: 0.55))
+            guard add(alive, "mushroom_blue", x: -5) != nil else { return nil }
+            _ = add(alive, "mushroom_tiny_blue", x: 8, y: -3)
         case .carrot:
-            alive.addChild(sprite(Art.dirt, CGSize(width: 40, height: 16)))
-            guard let a = Sprites.node("carrot", scale: s, x: -9, y: 0),
-                  let b = Sprites.node("carrot", scale: s, x: 9, y: 2),
-                  let sprout = Sprites.node("sprout", scale: s, x: 0, y: 0) else { return nil }
-            alive.addChild(b)
-            alive.addChild(a)
-            dead.addChild(sprite(Art.dirt, CGSize(width: 40, height: 16)))
-            dead.addChild(sprout)
+            guard add(alive, "carrot_ripe", x: -7) != nil, add(alive, "carrot_ripe", x: 8, y: 2) != nil else { return nil }
+            _ = add(dead, "sprout")
         case .herbPatch:
-            guard let herb = Sprites.node("herb", scale: s, x: -5, y: 0),
-                  let flower = Sprites.node("flowers_yellow", scale: 2, x: 11, y: -4) else { return nil }
-            alive.addChild(herb)
-            alive.addChild(flower)
-            dirt()
+            guard add(alive, "leek", x: -4) != nil else { return nil }
+            _ = add(alive, "flowers7", x: 9, y: -3)
+            _ = add(dead, "leek_young")
         case .fireFlower:
             let orange = UIColor(red: 1, green: 0.45, blue: 0.1, alpha: 1)
-            guard let flower = Sprites.node("tulip_red", scale: 2.8),
-                  let grass = Sprites.node("grass3", scale: s, x: 10, y: -2) else { return nil }
-            alive.addChild(glowSprite(orange, size: 70, y: 14, alpha: 0.6))
-            alive.addChild(grass)
-            alive.addChild(tinted(flower, orange, 0.3))
-            dirt()
+            alive.addChild(glowSprite(orange, size: 60, y: 12, alpha: 0.55))
+            guard let flowers = Sprites.node("flowers_red") else { return nil }
+            alive.addChild(flowers)
+            _ = add(dead, "tuft1")
+        case .pineapple:
+            guard add(alive, "pineapple") != nil else { return nil }
+            _ = add(dead, "sprout")
+        case .shells:
+            guard add(alive, "shells") != nil else { return nil }
         case .rock:
-            ok = ore("stone", scale: 2.7)
+            ok = ore("ore_stone", chunk: "chunk_stone")
         case .boulder:
-            guard let big = Sprites.node("stone", scale: 3.7, x: -4, y: 0),
-                  let small = Sprites.node("stone3", scale: 2.2, x: 20, y: -6) else { return nil }
-            alive.addChild(big)
-            alive.addChild(small)
-            if let pebbles = Sprites.node("pebbles", scale: 3.2) { dead.addChild(pebbles) }
+            guard add(alive, "boulder") != nil else { return nil }
+            _ = add(dead, "rubble")
         case .coalOre:
-            ok = ore("coal", rubble: UIColor(white: 0.15, alpha: 1))
+            ok = ore("ore_coal", chunk: "chunk_coal")
         case .ironOre:
-            ok = ore("iron", rubble: UIColor(red: 0.6, green: 0.4, blue: 0.32, alpha: 1))
+            ok = ore("ore_iron", chunk: "chunk_copper")
         case .goldOre:
-            ok = ore("gold", rubble: UIColor(red: 0.95, green: 0.7, blue: 0.2, alpha: 1), glow: ResourceKind.gold.oreColor, glowAlpha: 0.25)
-        case .obsidianOre:
-            ok = ore("obsidian", rubble: UIColor(red: 0.2, green: 0.15, blue: 0.3, alpha: 1))
-        case .iceBlock:
-            ok = ore("ice", scale: 3, rubble: UIColor(red: 0.75, green: 0.9, blue: 1, alpha: 1))
-        case .crystalOre:
-            ok = ore("crystal", scale: 3.1, rubble: UIColor(red: 0.55, green: 0.45, blue: 0.7, alpha: 1), glow: purple, glowAlpha: 0.5)
+            ok = ore("ore_gold", chunk: "chunk_gold", glow: ResourceKind.gold.oreColor, glowAlpha: 0.22)
         case .diamondOre:
-            ok = gemRock("diamond", base: "stone", glow: ResourceKind.diamond.oreColor)
+            ok = ore("ore_diamond", chunk: "chunk_diamond", glow: ResourceKind.diamond.oreColor, glowAlpha: 0.3)
         case .rubyOre:
-            ok = gemRock("ruby", base: "stone2", glow: ResourceKind.ruby.oreColor)
+            ok = ore("ore_ruby", chunk: "chunk_ruby", glow: ResourceKind.ruby.oreColor, glowAlpha: 0.3)
+        case .obsidianOre:
+            ok = ore("ore_obsidian", chunk: "chunk_obsidian")
+        case .crystalOre:
+            guard let crystal = Sprites.node("crystal_amethyst", x: -4) else { return nil }
+            alive.addChild(glowSprite(purple, size: 80, y: 16, alpha: 0.45))
+            alive.addChild(pulse(crystal))
+            _ = add(alive, "chunk_amethyst", x: 12, y: -3)
+            _ = add(dead, "rubble")
+        case .iceBlock:
+            ok = ore("ice_block", chunk: "chunk_ice")
         case .starRock:
             let star = UIColor(red: 1, green: 0.92, blue: 0.5, alpha: 1)
-            ok = ore("star", scale: 3, rubble: star, glow: star, glowAlpha: 0.5)
+            ok = ore("ore_star", chunk: "chunk_star", glow: star, glowAlpha: 0.45)
             if ok {
-                let twinkle = sprite(Art.spark, CGSize(width: 16, height: 16), CGPoint(x: 10, y: 40))
+                let twinkle = sprite(Art.spark, CGSize(width: 14, height: 14), CGPoint(x: 8, y: 34))
                 twinkle.blendMode = .add
                 twinkle.run(.repeatForever(.sequence([.group([.scale(to: 1.3, duration: 0.7), .fadeAlpha(to: 0.4, duration: 0.7)]),
                                                       .group([.scale(to: 0.8, duration: 0.7), .fadeAlpha(to: 1, duration: 0.7)])])))
@@ -180,23 +203,59 @@ enum PixelNodeArt {
             }
         case .sulfurVent:
             let yellow = ResourceKind.sulfur.oreColor
-            ok = ore("sulfur", rubble: yellow, glow: yellow, glowAlpha: 0.3)
+            ok = ore("ore_sulfur", chunk: "chunk_sulfur", glow: yellow, glowAlpha: 0.25)
             if ok {
-                let smoke = sprite(Art.puff, CGSize(width: 26, height: 26), CGPoint(x: 4, y: 40))
+                let smoke = sprite(Art.puff, CGSize(width: 22, height: 22), CGPoint(x: 0, y: 30))
                 smoke.color = UIColor(red: 0.95, green: 0.95, blue: 0.7, alpha: 1)
                 smoke.colorBlendFactor = 1
                 smoke.alpha = 0
                 smoke.run(.repeatForever(.sequence([
                     .group([.fadeAlpha(to: 0.6, duration: 0.3), .scale(to: 1, duration: 0.3)]),
-                    .group([.moveBy(x: 6, y: 34, duration: 1.4), .fadeOut(withDuration: 1.4), .scale(to: 2.2, duration: 1.4)]),
-                    .moveBy(x: -6, y: -34, duration: 0),
+                    .group([.moveBy(x: 6, y: 30, duration: 1.4), .fadeOut(withDuration: 1.4), .scale(to: 2.2, duration: 1.4)]),
+                    .moveBy(x: -6, y: -30, duration: 0),
                     .scale(to: 0.6, duration: 0),
                     .wait(forDuration: 0.4)
                 ])))
                 alive.addChild(smoke)
             }
-        default:
-            return nil
+        case .coral:
+            guard add(alive, "coral") != nil else { return nil }
+            _ = add(dead, "rubble")
+        case .clayPit:
+            guard let pit = add(alive, "clay_pit") else { return nil }
+            pit.anchorPoint = CGPoint(x: 0.5, y: 0.3)
+            if let low = add(dead, "clay_pit") {
+                low.anchorPoint = CGPoint(x: 0.5, y: 0.3)
+                low.alpha = 0.55
+            }
+        case .fishSpot, .oasisFish:
+            ok = fish("fish_anim")
+        case .swampFish:
+            ok = fish("fish_swamp_anim")
+        case .lavaFish:
+            ok = fish("fish_lava_anim", glow: UIColor(red: 1, green: 0.5, blue: 0.1, alpha: 1))
+        case .starPond:
+            ok = fish("fish_star_anim", glow: UIColor(red: 0.7, green: 0.6, blue: 1, alpha: 1))
+        case .iceHole:
+            guard let hole = Sprites.node("ice_hole") else { return nil }
+            hole.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+            alive.addChild(hole)
+            if let shadow = Sprites.animated("fish_ice_anim", fps: 8) {
+                shadow.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+                shadow.setScale(0.7)
+                alive.addChild(shadow)
+            }
+            if let still = Sprites.node("ice_hole") {
+                still.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+                dead.addChild(still)
+            }
+        case .oyster:
+            guard let shell = Sprites.node("oyster") else { return nil }
+            shell.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+            alive.addChild(shell)
+            let calm = sprite(Art.ripple, CGSize(width: 30, height: 15))
+            calm.alpha = 0.3
+            dead.addChild(calm)
         }
         return ok ? (alive, dead) : nil
     }

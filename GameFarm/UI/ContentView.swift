@@ -32,6 +32,25 @@ struct ContentView: View {
                     }
             }
 
+            if let chest = game.gardenChestFound {
+                RoyalChestCard(treasure: chest)
+                    .transition(.scale(scale: 0.6).combined(with: .opacity))
+                    .allowsHitTesting(false)
+                    .zIndex(6)
+                    .task(id: chest) {
+                        try? await Task.sleep(for: .seconds(3))
+                        withAnimation(.easeOut(duration: 0.3)) { game.gardenChestFound = nil }
+                    }
+            }
+
+            if let report = game.expeditionReport, game.levelUp == nil {
+                ExpeditionReportOverlay(report: report) {
+                    withAnimation(.spring(duration: 0.3)) { game.expeditionReport = nil }
+                }
+                .transition(.scale(scale: 0.8).combined(with: .opacity))
+                .zIndex(8)
+            }
+
             if game.offerPopup && game.starterAvailable && game.levelUp == nil {
                 OfferPopup { sheet = .shop }
                     .transition(.scale(scale: 0.8).combined(with: .opacity))
@@ -57,6 +76,12 @@ struct ContentView: View {
         .animation(.spring(duration: 0.35), value: game.levelUp)
         .animation(.spring(duration: 0.35), value: game.offlineReport)
         .animation(.spring(duration: 0.35), value: game.offerPopup)
+        .animation(.spring(duration: 0.35), value: game.expeditionReport)
+        .animation(.spring(duration: 0.4, bounce: 0.4), value: game.gardenChestFound)
+        .onChange(of: sheet) { old, new in
+            if new != nil && old == nil { Sound.shared.play(.open) }
+            if new == nil && old != nil { Sound.shared.play(.close) }
+        }
         .sheet(item: $sheet) { which in
             Group {
                 switch which {
@@ -65,7 +90,7 @@ struct ContentView: View {
                 case .talents: TalentsView()
                 case .animals: AnimalsView()
                 case .quests: QuestsView()
-                case .map: MapView { sheet = nil }
+                case .map: MapView(onTravel: { sheet = nil }, onShop: { sheet = .shop })
                 case .level: LevelView()
                 case .shop: ShopView()
                 case .wardrobe: WardrobeView()
@@ -150,6 +175,8 @@ struct HUDView: View {
                 }
             }
 
+            ExpeditionPill()
+
             ForEach(game.toasts) { toast in
                 ToastView(toast: toast)
                     .transition(.move(edge: .top).combined(with: .opacity))
@@ -165,6 +192,9 @@ struct HUDView: View {
             if let encounter = game.encounter {
                 EncounterCard(encounter: encounter) { scene.tameNearby() }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+            } else if let gate = game.gatePrompt {
+                GateCard(gateID: gate) { sheet = .shop }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
             bottomBar
@@ -173,6 +203,7 @@ struct HUDView: View {
         .padding(.top, 4)
         .padding(.bottom, 4)
         .animation(.spring(duration: 0.35), value: game.encounter)
+        .animation(.spring(duration: 0.35), value: game.gatePrompt)
         .animation(.spring(duration: 0.35), value: game.toasts)
         .animation(.easeInOut(duration: 0.3), value: game.save.tutorialDone)
     }
@@ -319,9 +350,7 @@ struct HUDView: View {
     }
 
     private var mapBadge: Int {
-        LocationID.allCases.filter { id in
-            !game.isUnlocked(id) && game.save.level >= id.spec.level && game.canAfford(game.unlockCost(id))
-        }.count
+        game.openableGates + (game.freeTicketReady ? 1 : 0)
     }
 }
 
@@ -401,7 +430,7 @@ struct EncounterCard: View {
         let stars = game.stars(encounter.animal)
         let cost = game.tameCost(encounter.animal)
         HStack(spacing: 12) {
-            Text(spec.emoji).font(.system(size: 44))
+            AnimalIcon(id: encounter.animal, size: 52)
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 6) {
                     Text(spec.name).font(.headline)

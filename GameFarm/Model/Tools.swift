@@ -104,6 +104,8 @@ enum NodeType: String, CaseIterable {
     case ashTree, fireFlower, sulfurVent, obsidianOre, rubyOre, lavaFish
     // Небесные острова
     case cloudBush, goldenTree, skyTree, starRock, starPond
+    // Королевский сад и экспедиции
+    case beehive, grapeVine, treasureChest
 
     var spec: NodeSpec { NodeSpec.table[self]! }
 }
@@ -255,7 +257,18 @@ struct NodeSpec {
                      radius: 20, blocking: true, barHeight: 60, chip: UIColor(red: 1, green: 0.95, blue: 0.6, alpha: 1)),
             NodeSpec(type: .starPond, tool: .rod, tier: 8, hp: 120, xp: 85, respawn: 30,
                      yields: [NodeYield(kind: .fish, min: 18, max: 22), NodeYield(kind: .stardust, min: 1, max: 1, chance: 0.2)],
-                     radius: 14, blocking: false, barHeight: 34, chip: UIColor(red: 0.6, green: 0.6, blue: 1, alpha: 1))
+                     radius: 14, blocking: false, barHeight: 34, chip: UIColor(red: 0.6, green: 0.6, blue: 1, alpha: 1)),
+            // Королевский сад и экспедиции
+            NodeSpec(type: .beehive, tool: .hand, tier: 1, hp: 6, xp: 14, respawn: 30,
+                     yields: [NodeYield(kind: .honey, min: 1, max: 2)], radius: 14, blocking: true, keepsBody: true, barHeight: 48,
+                     chip: UIColor(red: 1, green: 0.75, blue: 0.2, alpha: 1)),
+            NodeSpec(type: .grapeVine, tool: .hand, tier: 1, hp: 6, xp: 10, respawn: 25,
+                     yields: [NodeYield(kind: .berries, min: 5, max: 7)], radius: 22, blocking: false, barHeight: 70,
+                     chip: UIColor(red: 0.55, green: 0.3, blue: 0.75, alpha: 1)),
+            NodeSpec(type: .treasureChest, tool: .hand, tier: 1, hp: 8, xp: 30, respawn: 600,
+                     yields: [NodeYield(kind: .gold, min: 3, max: 6), NodeYield(kind: .pearl, min: 1, max: 1, chance: 0.35),
+                              NodeYield(kind: .diamond, min: 1, max: 1, chance: 0.25), NodeYield(kind: .shell, min: 2, max: 3, chance: 0.5)],
+                     radius: 16, blocking: false, barHeight: 40, chip: UIColor(red: 1, green: 0.85, blue: 0.3, alpha: 1))
         ]
         var dict: [NodeType: NodeSpec] = [:]
         for spec in list { dict[spec.type] = spec }

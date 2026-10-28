@@ -247,19 +247,18 @@ final class PlayerNode: SKNode {
         art.run(grow, withKey: "pop")
     }
 
-    func swing(_ kind: ToolKind, toward target: CGPoint) {
+    func swing(_ kind: ToolKind, toward target: CGPoint, interval: Double = 0.55) {
         let dir: CGFloat = target.x >= position.x ? 1 : -1
         facing = dir
         if let pixel {
             let dx = target.x - position.x
             let dy = target.y - position.y
+            let duration = min(0.42, max(0.24, interval * 0.8))
             switch kind {
-            case .axe: pixel.act(.axe, dx: dx, dy: dy)
-            case .pickaxe: pixel.act(.pickaxe, dx: dx, dy: dy)
-            case .hand: pixel.act(.hoe, dx: dx, dy: dy)
-            case .rod:
-                pixel.look(dx: dx, dy: dy)
-                swingEmojiTool(kind, dir: dir)
+            case .axe: pixel.act(.axe, dx: dx, dy: dy, duration: duration)
+            case .pickaxe: pixel.act(.pickaxe, dx: dx, dy: dy, duration: duration)
+            case .hand: pixel.act(.hoe, dx: dx, dy: dy, duration: duration)
+            case .rod: pixel.act(.fish, dx: dx, dy: dy, duration: max(duration, 0.4))
             }
             return
         }
@@ -337,19 +336,27 @@ final class CompanionNode: SKNode {
         position.x += velocity.dx * CGFloat(dt)
         position.y += velocity.dy * CGFloat(dt)
         let moving = hypot(velocity.dx, velocity.dy)
-        if moving > 12 {
+        let flies = pixel?.sheet.flies ?? false
+        if flies {
+            phase += dt * 4
+            body.position.y = 10 + CGFloat(sin(phase)) * 5
+        } else if moving > 12 {
             phase += dt * 15
-            body.position.y = CGFloat(abs(sin(phase))) * (pixel == nil ? 6 : 1.5)
-            if abs(velocity.dx) > 6 { body.xScale = velocity.dx > 0 ? -1 : 1 }
+            body.position.y = CGFloat(abs(sin(phase))) * (pixel == nil ? 6 : 1)
+            if pixel == nil, abs(velocity.dx) > 6 { body.xScale = velocity.dx > 0 ? -1 : 1 }
         } else {
             body.position.y += (0 - body.position.y) * 0.3
         }
-        pixel?.update(moving: moving > 12, dt: dt)
+        pixel?.update(velocity: velocity, dt: dt)
     }
 
     func attack(toward point: CGPoint) {
         let dx = point.x - position.x
-        if abs(dx) > 2 { body.xScale = dx > 0 ? -1 : 1 }
+        if let pixel {
+            pixel.look(dx: dx)
+        } else if abs(dx) > 2 {
+            body.xScale = dx > 0 ? -1 : 1
+        }
         let lunge = CGVector(dx: (point.x - position.x) * 0.18, dy: (point.y - position.y) * 0.18)
         body.run(.sequence([.moveBy(x: lunge.dx, y: lunge.dy, duration: 0.07), .moveBy(x: -lunge.dx, y: -lunge.dy, duration: 0.1)]))
     }
@@ -396,7 +403,7 @@ final class WildNode: SKNode {
         bubble.fillColor = UIColor(red: 0.95, green: 0.4, blue: 0.6, alpha: 1)
         bubble.strokeColor = .white
         bubble.lineWidth = 2
-        bubble.position = CGPoint(x: 0, y: px == nil ? 54 : 64)
+        bubble.position = CGPoint(x: 0, y: px == nil ? 54 : 56)
         bubble.addChild(mark)
         addChild(bobbing(bubble, height: 4, duration: 0.5))
 
@@ -412,7 +419,8 @@ final class WildNode: SKNode {
         life -= dt
         wait -= dt
         let d = distance(position, goal)
-        pixel?.update(moving: d >= 4, dt: dt)
+        let v = d >= 4 ? CGVector(dx: (goal.x - position.x) / d * 40, dy: (goal.y - position.y) / d * 40) : .zero
+        pixel?.update(velocity: v, dt: dt)
         if d < 4 {
             body.position.y += (0 - body.position.y) * 0.3
             if wait <= 0 {
@@ -426,7 +434,7 @@ final class WildNode: SKNode {
             position.x += (goal.x - position.x) / d * step
             position.y += (goal.y - position.y) / d * step
             body.position.y = CGFloat(abs(sin(life * 12))) * (pixel == nil ? 4 : 1)
-            if abs(goal.x - position.x) > 1 { body.xScale = goal.x > position.x ? -1 : 1 }
+            if pixel == nil, abs(goal.x - position.x) > 1 { body.xScale = goal.x > position.x ? -1 : 1 }
         }
     }
 
@@ -444,7 +452,7 @@ final class TreasureNode: SKNode {
         super.init()
         position = point
         addChild(glowSprite(UIColor(red: 1, green: 0.8, blue: 0.2, alpha: 1), size: 110, y: 16, alpha: 0.6))
-        let pixelBox = Sprites.node("chest")
+        let pixelBox = Sprites.node("chest_gold_anim")
         if pixelBox == nil { addChild(shadowSprite(36)) }
         let box = pixelBox ?? emojiSprite("🎁", 40, y: 20)
         let wobble = SKAction.sequence([
@@ -477,12 +485,30 @@ final class CritterNode: SKSpriteNode {
     private var heading = CGFloat.random(in: 0...(.pi * 2))
     private var phase = Double.random(in: 0...6)
     private let flier: Bool
-    private let baseScale: CGFloat
+    private let pixel: Bool
 
     init(emoji: String, flier: Bool) {
         self.flier = flier
+        // Бабочки и пчёлы - из пака, остальное эмодзи.
+        if Sprites.available, emoji == "🦋" || emoji == "🐝" {
+            let frames: [SKTexture]
+            if emoji == "🦋" {
+                let all = Sprites.frames("an_butterfly", cell: 8)
+                let row = Int.random(in: 0..<max(1, all.count / 2))
+                frames = all.count >= 2 ? [all[row * 2], all[row * 2 + 1]] : all
+            } else {
+                frames = Array(Sprites.frames("an_bee", cell: 16).prefix(4))
+            }
+            if let first = frames.first {
+                pixel = true
+                let side: CGFloat = emoji == "🦋" ? 16 : 26
+                super.init(texture: first, color: .clear, size: CGSize(width: side, height: side))
+                run(.repeatForever(.animate(with: frames, timePerFrame: emoji == "🦋" ? 0.14 : 0.06)))
+                return
+            }
+        }
+        pixel = false
         let size: CGFloat = flier ? 18 : 16
-        baseScale = 1
         let tex = Art.emoji(emoji, size: 32)
         super.init(texture: tex, color: .clear, size: CGSize(width: size, height: size))
     }
@@ -500,7 +526,9 @@ final class CritterNode: SKSpriteNode {
             position.x = max(50, min(bounds.width - 50, position.x))
             position.y = max(50, min(bounds.height - 50, position.y))
         }
-        if flier {
+        if pixel {
+            xScale = cos(heading) > 0 ? -1 : 1
+        } else if flier {
             let flap = CGFloat(abs(sin(phase * 14)))
             xScale = (cos(heading) > 0 ? -1 : 1) * (0.55 + 0.45 * flap)
         } else {

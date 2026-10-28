@@ -2,15 +2,27 @@ import Foundation
 
 enum AnimalID: String, CaseIterable, Identifiable {
     // Лавка
-    case dog, chicken, cat, hamster, cow, horse, sheep, turkey, bee, owl, llama, pig, panda, unicorn
+    case chicken, cow, horse, sheep, bee, rooster, pig, unicorn
     // Дикие
-    case rabbit, squirrel, goat, hedgehog, duck, beaver, otter, frog, turtle, crocodile, camel, lizard
-    case penguin, fox, polarBear, bat, dragon, parrot, monkey, crab, phoenix, lavasaur, eagle, swan, dove
+    case mouse, goose, duck, frog, butterfly, swan, goldenGoose
     // Из стартового набора
-    case lion
+    case duckHat
 
     var id: String { rawValue }
     var spec: AnimalSpec { AnimalSpec.table[self]! }
+
+    /// Старые звери из прошлых версий: во что они превращаются в сохранении.
+    static let migration: [String: AnimalID] = [
+        "dog": .mouse, "cat": .butterfly, "hamster": .horse, "turkey": .chicken, "owl": .rooster, "llama": .sheep,
+        "panda": .pig, "rabbit": .mouse, "squirrel": .mouse, "goat": .goose, "hedgehog": .goose, "beaver": .goose,
+        "otter": .duck, "turtle": .swan, "crocodile": .pig, "camel": .horse, "lizard": .butterfly, "penguin": .duck,
+        "fox": .swan, "polarBear": .pig, "bat": .butterfly, "dragon": .unicorn, "parrot": .butterfly, "monkey": .pig,
+        "crab": .duck, "phoenix": .goldenGoose, "lavasaur": .unicorn, "eagle": .swan, "dove": .goldenGoose, "lion": .duckHat
+    ]
+
+    static func from(_ raw: String) -> AnimalID? {
+        AnimalID(rawValue: raw) ?? migration[raw]
+    }
 }
 
 struct HelperSpec {
@@ -115,131 +127,58 @@ struct AnimalSpec {
 
     static let table: [AnimalID: AnimalSpec] = {
         let list: [AnimalSpec] = [
-            AnimalSpec(id: .dog, emoji: "🐕",
-                       effects: [.helper(HelperSpec(damage: 1, interval: 1.1, tools: [.hand, .axe], maxTier: 2))],
-                       source: .shop(price: 120, level: 2)),
             AnimalSpec(id: .chicken, emoji: "🐔",
                        effects: [.produce(.egg, 25)],
-                       source: .shop(price: 200, level: 3)),
-            AnimalSpec(id: .cat, emoji: "🐈",
-                       effects: [.crit(0.06), .xp(0.05)],
-                       source: .shop(price: 400, level: 5)),
-            AnimalSpec(id: .hamster, emoji: "🐹",
-                       effects: [.backpack(25)],
-                       source: .shop(price: 900, level: 8)),
+                       source: .shop(price: 200, level: 2)),
             AnimalSpec(id: .cow, emoji: "🐄",
                        effects: [.produce(.milk, 35)],
-                       source: .shop(price: 700, level: 7)),
+                       source: .shop(price: 700, level: 5)),
             AnimalSpec(id: .horse, emoji: "🐎",
-                       effects: [.speed(0.2)],
-                       source: .shop(price: 1200, level: 10)),
+                       effects: [.speed(0.2), .backpack(20)],
+                       source: .shop(price: 1200, level: 8)),
             AnimalSpec(id: .sheep, emoji: "🐑",
                        effects: [.produce(.wool, 40)],
-                       source: .shop(price: 1600, level: 12)),
-            AnimalSpec(id: .turkey, emoji: "🦃",
-                       effects: [.produce(.feather, 25), .yield(.farm, 0.1)],
-                       source: .shop(price: 2200, level: 14)),
+                       source: .shop(price: 1600, level: 11)),
             AnimalSpec(id: .bee, emoji: "🐝",
                        effects: [.produce(.honey, 45), .yield(.food, 0.1)],
-                       source: .shop(price: 2500, level: 15)),
-            AnimalSpec(id: .owl, emoji: "🦉",
-                       effects: [.xp(0.2)],
-                       source: .shop(price: 4000, level: 18)),
-            AnimalSpec(id: .llama, emoji: "🦙",
-                       effects: [.produce(.wool, 30), .backpack(30)],
-                       source: .shop(price: 9000, level: 20)),
+                       source: .shop(price: 2500, level: 14)),
+            AnimalSpec(id: .rooster, emoji: "🐓",
+                       effects: [.helper(HelperSpec(damage: 4, interval: 1.0, tools: [.hand, .axe, .pickaxe], maxTier: 4)), .xp(0.1)],
+                       source: .shop(price: 5000, level: 18)),
             AnimalSpec(id: .pig, emoji: "🐖",
-                       effects: [.yield(.food, 0.25), .sell(0.1)],
-                       source: .shop(price: 7000, level: 24)),
-            AnimalSpec(id: .panda, emoji: "🐼",
-                       effects: [.helper(HelperSpec(damage: 6, interval: 1.2, tools: [.hand, .axe], maxTier: 6)), .yieldKind(.bamboo, 0.6)],
+                       effects: [.helper(HelperSpec(damage: 12, interval: 1.2, tools: [.hand, .axe, .pickaxe], maxTier: 6)),
+                                 .yield(.food, 0.15)],
                        source: .shop(price: 15000, level: 26)),
             AnimalSpec(id: .unicorn, emoji: "🦄",
-                       effects: [.yield(nil, 0.15), .xp(0.15), .speed(0.1)],
-                       source: .shop(price: 40000, level: 35)),
+                       effects: [.helper(HelperSpec(damage: 28, interval: 1.0, tools: [.hand, .axe, .pickaxe, .rod], maxTier: 8)),
+                                 .yield(nil, 0.12), .xp(0.15)],
+                       source: .shop(price: 60000, level: 40)),
 
-            AnimalSpec(id: .rabbit, emoji: "🐇",
-                       effects: [.yield(.food, 0.2), .speed(0.05)],
+            AnimalSpec(id: .mouse, emoji: "🐁",
+                       effects: [.helper(HelperSpec(damage: 1, interval: 1.1, tools: [.hand, .axe], maxTier: 2)), .yield(.food, 0.05)],
                        source: .wild(.meadow, Cost(coins: 0, (.berries, 20), (.apples, 10)), weight: 1)),
-            AnimalSpec(id: .squirrel, emoji: "🐿️",
-                       effects: [.yield(.wood, 0.15)],
-                       source: .wild(.meadow, Cost(coins: 0, (.berries, 15), (.mushrooms, 10)), weight: 1)),
-            AnimalSpec(id: .goat, emoji: "🐐",
-                       effects: [.yield(.stone, 0.15), .yield(.ore, 0.1)],
+            AnimalSpec(id: .goose, emoji: "🪿",
+                       effects: [.helper(HelperSpec(damage: 2.5, interval: 1.1, tools: [.hand, .pickaxe], maxTier: 3)), .crit(0.04)],
                        source: .wild(.hills, Cost(coins: 0, (.carrots, 25), (.berries, 20)), weight: 1)),
-            AnimalSpec(id: .hedgehog, emoji: "🦔",
-                       effects: [.helper(HelperSpec(damage: 1.5, interval: 1.2, tools: [.hand, .pickaxe], maxTier: 2))],
-                       source: .wild(.hills, Cost(coins: 0, (.mushrooms, 25), (.apples, 20)), weight: 1)),
             AnimalSpec(id: .duck, emoji: "🦆",
-                       effects: [.produce(.feather, 30), .yieldKind(.fish, 0.1)],
-                       source: .wild(.lake, Cost(coins: 0, (.berries, 30), (.carrots, 20)), weight: 1)),
-            AnimalSpec(id: .beaver, emoji: "🦫",
-                       effects: [.helper(HelperSpec(damage: 3, interval: 1.0, tools: [.axe], maxTier: 4))],
-                       source: .wild(.lake, Cost(coins: 0, (.apples, 30), (.carrots, 20)), weight: 1)),
-            AnimalSpec(id: .otter, emoji: "🦦",
-                       effects: [.yieldKind(.fish, 0.4), .respawn(0.05)],
-                       source: .wild(.lake, Cost(coins: 0, (.fish, 25)), weight: 1)),
+                       effects: [.helper(HelperSpec(damage: 3.5, interval: 1.1, tools: [.rod, .hand], maxTier: 4)), .produce(.feather, 40)],
+                       source: .wild(.lake, Cost(coins: 0, (.fish, 25), (.carrots, 20)), weight: 1)),
             AnimalSpec(id: .frog, emoji: "🐸",
-                       effects: [.respawn(0.1), .yield(.food, 0.1)],
+                       effects: [.respawn(0.12), .yield(.food, 0.12)],
                        source: .wild(.swamp, Cost(coins: 0, (.herbs, 30), (.mushrooms, 30)), weight: 1)),
-            AnimalSpec(id: .turtle, emoji: "🐢",
-                       effects: [.backpack(50), .crit(0.04)],
-                       source: .wild(.swamp, Cost(coins: 0, (.fish, 40), (.herbs, 20)), weight: 1)),
-            AnimalSpec(id: .crocodile, emoji: "🐊",
-                       effects: [.helper(HelperSpec(damage: 10, interval: 1.4, tools: [.axe, .pickaxe, .rod], maxTier: 5))],
-                       source: .wild(.swamp, Cost(coins: 0, (.fish, 120), (.clay, 40)), weight: 0.5)),
-            AnimalSpec(id: .camel, emoji: "🐪",
-                       effects: [.backpack(40), .speed(0.05)],
+            AnimalSpec(id: .butterfly, emoji: "🦋",
+                       effects: [.xp(0.2), .sell(0.06)],
                        source: .wild(.desert, Cost(coins: 0, (.cactus, 30), (.coconut, 20)), weight: 1)),
-            AnimalSpec(id: .lizard, emoji: "🦎",
-                       effects: [.respawn(0.12)],
-                       source: .wild(.desert, Cost(coins: 0, (.berries, 50), (.cactus, 20)), weight: 1)),
-            AnimalSpec(id: .penguin, emoji: "🐧",
-                       effects: [.helper(HelperSpec(damage: 4, interval: 1.1, tools: [.rod, .hand], maxTier: 3))],
-                       source: .wild(.snow, Cost(coins: 0, (.fish, 60)), weight: 1)),
-            AnimalSpec(id: .fox, emoji: "🦊",
-                       effects: [.crit(0.1), .sell(0.05)],
-                       source: .wild(.snow, Cost(coins: 0, (.carrots, 60), (.egg, 20)), weight: 1)),
-            AnimalSpec(id: .polarBear, emoji: "🐻‍❄️",
-                       effects: [.helper(HelperSpec(damage: 8, interval: 1.3, tools: [.axe, .pickaxe], maxTier: 5))],
-                       source: .wild(.snow, Cost(coins: 0, (.fish, 80), (.honey, 30)), weight: 0.7)),
-            AnimalSpec(id: .bat, emoji: "🦇",
-                       effects: [.xp(0.25)],
-                       source: .wild(.caves, Cost(coins: 0, (.mushrooms, 100), (.berries, 60)), weight: 1)),
-            AnimalSpec(id: .dragon, emoji: "🐉",
-                       effects: [.helper(HelperSpec(damage: 15, interval: 1.0, tools: [.hand, .axe, .pickaxe, .rod], maxTier: 6)),
-                                 .yield(.gem, 0.15)],
-                       source: .wild(.caves, Cost(coins: 0, (.crystal, 10), (.diamond, 10), (.coconut, 50)), weight: 0.2))
-        ]
-        let late: [AnimalSpec] = [
-            AnimalSpec(id: .parrot, emoji: "🦜",
-                       effects: [.sell(0.12), .xp(0.08)],
-                       source: .wild(.island, Cost(coins: 0, (.banana, 30), (.pineapple, 20)), weight: 1)),
-            AnimalSpec(id: .monkey, emoji: "🐒",
-                       effects: [.helper(HelperSpec(damage: 9, interval: 0.9, tools: [.hand, .axe], maxTier: 7))],
-                       source: .wild(.island, Cost(coins: 0, (.banana, 60)), weight: 1)),
-            AnimalSpec(id: .crab, emoji: "🦀",
-                       effects: [.helper(HelperSpec(damage: 10, interval: 1.1, tools: [.pickaxe, .rod], maxTier: 7))],
-                       source: .wild(.island, Cost(coins: 0, (.shell, 40), (.fish, 100)), weight: 1)),
-            AnimalSpec(id: .phoenix, emoji: "🐦‍🔥",
-                       effects: [.xp(0.35), .respawn(0.1)],
-                       source: .wild(.volcano, Cost(coins: 0, (.ruby, 5), (.sulfur, 60), (.pineapple, 60)), weight: 0.4)),
-            AnimalSpec(id: .lavasaur, emoji: "🦖",
-                       effects: [.helper(HelperSpec(damage: 30, interval: 1.2, tools: [.hand, .axe, .pickaxe, .rod], maxTier: 8))],
-                       source: .wild(.volcano, Cost(coins: 0, (.obsidian, 20), (.coconut, 80), (.banana, 80)), weight: 0.5)),
-            AnimalSpec(id: .eagle, emoji: "🦅",
-                       effects: [.speed(0.3), .crit(0.05)],
-                       source: .wild(.sky, Cost(coins: 0, (.stardust, 5), (.fish, 200)), weight: 1)),
             AnimalSpec(id: .swan, emoji: "🦢",
-                       effects: [.produce(.cloud, 45)],
-                       source: .wild(.sky, Cost(coins: 0, (.cloud, 20), (.goldenApple, 5)), weight: 1)),
-            AnimalSpec(id: .dove, emoji: "🕊️",
-                       effects: [.xp(0.2), .yield(nil, 0.08)],
-                       source: .wild(.sky, Cost(coins: 0, (.herbs, 100), (.berries, 300)), weight: 1))
+                       effects: [.crit(0.1), .backpack(40)],
+                       source: .wild(.snow, Cost(coins: 0, (.fish, 80), (.ice, 30)), weight: 1)),
+            AnimalSpec(id: .goldenGoose, emoji: "🪿",
+                       effects: [.produce(.gold, 40), .yield(.gem, 0.12)],
+                       source: .wild(.caves, Cost(coins: 0, (.crystal, 10), (.diamond, 10), (.coconut, 50)), weight: 0.4)),
+
+            AnimalSpec(id: .duckHat, emoji: "🦆", effects: [.yield(nil, 0.08), .xp(0.1), .sell(0.1)], source: .premium)
         ]
         var dict: [AnimalID: AnimalSpec] = [:]
-        for spec in late { dict[spec.id] = spec }
-        dict[.lion] = AnimalSpec(id: .lion, emoji: "🦁", effects: [.yield(nil, 0.08), .xp(0.1), .sell(0.1)], source: .premium)
         for spec in list { dict[spec.id] = spec }
         return dict
     }()

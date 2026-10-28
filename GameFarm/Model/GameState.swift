@@ -18,6 +18,14 @@ final class GameState {
     var offlineReport: OfflineReport?
     var treasureFound: Treasure?
     var offerPopup = false
+    /// Закрытый проход рядом с персонажем.
+    private(set) var gatePrompt: String?
+    var expeditionReport: ExpeditionReport?
+    var gardenChestFound: Treasure?
+    /// Локации, куда можно дойти через открытые проходы.
+    private(set) var reachable: Set<LocationID> = [.meadow]
+    /// Через какие ворота персонаж пришёл в локацию (сцена ставит его к ним).
+    @ObservationIgnored var arrivalGate: String?
 
     @ObservationIgnored private var dirty = false
     @ObservationIgnored private var lastWrite = Date.distantPast
@@ -25,6 +33,9 @@ final class GameState {
 
     private init() {
         save = SaveFile.load()
+        migrateGates()
+        refreshReachable()
+        if save.current == .garden && !owns(.garden) { save.current = .meadow }
         recalc()
         ensureQuests()
         checkStarterOffer()
@@ -56,9 +67,10 @@ final class GameState {
         save.purchases = purchases
         save.granted = granted
         if owns(.starter) {
-            save.animals[.lion] = 1
-            save.active = [.lion]
+            save.animals[.duckHat] = 1
+            save.active = [.duckHat]
         }
+        refreshReachable()
         encounter = nil
         backpackFull = false
         levelUp = nil
@@ -101,6 +113,7 @@ final class GameState {
         if save.level > from {
             recalc()
             levelUp = LevelUpInfo(from: levelUp?.from ?? from, to: save.level)
+            SoundFX.play(.levelUp)
             checkStarterOffer()
         }
         markDirty()
@@ -127,6 +140,7 @@ final class GameState {
         guard n > 0 else { return 0 }
         save.backpack[kind, default: 0] += n
         save.gathered[kind, default: 0] += n
+        noteExpeditionLoot(kind, n)
         progressQuests(.gather, kind: kind, amount: n)
         markDirty()
         return n
@@ -138,6 +152,7 @@ final class GameState {
         save.storage[kind, default: 0] += amount
         if counts {
             save.gathered[kind, default: 0] += amount
+            noteExpeditionLoot(kind, amount)
             progressQuests(.gather, kind: kind, amount: amount)
         }
         markDirty()
@@ -174,6 +189,13 @@ final class GameState {
         return coins
     }
 
+    func addCoins(_ n: Int) {
+        guard n > 0 else { return }
+        save.coins += n
+        save.coinsEarned += n
+        markDirty()
+    }
+
     func sellPrice(_ kind: ResourceKind) -> Int {
         let bonus = 1 + (stats.sellCategory[kind.category] ?? 0)
         return max(1, Int((Double(kind.price) * stats.sellMult * bonus).rounded()))
@@ -188,6 +210,7 @@ final class GameState {
         save.coins += earned
         save.coinsEarned += earned
         progressQuests(.sell, amount: earned)
+        SoundFX.play(.coin)
         markDirty()
     }
 
@@ -273,6 +296,7 @@ final class GameState {
         pay(cost)
         save.tools[tool] = next
         recalc()
+        SoundFX.play(.unlock)
         toast(tool.emoji, tr("toast.newTool", ToolTier.name(tool, tier: next)))
         return true
     }
@@ -338,6 +362,7 @@ final class GameState {
               let price = shopPrice(id), save.coins >= price else { return false }
         save.coins -= price
         addStar(id, count: 1)
+        SoundFX.play(.purchase)
         return true
     }
 
@@ -385,28 +410,201 @@ final class GameState {
         return true
     }
 
-    // MARK: Локации
+    // MARK: Локации и проходы
 
-    func isUnlocked(_ id: LocationID) -> Bool { save.unlocked.contains(id) }
+    func isUnlocked(_ id: LocationID) -> Bool {
+        switch id.spec.kind {
+        case .world: return reachable.contains(id)
+        case .garden: return owns(.garden)
+        case .expedition: return save.expedition?.id == id
+        }
+    }
 
-    func unlockCost(_ id: LocationID) -> Cost { discounted(id.spec.cost) }
+    func refreshReachable() {
+        reachable = WorldGraph.reachable(open: Set(save.openGates))
+        save.unlocked = LocationID.world.filter { reachable.contains($0) }
+    }
+
+    /// Старые сохранения: локации открывались без проходов. Открываем проходы по цепочке до каждой.
+    private func migrateGates() {
+        guard save.openGates.isEmpty, save.unlocked.count > 1 else { return }
+        let had = Set(save.unlocked)
+        for id in save.unlocked where id != .meadow {
+            let path = WorldGraph.path(to: id, within: had) ?? WorldGraph.path(to: id, within: nil) ?? []
+            for gate in path where !save.openGates.contains(gate) {
+                save.openGates.append(gate)
+                if let spec = WorldGraph.gate(gate) {
+                    for g in WorldGraph.bundle(spec) where !save.openGates.contains(g.id) { save.openGates.append(g.id) }
+                }
+            }
+        }
+    }
+
+    func isGateOpen(_ id: String) -> Bool {
+        guard let gate = WorldGraph.gate(id) else { return false }
+        if gate.royal { return owns(.garden) }
+        return save.openGates.contains(id)
+    }
+
+    /// Цена прохода. Короткий путь между двумя уже открытыми локациями стоит вдвое дешевле.
+    func gateCost(_ gate: GateSpec) -> Cost {
+        let cost = discounted(gate.cost)
+        if reachable.contains(gate.a) && reachable.contains(gate.b) { return cost.scaled(0.5) }
+        return cost
+    }
+
+    func canOpenGate(_ gate: GateSpec) -> Bool {
+        !gate.royal && !isGateOpen(gate.id) && save.level >= gate.level && canAfford(gateCost(gate))
+    }
+
+    /// Сколько закрытых проходов можно открыть прямо сейчас (для значка на карте).
+    var openableGates: Int {
+        WorldGraph.gates.filter { gate in
+            (reachable.contains(gate.a) || reachable.contains(gate.b)) && canOpenGate(gate)
+        }.count
+    }
 
     @discardableResult
-    func unlock(_ id: LocationID) -> Bool {
-        guard !isUnlocked(id), save.level >= id.spec.level, canAfford(unlockCost(id)) else { return false }
-        pay(unlockCost(id))
-        save.unlocked.append(id)
-        toast(id.spec.emoji, tr("toast.locationOpened", id.spec.name))
-        gainXP(GameRules.unlockXP(id))
-        markDirty()
+    func openGate(_ id: String) -> Bool {
+        guard let gate = WorldGraph.gate(id), canOpenGate(gate) else { return false }
+        let before = reachable
+        pay(gateCost(gate))
+        for g in WorldGraph.bundle(gate) where !save.openGates.contains(g.id) {
+            save.openGates.append(g.id)
+        }
+        refreshReachable()
+        let fresh = LocationID.world.filter { reachable.contains($0) && !before.contains($0) }
+        for loc in fresh {
+            toast(loc.spec.emoji, tr("toast.locationOpened", loc.spec.name))
+            gainXP(GameRules.unlockXP(loc))
+        }
+        if fresh.isEmpty { toast("🚪", tr("toast.gateOpened")) }
+        gatePrompt = nil
+        SoundFX.play(.gateOpen)
+        saveNow()
         return true
     }
 
+    func setGatePrompt(_ id: String?) {
+        if gatePrompt != id { gatePrompt = id }
+    }
+
+    /// Персонаж прошёл через открытые ворота на краю карты.
+    func walk(through gateID: String) {
+        guard let gate = WorldGraph.gate(gateID), isGateOpen(gateID), gate.connects(save.current) else { return }
+        let target = gate.other(save.current)
+        guard isUnlocked(target) else { return }
+        arrivalGate = gateID
+        save.current = target
+        encounter = nil
+        gatePrompt = nil
+        markDirty()
+    }
+
+    /// Быстрый переход по карте: появляемся у склада.
     func travel(to id: LocationID) {
-        guard isUnlocked(id), save.current != id else { return }
+        guard isUnlocked(id), save.current != id, save.expedition == nil else { return }
+        arrivalGate = nil
         save.current = id
         encounter = nil
+        gatePrompt = nil
         markDirty()
+    }
+
+    // MARK: Экспедиции
+
+    var freeTicketReady: Bool {
+        save.tickets < Expedition.maxTickets
+            && (save.lastFreeTicket ?? .distantPast).addingTimeInterval(Expedition.freeTicketEvery) <= Date()
+    }
+
+    var nextFreeTicket: Date? {
+        guard let last = save.lastFreeTicket else { return nil }
+        let next = last.addingTimeInterval(Expedition.freeTicketEvery)
+        return next > Date() ? next : nil
+    }
+
+    func claimFreeTicket() {
+        guard freeTicketReady else { return }
+        let n = hasPro ? 2 : 1
+        save.tickets = min(Expedition.maxTickets, save.tickets + n)
+        save.lastFreeTicket = Date()
+        toast("🎟️", tr("toast.ticket", n))
+        SoundFX.play(.coin)
+        saveNow()
+    }
+
+    /// Уйти в экспедицию по билету. Возвращаемся туда, откуда ушли.
+    @discardableResult
+    func startExpedition(_ id: LocationID) -> Bool {
+        guard id.spec.kind == .expedition, save.expedition == nil, save.tickets > 0 else { return false }
+        save.tickets -= 1
+        save.expedition = ExpeditionRun(location: id.rawValue, endsAt: Date().addingTimeInterval(Expedition.duration),
+                                        returnTo: save.current.rawValue)
+        if backpackCount > 0 { depositBackpack() }
+        arrivalGate = nil
+        save.current = id
+        encounter = nil
+        gatePrompt = nil
+        saveNow()
+        return true
+    }
+
+    var inExpedition: Bool { save.current.spec.kind == .expedition && save.expedition != nil }
+
+    private func noteExpeditionLoot(_ kind: ResourceKind, _ n: Int) {
+        guard var run = save.expedition, run.id == save.current else { return }
+        run.loot[kind.rawValue, default: 0] += n
+        save.expedition = run
+    }
+
+    func noteExpeditionCoins(_ n: Int) {
+        guard var run = save.expedition, run.id == save.current, n > 0 else { return }
+        run.coins += n
+        save.expedition = run
+    }
+
+    /// Время вышло (или игрок ушёл сам): показываем итог и возвращаемся.
+    func finishExpedition() {
+        guard let run = save.expedition else { return }
+        if backpackCount > 0 { depositBackpack() }
+        if let id = run.id {
+            expeditionReport = ExpeditionReport(location: id, items: run.items, coins: run.coins)
+        }
+        save.expedition = nil
+        arrivalGate = nil
+        let home = run.home
+        save.current = isUnlocked(home) ? home : .meadow
+        encounter = nil
+        gatePrompt = nil
+        SoundFX.play(.success)
+        saveNow()
+    }
+
+    // MARK: Королевский сад
+
+    var gardenChestReady: Bool {
+        owns(.garden) && (save.gardenChestAt ?? .distantPast) <= Date()
+    }
+
+    /// Королевский сундук раз в сутки: много монет, ресурсы и билет.
+    func openGardenChest() {
+        guard gardenChestReady else { return }
+        let level = save.level
+        let coins = Int(Double(300 + level * 120) * Double.random(in: 0.9...1.2))
+        var items: [ResourceAmount] = []
+        for kind in gatherableKinds.shuffled().prefix(3) {
+            let n = max(2, Int(Double(60 + level * 8) / pow(Double(kind.price), 0.6)))
+            items.append(ResourceAmount(kind: kind, amount: n))
+        }
+        save.coins += coins
+        save.coinsEarned += coins
+        for item in items { addToStorage(item.kind, item.amount) }
+        save.tickets = min(Expedition.maxTickets, save.tickets + 1)
+        save.gardenChestAt = Date().addingTimeInterval(RoyalGarden.chestEvery)
+        gardenChestFound = Treasure(coins: coins, items: items)
+        SoundFX.play(.treasure)
+        saveNow()
     }
 
     // MARK: Клады
@@ -464,6 +662,7 @@ final class GameState {
         save.coins += quest.coins
         save.coinsEarned += quest.coins
         save.questsDone += 1
+        SoundFX.play(.success)
         let fresh = Quest.make(level: save.level, available: gatherableKinds,
                                producers: stats.producers.map(\.kind), avoid: save.quests)
         save.quests.insert(fresh, at: min(index, save.quests.count))
@@ -520,6 +719,7 @@ final class GameState {
     func claim(_ achievement: Achievement) {
         guard canClaim(achievement) else { return }
         save.claimed.append(achievement.id)
+        SoundFX.play(.success)
         save.coins += achievement.coins
         save.coinsEarned += achievement.coins
         save.bonusTalentPoints += achievement.talentPoints
@@ -536,22 +736,39 @@ final class GameState {
     var hasPro: Bool { owns(.pro) }
 
     /// Выдаёт покупку. Разовые награды (монеты, зверь) выдаются один раз даже при повторном восстановлении.
-    func grant(_ product: ProductID) {
+    func grant(_ product: ProductID, transaction: String? = nil) {
+        if product.consumable {
+            // Билеты можно покупать много раз: каждую покупку выдаём ровно один раз.
+            if let transaction {
+                guard !save.consumed.contains(transaction) else { return }
+                save.consumed.append(transaction)
+            }
+            save.tickets += Expedition.ticketPack
+            toast(product.emoji, tr("toast.purchased", product.title))
+            saveNow()
+            return
+        }
         if !owns(product) { save.purchases.append(product.rawValue) }
         if !save.granted.contains(product.rawValue) {
             save.granted.append(product.rawValue)
             switch product {
             case .starter:
                 save.coins += Premium.starterCoins
-                if stars(.lion) == 0 { addStar(.lion, count: 1) }
+                if stars(.duckHat) == 0 { addStar(.duckHat, count: 1) }
                 save.skin = Skin.robot.rawValue
                 save.starterOfferUntil = nil
             case .pro:
                 save.skin = Skin.genie.rawValue
             case .skins:
                 break
+            case .garden:
+                save.skin = Skin.knight.rawValue
+                save.gardenChestAt = nil
+            case .tickets:
+                break
             }
             toast(product.emoji, tr("toast.purchased", product.title))
+            SoundFX.play(.purchase)
         }
         offerPopup = false
         recalc()
@@ -561,7 +778,7 @@ final class GameState {
 
     /// Покупку вернули: убираем её, образ сбрасываем, если он был из неё.
     func revoke(_ product: ProductID) {
-        guard owns(product) else { return }
+        guard !product.consumable, owns(product) else { return }
         save.purchases.removeAll { $0 == product.rawValue }
         if !isSkinUnlocked(currentSkin) { save.skin = Skin.farmer.rawValue }
         recalc()
@@ -640,6 +857,7 @@ final class GameState {
         save.luckReadyAt = until.addingTimeInterval(Premium.luckCooldown)
         if fromAd { save.adsWatched += 1 }
         toast("🍀", tr("toast.luck"))
+        SoundFX.play(.luck)
         markDirty()
     }
 
@@ -729,6 +947,7 @@ final class GameState {
         s.toolBonus = r(.toolMaster) > 0 ? 1 : 0
 
         s.yieldAll = 0.1 * r(.bounty) + 0.06 * r(.fertile) + (r(.abundance) > 0 ? 0.1 : 0)
+            + (owns(.garden) ? RoyalGarden.capybaraYield : 0)
         s.yieldCategory[.food] = 0.2 * r(.farmer)
         s.yieldCategory[.ore] = 0.1 * r(.oreHunter)
         s.yieldCategory[.gem] = 0.1 * r(.oreHunter)

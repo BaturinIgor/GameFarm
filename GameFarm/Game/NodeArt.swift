@@ -76,7 +76,7 @@ enum NodeArt {
             return .crumble
         case .fishSpot, .oasisFish, .iceHole, .swampFish, .oyster, .lavaFish, .starPond:
             return .splash
-        case .appleTree, .goldenTree:
+        case .appleTree, .goldenTree, .beehive, .grapeVine:
             return .fade
         default:
             return .pop
@@ -354,6 +354,20 @@ enum NodeArt {
             fish.run(.repeatForever(.sequence([.fadeAlpha(to: 0.4, duration: 0.8), .fadeAlpha(to: 1, duration: 0.8)])))
             alive.addChild(fish)
             dead.addChild(sprite(Art.iceHole, CGSize(width: 54, height: 30)))
+        case .beehive:
+            alive.addChild(shadowSprite(36))
+            alive.addChild(emojiSprite("🍯", 34, y: 16))
+            alive.addChild(bobbing(emojiSprite("🐝", 16, x: 14, y: 40), height: 4, duration: 0.5))
+            dead.addChild(emojiSprite("🍯", 30, y: 14, tint: .gray, blend: 0.5))
+        case .grapeVine:
+            alive.addChild(shadowSprite(50))
+            alive.addChild(emojiSprite("🍇", 40, y: 20))
+            dead.addChild(emojiSprite("🌿", 34, y: 16))
+        case .treasureChest:
+            alive.addChild(glowSprite(UIColor(red: 1, green: 0.85, blue: 0.3, alpha: 1), size: 70, y: 12, alpha: 0.4))
+            alive.addChild(shadowSprite(36))
+            alive.addChild(emojiSprite("🧰", 36, y: 16))
+            dead.addChild(emojiSprite("📭", 28, y: 12))
         }
         return (alive, dead)
     }
