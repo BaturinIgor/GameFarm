@@ -1185,7 +1185,7 @@ final class GameState {
         let warlord = r(.warlord) > 0 ? 0.15 : 0
         s.hpMult = (1 + 0.08 * r(.toughness)) * (1 + warlord)
         s.weaponMult = (1 + 0.07 * r(.bladeMaster)) * (1 + warlord)
-        s.defenseBonus = 0.03 * r(.guard)
+        s.defenseBonus = 0.03 * r(.stance)
         s.dodgeBonus = 0.02 * r(.evasion)
         s.lifesteal = 0.02 * r(.vampirism)
         s.potionBonus = 0.1 * r(.alchemist)

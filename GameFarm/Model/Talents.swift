@@ -46,7 +46,7 @@ enum TalentID: String, CaseIterable, Identifiable {
     case greenThumb, bigHarvest, seedSaver, rainmaker, composter, chef, quickCook, marketDay, goldenHarvest
     case deepRoots, seedTrader, harvestMoon
     // Бой
-    case toughness, bladeMaster, guard, vampirism, evasion, alchemist, berserk, bossSlayer, lastStand
+    case toughness, bladeMaster, stance, vampirism, evasion, alchemist, berserk, bossSlayer, lastStand
     case delver, regen, warlord
 
     var id: String { rawValue }
@@ -244,14 +244,14 @@ struct TalentSpec {
                        parents: [], perRank: 0.08, unit: .percent),
             TalentSpec(id: .bladeMaster, branch: .combat, icon: "sword", maxRank: 5, tier: 1, column: 0,
                        parents: [.toughness], perRank: 0.07, unit: .percent),
-            TalentSpec(id: .guard, branch: .combat, icon: "shield", maxRank: 4, tier: 1, column: 2,
+            TalentSpec(id: .stance, branch: .combat, icon: "shield", maxRank: 4, tier: 1, column: 2,
                        parents: [.toughness], perRank: 0.03, unit: .percent),
             TalentSpec(id: .vampirism, branch: .combat, icon: "fang", maxRank: 3, tier: 2, column: 1,
                        parents: [.toughness], perRank: 0.02, unit: .percent),
             TalentSpec(id: .evasion, branch: .combat, icon: "wind", maxRank: 4, tier: 3, column: 0,
                        parents: [.bladeMaster], perRank: 0.02, unit: .percent),
             TalentSpec(id: .alchemist, branch: .combat, icon: "potion", maxRank: 3, tier: 3, column: 2,
-                       parents: [.guard], perRank: 0.1, unit: .percent),
+                       parents: [.stance], perRank: 0.1, unit: .percent),
             TalentSpec(id: .berserk, branch: .combat, icon: "flame", maxRank: 3, tier: 4, column: 0,
                        parents: [.evasion], perRank: 0.12, unit: .percent),
             TalentSpec(id: .bossSlayer, branch: .combat, icon: "skull", maxRank: 4, tier: 4, column: 2,
