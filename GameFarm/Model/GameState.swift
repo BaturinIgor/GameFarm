@@ -8,6 +8,13 @@ final class GameState {
 
     private(set) var save: SaveData
     private(set) var stats = Stats()
+    /// Бонусы ступеней снаряжения (собираются в recalc).
+    private(set) var gear = GearPerks()
+    /// Идущий забег по подземелью и итог последнего.
+    private(set) var dungeonRun: DungeonRun?
+    var dungeonReport: DungeonReport?
+    /// Босс на арене: имя и сколько здоровья осталось.
+    private(set) var bossInfo: BossInfo?
 
     // Временное состояние для интерфейса, не сохраняется.
     private(set) var encounter: Encounter?
@@ -54,6 +61,10 @@ final class GameState {
     @ObservationIgnored private var dirty = false
     @ObservationIgnored private var lastWrite = Date.distantPast
     @ObservationIgnored private var lastBackup = Date.distantPast
+    @ObservationIgnored var lastSecondWind = Date.distantPast
+    @ObservationIgnored var lastPotion = Date.distantPast
+    @ObservationIgnored var dungeonReturn: LocationID = .meadow
+    @ObservationIgnored var lastChest: DungeonReport?
     @ObservationIgnored private var bannerToken = 0
 
     private init() {
@@ -61,6 +72,7 @@ final class GameState {
         migrateGates()
         refreshReachable()
         if save.current == .garden && !owns(.garden) { save.current = .meadow }
+        if owns(.garden) && (save.weapons[.royalSword] ?? 0) == 0 { save.weapons[.royalSword] = WeaponID.royalSword.startTier }
         recalc()
         ensureQuests()
         checkStarterOffer()
@@ -181,6 +193,10 @@ final class GameState {
         save.eventDecor = old.eventDecor
         save.eventSkins = old.eventSkins
         save.bestLevel = max(old.bestLevel, old.level)
+        save.potions = old.potions
+        save.dungeonBest = old.dungeonBest
+        save.weapons = Dictionary(uniqueKeysWithValues: old.weapons.keys.map { ($0, $0.startTier) })
+        save.weapon = old.weapon
         save.rebirths = old.rebirths + (reward > 0 ? 1 : 0)
         save.sparks = old.sparks + reward
         save.sparksEarned = old.sparksEarned + reward
@@ -406,7 +422,7 @@ final class GameState {
         case .rod: base = ToolTier.power(effectiveTier(.rod)) * s.handMult
         case .axe: base = ToolTier.power(effectiveTier(.axe)) * (1 + s.woodBonus)
         case .pickaxe: base = ToolTier.power(effectiveTier(.pickaxe)) * (1 + s.stoneBonus)
-        case .sword, .armor: base = 1
+        case .sword, .armor, .helmet, .boots: base = 1
         }
         if spec.tier >= 5 { base *= 1 + s.highTierBonus }
         return base * s.damageMult
@@ -416,6 +432,14 @@ final class GameState {
         let next = tier(tool) + 1
         guard next <= ToolTier.maxTier else { return nil }
         return discounted(ToolTier.cost(tool, tier: next))
+    }
+
+    /// Можно улучшить прямо сейчас (для значков на вкладках).
+    func canUpgradeNow(_ tool: ToolKind) -> Bool {
+        let next = tier(tool) + 1
+        guard next <= ToolTier.maxTier, save.level >= ToolTier.requiredLevel(tool, tier: next),
+              let cost = nextToolCost(tool) else { return false }
+        return canAfford(cost)
     }
 
     @discardableResult
@@ -906,6 +930,7 @@ final class GameState {
             case .garden:
                 save.skin = Skin.knight.rawValue
                 save.gardenChestAt = nil
+                save.weapons[.royalSword] = max(save.weapons[.royalSword] ?? 0, WeaponID.royalSword.startTier)
             case .tickets, .eventPass:
                 break
             }
@@ -1200,6 +1225,17 @@ final class GameState {
                 }
             }
         }
+
+        // Снаряжение: бонусы ступеней и особое оружие
+        let critBefore = s.critChance
+        let g = GearPerks.collect(tiers: { self.tier($0) }, into: &s)
+        critBonus += s.critChance - critBefore
+        speedBonus += g.speed + Hero.speed(boots: tier(.boots))
+        if save.weapon == .boneSaber {
+            critBonus += 0.1
+            s.critMult += 0.2
+        }
+        gear = g
 
         let strider = r(.strider) > 0 ? 1.25 : 1
         capacity *= (1 + 0.1 * r(.packMaster)) * strider
@@ -1810,7 +1846,15 @@ extension GameState {
 // MARK: Бой и охота
 
 extension GameState {
-    var maxHP: Double { Hero.maxHP(level: save.level, armor: tier(.armor)) }
+    var maxHP: Double {
+        Hero.maxHP(level: save.level, armor: tier(.armor), helmet: tier(.helmet)) * (1 + gear.hpBonus)
+    }
+
+    /// Доля урона, которую гасит шлем.
+    var defense: Double { min(0.6, Hero.defense(helmet: tier(.helmet)) + gear.defense) }
+
+    /// Шанс увернуться от укуса.
+    var dodgeChance: Double { min(0.35, Hero.dodge(boots: tier(.boots)) + gear.dodge) }
 
     var hpFraction: Double { min(1, max(0, hp / max(1, maxHP))) }
 
@@ -1818,11 +1862,23 @@ extension GameState {
         if inCombat != value { inCombat = value }
     }
 
-    /// Урон герою. Возвращает true, если здоровье кончилось.
+    func setBossInfo(_ value: BossInfo?) {
+        if bossInfo != value { bossInfo = value }
+    }
+
+    /// Урон герою с учётом шлема. Возвращает, сколько здоровья ушло.
     @discardableResult
-    func hurtHero(_ amount: Double) -> Bool {
-        hp = max(0, min(hp, maxHP) - amount)
-        return hp <= 0
+    func hurtHero(_ amount: Double) -> Double {
+        let dealt = amount * (1 - defense)
+        var next = max(0, min(hp, maxHP) - dealt)
+        // Второе дыхание (броня 10 ступени): раз в 5 минут герой не падает.
+        if next <= 0 && gear.secondWind && Date().timeIntervalSince(lastSecondWind) > 300 {
+            lastSecondWind = Date()
+            next = maxHP * 0.3
+            toast("💪", tr("toast.secondWind"))
+        }
+        hp = next
+        return dealt
     }
 
     /// Лечит на долю от максимума.
@@ -1831,36 +1887,211 @@ extension GameState {
         if abs(next - hp) > 0.01 { hp = next }
     }
 
+    /// Лечит на число единиц здоровья (вампиризм).
+    func healAmount(_ amount: Double) {
+        let next = min(maxHP, hp + amount)
+        if abs(next - hp) > 0.01 { hp = next }
+    }
+
     func healFull() {
         if hp != maxHP { hp = maxHP }
     }
 
-    /// Герой упал без сил: просыпается у склада, теряет треть рюкзака.
+    /// Герой упал без сил: просыпается у склада и теряет часть рюкзака (немного).
     func faint() -> Int {
         var lost = 0
         for (kind, n) in save.backpack {
-            let drop = n * 3 / 10
+            let drop = n * 15 / 100
             if drop > 0 {
                 save.backpack[kind] = n - drop
                 lost += drop
             }
         }
-        hp = maxHP * 0.5
+        hp = maxHP * 0.6
         markDirty()
         return lost
     }
 
-    func swordDamage() -> Double {
-        Hero.swordDamage(level: save.level, sword: tier(.sword)) * stats.damageMult * stats.swordMult
+    // MARK: Оружие
+
+    func weaponTier(_ id: WeaponID) -> Int { id == .forged ? tier(.sword) : (save.weapons[id] ?? 0) }
+
+    func ownsWeapon(_ id: WeaponID) -> Bool { weaponTier(id) > 0 }
+
+    func equip(_ id: WeaponID) {
+        guard ownsWeapon(id), save.weapon != id else { return }
+        save.weapon = id
+        recalc()
+        SoundFX.play(.tap)
+        markDirty()
+    }
+
+    /// Урон текущим оружием за удар.
+    func weaponDamage(boss: Bool = false) -> Double {
+        let w = save.weapon
+        let base = Hero.swordDamage(level: save.level, sword: max(1, weaponTier(w))) * w.mult
+        return base * stats.damageMult * stats.swordMult * (boss ? 1 + gear.bossDamage : 1)
+    }
+
+    func swordDamage() -> Double { weaponDamage() }
+
+    func weaponUpgradeCost(_ id: WeaponID) -> Cost? {
+        guard id != .forged, ownsWeapon(id), weaponTier(id) < ToolTier.maxTier else { return nil }
+        return discounted(WeaponID.upgradeCost(to: weaponTier(id) + 1))
+    }
+
+    func canUpgradeWeapon(_ id: WeaponID) -> Bool {
+        guard let cost = weaponUpgradeCost(id) else { return false }
+        return save.level >= ToolTier.requiredLevel(.sword, tier: weaponTier(id) + 1) && canAfford(cost)
+    }
+
+    func upgradeWeapon(_ id: WeaponID) {
+        guard canUpgradeWeapon(id), let cost = weaponUpgradeCost(id) else { return }
+        pay(cost)
+        save.weapons[id] = weaponTier(id) + 1
+        recalc()
+        SoundFX.play(.unlock)
+        toast("⚔️", tr("toast.weaponUp", id.name, weaponTier(id)))
+        saveNow()
+    }
+
+    /// Получить особое оружие (с босса или за покупку).
+    func grantWeapon(_ id: WeaponID) {
+        guard id != .forged else { return }
+        if ownsWeapon(id) { return }
+        save.weapons[id] = id.startTier
+        toast("⚔️", tr("toast.weaponNew", id.name))
+        markDirty()
+    }
+
+    // MARK: Зелья
+
+    func potionPrice(_ count: Int) -> Int { Potion.price(level: save.level) * count }
+
+    func buyPotions(_ count: Int) {
+        let price = potionPrice(count)
+        guard save.coins >= price else { return }
+        save.coins -= price
+        save.potions += count
+        SoundFX.play(.purchase)
+        markDirty()
+    }
+
+    var potionReady: Bool { save.potions > 0 && Date().timeIntervalSince(lastPotion) > Potion.cooldown }
+
+    func drinkPotion() {
+        guard potionReady, hp < maxHP else { return }
+        save.potions -= 1
+        lastPotion = Date()
+        heal(Potion.heal)
+        SoundFX.play(.success)
+        markDirty()
+    }
+
+    // MARK: Подземелья
+
+    func dungeonBest(_ id: DungeonID) -> Int { save.dungeonBest[id] ?? 0 }
+
+    var inDungeon: Bool { save.current.spec.kind == .dungeon && dungeonRun != nil }
+
+    func canEnter(_ id: DungeonID, floor: Int) -> Bool {
+        save.level >= id.level && floor >= 1 && floor <= min(Dungeon.floors, dungeonBest(id) + 1)
+            && save.expedition == nil && dungeonRun == nil
+    }
+
+    func startDungeon(_ id: DungeonID, floor: Int) {
+        guard canEnter(id, floor: floor) else { return }
+        if backpackCount > 0 { depositBackpack() }
+        dungeonReturn = save.current.spec.kind == .world || save.current.spec.kind == .garden ? save.current : .meadow
+        dungeonRun = DungeonRun(dungeon: id, floor: floor, waves: Dungeon.waves(floor: floor))
+        arrivalGate = nil
+        save.current = id.location
+        encounter = nil
+        gatePrompt = nil
+        healFull()
+        markDirty()
+    }
+
+    func setDungeonWave(_ wave: Int) {
+        guard var run = dungeonRun, run.wave != wave else { return }
+        run.wave = wave
+        dungeonRun = run
+    }
+
+    func dungeonCleared() {
+        guard var run = dungeonRun, !run.cleared else { return }
+        run.cleared = true
+        dungeonRun = run
+        SoundFX.play(.levelUp)
+        toast("🏆", tr("toast.floorCleared", run.floor))
+    }
+
+    /// Сундук после этажа: монеты, эссенция, зелья, карта и, может быть, оружие босса.
+    func openDungeonChest() {
+        guard var run = dungeonRun, run.cleared, !run.chestOpened else { return }
+        let id = run.dungeon
+        let first = run.floor > dungeonBest(id)
+        let coins = Dungeon.coins(id, floor: run.floor, first: first)
+        let essence = Dungeon.essence(id, floor: run.floor, first: first)
+        addCoins(coins)
+        addToStorage(.essence, essence, counts: false)
+        let potions = first ? 2 : (Double.random(in: 0..<1) < 0.3 ? 1 : 0)
+        save.potions += potions
+        var weapon: WeaponID?
+        if Dungeon.isBossFloor(run.floor), !ownsWeapon(id.weapon), Double.random(in: 0..<1) < Dungeon.weaponChance(floor: run.floor, first: first) {
+            grantWeapon(id.weapon)
+            weapon = id.weapon
+        }
+        randomCard()
+        if first { save.dungeonBest[id] = run.floor }
+        run.chestOpened = true
+        run.coins += coins
+        run.essence += essence
+        dungeonRun = run
+        lastChest = DungeonReport(dungeon: id, floor: run.floor, won: true, firstClear: first, coins: run.coins,
+                                  essence: run.essence, weapon: weapon, potions: potions)
+        SoundFX.play(.treasure)
+        saveNow()
+    }
+
+    /// Выйти из подземелья: через портал после победы или раньше (тогда награды за этаж нет).
+    func leaveDungeon() {
+        guard let run = dungeonRun else { return }
+        dungeonReport = run.chestOpened ? lastChest
+            : DungeonReport(dungeon: run.dungeon, floor: run.floor, won: false, firstClear: false, coins: run.coins,
+                            essence: run.essence, weapon: nil, potions: 0)
+        dungeonRun = nil
+        lastChest = nil
+        bossInfo = nil
+        arrivalGate = nil
+        save.current = dungeonReturn
+        encounter = nil
+        healFull()
+        saveNow()
+    }
+
+    /// Награда за убийство в подземелье копится в итоге забега.
+    func noteDungeonKill(coins: Int, essence: Int) {
+        guard var run = dungeonRun else { return }
+        run.kills += 1
+        run.coins += coins
+        run.essence += essence
+        dungeonRun = run
     }
 
     /// Монстр побеждён: опыт, монеты, трофеи, заказы стражника.
-    func noteKill(_ kind: MonsterKind, level: Int) -> (coins: Int, loot: Int) {
-        let st = MonsterStats(kind: kind, level: level)
+    func noteKill(_ kind: MonsterKind, level: Int, boss: Bool = false) -> (coins: Int, loot: Int) {
+        let st = MonsterStats(kind: kind, level: level, boss: boss)
         save.kills += 1
         addCoins(st.coins)
         let loot = Int.random(in: 1...(kind == .slimeGold ? 4 : 2))
-        let added = inExpedition ? addToStorage(kind.loot, loot) : addToBackpack(kind.loot, loot)
+        let direct = inExpedition || inDungeon
+        let added = direct ? addToStorage(kind.loot, loot) : addToBackpack(kind.loot, loot)
+        if inDungeon {
+            let essence = Double.random(in: 0..<1) < 0.2 ? 1 : 0
+            if essence > 0 { addToStorage(.essence, essence, counts: false) }
+            noteDungeonKill(coins: st.coins, essence: essence)
+        }
         gainXP(st.xp)
         rollCard(for: kind)
         if inEvent { addEventPoints(Events.points(for: kind)) }

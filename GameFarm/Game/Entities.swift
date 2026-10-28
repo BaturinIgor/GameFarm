@@ -5,9 +5,13 @@ final class HPBar: SKNode {
     private let back = SKSpriteNode(color: UIColor.black.withAlphaComponent(0.55), size: CGSize(width: 40, height: 8))
     private let fill = SKSpriteNode(color: .green, size: CGSize(width: 36, height: 4))
     private let shine = SKSpriteNode(color: UIColor.white.withAlphaComponent(0.35), size: CGSize(width: 36, height: 1.5))
+    /// Постоянный цвет полоски (щит). nil - цвет по здоровью.
+    private let fixedColor: UIColor?
 
-    override init() {
+    init(color: UIColor? = nil) {
+        fixedColor = color
         super.init()
+        if let color { fill.color = color }
         addChild(back)
         fill.anchorPoint = CGPoint(x: 0, y: 0.5)
         fill.position = CGPoint(x: -18, y: 0)
@@ -26,7 +30,7 @@ final class HPBar: SKNode {
         resize.timingMode = .easeOut
         fill.run(resize, withKey: "w")
         shine.xScale = max(0.02, f)
-        fill.color = UIColor(red: 1 - f * 0.7, green: 0.35 + f * 0.55, blue: 0.25, alpha: 1)
+        fill.color = fixedColor ?? UIColor(red: 1 - f * 0.7, green: 0.35 + f * 0.55, blue: 0.25, alpha: 1)
     }
 
     func reset() {
@@ -262,7 +266,7 @@ final class PlayerNode: SKNode {
             case .pickaxe: pixel.act(.pickaxe, dx: dx, dy: dy, duration: duration)
             case .hand: pixel.act(.hoe, dx: dx, dy: dy, duration: duration)
             case .rod: pixel.act(.fish, dx: dx, dy: dy, duration: max(duration, 0.4))
-            case .sword, .armor: pixel.act(.axe, dx: dx, dy: dy, duration: duration)
+            case .sword, .armor, .helmet, .boots: pixel.act(.axe, dx: dx, dy: dy, duration: duration)
             }
             return
         }

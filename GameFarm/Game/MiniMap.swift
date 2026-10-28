@@ -29,7 +29,7 @@ enum MiniMap {
             }
         case .rod: return UIColor(red: 0.6, green: 0.88, blue: 1, alpha: 1)
         case .hand: return UIColor(red: 0.95, green: 0.35, blue: 0.45, alpha: 1)
-        case .sword, .armor: return .white
+        case .sword, .armor, .helmet, .boots: return .white
         }
     }
 

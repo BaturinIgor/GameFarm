@@ -6,8 +6,9 @@ struct MonsterIcon: View {
     var size: CGFloat = 40
 
     var body: some View {
-        let cell: CGFloat = kind.isSlime ? 64 : 32
-        if let image = Sprites.crisp(kind.sprite, crop: CGRect(x: 0, y: 0, width: cell, height: cell), scale: 4) {
+        let sheet = kind.sheet
+        let crop = CGRect(x: 0, y: CGFloat(sheet.idle.row) * sheet.cell, width: sheet.cell, height: sheet.cell)
+        if let image = Sprites.crisp(kind.sprite, crop: crop, scale: 4) {
             Image(uiImage: image)
                 .resizable()
                 .interpolation(.none)
@@ -19,23 +20,32 @@ struct MonsterIcon: View {
     }
 }
 
-/// Стражник у доски: заказы на охоту.
+/// Стражник у доски: заказы на охоту и подземелья.
 struct HuntView: View {
+    enum Tab: Hashable { case hunts, dungeons }
+
     @Environment(GameState.self) private var game
+    @Environment(\.gameActions) private var actions
+    @State private var tab: Tab = .hunts
 
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
                 HStack(spacing: 12) {
                     NPCPortrait(name: "guard")
-                    Text(tr("hunt.hello"))
+                    Text(tr(tab == .hunts ? "hunt.hello" : "dungeon.hello"))
                         .font(.game(13, .semibold))
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(10)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .listBox(radius: 12)
                 }
-                HuntList()
+                GameTabs(selection: $tab, items: [(Tab.hunts, tr("hunt.tab")), (Tab.dungeons, tr("dungeon.tab"))],
+                         badges: [.hunts: game.claimableHunts])
+                switch tab {
+                case .hunts: HuntList()
+                case .dungeons: DungeonList { actions.close() }
+                }
             }
             .padding(16)
         }

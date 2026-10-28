@@ -1,18 +1,39 @@
 import SpriteKit
 import UIKit
 
-/// Монстр: бродит у своего логова, гонится за героем, если тот близко, и кусает при касании.
+/// Укус монстра: сколько урона и был ли крит.
+struct MonsterBite {
+    let damage: Double
+    let crit: Bool
+    let traits: [MonsterTrait]
+}
+
+/// Чем закончился удар героя.
+enum MonsterHit {
+    case dodged
+    case damaged
+    case killed
+}
+
+/// Монстр: бродит у логова, гонится за героем, замахивается и кусает.
+/// Особые свойства (крит, уклонение, щит, ярость...) видны значками над ним.
 final class MonsterNode: SKNode {
     let kind: MonsterKind
     let level: Int
     let stats: MonsterStats
     let home: CGPoint
+    let traits: [MonsterTrait]
+    let boss: Bool
     private(set) var hp: Double
     private(set) var alive = true
     var attackCooldown: Double = 0.8
+    /// В подземелье монстры видят героя через всю арену и не возвращаются домой.
+    var aggroRange: CGFloat = 150
+    var leashRange: CGFloat = 320
 
     private let body: SKSpriteNode
     private let bar = HPBar()
+    private var shieldBar: HPBar?
     private var idle: [SKTexture] = []
     private var move: [SKTexture] = []
     private var hurt: [SKTexture] = []
@@ -23,37 +44,50 @@ final class MonsterNode: SKNode {
     private var showing: Int = -1
     private var barTime: Double = 0
     private var knock = CGVector.zero
+    private var baseScale: CGFloat = 1
+    private let tintColor: UIColor?
 
-    static let aggro: CGFloat = 150
-    static let leash: CGFloat = 320
+    // Замах перед укусом: герой успевает отойти.
+    private var windup: Double = 0
+    // Щит, ярость, восстановление
+    private(set) var shield: Double = 0
+    private var shieldMax: Double = 0
+    private var shieldRegen: Double = 0
+    private var sinceHit: Double = 99
+    private(set) var enraged = false
+    // Эффекты от оружия героя
+    private var poisonLeft: Double = 0
+    private var poisonDPS: Double = 0
+    private var dotTick: Double = 0
+    private var slowLeft: Double = 0
+    private var slowFactor: Double = 1
+    private var stunLeft: Double = 0
 
-    init(kind: MonsterKind, level: Int, at point: CGPoint) {
+    static let windupTime = 0.38
+    static let biteRange: CGFloat = 34
+
+    init(kind: MonsterKind, level: Int, at point: CGPoint, traits: [MonsterTrait] = [], boss: Bool = false, tint: UIColor? = nil) {
         self.kind = kind
         self.level = level
-        stats = MonsterStats(kind: kind, level: level)
+        self.traits = traits
+        self.boss = boss
+        tintColor = tint
+        stats = MonsterStats(kind: kind, level: level, boss: boss)
         hp = stats.hp
         home = point
         goal = point
-        let cell: CGFloat = kind.isSlime ? 64 : 32
-        let all = Sprites.frames(kind.sprite, cell: cell)
-        let cols = kind.isSlime ? 8 : 6
-        func row(_ r: Int, _ range: Range<Int>) -> [SKTexture] {
-            let start = r * cols
-            return range.compactMap { start + $0 < all.count ? all[start + $0] : nil }
+        let sheet = kind.sheet
+        let all = Sprites.frames(kind.sprite, cell: sheet.cell)
+        func frames(_ spec: (row: Int, frames: Range<Int>)) -> [SKTexture] {
+            let start = spec.row * sheet.cols
+            return spec.frames.compactMap { start + $0 < all.count ? all[start + $0] : nil }
         }
-        if kind.isSlime {
-            idle = row(0, 0..<4)
-            move = row(1, 0..<8)
-            hurt = row(2, 1..<4)
-            death = row(2, 4..<8)
-        } else {
-            idle = row(1, 0..<6)
-            move = row(4, 0..<6)
-            hurt = row(8, 0..<4)
-            death = row(6, 0..<4)
-        }
+        idle = frames(sheet.idle)
+        move = frames(sheet.move)
+        hurt = sheet.hurt.map(frames) ?? []
+        death = frames(sheet.death)
         if let first = idle.first {
-            body = SKSpriteNode(texture: first, size: CGSize(width: cell * Sprites.scale, height: cell * Sprites.scale))
+            body = SKSpriteNode(texture: first, size: CGSize(width: sheet.cell * Sprites.scale, height: sheet.cell * Sprites.scale))
             body.anchorPoint = Sprites.anchor(kind.sprite)
         } else {
             body = SKSpriteNode(texture: Art.emoji(kind.emoji, size: 48), size: CGSize(width: 34, height: 34))
@@ -62,13 +96,40 @@ final class MonsterNode: SKNode {
         super.init()
         position = point
         addChild(body)
-        bar.position = CGPoint(x: 0, y: kind.isSlime ? 40 : 56)
-        bar.alpha = 0
+        if let tint {
+            body.color = tint
+            body.colorBlendFactor = 0.55
+        }
+        baseScale = boss ? 1.8 : 1
+        let barY = sheet.bar * baseScale
+        bar.position = CGPoint(x: 0, y: barY)
+        bar.alpha = boss || !traits.isEmpty ? 1 : 0
         bar.zPosition = 5
+        if boss { bar.setScale(1.5) }
         addChild(bar)
+        if traits.contains(.shield) {
+            shieldMax = stats.hp * 0.25
+            shield = shieldMax
+            let s = HPBar(color: UIColor(red: 0.55, green: 0.8, blue: 1, alpha: 1))
+            s.position = CGPoint(x: 0, y: barY + 7 * (boss ? 1.5 : 1))
+            s.zPosition = 5
+            if boss { s.setScale(1.5) }
+            addChild(s)
+            shieldBar = s
+        }
+        // Значки свойств над полоской здоровья
+        for (i, trait) in traits.enumerated() {
+            guard let tex = Sprites.texture("ic_\(trait.icon)") else { continue }
+            let icon = SKSpriteNode(texture: tex, size: CGSize(width: 12, height: 12))
+            let count = CGFloat(traits.count)
+            icon.position = CGPoint(x: (CGFloat(i) - (count - 1) / 2) * 13, y: barY + (shieldBar == nil ? 11 : 18) * (boss ? 1.5 : 1))
+            icon.zPosition = 6
+            addChild(icon)
+        }
         play(idle, key: 0, fps: 6)
         setScale(0.2)
         run(.scale(to: 1, duration: 0.3))
+        body.setScale(baseScale)
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -80,28 +141,78 @@ final class MonsterNode: SKNode {
         body.run(.repeatForever(.animate(with: frames, timePerFrame: 1 / fps)), withKey: "anim")
     }
 
+    private var speedMult: Double {
+        var m = 1.0
+        if traits.contains(.swift) { m *= 1.4 }
+        if enraged { m *= 1.3 }
+        if slowLeft > 0 { m *= slowFactor }
+        return m
+    }
+
+    /// Урон от яда и ожога за этот кадр (сцена списывает его как обычный урон).
+    func tickEffects(_ dt: Double) -> Double {
+        guard alive else { return 0 }
+        sinceHit += dt
+        slowLeft = max(0, slowLeft - dt)
+        stunLeft = max(0, stunLeft - dt)
+        // Регенерация и щит восстанавливаются, если по монстру давно не били.
+        if traits.contains(.regen) && sinceHit > 2 && hp < stats.hp {
+            hp = min(stats.hp, hp + stats.hp * 0.02 * dt)
+            bar.set(hp / stats.hp)
+        }
+        if shieldMax > 0 && sinceHit > 6 && shield < shieldMax {
+            shield = min(shieldMax, shield + shieldMax * 0.25 * dt)
+            shieldBar?.set(shield / shieldMax)
+        }
+        guard poisonLeft > 0 else { return 0 }
+        poisonLeft -= dt
+        dotTick -= dt
+        guard dotTick <= 0 else { return 0 }
+        dotTick = 0.5
+        return poisonDPS * 0.5
+    }
+
     /// Шаг монстра. walkable проверяет, можно ли стоять в точке.
-    /// Возвращает true, если монстр рядом с героем и может укусить.
-    func update(_ dt: Double, hero: CGPoint, walkable: (CGPoint) -> Bool) -> Bool {
-        guard alive else { return false }
+    /// Возвращает укус, если монстр закончил замах рядом с героем.
+    func update(_ dt: Double, hero: CGPoint, walkable: (CGPoint) -> Bool) -> MonsterBite? {
+        guard alive else { return nil }
         attackCooldown -= dt
-        if barTime > 0 {
+        if barTime > 0 && !boss && traits.isEmpty {
             barTime -= dt
             if barTime <= 0 { bar.run(.fadeOut(withDuration: 0.3)) }
         }
+        if stunLeft > 0 { return nil }
         let toHero = distance(position, hero)
         let fromHome = distance(position, home)
+
+        // Замах: стоим и наливаемся красным, потом кусаем, если герой не отошёл.
+        if windup > 0 {
+            windup -= dt
+            if windup <= 0 {
+                body.run(.colorize(with: tintColor ?? .white, colorBlendFactor: tintColor == nil ? 0 : 0.55, duration: 0.08))
+                attackCooldown = 1.1
+                guard toHero < Self.biteRange + 10 else { return nil }
+                let crit = traits.contains(.crit) && Double.random(in: 0..<1) < 0.2
+                var damage = stats.damage * (enraged ? 1.5 : 1)
+                if crit { damage *= 2 }
+                body.run(.sequence([.moveBy(x: (hero.x - position.x) * 0.15, y: (hero.y - position.y) * 0.15, duration: 0.06),
+                                    .moveBy(x: -(hero.x - position.x) * 0.15, y: -(hero.y - position.y) * 0.15, duration: 0.1)]))
+                return MonsterBite(damage: damage, crit: crit, traits: traits)
+            }
+            return nil
+        }
+
         if chasing {
-            if fromHome > Self.leash || toHero > Self.aggro * 1.8 { chasing = false; goal = home }
-        } else if toHero < Self.aggro && distance(hero, home) < Self.leash {
+            if fromHome > leashRange || toHero > aggroRange * 1.8 { chasing = false; goal = home }
+        } else if toHero < aggroRange && distance(hero, home) < leashRange {
             chasing = true
         }
         if chasing { goal = hero }
 
         var step = CGVector.zero
         let d = distance(position, goal)
-        if d > (chasing ? 18 : 4) {
-            let speed = CGFloat(stats.speed) * (chasing ? 1.25 : 0.6)
+        if d > (chasing ? 22 : 4) {
+            let speed = CGFloat(stats.speed * speedMult) * (chasing ? 1.25 : 0.6)
             step = CGVector(dx: (goal.x - position.x) / d * speed * CGFloat(dt), dy: (goal.y - position.y) / d * speed * CGFloat(dt))
         } else if !chasing {
             wait -= dt
@@ -124,21 +235,48 @@ final class MonsterNode: SKNode {
         if body.action(forKey: "hurt") == nil {
             play(moving ? move : idle, key: moving ? 1 : 0, fps: moving ? 10 : 6)
         }
-        if abs(step.dx) > 0.1 { body.xScale = step.dx < 0 ? -1 : 1 }
-        return chasing && toHero < 26 && attackCooldown <= 0
+        if abs(step.dx) > 0.1 { body.xScale = (step.dx < 0 ? -1 : 1) * baseScale }
+        if chasing && toHero < Self.biteRange && attackCooldown <= 0 {
+            windup = Self.windupTime
+            body.run(.colorize(with: UIColor(red: 1, green: 0.25, blue: 0.2, alpha: 1), colorBlendFactor: 0.7, duration: Self.windupTime * 0.8))
+        }
+        return nil
     }
 
-    /// Получить урон. Возвращает true, если монстр погиб.
-    func hit(_ damage: Double, from point: CGPoint) -> Bool {
-        guard alive else { return false }
-        hp -= damage
+    /// Получить урон. Уклонение и щит срабатывают здесь.
+    func hit(_ damage: Double, from point: CGPoint, canDodge: Bool = true) -> MonsterHit {
+        guard alive else { return .damaged }
+        sinceHit = 0
         chasing = true
+        if canDodge && traits.contains(.dodge) && Double.random(in: 0..<1) < 0.2 {
+            body.run(.sequence([.moveBy(x: 8, y: 0, duration: 0.06), .moveBy(x: -8, y: 0, duration: 0.1)]))
+            return .dodged
+        }
+        var left = damage
+        if shield > 0 {
+            let absorbed = min(shield, left)
+            shield -= absorbed
+            left -= absorbed
+            shieldBar?.set(shield / max(1, shieldMax))
+        }
+        hp -= left
         bar.set(hp / stats.hp)
         bar.removeAllActions()
         bar.alpha = 1
         barTime = 2
+        if traits.contains(.enrage) && !enraged && hp < stats.hp * 0.4 && hp > 0 {
+            enraged = true
+            let red = SKSpriteNode(texture: Effects.ringTexture, size: CGSize(width: 46 * baseScale, height: 22 * baseScale))
+            red.color = UIColor(red: 1, green: 0.2, blue: 0.1, alpha: 1)
+            red.colorBlendFactor = 1
+            red.alpha = 0.6
+            red.zPosition = -1
+            red.run(.repeatForever(.sequence([.fadeAlpha(to: 0.2, duration: 0.4), .fadeAlpha(to: 0.6, duration: 0.4)])))
+            addChild(red)
+        }
         let d = max(1, distance(point, position))
-        knock = CGVector(dx: (position.x - point.x) / d * 260, dy: (position.y - point.y) / d * 260)
+        let push: CGFloat = boss ? 60 : 260
+        knock = CGVector(dx: (position.x - point.x) / d * push, dy: (position.y - point.y) / d * push)
         body.removeAction(forKey: "hurt")
         if !hurt.isEmpty {
             showing = -1
@@ -146,18 +284,45 @@ final class MonsterNode: SKNode {
             body.run(.animate(with: hurt, timePerFrame: 0.06), withKey: "hurt")
         }
         body.run(.sequence([.colorize(with: .white, colorBlendFactor: 0.8, duration: 0.03),
-                            .colorize(withColorBlendFactor: 0, duration: 0.12)]))
+                            .colorize(with: tintColor ?? .white, colorBlendFactor: tintColor == nil ? 0 : 0.55, duration: 0.12)]))
         if hp <= 0 {
             alive = false
             bar.removeFromParent()
+            shieldBar?.removeFromParent()
             body.removeAllActions()
             let fall: SKAction = death.isEmpty ? .fadeOut(withDuration: 0.3) : .animate(with: death, timePerFrame: 0.08)
-            run(.sequence([.run { [weak self] in self?.body.run(fall) }, .wait(forDuration: 0.4),
+            run(.sequence([.run { [weak self] in self?.body.run(fall) }, .wait(forDuration: 0.5),
                            .fadeOut(withDuration: 0.25), .removeFromParent()]))
-            return true
+            return .killed
         }
-        return false
+        return .damaged
     }
 
-    func biteDone() { attackCooldown = 1.1 }
+    /// Восстановить здоровье (вампиризм).
+    func heal(_ amount: Double) {
+        guard alive else { return }
+        hp = min(stats.hp, hp + amount)
+        bar.set(hp / stats.hp)
+    }
+
+    func applyPoison(dps: Double, seconds: Double) {
+        poisonDPS = max(poisonDPS, dps)
+        poisonLeft = max(poisonLeft, seconds)
+        body.run(.sequence([.colorize(with: UIColor(red: 0.4, green: 1, blue: 0.3, alpha: 1), colorBlendFactor: 0.6, duration: 0.1),
+                            .colorize(with: tintColor ?? .white, colorBlendFactor: tintColor == nil ? 0 : 0.55, duration: 0.4)]))
+    }
+
+    func applySlow(_ factor: Double, seconds: Double) {
+        slowFactor = factor
+        slowLeft = max(slowLeft, seconds)
+        body.run(.sequence([.colorize(with: UIColor(red: 0.5, green: 0.8, blue: 1, alpha: 1), colorBlendFactor: 0.6, duration: 0.1),
+                            .colorize(with: tintColor ?? .white, colorBlendFactor: tintColor == nil ? 0 : 0.55, duration: 0.6)]))
+    }
+
+    func stun(_ seconds: Double) {
+        stunLeft = max(stunLeft, seconds)
+        windup = 0
+    }
+
+    var hpFraction: Double { max(0, hp / stats.hp) }
 }

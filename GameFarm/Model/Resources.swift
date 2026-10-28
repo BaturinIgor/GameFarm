@@ -16,8 +16,8 @@ enum ResourceKind: String, CaseIterable, Identifiable {
     case shell, coral, pearl, cloud, stardust
     // Огород
     case wheat, tomato, potato, strawberry, corn, cabbage, eggplant, pumpkin, sunflower, chili, grapes
-    // Трофеи с монстров
-    case slime, bone
+    // Трофеи с монстров и подземелий
+    case slime, bone, tusk, essence
 
     var id: String { rawValue }
 
@@ -65,6 +65,8 @@ enum ResourceKind: String, CaseIterable, Identifiable {
         case .grapes: "🍇"
         case .slime: "🟢"
         case .bone: "🦴"
+        case .tusk: "🦷"
+        case .essence: "🔮"
         }
     }
 
@@ -78,7 +80,7 @@ enum ResourceKind: String, CaseIterable, Identifiable {
         case .egg, .milk, .wool, .honey, .feather: .farm
         case .shell, .coral, .pearl, .cloud, .stardust: .treasure
         case .wheat, .tomato, .potato, .strawberry, .corn, .cabbage, .eggplant, .pumpkin, .sunflower, .chili, .grapes: .crop
-        case .slime, .bone: .loot
+        case .slime, .bone, .tusk, .essence: .loot
         }
     }
 
@@ -132,6 +134,8 @@ enum ResourceKind: String, CaseIterable, Identifiable {
         case .grapes: 210
         case .slime: 6
         case .bone: 14
+        case .tusk: 30
+        case .essence: 120
         }
     }
 

@@ -2,7 +2,7 @@ import UIKit
 
 /// Обычная локация мира, платный сад, экспедиция по билету, карта ивента или этаж дома.
 enum LocationKind {
-    case world, garden, expedition, event, home
+    case world, garden, expedition, event, home, dungeon
 }
 
 enum LocationID: String, CaseIterable, Identifiable {
@@ -11,6 +11,7 @@ enum LocationID: String, CaseIterable, Identifiable {
     case goldMine, treasureIsland, luckyMeadow
     case harvestFest, slimeNight, winterTale, beachParty
     case homeGround, homeUpper, homeBasement, homeAttic, homeGreenhouse
+    case dSlime, dCrypt, dOrc, dFrost, dFire
 
     var id: String { rawValue }
     var spec: LocationSpec { LocationSpec.table[self]! }
@@ -19,6 +20,9 @@ enum LocationID: String, CaseIterable, Identifiable {
     static var world: [LocationID] { allCases.filter { $0.spec.kind == .world } }
     static var expeditions: [LocationID] { allCases.filter { $0.spec.kind == .expedition } }
     static var events: [LocationID] { allCases.filter { $0.spec.kind == .event } }
+
+    /// Подземелье этой карты.
+    var dungeon: DungeonID? { DungeonID.allCases.first { $0.location == self } }
 
     /// Этаж дома для этой локации (если это дом).
     var floor: HouseFloor? { HouseFloor.allCases.first { $0.location == self } }
@@ -173,7 +177,23 @@ struct LocationSpec {
                          wild: [], weather: .motes, cloudShadows: false, music: .garden, ambience: nil, footstep: .footstepStone),
             LocationSpec(id: .homeGreenhouse, emoji: "🪴", level: 1, kind: .home,
                          ground: c(120, 150, 110), path: c(120, 150, 110),
-                         wild: [], weather: .pollen, cloudShadows: false, music: .garden, ambience: .birds, footstep: .footstepStone)
+                         wild: [], weather: .pollen, cloudShadows: false, music: .garden, ambience: .birds, footstep: .footstepStone),
+            // Подземелья
+            LocationSpec(id: .dSlime, emoji: "🟢", level: 1, kind: .dungeon,
+                         ground: c(36, 86, 58), path: c(36, 86, 58), water: c(58, 168, 58),
+                         wild: [], dark: true, weather: .motes, cloudShadows: false, music: .caves, ambience: nil, footstep: .footstepStone),
+            LocationSpec(id: .dCrypt, emoji: "💀", level: 1, kind: .dungeon,
+                         ground: c(58, 52, 72), path: c(58, 52, 72),
+                         wild: [], dark: true, weather: .motes, cloudShadows: false, music: .caves, ambience: nil, footstep: .footstepStone),
+            LocationSpec(id: .dOrc, emoji: "👹", level: 1, kind: .dungeon,
+                         ground: c(90, 60, 32), path: c(90, 60, 32),
+                         wild: [], dark: true, weather: .embers, cloudShadows: false, music: .caves, ambience: .fire, footstep: .footstepStone),
+            LocationSpec(id: .dFrost, emoji: "❄️", level: 1, kind: .dungeon,
+                         ground: c(46, 90, 138), path: c(46, 90, 138),
+                         wild: [], dark: true, weather: .snow, cloudShadows: false, music: .snow, ambience: .wind, footstep: .footstepSnow),
+            LocationSpec(id: .dFire, emoji: "🔥", level: 1, kind: .dungeon,
+                         ground: c(94, 34, 16), path: c(94, 34, 16),
+                         wild: [], dark: true, weather: .embers, cloudShadows: false, music: .volcano, ambience: .fire, footstep: .footstepStone)
         ]
         var dict: [LocationID: LocationSpec] = [:]
         for spec in list { dict[spec.id] = spec }

@@ -84,6 +84,14 @@ struct ContentView: View {
                     .zIndex(17)
             }
 
+            if let report = game.dungeonReport, game.levelUp == nil {
+                DungeonReportOverlay(report: report) {
+                    withAnimation(.spring(duration: 0.3)) { game.dungeonReport = nil }
+                }
+                .transition(.scale(scale: 0.8).combined(with: .opacity))
+                .zIndex(18)
+            }
+
             if let report = game.expeditionReport, game.levelUp == nil {
                 ExpeditionReportOverlay(report: report) {
                     withAnimation(.spring(duration: 0.3)) { game.expeditionReport = nil }
@@ -130,6 +138,7 @@ struct ContentView: View {
         .animation(.spring(duration: 0.35), value: game.offlineReport)
         .animation(.spring(duration: 0.35), value: game.offerPopup)
         .animation(.spring(duration: 0.35), value: game.expeditionReport)
+        .animation(.spring(duration: 0.35), value: game.dungeonReport)
         .animation(.spring(duration: 0.4, bounce: 0.4), value: game.gardenChestFound)
         .animation(.spring(duration: 0.32, bounce: 0.12), value: sheet)
         .animation(.spring(duration: 0.3), value: game.bigMap)
@@ -269,6 +278,8 @@ struct HUDView: View {
 
             ExpeditionPill()
             EventMapPill { sheet = .events }
+            DungeonPill()
+            BossBar()
 
             ForEach(game.toasts) { toast in
                 ToastView(toast: toast)
@@ -308,6 +319,10 @@ struct HUDView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
+            HStack {
+                Spacer()
+                PotionButton()
+            }
             bottomBar
         }
         .padding(.horizontal, 12)

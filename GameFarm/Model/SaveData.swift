@@ -87,6 +87,11 @@ struct SaveData: Codable {
     var fertilizers: [FertilizerID: Int] = [:]
     var selectedFertilizer: FertilizerID?
     var kitchenLevel = 1
+    // Снаряжение и подземелья
+    var weapon: WeaponID = .forged
+    var weapons: [WeaponID: Int] = [:]
+    var potions = 0
+    var dungeonBest: [DungeonID: Int] = [:]
 
     init() {}
 
@@ -103,6 +108,7 @@ struct SaveData: Codable {
         case cards, awaken, shiny
         case eventKey, eventPoints, eventFree, eventVip, eventBonus, vipKeys, eventSeen, eventDecor, eventSkins
         case bestLevel, canLevel, fertilizers, selectedFertilizer, kitchenLevel
+        case weapon, weapons, potions, dungeonBest
     }
 
     init(from decoder: Decoder) throws {
@@ -205,6 +211,13 @@ struct SaveData: Codable {
         selectedFertilizer = (try? c.decodeIfPresent(String.self, forKey: .selectedFertilizer)).flatMap { FertilizerID(rawValue: $0) }
         // Раньше вторая плита давалась подвалом: такие сохранения начинают со второго уровня кухни.
         kitchenLevel = max(houseFloors.contains(.basement) ? 2 : 1, try c.decodeIfPresent(Int.self, forKey: .kitchenLevel) ?? 1)
+        weapon = (try? c.decodeIfPresent(String.self, forKey: .weapon)).flatMap { WeaponID(rawValue: $0) } ?? .forged
+        weapons = try Self.map(c.decodeIfPresent([String: Int].self, forKey: .weapons)) ?? [:]
+        potions = try c.decodeIfPresent(Int.self, forKey: .potions) ?? 0
+        dungeonBest = try Self.map(c.decodeIfPresent([String: Int].self, forKey: .dungeonBest)) ?? [:]
+        if weapon != .forged && (weapons[weapon] ?? 0) == 0 { weapon = .forged }
+        // Забег по подземелью не сохраняется: после перезапуска - на поляну.
+        if current.spec.kind == .dungeon { current = .meadow }
 
         if !unlocked.contains(.meadow) { unlocked.insert(.meadow, at: 0) }
         // Экспедиция и сад не открываются через список, туда попадают отдельно.
@@ -291,6 +304,10 @@ struct SaveData: Codable {
         try c.encode(Self.raw(fertilizers), forKey: .fertilizers)
         try c.encodeIfPresent(selectedFertilizer?.rawValue, forKey: .selectedFertilizer)
         try c.encode(kitchenLevel, forKey: .kitchenLevel)
+        try c.encode(weapon.rawValue, forKey: .weapon)
+        try c.encode(Self.raw(weapons), forKey: .weapons)
+        try c.encode(potions, forKey: .potions)
+        try c.encode(Self.raw(dungeonBest), forKey: .dungeonBest)
     }
 
     private static func map<K: RawRepresentable & Hashable>(_ raw: [String: Int]?) -> [K: Int]? where K.RawValue == String {
@@ -359,14 +376,17 @@ enum SaveFile {
         return try? decoder.decode(SaveData.self, from: data)
     }
 
-    /// Автокопия в папке приложения, её видно в Файлах (На iPhone > GameFarm).
+    /// Автокопия в папке приложения, её видно в Файлах (На iPhone > Harvest Hollow).
     static var autoBackupURL: URL {
-        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("GameFarm-backup.json")
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("HarvestHollow-backup.json")
     }
 
     static func writeAutoBackup(_ save: SaveData) {
         guard let data = encode(save) else { return }
         try? data.write(to: autoBackupURL, options: .atomic)
+        // копия под старым названием игры больше не нужна
+        let old = autoBackupURL.deletingLastPathComponent().appendingPathComponent("GameFarm-backup.json")
+        if FileManager.default.fileExists(atPath: old.path) { try? FileManager.default.removeItem(at: old) }
     }
 
     /// Копия для отправки: временный файл с датой в имени.
@@ -374,7 +394,7 @@ enum SaveFile {
         guard let data = encode(save) else { return nil }
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd-HHmm"
-        let file = FileManager.default.temporaryDirectory.appendingPathComponent("GameFarm-\(f.string(from: Date())).json")
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("HarvestHollow-\(f.string(from: Date())).json")
         try? data.write(to: file, options: .atomic)
         return file
     }

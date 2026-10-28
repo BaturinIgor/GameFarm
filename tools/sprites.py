@@ -24,6 +24,7 @@ import handmade  # noqa: E402
 import interior  # noqa: E402
 import house  # noqa: E402
 import icons  # noqa: E402
+import dungeon  # noqa: E402
 
 SRC = sys.argv[1]
 OUT = sys.argv[2]
@@ -764,6 +765,26 @@ for color, ramp in SLIMES.items():
     sheet = slime if ramp is None else lum_map(slime, ramp, mask=slime_green_px)
     save(f"mo_slime_{color}", sheet, anchor=foot_anchor(slime.crop((0, 0, 64, 64))))
 save("mo_skeleton", skeleton, anchor=foot_anchor(skeleton.crop((0, 0, 32, 32))))
+
+# Мобы Pixel Crawler: ряды "стоит", "бежит", "падает" в клетках 64x64.
+PCM = os.path.join(SRC, "Pixel Crawler - Free Pack 2", "Pixel Crawler - Free Pack", "Entities", "Mobs")
+for mob_name, folder in {"orc": "Orc Crew/Orc", "orc_rogue": "Orc Crew/Orc - Rogue", "orc_shaman": "Orc Crew/Orc - Shaman",
+                         "orc_warrior": "Orc Crew/Orc - Warrior", "skel_soldier": "Skeleton Crew/Skeleton - Base",
+                         "skel_mage": "Skeleton Crew/Skeleton - Mage", "skel_rogue": "Skeleton Crew/Skeleton - Rogue",
+                         "skel_knight": "Skeleton Crew/Skeleton - Warrior"}.items():
+    idle = Image.open(os.path.join(PCM, folder, "Idle", "Idle-Sheet.png")).convert("RGBA")
+    run = Image.open(os.path.join(PCM, folder, "Run", "Run-Sheet.png")).convert("RGBA")
+    death = Image.open(os.path.join(PCM, folder, "Death", "Death-Sheet.png")).convert("RGBA")
+    sheet = Image.new("RGBA", (12 * 64, 3 * 64))
+    for i in range(idle.width // 32):
+        sheet.alpha_composite(idle.crop((i * 32, 0, i * 32 + 32, 32)), (i * 64 + 16, 32))
+    for i in range(run.width // 64):
+        sheet.alpha_composite(run.crop((i * 64, 0, i * 64 + 64, 64)), (i * 64, 64))
+    fw = 48 if death.height == 48 else 64
+    for i in range(min(12, death.width // fw)):
+        frame = death.crop((i * fw, max(0, death.height - 64), i * fw + fw, death.height))
+        sheet.alpha_composite(frame, (i * 64 + (64 - fw) // 2, 128 + 64 - frame.height))
+    save(f"mo_{mob_name}", sheet, anchor=foot_anchor(sheet.crop((0, 0, 64, 64))))
 save("mo_skeleton_dark", lum_map(skeleton, ["#0e071b", "#262b44", "#3c4258", "#5a6988", "#8b9bb4"],
                                  mask=lambda p: abs(p[0] - p[1]) < 16 and abs(p[1] - p[2]) < 20 and p[0] > 60),
      anchor=foot_anchor(skeleton.crop((0, 0, 32, 32))))
@@ -774,6 +795,9 @@ for name, im in interior.sprites().items():
     save(name, im)
 # Мебель дома изнутри
 for name, im in house.props(SRC).items():
+    save(name, im)
+# Арены подземелий
+for name, im in dungeon.props(SRC).items():
     save(name, im)
 furn = load("Buildings", "House_Decor", "Furnaces.png")
 save("stove", crop_opaque(furn.crop((16, 0, 32, 32))))

@@ -1,13 +1,13 @@
 import UIKit
 
 enum ToolKind: String, CaseIterable, Identifiable {
-    case hand, axe, pickaxe, rod, sword, armor
+    case hand, axe, pickaxe, rod, sword, armor, helmet, boots
 
     var id: String { rawValue }
 
     /// Инструменты добычи.
     static let gathering: [ToolKind] = [.axe, .pickaxe, .rod]
-    static let upgradable: [ToolKind] = [.axe, .pickaxe, .rod, .sword, .armor]
+    static let upgradable: [ToolKind] = [.axe, .pickaxe, .rod, .sword, .helmet, .armor, .boots]
 
     var emoji: String {
         switch self {
@@ -17,20 +17,32 @@ enum ToolKind: String, CaseIterable, Identifiable {
         case .rod: "🎣"
         case .sword: "🗡️"
         case .armor: "🛡️"
+        case .helmet: "⛑️"
+        case .boots: "👢"
         }
     }
 
     var title: String { tr("tool.\(rawValue)") }
 
+    /// Пиксельная иконка ic_<имя>.
+    var icon: String {
+        switch self {
+        case .helmet: "helmet"
+        case .boots: "boots"
+        case .hand: "hand"
+        default: "tool_\(rawValue)"
+        }
+    }
+
     var purpose: String { tr("tool.\(rawValue).purpose") }
 }
 
 enum ToolTier {
-    static let maxTier = 8
+    static let maxTier = 10
 
     /// Сила удара инструмента по ступеням.
     static func power(_ tier: Int) -> Double {
-        let table: [Double] = [1, 1.8, 3, 4.6, 6.8, 10, 14.5, 21, 30]
+        let table: [Double] = [1, 1.8, 3, 4.6, 6.8, 10, 14.5, 21, 30, 42]
         return table[max(0, min(table.count - 1, tier - 1))]
     }
 
@@ -47,15 +59,18 @@ enum ToolTier {
         case 5: UIColor(red: 0.4, green: 0.88, blue: 1.0, alpha: 1)
         case 6: UIColor(red: 0.72, green: 0.45, blue: 1.0, alpha: 1)
         case 7: UIColor(red: 0.42, green: 0.24, blue: 0.6, alpha: 1)
-        default: UIColor(red: 1.0, green: 0.93, blue: 0.55, alpha: 1)
+        case 8: UIColor(red: 1.0, green: 0.93, blue: 0.55, alpha: 1)
+        case 9: UIColor(red: 0.3, green: 0.95, blue: 0.85, alpha: 1)
+        default: UIColor(red: 1.0, green: 0.55, blue: 0.2, alpha: 1)
         }
     }
 
     static func requiredLevel(_ tool: ToolKind, tier: Int) -> Int {
-        let index = max(0, min(7, tier - 1))
+        let index = max(0, min(9, tier - 1))
         switch tool {
-        case .rod: return [1, 11, 16, 24, 32, 40, 45, 52][index]
-        default: return [1, 3, 7, 13, 20, 28, 43, 50][index]
+        case .rod: return [1, 11, 16, 24, 32, 40, 45, 52, 56, 59][index]
+        case .helmet, .boots: return [1, 5, 10, 16, 23, 31, 43, 50, 55, 58][index]
+        default: return [1, 3, 7, 13, 20, 28, 43, 50, 54, 58][index]
         }
     }
 
@@ -96,6 +111,37 @@ enum ToolTier {
         case (.armor, 6): Cost(coins: 14000, (.diamond, 8), (.slime, 200))
         case (.armor, 7): Cost(coins: 32000, (.obsidian, 40), (.bone, 250))
         case (.armor, 8): Cost(coins: 85000, (.ruby, 12), (.bone, 500))
+        // Девятая и десятая ступени: нужна эссенция из подземелий
+        case (.axe, 9): Cost(coins: 150_000, (.wood, 6000), (.essence, 40), (.stardust, 10))
+        case (.axe, 10): Cost(coins: 300_000, (.wood, 10000), (.essence, 100), (.stardust, 25))
+        case (.pickaxe, 9): Cost(coins: 150_000, (.obsidian, 150), (.essence, 40), (.stardust, 10))
+        case (.pickaxe, 10): Cost(coins: 300_000, (.ruby, 40), (.essence, 100), (.stardust, 25))
+        case (.rod, 9): Cost(coins: 160_000, (.fish, 2500), (.essence, 40), (.pearl, 60))
+        case (.rod, 10): Cost(coins: 320_000, (.fish, 4000), (.essence, 100), (.stardust, 25))
+        case (.sword, 9): Cost(coins: 150_000, (.tusk, 300), (.essence, 60), (.ruby, 20))
+        case (.sword, 10): Cost(coins: 300_000, (.essence, 150), (.stardust, 30), (.ruby, 30))
+        case (.armor, 9): Cost(coins: 160_000, (.tusk, 300), (.essence, 60), (.obsidian, 100))
+        case (.armor, 10): Cost(coins: 320_000, (.essence, 150), (.stardust, 30))
+        // Шлем
+        case (.helmet, 2): Cost(coins: 100, (.iron, 10), (.slime, 10))
+        case (.helmet, 3): Cost(coins: 500, (.iron, 30), (.bone, 20))
+        case (.helmet, 4): Cost(coins: 1800, (.gold, 20), (.bone, 40))
+        case (.helmet, 5): Cost(coins: 6000, (.diamond, 4), (.tusk, 20))
+        case (.helmet, 6): Cost(coins: 15000, (.crystal, 10), (.tusk, 60))
+        case (.helmet, 7): Cost(coins: 35000, (.obsidian, 40), (.tusk, 120))
+        case (.helmet, 8): Cost(coins: 90000, (.ruby, 10), (.essence, 20))
+        case (.helmet, 9): Cost(coins: 160_000, (.essence, 60), (.tusk, 300))
+        case (.helmet, 10): Cost(coins: 320_000, (.essence, 150), (.stardust, 30))
+        // Сапоги
+        case (.boots, 2): Cost(coins: 90, (.wool, 10), (.slime, 6))
+        case (.boots, 3): Cost(coins: 450, (.clay, 30), (.bone, 15))
+        case (.boots, 4): Cost(coins: 1600, (.iron, 50), (.bone, 40))
+        case (.boots, 5): Cost(coins: 5500, (.gold, 30), (.tusk, 15))
+        case (.boots, 6): Cost(coins: 14000, (.ice, 80), (.tusk, 50))
+        case (.boots, 7): Cost(coins: 33000, (.coral, 40), (.tusk, 100))
+        case (.boots, 8): Cost(coins: 85000, (.cloud, 40), (.essence, 20))
+        case (.boots, 9): Cost(coins: 150_000, (.essence, 60), (.feather, 200))
+        case (.boots, 10): Cost(coins: 300_000, (.essence, 150), (.stardust, 25))
         default: Cost()
         }
     }
