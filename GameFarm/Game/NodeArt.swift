@@ -72,7 +72,7 @@ enum NodeArt {
         case .tree, .pine, .palm, .snowPine, .glowTree, .willow, .bananaPalm, .ashTree, .skyTree, .bamboo, .cactus:
             return .fall
         case .rock, .boulder, .coalOre, .ironOre, .goldOre, .iceBlock, .diamondOre, .crystalOre,
-             .coral, .sulfurVent, .obsidianOre, .rubyOre, .starRock, .clayPit:
+             .coral, .sulfurVent, .obsidianOre, .rubyOre, .starRock, .clayPit, .slimeCrystal, .sandCastle:
             return .crumble
         case .fishSpot, .oasisFish, .iceHole, .swampFish, .oyster, .lavaFish, .starPond:
             return .splash
@@ -368,6 +368,20 @@ enum NodeArt {
             alive.addChild(shadowSprite(36))
             alive.addChild(emojiSprite("🧰", 36, y: 16))
             dead.addChild(emojiSprite("📭", 28, y: 12))
+        case .pumpkinPatch:
+            alive.addChild(shadowSprite(36))
+            alive.addChild(emojiSprite("🎃", 34, y: 14))
+            dead.addChild(emojiSprite("🌱", 22, y: 8))
+        case .giftBox:
+            alive.addChild(shadowSprite(34))
+            alive.addChild(emojiSprite("🎁", 34, y: 14))
+        case .sandCastle:
+            alive.addChild(shadowSprite(40))
+            alive.addChild(emojiSprite("🏰", 38, y: 16, tint: UIColor(red: 0.95, green: 0.8, blue: 0.55, alpha: 1), blend: 0.6))
+        case .slimeCrystal:
+            alive.addChild(glowSprite(UIColor(red: 0.45, green: 1, blue: 0.4, alpha: 1), size: 80, y: 16, alpha: 0.5))
+            alive.addChild(emojiSprite("💎", 36, y: 16, tint: UIColor(red: 0.4, green: 1, blue: 0.4, alpha: 1), blend: 0.7))
+            dead.addChild(emojiSprite("🪨", 22, y: 8))
         }
         return (alive, dead)
     }

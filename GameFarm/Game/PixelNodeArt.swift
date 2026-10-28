@@ -249,6 +249,32 @@ enum PixelNodeArt {
                 still.anchorPoint = CGPoint(x: 0.5, y: 0.5)
                 dead.addChild(still)
             }
+        case .pumpkinPatch:
+            let orange = UIColor(red: 1, green: 0.55, blue: 0.1, alpha: 1)
+            alive.addChild(glowSprite(orange, size: 64, y: 8, alpha: 0.3))
+            guard add(alive, "crop_pumpkin_3", x: -8) != nil else { return nil }
+            _ = add(alive, "crop_pumpkin_3", x: 9, y: -4)
+            _ = add(dead, "crop_pumpkin_1")
+        case .giftBox:
+            let colors = ["gift_red", "gift_blue", "gift_green"].shuffled()
+            guard add(alive, colors[0], x: -7) != nil else { return nil }
+            _ = add(alive, colors[1], x: 8, y: -3)
+            if let top = Sprites.node(colors[2], x: -1, y: 12) {
+                top.setScale(0.8)
+                alive.addChild(top)
+            }
+            alive.addChild(glowSprite(UIColor(red: 1, green: 0.9, blue: 0.5, alpha: 1), size: 60, y: 10, alpha: 0.25))
+            _ = add(dead, "gift_paper")
+        case .sandCastle:
+            guard add(alive, "sandcastle") != nil else { return nil }
+            _ = add(dead, "sand_pile")
+        case .slimeCrystal:
+            let green = UIColor(red: 0.45, green: 1, blue: 0.4, alpha: 1)
+            guard let crystal = Sprites.node("crystal_slime", x: -4) else { return nil }
+            alive.addChild(glowSprite(green, size: 84, y: 16, alpha: 0.5))
+            alive.addChild(pulse(crystal))
+            _ = add(alive, "slime_blob", x: 12, y: -3)
+            _ = add(dead, "rubble")
         case .oyster:
             guard let shell = Sprites.node("oyster") else { return nil }
             shell.anchorPoint = CGPoint(x: 0.5, y: 0.5)

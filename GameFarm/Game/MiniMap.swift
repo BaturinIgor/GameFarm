@@ -15,6 +15,7 @@ enum MiniMap {
     static func dotColor(_ type: NodeType) -> UIColor {
         let spec = type.spec
         if type == .treasureChest { return UIColor(red: 1, green: 0.82, blue: 0.2, alpha: 1) }
+        if Events.points(for: type) > 1 { return UIColor(red: 1, green: 0.55, blue: 0.1, alpha: 1) }
         switch spec.tool {
         case .axe: return UIColor(red: 0.12, green: 0.42, blue: 0.15, alpha: 1)
         case .pickaxe:

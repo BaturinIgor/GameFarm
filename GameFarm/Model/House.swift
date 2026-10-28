@@ -35,6 +35,8 @@ enum HouseFloor: String, CaseIterable, Identifiable, Codable {
 /// Украшения для дома: дают уют, а уют прибавляет добычу и опыт.
 enum DecorID: String, CaseIterable, Identifiable, Codable {
     case potGreen, potRed, potBlue, lantern, clock, painting, stool, table, bench, rug, bookshelf, barrel, anvil, hay
+    // Награды ивентов
+    case jackLantern, slimeLamp, snowman, sandcastle
 
     var id: String { rawValue }
 
@@ -48,9 +50,14 @@ enum DecorID: String, CaseIterable, Identifiable, Codable {
         case .table: "table_small"
         case .barrel: "barrel_berries"
         case .hay: "hay_big"
+        case .jackLantern: "jack_lantern"
+        case .slimeLamp: "slime_lamp"
         default: rawValue
         }
     }
+
+    /// Ивент, за который выдаётся украшение (его нельзя купить).
+    var event: EventID? { EventID.allCases.first { $0.decor == self } }
 
     var comfort: Int {
         switch self {
@@ -58,6 +65,7 @@ enum DecorID: String, CaseIterable, Identifiable, Codable {
         case .lantern, .clock, .barrel, .table: 2
         case .painting, .bench, .anvil: 3
         case .rug, .bookshelf: 4
+        case .jackLantern, .slimeLamp, .snowman, .sandcastle: 5
         }
     }
 
@@ -77,6 +85,7 @@ enum DecorID: String, CaseIterable, Identifiable, Codable {
         case .anvil: Cost(coins: 1500, (.iron, 20))
         case .rug: Cost(coins: 2500, (.wool, 15))
         case .bookshelf: Cost(coins: 3000, (.wood, 120))
+        case .jackLantern, .slimeLamp, .snowman, .sandcastle: Cost()
         }
     }
 }

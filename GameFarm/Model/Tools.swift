@@ -124,6 +124,8 @@ enum NodeType: String, CaseIterable {
     case cloudBush, goldenTree, skyTree, starRock, starPond
     // Королевский сад и экспедиции
     case beehive, grapeVine, treasureChest
+    // Ивенты
+    case pumpkinPatch, giftBox, sandCastle, slimeCrystal
 
     var spec: NodeSpec { NodeSpec.table[self]! }
 }
@@ -286,7 +288,20 @@ struct NodeSpec {
             NodeSpec(type: .treasureChest, tool: .hand, tier: 1, hp: 8, xp: 30, respawn: 600,
                      yields: [NodeYield(kind: .gold, min: 3, max: 6), NodeYield(kind: .pearl, min: 1, max: 1, chance: 0.35),
                               NodeYield(kind: .diamond, min: 1, max: 1, chance: 0.25), NodeYield(kind: .shell, min: 2, max: 3, chance: 0.5)],
-                     radius: 16, blocking: false, barHeight: 40, chip: UIColor(red: 1, green: 0.85, blue: 0.3, alpha: 1))
+                     radius: 16, blocking: false, barHeight: 40, chip: UIColor(red: 1, green: 0.85, blue: 0.3, alpha: 1)),
+            // Ивенты
+            NodeSpec(type: .pumpkinPatch, tool: .hand, tier: 1, hp: 5, xp: 10, respawn: 14,
+                     yields: [NodeYield(kind: .wheat, min: 2, max: 3), NodeYield(kind: .pumpkin, min: 1, max: 1, chance: 0.12)],
+                     radius: 16, blocking: false, barHeight: 44, chip: UIColor(red: 1, green: 0.55, blue: 0.1, alpha: 1)),
+            NodeSpec(type: .giftBox, tool: .hand, tier: 1, hp: 5, xp: 10, respawn: 16,
+                     yields: [NodeYield(kind: .apples, min: 2, max: 3), NodeYield(kind: .gold, min: 1, max: 1, chance: 0.2)],
+                     radius: 14, blocking: false, barHeight: 40, chip: UIColor(red: 0.9, green: 0.25, blue: 0.3, alpha: 1)),
+            NodeSpec(type: .sandCastle, tool: .hand, tier: 1, hp: 5, xp: 10, respawn: 14,
+                     yields: [NodeYield(kind: .shell, min: 1, max: 2), NodeYield(kind: .pearl, min: 1, max: 1, chance: 0.06)],
+                     radius: 16, blocking: false, barHeight: 46, chip: UIColor(red: 0.95, green: 0.8, blue: 0.55, alpha: 1)),
+            NodeSpec(type: .slimeCrystal, tool: .pickaxe, tier: 1, hp: 6, xp: 12, respawn: 16,
+                     yields: [NodeYield(kind: .slime, min: 2, max: 3), NodeYield(kind: .crystal, min: 1, max: 1, chance: 0.05)],
+                     radius: 18, blocking: true, barHeight: 58, chip: UIColor(red: 0.45, green: 0.95, blue: 0.4, alpha: 1))
         ]
         var dict: [NodeType: NodeSpec] = [:]
         for spec in list { dict[spec.type] = spec }

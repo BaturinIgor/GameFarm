@@ -20,6 +20,11 @@ MAT.update({
     "metal": ("#3c4258", "#7a8299", "#c0c8d8"),
     "stone": ("#3c3a44", "#6c6878", "#9c98a8"),
     "fire": ("#b8320e", "#ff7a1f", "#ffd060"),
+    "pumpkin": ("#9c3a00", "#ed7614", "#ffb04a"),
+    "snow": ("#9fb4cc", "#eef4fc", "#ffffff"),
+    "slimeg": ("#1e6f20", "#4fc83a", "#a8f070"),
+    "giftgreen": ("#1e6f50", "#33984b", "#5ac54f"),
+    "stem": ("#3a4a1a", "#5a7a2a", "#8aaa3a"),
 })
 
 
@@ -319,8 +324,147 @@ def cards_icon():
     return im
 
 
+# ---------------------------------------------------------------- ивенты
+
+def gift(body):
+    c = Canvas(14, 14)
+    c.rect(1, 5, 12, 13, body)          # коробка
+    c.rect(0, 3, 13, 5, body)           # крышка
+    im = c.render()
+    p = im.load()
+    gold, gold_dark = hexc("#ffc825"), hexc("#ed7614")
+    for y in range(3, 14):
+        p[6, y] = gold
+        p[7, y] = gold_dark
+    for x in range(0, 14):
+        if p[x, 4][3]:
+            p[x, 4] = gold
+    # бант
+    for x, y in ((4, 1), (5, 2), (4, 2), (9, 1), (8, 2), (9, 2), (6, 2), (7, 2)):
+        p[x, y] = gold
+    for x, y in ((3, 1), (3, 2), (10, 1), (10, 2), (4, 0), (9, 0)):
+        p[x, y] = hexc("#0e071b")
+    return im
+
+
+def gift_paper():
+    c = Canvas(18, 8)
+    for x, y, mat in ((2, 5, "red"), (6, 6, "blanketblue"), (11, 5, "giftgreen"), (15, 6, "red"), (8, 3, "gold")):
+        c.rect(x, y, x + 1, y + 1, mat)
+    return c.render(light=False)
+
+
+def sandcastle():
+    c = Canvas(28, 26)
+    c.rect(3, 12, 24, 24, "sand")        # стена
+    c.rect(1, 6, 7, 24, "sand")          # левая башня
+    c.rect(20, 6, 26, 24, "sand")        # правая башня
+    c.rect(10, 4, 17, 24, "sand")        # центр
+    for x in (1, 4, 7, 20, 23, 26):
+        c.rect(x, 4, x, 5, "sand")
+    for x in (10, 12, 14, 17):
+        c.rect(x, 2, x, 3, "sand")
+    im = c.render()
+    p = im.load()
+    for y in range(17, 25):                # ворота
+        for x in range(12, 16):
+            if y > 17 or x in (13, 14):
+                p[x, y] = hexc("#7a4a2c")
+    for x, y in ((4, 11), (23, 11), (13, 9), (14, 9)):  # окошки
+        p[x, y] = hexc("#7a4a2c")
+        p[x, y + 1] = hexc("#7a4a2c")
+    # флажок
+    for y in range(0, 4):
+        p[13, y] = hexc("#3c4258")
+    for x, y in ((14, 0), (15, 0), (16, 1), (14, 1), (15, 1)):
+        p[x, y] = hexc("#c42430")
+    for x, y in ((6, 20), (21, 19), (17, 14)):   # ракушки
+        p[x, y] = hexc("#ffb8dc")
+    return im
+
+
+def sand_pile():
+    c = Canvas(18, 8)
+    c.ellipse(9, 7, 8.5, 5, "sand")
+    return c.render()
+
+
+def jack_lantern():
+    c = Canvas(18, 16)
+    c.ellipse(9, 9.5, 8.5, 6.5, "pumpkin")
+    c.rect(8, 1, 9, 3, "stem")
+    im = c.render()
+    p = im.load()
+    for y in range(5, 15):                 # дольки
+        for x in (5, 12):
+            if p[x, y][3] and p[x, y] != hexc("#0e071b"):
+                p[x, y] = hexc("#c45a10")
+    glow, deep = hexc("#ffe27a"), hexc("#ffb04a")
+    for x, y in ((5, 7), (6, 7), (6, 8), (11, 7), (12, 7), (11, 8)):   # глаза
+        p[x, y] = glow
+    for x in range(5, 14):                                              # улыбка
+        p[x, 11] = glow if x % 2 else deep
+    for x in (6, 8, 10, 12):
+        p[x, 12] = glow
+    return im
+
+
+def snowman():
+    c = Canvas(18, 26)
+    c.disc(9, 19.5, 6.5, "snow")
+    c.disc(9, 10.5, 4.8, "snow")
+    c.rect(5, 1, 12, 5, "dark")          # шляпа
+    c.rect(3, 5, 14, 6, "dark")
+    im = c.render()
+    p = im.load()
+    for x, y in ((7, 9), (11, 9)):
+        p[x, y] = hexc("#262b44")
+    for x in (9, 10, 11):
+        p[x, 11] = hexc("#ed7614")
+    for y in (16, 19, 22):
+        p[9, y] = hexc("#262b44")
+    for x in range(5, 13):                # шарф
+        p[x, 14] = hexc("#c42430")
+    p[11, 15] = hexc("#c42430")
+    p[11, 16] = hexc("#891e2b")
+    return im
+
+
+def slime_lamp():
+    c = Canvas(14, 18)
+    c.rect(2, 4, 11, 17, "glass")
+    c.rect(3, 9, 10, 16, "slimeg")
+    c.rect(1, 1, 12, 3, "metal")
+    im = c.render()
+    p = im.load()
+    for x, y in ((5, 11), (8, 13), (6, 14)):
+        p[x, y] = hexc("#e8ffd0")
+    p[3, 6] = hexc("#ffffff")
+    p[3, 7] = hexc("#dff4ff")
+    return im
+
+
+def slime_blob():
+    c = Canvas(12, 10)
+    c.ellipse(6, 7, 5.5, 3.5, "slimeg")
+    c.disc(6, 4.5, 2.6, "slimeg")
+    im = c.render()
+    im.load()[5, 4] = hexc("#e8ffd0")
+    return im
+
+
 def sprites():
     return {
+        "gift_red": gift("red"),
+        "gift_blue": gift("blanketblue"),
+        "gift_green": gift("giftgreen"),
+        "gift_paper": gift_paper(),
+        "sandcastle": sandcastle(),
+        "sand_pile": sand_pile(),
+        "jack_lantern": jack_lantern(),
+        "snowman": snowman(),
+        "slime_lamp": slime_lamp(),
+        "slime_blob": slime_blob(),
         "quest_board": quest_board(),
         "bed": bed(),
         "wardrobe": wardrobe(),

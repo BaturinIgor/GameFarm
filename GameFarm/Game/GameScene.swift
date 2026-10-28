@@ -400,7 +400,7 @@ final class GameScene: SKScene {
             }
         }
         // Живность
-        let groundCritters: Set<String> = ["🐌", "🦂", "🐞"]
+        let groundCritters: Set<String> = ["🐌", "🦂", "🐞", "🦀"]
         for emoji in spec.critters {
             for _ in 0..<3 {
                 let critter = CritterNode(emoji: emoji, flier: !groundCritters.contains(emoji))
@@ -598,7 +598,7 @@ final class GameScene: SKScene {
         depositBuiltRadius = max(radius, 1)
 
         // Дом стоит слева сверху от площадки склада. В экспедиции вместо дома палатка.
-        let houseName = spec.kind == .expedition ? "tent" : "house"
+        let houseName = spec.kind == .expedition || spec.kind == .event ? "tent" : "house"
         let houseFoot = CGPoint(x: base.x - 60, y: base.y + 34)
         if let house = Sprites.node(houseName, x: houseFoot.x, y: houseFoot.y) {
             house.zPosition = zFor(houseFoot.y)
@@ -613,7 +613,7 @@ final class GameScene: SKScene {
                 world.addChild(smoke)
             }
         } else {
-            let house = SKSpriteNode(texture: Art.emoji(spec.kind == .expedition ? "⛺" : "🏡", size: 96), size: CGSize(width: 80, height: 80))
+            let house = SKSpriteNode(texture: Art.emoji(houseName == "tent" ? "⛺" : "🏡", size: 96), size: CGSize(width: 80, height: 80))
             house.anchorPoint = CGPoint(x: 0.5, y: 0.12)
             house.position = houseFoot
             house.zPosition = zFor(houseFoot.y)
@@ -677,6 +677,7 @@ final class GameScene: SKScene {
             checkGates(dt)
             checkRoyalChest()
             checkExpedition()
+            checkEvent(dt)
         }
         for spot in spots where spot.tick(dt) {
             if distance(spot.position, player.position) < 500 {
@@ -953,6 +954,20 @@ final class GameScene: SKScene {
         }
     }
 
+    private var eventCheckTimer = 0.0
+
+    /// Ивент закончился, пока герой на его карте: возвращаемся домой.
+    private func checkEvent(_ dt: Double) {
+        eventCheckTimer -= dt
+        guard eventCheckTimer <= 0 else { return }
+        eventCheckTimer = 1
+        game.syncEvent()
+        if spec.kind == .event, let here = loaded, !game.isUnlocked(here) {
+            game.toast("⏰", tr("toast.eventOver"))
+            game.leaveEvent()
+        }
+    }
+
     private func checkRoyalChest() {
         guard let chest = royalChest else { return }
         let ready = game.gardenChestReady
@@ -1132,6 +1147,13 @@ final class GameScene: SKScene {
             }
         }
         let coins = game.registerHarvest(xp: spot.spec.xp)
+        if spec.kind == .event {
+            let points = Events.points(for: spot.spec.type) * multiplier
+            game.addEventPoints(points)
+            Effects.text("+\(points) \(Events.current.event.emoji)",
+                         at: CGPoint(x: spot.position.x - 30, y: spot.position.y + min(70, spot.spec.barHeight) + 26), in: world,
+                         color: UIColor(red: 1, green: 0.95, blue: 0.6, alpha: 1), size: byHelper ? 13 : 16, delay: 0.1)
+        }
         if spot.spec.type == .treasureChest {
             let bonusCoins = 40 + game.save.level * 12
             game.addCoins(bonusCoins)
@@ -1341,9 +1363,20 @@ final class GameScene: SKScene {
 
     /// Логова монстров в дальних частях локации.
     private func buildMonsters(_ id: LocationID) {
-        guard spec.kind == .world else { return }
-        let level = Bestiary.level(in: id)
-        for (kind, count) in Bestiary.monsters(in: id) {
+        let list: [(MonsterKind, Int)]
+        let level: Int
+        switch spec.kind {
+        case .world:
+            list = Bestiary.monsters(in: id)
+            level = Bestiary.level(in: id)
+        case .event:
+            guard let event = EventID.allCases.first(where: { $0.location == id }) else { return }
+            list = Events.monsters(event)
+            level = Events.monsterLevel(playerLevel: game.save.level)
+        default:
+            return
+        }
+        for (kind, count) in list {
             for _ in 0..<count {
                 guard let point = farPoint() else { continue }
                 monsterSlots.append(MonsterSlot(kind: kind, level: level, point: point, respawn: Double.random(in: 0.5...4)))
@@ -1402,6 +1435,11 @@ final class GameScene: SKScene {
         let reward = game.noteKill(foe.kind, level: foe.level)
         Effects.text("+\(reward.coins) 🪙", at: CGPoint(x: foe.position.x, y: foe.position.y + 58), in: world,
                      color: UIColor(red: 1, green: 0.85, blue: 0.3, alpha: 1), size: 15)
+        if spec.kind == .event {
+            Effects.text("+\(Events.points(for: foe.kind)) \(Events.current.event.emoji)",
+                         at: CGPoint(x: foe.position.x, y: foe.position.y + 80), in: world,
+                         color: UIColor(red: 1, green: 0.95, blue: 0.6, alpha: 1), size: 16, delay: 0.2)
+        }
         if reward.loot > 0 {
             Effects.gain(foe.kind.loot, reward.loot, at: CGPoint(x: foe.position.x, y: foe.position.y + 34), in: world, delay: 0.15)
         }

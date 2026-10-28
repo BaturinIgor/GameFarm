@@ -155,6 +155,7 @@ struct ContentView: View {
             case .calendar: CalendarView()
             case .hunt: HuntView()
             case .collection: CollectionView()
+            case .events: EventsView(onTravel: { closeAll() })
             }
         }
         .environment(game)
@@ -248,11 +249,15 @@ struct HUDView: View {
                         LuckButton(style: .pill)
                         shopPill
                     }
-                    MealPill { sheet = .kitchen }
+                    HStack(spacing: 6) {
+                        EventHUDPill { sheet = .events }
+                        MealPill { sheet = .kitchen }
+                    }
                 }
             }
 
             ExpeditionPill()
+            EventMapPill { sheet = .events }
 
             ForEach(game.toasts) { toast in
                 ToastView(toast: toast)

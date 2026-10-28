@@ -1,14 +1,15 @@
 import UIKit
 
-/// Обычная локация мира, платный сад или экспедиция по билету.
+/// Обычная локация мира, платный сад, экспедиция по билету или карта ивента.
 enum LocationKind {
-    case world, garden, expedition
+    case world, garden, expedition, event
 }
 
 enum LocationID: String, CaseIterable, Identifiable {
     case meadow, hills, lake, swamp, desert, snow, caves, island, volcano, sky
     case garden
     case goldMine, treasureIsland, luckyMeadow
+    case harvestFest, slimeNight, winterTale, beachParty
 
     var id: String { rawValue }
     var spec: LocationSpec { LocationSpec.table[self]! }
@@ -16,6 +17,7 @@ enum LocationID: String, CaseIterable, Identifiable {
 
     static var world: [LocationID] { allCases.filter { $0.spec.kind == .world } }
     static var expeditions: [LocationID] { allCases.filter { $0.spec.kind == .expedition } }
+    static var events: [LocationID] { allCases.filter { $0.spec.kind == .event } }
 }
 
 /// Частицы в воздухе.
@@ -132,7 +134,26 @@ struct LocationSpec {
             LocationSpec(id: .luckyMeadow, emoji: "🍀", level: 1, kind: .expedition,
                          ground: c(51, 152, 75), path: c(228, 166, 114),
                          wild: [], weather: .pollen, critters: ["🦋", "🦋", "🐝"],
-                         music: .expedition, ambience: .birds)
+                         music: .expedition, ambience: .birds),
+            // Карты ивентов
+            LocationSpec(id: .harvestFest, emoji: "🎃", level: 1, kind: .event,
+                         ground: c(133, 114, 40), path: c(154, 98, 56),
+                         wild: [], weather: .leaves,
+                         tint: UIColor(red: 1, green: 0.55, blue: 0.15, alpha: 0.06), critters: ["🦇", "🦋"],
+                         music: .hills, ambience: .wind),
+            LocationSpec(id: .slimeNight, emoji: "🟢", level: 1, kind: .event,
+                         ground: c(30, 58, 40), path: c(60, 90, 66), water: c(58, 168, 58),
+                         wild: [], dark: true, weather: .fireflies, cloudShadows: false,
+                         music: .caves, ambience: nil, footstep: .footstepStone),
+            LocationSpec(id: .winterTale, emoji: "🎁", level: 1, kind: .event,
+                         ground: c(238, 244, 252), path: c(188, 205, 224), water: c(200, 230, 248),
+                         wild: [], weather: .snow,
+                         tint: UIColor(red: 0.4, green: 0.6, blue: 1, alpha: 0.05),
+                         music: .snow, ambience: .wind, footstep: .footstepSnow),
+            LocationSpec(id: .beachParty, emoji: "🏖️", level: 1, kind: .event,
+                         ground: c(228, 166, 114), path: c(240, 200, 150), water: c(22, 180, 212),
+                         wild: [], weather: .spray, critters: ["🦀", "🐦"],
+                         music: .island, ambience: .waves, footstep: .footstepSand)
         ]
         var dict: [LocationID: LocationSpec] = [:]
         for spec in list { dict[spec.id] = spec }

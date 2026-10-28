@@ -17,6 +17,7 @@ struct ShopView: View {
                     StarterCard()
                 }
                 ProCard()
+                if game.eventsOpen && !game.hasVip { EventVipCard(event: Events.current.event) }
                 GardenCard()
                 TicketsCard()
                 SkinsCard()
@@ -353,6 +354,7 @@ private struct SkinTile: View {
         case .level(let level): return tr("common.lvl", level)
         case .product(let product): return product.title
         case .constellation(let c): return "✨ " + c.name
+        case .event(let e): return e.emoji + " " + tr("skin.event", e.name)
         }
     }
 

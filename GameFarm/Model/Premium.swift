@@ -7,11 +7,12 @@ enum ProductID: String, CaseIterable, Identifiable {
     case skins = "com.personal.gamefarm.skins"
     case garden = "com.personal.gamefarm.garden"
     case tickets = "com.personal.gamefarm.tickets5"
+    case eventPass = "com.personal.gamefarm.eventpass"
 
     var id: String { rawValue }
 
     /// Расходуемая покупка: её можно купить снова.
-    var consumable: Bool { self == .tickets }
+    var consumable: Bool { self == .tickets || self == .eventPass }
 
     var key: String {
         switch self {
@@ -20,6 +21,7 @@ enum ProductID: String, CaseIterable, Identifiable {
         case .skins: "skins"
         case .garden: "garden"
         case .tickets: "tickets"
+        case .eventPass: "eventPass"
         }
     }
 
@@ -32,6 +34,7 @@ enum ProductID: String, CaseIterable, Identifiable {
         case .skins: "🎭"
         case .garden: "🏰"
         case .tickets: "🎟️"
+        case .eventPass: "🌟"
         }
     }
 
@@ -43,6 +46,7 @@ enum ProductID: String, CaseIterable, Identifiable {
         case .skins: "$2.99"
         case .garden: "$3.99"
         case .tickets: "$0.99"
+        case .eventPass: "$2.99"
         }
     }
 }
@@ -63,6 +67,7 @@ enum SkinUnlock {
     case level(Int)
     case product(ProductID)
     case constellation(ConstellationID)
+    case event(EventID)
 }
 
 /// Образы персонажа. Только внешний вид, на силу не влияют.
@@ -72,6 +77,7 @@ enum Skin: String, CaseIterable, Identifiable {
     case wizard, ninja, vampire, astronaut, princess, prince, superhero, merperson, fairy, zombie
     case knight
     case harvester, ranger, miner, sailor, shepherd, hunter, stargazer
+    case autumn, slimeKing, frost, surfer
 
     var id: String { rawValue }
 
@@ -105,6 +111,10 @@ enum Skin: String, CaseIterable, Identifiable {
         case .shepherd: "🐑"
         case .hunter: "🗡️"
         case .stargazer: "🔭"
+        case .autumn: "🍂"
+        case .slimeKing: "👑"
+        case .frost: "❄️"
+        case .surfer: "🏄"
         }
     }
 
@@ -128,6 +138,10 @@ enum Skin: String, CaseIterable, Identifiable {
         case .shepherd: .constellation(.beasts)
         case .hunter: .constellation(.monsters)
         case .stargazer: .constellation(.sky)
+        case .autumn: .event(.harvestFest)
+        case .slimeKing: .event(.slimeNight)
+        case .frost: .event(.winterTale)
+        case .surfer: .event(.beachParty)
         default: .product(.skins)
         }
     }

@@ -324,13 +324,19 @@ private struct DecorPicker: View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(decor.name).font(.game(14))
                                     Text(tr("decor.comfort", decor.comfort)).font(.game(11)).foregroundStyle(Palette.good)
-                                    CostView(cost: decor.cost)
+                                    if let event = decor.event {
+                                        Text(game.hasDecor(decor) ? tr("decor.event.owned") : tr("decor.event.locked", event.name))
+                                            .font(.game(11, .semibold))
+                                            .foregroundStyle(game.hasDecor(decor) ? Palette.good : Palette.inkSoft)
+                                    } else {
+                                        CostView(cost: decor.cost)
+                                    }
                                 }
                                 Spacer(minLength: 4)
                                 Button {
                                     if game.place(decor, at: slot) { onClose() }
                                 } label: {
-                                    Text(tr("common.buy"))
+                                    Text(decor.event == nil ? tr("common.buy") : tr("decor.place"))
                                 }
                                 .buttonStyle(.game(.green, small: true))
                                 .disabled(!game.canPlace(decor))

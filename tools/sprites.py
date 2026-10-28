@@ -237,6 +237,15 @@ SKINS = {
                    legs="Plate_Legs/Plate_Legs_Red", feet="Black"),
     "stargazer": dict(hair=(6, "White"), chest="Royal_Shirt/Royal_Shirt_1_Purple", legs="Royal_Pants/Royal_Pants_1_Blue",
                       feet="Blue", hat="#2a2a7a", tone="pale"),
+    # Образы за ивенты
+    "autumn": dict(hair=(2, "Ginger"), chest="Lumberjack_Shirt/Lumberjack_Shirt_1_Orange", legs="OG_Pants/Pants_1_Brown",
+                   feet="Brown", hat="#b8531a", tone="tan"),
+    "slimeKing": dict(hair=(5, "Teal"), chest="Royal_Shirt/Royal_Shirt_1_Green", legs="Royal_Pants/Royal_Pants_1_Green",
+                      feet="Green", crown=True, tone="green"),
+    "frost": dict(hair=(6, "White"), chest="Royal_Shirt/Royal_Shirt_1_White", legs="Royal_Pants/Royal_Pants_1_Blue",
+                  feet="Blue", crown=True, tone="pale"),
+    "surfer": dict(hair=(1, "Blonde"), chest="OG_Shirt/Shirt_1_Orange", legs="Farmer_Pants/Farmer_Pants_1_Blue",
+                   feet="Orange", tone="tan"),
     # Торговцы и стражник (не образы игрока)
     "guard": dict(helmet="Plate_Helmet_1/Plate_Helmet_1_Iron", chest="Plate_Chest/Plate_Chest_Iron",
                   legs="Plate_Legs/Plate_Legs_Iron", feet="Brown"),
@@ -573,6 +582,8 @@ save("crystal_amethyst", ore(4, "amethyst"))
 save("crystal_diamond", ore(4, "diamond"))
 save("crystal_ruby", ore(4, "ruby"))
 save("crystal_gold", ore(4, "gold"))
+save("crystal_slime", lum_map(ore(4, "emerald"), ["#0e2a12", "#1e6f20", "#4fc83a", "#a8f070", "#eaffd8"],
+                              mask=lambda p: hsv(p)[1] > 0.25))
 coal = ore(0, "stone")
 save("ore_coal", lum_map(coal, ["#050408", "#1b1a20", "#2e2c34"], mask=lambda p: hexc("#0c2e44") == p[:3] or hsv(p)[1] > 0.45))
 save("ore_obsidian", lum_map(ore(1, "amethyst"), ["#07050c", "#1f1630", "#3a2a5a", "#6a4c9c", "#b8a0f0"]))
@@ -770,6 +781,7 @@ for i, flower in enumerate(["green", "purple", "red", "pink", "coral", "blue"]):
 save("barrel_berries", crop_opaque(barrels.crop((0, 0, 16, 32))))
 save("barrel_water", crop_opaque(barrels.crop((16, 0, 32, 32))))
 save("lantern", crop_opaque(load("Outdoor decoration", "Lantern.png")))
+save("bunting", crop_opaque(load("Outdoor decoration", "Outdoor_Decor.png").crop((64, 240, 96, 272))))
 save("anvil", crop_opaque(load("Buildings", "House_Decor", "Anvil_Anim.png").crop((0, 0, 16, 16))))
 hay = load("Outdoor decoration", "Hay_Bales.png")
 save("hay_small", crop_opaque(hay.crop((0, 0, 16, 16))))

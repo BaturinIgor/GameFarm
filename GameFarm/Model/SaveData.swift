@@ -70,6 +70,16 @@ struct SaveData: Codable {
     var cards: [CardID: Int] = [:]
     var awaken: [AnimalID: Int] = [:]
     var shiny: [AnimalID] = []
+    // Ивенты
+    var eventKey = ""
+    var eventPoints = 0
+    var eventFree: [Int] = []
+    var eventVip: [Int] = []
+    var eventBonus = 0
+    var vipKeys: [String] = []
+    var eventSeen = ""
+    var eventDecor: [String] = []
+    var eventSkins: [String] = []
 
     init() {}
 
@@ -84,6 +94,7 @@ struct SaveData: Codable {
         case houseFloors, decor, dishes, cooking, meal, mealUntil, loginDay, loginClaims
         case hunts, huntDay, kills
         case cards, awaken, shiny
+        case eventKey, eventPoints, eventFree, eventVip, eventBonus, vipKeys, eventSeen, eventDecor, eventSkins
     }
 
     init(from decoder: Decoder) throws {
@@ -163,11 +174,22 @@ struct SaveData: Codable {
         }
         awaken = awakenMap
         shiny = (try c.decodeIfPresent([String].self, forKey: .shiny) ?? []).compactMap { AnimalID.from($0) }
+        eventKey = try c.decodeIfPresent(String.self, forKey: .eventKey) ?? ""
+        eventPoints = try c.decodeIfPresent(Int.self, forKey: .eventPoints) ?? 0
+        eventFree = try c.decodeIfPresent([Int].self, forKey: .eventFree) ?? []
+        eventVip = try c.decodeIfPresent([Int].self, forKey: .eventVip) ?? []
+        eventBonus = try c.decodeIfPresent(Int.self, forKey: .eventBonus) ?? 0
+        vipKeys = try c.decodeIfPresent([String].self, forKey: .vipKeys) ?? []
+        eventSeen = try c.decodeIfPresent(String.self, forKey: .eventSeen) ?? ""
+        eventDecor = try c.decodeIfPresent([String].self, forKey: .eventDecor) ?? []
+        eventSkins = try c.decodeIfPresent([String].self, forKey: .eventSkins) ?? []
 
         if !unlocked.contains(.meadow) { unlocked.insert(.meadow, at: 0) }
         // Экспедиция и сад не открываются через список, туда попадают отдельно.
         if current.spec.kind == .world && !unlocked.contains(current) { current = .meadow }
         if current.spec.kind == .expedition && expedition == nil { current = .meadow }
+        // Ивент закончился, пока игра была закрыта: возвращаемся домой.
+        if current.spec.kind == .event && Events.current.event.location != current { current = .meadow }
         for tool in ToolKind.upgradable where tools[tool] == nil { tools[tool] = 1 }
         active = active.filter { animals[$0] != nil }
     }
@@ -233,6 +255,15 @@ struct SaveData: Codable {
         try c.encode(Self.raw(cards), forKey: .cards)
         try c.encode(Self.raw(awaken), forKey: .awaken)
         try c.encode(shiny.map(\.rawValue), forKey: .shiny)
+        try c.encode(eventKey, forKey: .eventKey)
+        try c.encode(eventPoints, forKey: .eventPoints)
+        try c.encode(eventFree, forKey: .eventFree)
+        try c.encode(eventVip, forKey: .eventVip)
+        try c.encode(eventBonus, forKey: .eventBonus)
+        try c.encode(vipKeys, forKey: .vipKeys)
+        try c.encode(eventSeen, forKey: .eventSeen)
+        try c.encode(eventDecor, forKey: .eventDecor)
+        try c.encode(eventSkins, forKey: .eventSkins)
     }
 
     private static func map<K: RawRepresentable & Hashable>(_ raw: [String: Int]?) -> [K: Int]? where K.RawValue == String {

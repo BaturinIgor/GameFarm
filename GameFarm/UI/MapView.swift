@@ -3,6 +3,7 @@ import SwiftUI
 /// Карта мира: локации и проходы между ними, экспедиции и королевский сад.
 struct MapView: View {
     @Environment(GameState.self) private var game
+    @Environment(\.gameActions) private var actions
     let onTravel: () -> Void
     var onShop: () -> Void = {}
     @State private var selected: LocationID?
@@ -16,6 +17,7 @@ struct MapView: View {
                         .id(id)
                         .transition(.opacity)
                 }
+                EventMapCard(onTravel: onTravel, onOpen: { actions.open(.events) })
                 ExpeditionsCard(onTravel: onTravel)
                 GardenMapCard(onTravel: onTravel, onShop: onShop)
             }

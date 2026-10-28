@@ -130,6 +130,15 @@ final class GameState {
         save.loginClaims = old.loginClaims
         save.cards = old.cards
         save.shiny = old.shiny
+        save.eventKey = old.eventKey
+        save.eventPoints = old.eventPoints
+        save.eventFree = old.eventFree
+        save.eventVip = old.eventVip
+        save.eventBonus = old.eventBonus
+        save.vipKeys = old.vipKeys
+        save.eventSeen = old.eventSeen
+        save.eventDecor = old.eventDecor
+        save.eventSkins = old.eventSkins
         save.rebirths = old.rebirths + (reward > 0 ? 1 : 0)
         save.sparks = old.sparks + reward
         save.sparksEarned = old.sparksEarned + reward
@@ -497,6 +506,7 @@ final class GameState {
         case .world: return reachable.contains(id)
         case .garden: return owns(.garden)
         case .expedition: return save.expedition?.id == id
+        case .event: return eventsOpen && Events.current.event.location == id
         }
     }
 
@@ -827,7 +837,11 @@ final class GameState {
                 guard !save.consumed.contains(transaction) else { return }
                 save.consumed.append(transaction)
             }
-            save.tickets += Expedition.ticketPack
+            if product == .eventPass {
+                activateVip()
+            } else {
+                save.tickets += Expedition.ticketPack
+            }
             toast(product.emoji, tr("toast.purchased", product.title))
             saveNow()
             return
@@ -848,7 +862,7 @@ final class GameState {
             case .garden:
                 save.skin = Skin.knight.rawValue
                 save.gardenChestAt = nil
-            case .tickets:
+            case .tickets, .eventPass:
                 break
             }
             toast(product.emoji, tr("toast.purchased", product.title))
@@ -906,6 +920,7 @@ final class GameState {
         case .level(let level): return save.level >= level
         case .product(let product): return owns(product)
         case .constellation(let c): return isComplete(c)
+        case .event: return save.eventSkins.contains(skin.rawValue)
         }
     }
 
@@ -989,6 +1004,7 @@ final class GameState {
 
     func applyOfflineProgress() {
         if canClaimLogin && save.tutorialDone { loginPopup = true }
+        syncEvent()
         repairTimers()
         let elapsed = min(Date().timeIntervalSince(save.lastSeen), stats.offlineHours * 3600)
         save.lastSeen = Date()
@@ -1378,7 +1394,13 @@ extension GameState {
 
     var comfort: Int { save.decor.values.reduce(0) { $0 + $1.comfort } }
 
-    func canPlace(_ decor: DecorID) -> Bool { canAfford(decor.cost) }
+    /// Украшение ивента можно поставить, только если оно получено, и только одно.
+    func hasDecor(_ decor: DecorID) -> Bool { decor.event == nil || save.eventDecor.contains(decor.rawValue) }
+
+    func canPlace(_ decor: DecorID) -> Bool {
+        if decor.event != nil { return hasDecor(decor) && !save.decor.values.contains(decor) }
+        return canAfford(decor.cost)
+    }
 
     @discardableResult
     func place(_ decor: DecorID, at slot: String) -> Bool {
@@ -1561,6 +1583,7 @@ extension GameState {
         let added = inExpedition ? addToStorage(kind.loot, loot) : addToBackpack(kind.loot, loot)
         gainXP(st.xp)
         rollCard(for: kind)
+        if inEvent { addEventPoints(Events.points(for: kind)) }
         ensureHunts()
         for i in save.hunts.indices where save.hunts[i].monster == kind && !save.hunts[i].done {
             save.hunts[i].progress += 1
@@ -1707,3 +1730,193 @@ extension GameState {
     }
 }
 
+
+// MARK: Ивенты
+
+extension GameState {
+    var eventsOpen: Bool { save.level >= Events.minLevel }
+
+    var hasVip: Bool { save.vipKeys.contains(Events.current.key) }
+
+    var eventTier: Int { Events.tier(points: save.eventPoints) }
+
+    var inEvent: Bool { save.current.spec.kind == .event }
+
+    /// Ивент ещё не открывали: на кнопке горит отметка.
+    var eventIsNew: Bool { eventsOpen && save.eventSeen != Events.current.key }
+
+    func markEventSeen() {
+        let key = Events.current.key
+        guard save.eventSeen != key else { return }
+        save.eventSeen = key
+        markDirty()
+    }
+
+    /// Начался новый проход ивента: незабранные награды выдаём сами, очки обнуляем.
+    func syncEvent() {
+        let run = Events.current
+        guard save.eventKey != run.key else { return }
+        if !save.eventKey.isEmpty { claimLeftovers(key: save.eventKey) }
+        let first = save.eventKey.isEmpty
+        save.eventKey = run.key
+        save.eventPoints = 0
+        save.eventFree = []
+        save.eventVip = []
+        save.eventBonus = 0
+        if eventsOpen && !first { toast(run.event.emoji, tr("toast.eventStarted", run.event.name)) }
+        markDirty()
+    }
+
+    private func claimLeftovers(key: String) {
+        guard let raw = key.split(separator: "-").first, let event = EventID(rawValue: String(raw)) else { return }
+        let tier = Events.tier(points: save.eventPoints)
+        guard tier > 0 else { return }
+        let vip = save.vipKeys.contains(key)
+        var any = false
+        for t in 1...tier {
+            if !save.eventFree.contains(t) { grantEventReward(Events.free(tier: t), event: event); any = true }
+            if vip && !save.eventVip.contains(t) { grantEventReward(Events.vip(tier: t), event: event); any = true }
+        }
+        if any { toast(event.emoji, tr("toast.eventLeftovers", event.name)) }
+    }
+
+    func canClaimEvent(_ tier: Int, vip: Bool) -> Bool {
+        guard tier <= eventTier else { return false }
+        return vip ? hasVip && !save.eventVip.contains(tier) : !save.eventFree.contains(tier)
+    }
+
+    /// Бонусные сундуки после последней ступени.
+    var eventBonusReady: Int {
+        let extra = save.eventPoints - Events.total
+        guard extra >= Events.bonusEvery else { return 0 }
+        return extra / Events.bonusEvery - save.eventBonus
+    }
+
+    /// Сколько наград ждёт (для значка на кнопке).
+    var eventClaimable: Int {
+        guard eventsOpen else { return 0 }
+        var n = 0
+        for t in 1...Events.tiers {
+            if canClaimEvent(t, vip: false) { n += 1 }
+            if canClaimEvent(t, vip: true) { n += 1 }
+        }
+        return n + max(0, eventBonusReady)
+    }
+
+    func claimEvent(_ tier: Int, vip: Bool) {
+        syncEvent()
+        guard canClaimEvent(tier, vip: vip) else { return }
+        let event = Events.current.event
+        if vip {
+            save.eventVip.append(tier)
+            grantEventReward(Events.vip(tier: tier), event: event)
+        } else {
+            save.eventFree.append(tier)
+            grantEventReward(Events.free(tier: tier), event: event)
+        }
+        SoundFX.play(.treasure)
+        saveNow()
+    }
+
+    func claimAllEvent() {
+        syncEvent()
+        let event = Events.current.event
+        var any = false
+        for t in 1...Events.tiers {
+            if canClaimEvent(t, vip: false) {
+                save.eventFree.append(t)
+                grantEventReward(Events.free(tier: t), event: event)
+                any = true
+            }
+            if canClaimEvent(t, vip: true) {
+                save.eventVip.append(t)
+                grantEventReward(Events.vip(tier: t), event: event)
+                any = true
+            }
+        }
+        if eventBonusReady > 0 { claimEventBonus(); any = true }
+        guard any else { return }
+        SoundFX.play(.treasure)
+        saveNow()
+    }
+
+    func claimEventBonus() {
+        guard eventBonusReady > 0 else { return }
+        let n = eventBonusReady
+        save.eventBonus += n
+        addCoins(Events.bonusCoins(level: save.level) * n)
+        for _ in 0..<n { randomCard() }
+        toast("🎁", tr("toast.eventBonus", n))
+        markDirty()
+    }
+
+    func eventRewardCoins(_ base: Int) -> Int { Events.coins(base, level: save.level) }
+
+    private func grantEventReward(_ reward: Events.Reward, event: EventID) {
+        switch reward {
+        case .coins(let n): addCoins(eventRewardCoins(n))
+        case .tickets(let n): save.tickets += n
+        case .seeds(let n): save.seeds[event.crop, default: 0] += n
+        case .dish(let n): save.dishes[event.dish, default: 0] += n
+        case .cards(let n): for _ in 0..<n { randomCard() }
+        case .sparks(let n):
+            save.sparks += n
+            save.sparksEarned += n
+        case .decor:
+            if save.eventDecor.contains(event.decor.rawValue) {
+                addCoins(eventRewardCoins(1500))
+            } else {
+                save.eventDecor.append(event.decor.rawValue)
+                toast("🏠", tr("toast.eventDecor", event.decor.name))
+            }
+        case .skin:
+            if save.eventSkins.contains(event.skin.rawValue) {
+                addCoins(eventRewardCoins(3000))
+            } else {
+                save.eventSkins.append(event.skin.rawValue)
+                toast(event.skin.emoji, tr("toast.eventSkin", event.skin.name))
+            }
+        }
+    }
+
+    /// Очки ивента за добычу и монстров на карте ивента.
+    func addEventPoints(_ n: Int) {
+        guard n > 0, inEvent else { return }
+        syncEvent()
+        let before = eventTier
+        save.eventPoints += n
+        let after = eventTier
+        if after > before {
+            toast(Events.current.event.emoji, tr("toast.eventTier", after))
+            SoundFX.play(.unlock)
+        }
+        markDirty()
+    }
+
+    /// Купили VIP-пропуск: он действует на текущий ивент.
+    func activateVip() {
+        syncEvent()
+        let key = Events.current.key
+        guard !save.vipKeys.contains(key) else { return }
+        save.vipKeys.append(key)
+        // Старые ключи не нужны, оставляем последние.
+        if save.vipKeys.count > 8 { save.vipKeys.removeFirst(save.vipKeys.count - 8) }
+        recalc()
+    }
+
+    /// Отправиться на карту ивента.
+    func goToEvent() {
+        syncEvent()
+        travel(to: Events.current.event.location)
+    }
+
+    /// С карты ивента домой, на поляну.
+    func leaveEvent() {
+        guard inEvent else { return }
+        arrivalGate = nil
+        save.current = .meadow
+        encounter = nil
+        gatePrompt = nil
+        markDirty()
+    }
+}

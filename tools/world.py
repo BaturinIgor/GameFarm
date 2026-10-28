@@ -212,6 +212,11 @@ BIOMES = {
                 water=["#3a2a8a", "#5f50c8", "#9a8af0"], bank=["#6a4a8a", "#9a72b8", "#c8a2e0"],
                 path=["#e8d8f0", "#f4e8f8", "#fff8ff"], void="#a8d4ff"),
     "garden": dict(grass=2, path=["#a89a8a", "#c8bcae", "#e0d6ca"]),
+    "autumn": dict(grass=3, recolor_grass=["#3e3218", "#6e6024", "#857228", "#9e8636"],
+                   path=["#7a4a2a", "#9a6238", "#b87c48"]),
+    "slimecave": dict(grass=4, recolor_grass=["#0c1a12", "#14281c", "#1c3826", "#264a32"],
+                      water=["#1e5a1e", "#3aa83a", "#8af06a"], bank=["#08120c", "#122218", "#1c3222"],
+                      path=["#2c4434", "#3a5844", "#4a6c54"], void="#030805"),
     "mine": dict(grass=3, recolor_grass=["#1e1610", "#2e2218", "#3e3020", "#4e3e2a"],
                  water=["#1a2e4a", "#2a4a70", "#4a70a0"], bank=["#0e0a06", "#1e160e", "#2e2216"],
                  path=["#5a4630", "#6e583e", "#82684a"], void="#0a0704"),
@@ -375,6 +380,7 @@ NODE_RADIUS = {
     "oyster": 14, "coral": 18, "ashTree": 20, "fireFlower": 12, "sulfurVent": 20, "obsidianOre": 20, "rubyOre": 20,
     "lavaFish": 14, "cloudBush": 16, "goldenTree": 20, "skyTree": 20, "starRock": 20, "starPond": 14,
     "beehive": 14, "grapeVine": 20, "treasureChest": 16,
+    "pumpkinPatch": 16, "giftBox": 14, "sandCastle": 16, "slimeCrystal": 18,
 }
 WATER_NODES = {"fishSpot", "oasisFish", "iceHole", "swampFish", "oyster", "lavaFish", "starPond"}
 TALL = {"tree", "pine", "palm", "snowPine", "glowTree", "appleTree", "willow", "bananaPalm", "ashTree", "goldenTree",
@@ -557,6 +563,50 @@ LOCATIONS = {
         clusters=[C("goldenTree", 4, 0.5, 0.62, 6), C("appleTree", 4, 0.3, 0.45, 4), C("bush", 6, 0.7, 0.45, 4),
                   C("herbPatch", 6, 0.5, 0.4, 5), C("mushroom", 5, 0.3, 0.72, 3), C("tree", 4, 0.72, 0.75, 3)],
         decor=dict(flowers=0.14, tufts=0.04, props=0.01), props=["flowers_purple", "flowers_red", "bush_leafy"],
+    ),
+    # Карты ивентов
+    "harvestFest": dict(
+        size=(38, 46), biome="autumn", seed=301, edge="forest", trees=["tree_autumn_big", "tree_oak_big", "tree_autumn_big"],
+        land=[("ellipse", 0.5, 0.5, 0.42, 0.42), ("ellipse", 0.3, 0.72, 0.18, 0.14)],
+        water=[("ellipse", 0.74, 0.7, 0.07, 0.05)],
+        base=(0.5, 0.2), bare=[("ellipse", 0.5, 0.52, 0.07, 0.05)],
+        clusters=[C("pumpkinPatch", 10, 0.5, 0.55, 8), C("pumpkinPatch", 6, 0.3, 0.72, 4), C("pumpkinPatch", 4, 0.75, 0.4, 3),
+                  C("tree", 6, 0.22, 0.42, 4), C("appleTree", 4, 0.78, 0.78, 3), C("bush", 5, 0.66, 0.26, 3),
+                  C("mushroom", 5, 0.2, 0.6, 3), C("rock", 4, 0.82, 0.55, 3), C("fishSpot", 2, 0.74, 0.7, 0)],
+        decor=dict(flowers=0.02, tufts=0.03, props=0.012), props=["log", "stump_mossy", "bush_leafy2", "hay_small"],
+        fixed_props=[("bunting", 0.5, 0.27, 0), ("scarecrow", 0.4, 0.62)],
+    ),
+    "slimeNight": dict(
+        size=(38, 46), biome="slimecave", seed=307, edge="void", trees=["boulder", "boulder2", "boulder3"],
+        land=[("ellipse", 0.5, 0.36, 0.4, 0.3), ("ellipse", 0.42, 0.7, 0.32, 0.24), ("ellipse", 0.72, 0.66, 0.2, 0.16)],
+        water=[("ellipse", 0.56, 0.5, 0.08, 0.05), ("ellipse", 0.3, 0.78, 0.06, 0.05)],
+        base=(0.5, 0.16), bare=[],
+        clusters=[C("slimeCrystal", 10, 0.48, 0.55, 8), C("slimeCrystal", 5, 0.72, 0.66, 4), C("glowShroom", 6, 0.3, 0.42, 4),
+                  C("mushroom", 4, 0.65, 0.3, 3), C("rock", 5, 0.25, 0.65, 3), C("coalOre", 4, 0.8, 0.4, 3)],
+        decor=dict(flowers=0.0, tufts=0.03, props=0.016), props=["rubble", "rock3", "mushroom_tiny_purple"],
+        fixed_props=[("bunting", 0.5, 0.23, 0)],
+    ),
+    "winterTale": dict(
+        size=(38, 46), biome="snow", seed=311, edge="forest", trees=["tree_frost_big", "tree_frost", "tree_frost_big"],
+        land=[("ellipse", 0.5, 0.5, 0.42, 0.42), ("ellipse", 0.74, 0.7, 0.16, 0.14)],
+        ice=[("ellipse", 0.3, 0.66, 0.1, 0.07)],
+        base=(0.5, 0.2), bare=[("ellipse", 0.52, 0.5, 0.07, 0.05)],
+        clusters=[C("giftBox", 10, 0.5, 0.55, 8), C("giftBox", 6, 0.74, 0.7, 4), C("giftBox", 4, 0.24, 0.42, 3),
+                  C("pine", 7, 0.22, 0.6, 4), C("pine", 5, 0.8, 0.45, 3), C("rock", 4, 0.66, 0.3, 3),
+                  C("bush", 4, 0.36, 0.3, 3)],
+        decor=dict(flowers=0.03, tufts=0.02, props=0.008), props=["bush_cloud", "stone_small2"],
+        fixed_props=[("bunting", 0.5, 0.27, 0), ("snowman", 0.38, 0.5), ("snowman", 0.64, 0.6)],
+    ),
+    "beachParty": dict(
+        size=(40, 46), biome="island", seed=313, edge="sea", trees=[],
+        land=[("ellipse", 0.5, 0.5, 0.4, 0.38), ("ellipse", 0.3, 0.74, 0.16, 0.12)],
+        grass=[("ellipse", 0.5, 0.58, 0.2, 0.16)],
+        water=[("ellipse", 0.66, 0.42, 0.08, 0.06)],
+        base=(0.5, 0.22), bare=[],
+        clusters=[C("sandCastle", 10, 0.48, 0.48, 8), C("sandCastle", 5, 0.3, 0.74, 4), C("shells", 7, 0.5, 0.36, 8),
+                  C("palm", 6, 0.5, 0.62, 5), C("pineapple", 4, 0.36, 0.56, 3), C("fishSpot", 3, 0.66, 0.42, 0)],
+        decor=dict(flowers=0.02, tufts=0.03, props=0.008), props=["rock1", "stone_small1"],
+        fixed_props=[("bunting", 0.5, 0.29, 0)],
     ),
 }
 
@@ -957,10 +1007,12 @@ def generate(lid, spec):
     def clear(p, r=22):
         return all(math.hypot(p[0] - q[0], p[1] - q[1]) > r + rq for q, rq in occupied)
 
-    for name, x, y in spec.get("fixed_props", []):
+    for item in spec.get("fixed_props", []):
+        name, x, y = item[:3]
+        solid = item[3] if len(item) > 3 else 1
         c, r = norm_to_cell(g, x, y)
         p = cell_to_pt(g, c, r)
-        props.append((name, (round(p[0]), round(p[1])), 1))
+        props.append((name, (round(p[0]), round(p[1])), solid))
         occupied.append((p, 50))
 
     for r in range(H):
