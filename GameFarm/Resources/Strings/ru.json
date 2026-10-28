@@ -412,6 +412,8 @@
  "home.down.hint": "",
  "home.exit": "Дверь",
  "home.exit.hint": "Выход на поляну",
+ "home.floor.locked": "{0}: с {1} ур.",
+ "home.goOut": "Выйти во двор",
  "home.lectern": "Книга наследия",
  "home.lectern.hint": "Перерождение и вечные улучшения за искры",
  "home.map": "Карта мира",

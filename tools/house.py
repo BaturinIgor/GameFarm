@@ -17,13 +17,13 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from handmade import MAT, Canvas, hexc  # noqa: E402
 import interior  # noqa: E402  (дополняет MAT и даёт календарь)
+from warm import warm  # noqa: E402
 
 T = 16      # пикселей в клетке
 PT = 32     # точек в клетке
-W, H = 19, 14
-WALL_ROWS = 3
-PART = 10   # столбец перегородки между комнатами
-DOOR_ROWS = (7, 8, 9)
+W, H = 12, 14   # одна комната на этаж: ширина ровно в экран телефона
+WALL_ROWS = 4   # задняя стена: на неё помещается высокая мебель
+DOOR = (5, 6)   # проём входной двери внизу первого этажа
 OUTLINE = (14, 7, 27, 255)
 
 PC = ("Pixel Crawler - Free Pack 2", "Pixel Crawler - Free Pack")
@@ -31,6 +31,10 @@ PC = ("Pixel Crawler - Free Pack 2", "Pixel Crawler - Free Pack")
 
 def pc(src, *parts):
     return Image.open(os.path.join(src, *PC, *parts)).convert("RGBA")
+
+
+def cf(src, *parts):
+    return Image.open(os.path.join(src, "Cute_Fantasy", *parts)).convert("RGBA")
 
 
 def opaque(im):
@@ -45,6 +49,7 @@ MAT.update({
     "brass": ("#7a4a10", "#c8902a", "#ffd870"),
     "glasstube": ("#24304a", "#3c5a8a", "#8ab4e8"),
     "board": ("#5a3418", "#8a5a30", "#b07a44"),
+    "flame": ("#b8320e", "#ff9a1f", "#ffe070"),
 })
 
 
@@ -149,21 +154,42 @@ def lectern():
 
 
 def trophy_board():
-    """Доска для трофеев на стене гостиной: два ряда по три крючка."""
-    c = Canvas(56, 42)
-    c.rect(0, 0, 55, 41, "board")
-    im = c.render()
+    """Полка для трофеев на стене гостиной: рамка, зелёное сукно и две полочки."""
+    w, h = 56, 42
+    im = Image.new("RGBA", (w, h))
     p = im.load()
-    for x in range(2, 54):
-        p[x, 2] = hexc("#c08850")
-        p[x, 39] = hexc("#5a3418")
-        p[x, 20] = hexc("#6e4426")
-    for row in (5, 23):
-        for i in range(3):
-            x = 10 + i * 18
-            p[x, row] = hexc("#c8902a")
-            p[x, row + 1] = hexc("#7a4a10")
+    frame = [hexc(c) for c in ("#5a2f2a", "#743f39", "#91533b")]
+    felt, felt_d = hexc("#3f7a52"), hexc("#336646")
+    for y in range(h):
+        for x in range(w):
+            edge = x in (0, w - 1) or y in (0, h - 1)
+            border = x < 3 or x > w - 4 or y < 3 or y > h - 4
+            if edge:
+                p[x, y] = OUTLINE
+            elif border:
+                p[x, y] = frame[2] if (y == 1 or x == 1) else (frame[0] if (y == h - 2 or x == w - 2) else frame[1])
+            else:
+                p[x, y] = felt_d if (x + y * 3) % 7 == 0 else felt
+    # полочки: середина и низ
+    for sy in (22, 38):
+        for x in range(3, w - 3):
+            p[x, sy - 1] = hexc("#e4a672")
+            p[x, sy] = hexc("#b86f50")
+            p[x, sy + 1] = hexc("#743f39")
+    # латунная табличка сверху
+    for x in range(22, 34):
+        for y in range(4, 7):
+            p[x, y] = hexc("#ffc825") if y == 4 else hexc("#c8902a")
     return im
+
+
+def sconce():
+    """Настенный светильник: латунный держатель и тёплый огонёк."""
+    c = Canvas(10, 16)
+    c.rect(4, 8, 5, 14, "brass")
+    c.rect(2, 13, 7, 14, "brass")
+    c.ellipse(4.5, 5.5, 3, 4.5, "flame")
+    return c.render()
 
 
 def cup():
@@ -217,10 +243,11 @@ def seed_tray():
 
 def props(src):
     """Спрайты мебели для sprites.py: имя -> картинка."""
-    ip = pc(src, "Environment", "Structures", "Buildings", "Interior", "Interior_Props_01.png")
-    fu = pc(src, "Environment", "Props", "Static", "Furniture.png")
-    wb = pc(src, "Environment", "Structures", "Stations", "Workbench", "Workbench.png")
-    al = pc(src, "Environment", "Structures", "Stations", "Alchemy", "Alchemy_Table_01-Sheet.png")
+    # Мебель Pixel Crawler перекрашена в тёплую палитру мира (tools/warm.py)
+    ip = warm(pc(src, "Environment", "Structures", "Buildings", "Interior", "Interior_Props_01.png"))
+    fu = warm(pc(src, "Environment", "Props", "Static", "Furniture.png"))
+    wb = warm(pc(src, "Environment", "Structures", "Stations", "Workbench", "Workbench.png"))
+    al = warm(pc(src, "Environment", "Structures", "Stations", "Alchemy", "Alchemy_Table_01-Sheet.png"))
     out = {
         "hm_range": opaque(ip.crop((176, 0, 224, 64))),
         "hm_stove": opaque(ip.crop((116, 0, 140, 48))),
@@ -279,59 +306,115 @@ def props(src):
         "hm_doormat": doormat(),
         "hm_seed_tray": seed_tray(),
         "hm_calendar_wall": interior.calendar(),
+        "hm_sconce": sconce(),
     }
+    # Стол с картой мира на чердаке
+    table = out["hm_table_big"].copy()
+    paper = Canvas(22, 14)
+    paper.rect(1, 1, 20, 12, "paper")
+    sheet = paper.render()
+    sp = sheet.load()
+    for x, y in ((6, 5), (7, 6), (8, 6), (12, 4), (13, 5), (14, 8), (15, 8), (9, 9), (10, 9)):
+        sp[x, y] = hexc("#5aa06a")
+    for x, y in ((15, 4), (16, 5)):
+        sp[x, y] = hexc("#c42430")
+    table.alpha_composite(sheet, ((table.width - 22) // 2, 3))
+    out["hm_map_table"] = table
+    # Коврики-пледы из Cute Fantasy: красный, розовый, синий, жёлтый
+    blankets = cf(src, "Tiles", "Picnic_Blankets.png")
+    for name, (qx, qy) in (("red", (0, 0)), ("pink", (48, 0)), ("blue", (0, 48)), ("yellow", (48, 48))):
+        out[f"hm_rug_{name}"] = opaque(blankets.crop((qx, qy, qx + 48, qy + 48)))
     return out
 
 
 # ================================================================ стены и пол
 
-FLOOR_TILES = {
-    "wood": (16, 332, 64, 380),
-    "stone": (96, 332, 144, 380),
-    "parquet": (176, 332, 224, 380),
-    "herring": (256, 332, 304, 380),
+# Пол рисуется кодом в палитре мира: доски, паркет или плитка из Cute Fantasy.
+FLOOR_STYLES = {
+    # доски: основной, второй, шов, блик
+    "honey": ("#c98d5a", "#bb7e4d", "#8a5434", "#dfa56c"),
+    "oak": ("#a8704a", "#9a643f", "#6e4426", "#bf8558"),
 }
 
 WALLS = {
-    # обои: цвет, полоска; панель снизу
-    "living": dict(paper=("#f0d8a8", "#e2c48e"), panel="board", pattern="stripes"),
-    "kitchen": dict(paper=("#e8f0f4", "#b8d0dc"), panel="board", pattern="tiles"),
-    "bedroom": dict(paper=("#b8d4ec", "#9cc0e0"), panel="board", pattern="dots"),
-    "library": dict(paper=("#3e6a4a", "#335a3e"), panel="beam", pattern="stripes"),
-    "cellar": dict(paper=("#7a7686", "#5e5a6a"), panel=None, pattern="bricks"),
-    "workshop": dict(paper=("#8a5a30", "#6e4426"), panel=None, pattern="planks"),
-    "observatory": dict(paper=("#2a2a5a", "#20204a"), panel="beam", pattern="stars"),
-    "attic": dict(paper=("#a06a3a", "#86562e"), panel=None, pattern="planks"),
-    "greenhouse": dict(paper=("#bfe6f4", "#9fd0e6"), panel="board", pattern="glass"),
-    "potting": dict(paper=("#c8e8c0", "#a8d4a0"), panel="board", pattern="glass"),
+    # обои: основной цвет и узор; панель снизу (тёмный, средний, светлый) или None
+    "living": dict(paper=("#f3dcae", "#e6c88e"), pattern="stripes", panel=("#743f39", "#a0603c", "#c88458")),
+    "bedroom": dict(paper=("#bcd8ee", "#9fc2e2"), pattern="dots", panel=("#9a8a76", "#d8c8ae", "#f2e6d0")),
+    "cellar": dict(paper=("#b4705a", "#8e5444"), pattern="bricks", panel=None),
+    "attic": dict(paper=("#b07a4a", "#8e5e36"), pattern="planks", panel=None),
+    "greenhouse": dict(paper=("#c4ecf8", "#e8f8fc"), pattern="glass", panel=("#3f7a52", "#5aa06a", "#8ccc8c")),
 }
 
 
-def tile_floor(img, src, kind, x0, y0, x1, y1):
-    walls = pc(src, "Environment", "Structures", "Buildings", "Interior", "Interior_Walls_01.png")
-    tile = walls.crop(FLOOR_TILES[kind])
-    tw, th = tile.size
-    for y in range(y0, y1, th):
-        for x in range(x0, x1, tw):
-            part = tile.crop((0, 0, min(tw, x1 - x), min(th, y1 - y)))
-            img.alpha_composite(part, (x, y))
+def plank_floor(img, x0, y0, x1, y1, style):
+    """Половицы поперёк комнаты, швы вразбежку."""
+    base, alt, seam, hi = (hexc(c) for c in FLOOR_STYLES[style])
+    px = img.load()
+    for y in range(y0, y1):
+        row = (y - y0) // 5
+        ly = (y - y0) % 5
+        shift = (row * 23) % 40
+        for x in range(x0, x1):
+            lx = (x - x0 + shift) % 40
+            c = base if row % 2 == 0 else alt
+            if ly == 4 or lx == 0:
+                c = seam
+            elif ly == 0:
+                c = hi
+            elif (x * 7 + y * 13) % 53 == 0:
+                c = seam
+            px[x, y] = c
+
+
+def parquet_floor(img, x0, y0, x1, y1):
+    """Паркет ёлочкой: блоки 8x4 и 4x8 по очереди."""
+    a, b, seam = hexc("#c99560"), hexc("#b5824f"), hexc("#8a5a34")
+    px = img.load()
+    for y in range(y0, y1):
+        for x in range(x0, x1):
+            lx, ly = (x - x0) % 16, (y - y0) % 16
+            horiz = (lx < 8) == (ly < 8)
+            if horiz:
+                c = a if (ly % 8) < 4 else b
+                if ly % 4 == 3 or lx % 8 == 0:
+                    c = seam
+            else:
+                c = b if (lx % 8) < 4 else a
+                if lx % 4 == 3 or ly % 8 == 0:
+                    c = seam
+            px[x, y] = c
+
+
+def tile_floor(img, src, x0, y0, x1, y1, dark=1.0, tint=None):
+    """Плитка из Cute Fantasy (песчаник), для кухни, подвала и оранжереи."""
+    tile = cf(src, "Tiles", "Pavement_Tiles.png").crop((0, 0, 32, 32))
+    if dark != 1.0 or tint:
+        tp = tile.load()
+        for y in range(32):
+            for x in range(32):
+                r, g, b, a = tp[x, y]
+                if tint:
+                    r, g, b = (r + tint[0]) // 2, (g + tint[1]) // 2, (b + tint[2]) // 2
+                tp[x, y] = (int(r * dark), int(g * dark), int(b * dark), a)
+    for y in range(y0, y1, 32):
+        for x in range(x0, x1, 32):
+            img.alpha_composite(tile.crop((0, 0, min(32, x1 - x), min(32, y1 - y))), (x, y))
 
 
 def wall_face(img, theme, x0, x1):
-    """Стена комнаты сверху: обои и панель, высотой WALL_ROWS клеток."""
+    """Задняя стена: потолочная балка, обои, деревянная панель и плинтус."""
     spec = WALLS[theme]
     px = img.load()
     h = WALL_ROWS * T
     base, alt = hexc(spec["paper"][0]), hexc(spec["paper"][1])
     pattern = spec["pattern"]
-    panel_top = h - 12 if spec["panel"] else h
+    panel = spec["panel"]
+    panel_top = h - 16 if panel else h - 3
     for y in range(h):
         for x in range(x0, x1):
-            c = base
             lx, ly = x - x0, y
+            c = base
             if pattern == "stripes" and (lx // 4) % 2 == 0:
-                c = alt
-            elif pattern == "tiles" and (lx % 8 == 0 or ly % 8 == 0):
                 c = alt
             elif pattern == "dots" and lx % 8 == 3 and ly % 8 == 3:
                 c = alt
@@ -340,239 +423,264 @@ def wall_face(img, theme, x0, x1):
                 off = 0 if row % 2 else 6
                 if ly % 6 == 5 or (lx + off) % 12 == 0:
                     c = alt
-            elif pattern == "planks" and (lx % 10 == 0 or (ly * 7 + lx // 10 * 13) % 29 == 0):
+            elif pattern == "planks" and (lx % 9 == 0 or (ly * 7 + lx // 9 * 13) % 31 == 0):
                 c = alt
-            elif pattern == "stars" and (lx * 7 + ly * 13) % 47 == 0:
-                c = hexc("#ffe27a")
-            elif pattern == "glass" and (lx % 16 == 0 or ly % 16 == 0):
-                c = hexc("#e8f6fc")
-            if y >= panel_top:
-                d, m, hi = (hexc(v) for v in MAT[spec["panel"]])
-                c = hi if y == panel_top else (d if (lx % 12 == 0 or y == h - 1) else m)
-            if y < 3:
-                c = hexc("#4a2c1a") if y < 2 else hexc("#6e4426")
+            elif pattern == "glass" and (lx % 16 in (0, 1) or ly % 16 in (0, 1)):
+                c = hexc("#6e9a7a")
+            elif pattern == "glass" and (lx + ly) % 16 < 3:
+                c = alt
+            if panel and panel_top <= y < h - 3:
+                d, m, hi = (hexc(v) for v in panel)
+                c = hi if y == panel_top else (d if lx % 12 == 0 else m)
+            if y >= h - 3:
+                c = hexc("#5a2f2a") if y < h - 1 else OUTLINE
+            if y < 4:
+                c = OUTLINE if y == 0 else (hexc("#5a2f2a") if y < 3 else hexc("#743f39"))
             px[x, y] = c
-    # тень под потолком
+    # тень под балкой
     for x in range(x0, x1):
-        r, g, b, a = px[x, 3]
-        px[x, 3] = (r * 3 // 4, g * 3 // 4, b * 3 // 4, a)
+        for y, k in ((4, 0.72), (5, 0.86)):
+            r, g, b, a = px[x, y]
+            px[x, y] = (int(r * k), int(g * k), int(b * k), a)
 
 
-def beam_v(img, x, y0, y1):
-    """Вертикальная балка: боковая стена или перегородка (вид сверху)."""
+def wall_side(img, x, y0, y1, inner_right):
+    """Боковая стена сверху: тёмное дерево с кромкой к комнате."""
     px = img.load()
     for y in range(y0, y1):
         for dx in range(T):
-            c = hexc("#4a2c1a")
-            if dx in (0, T - 1):
+            c = hexc("#5a2f2a")
+            if dx == 0 or dx == T - 1:
                 c = OUTLINE
-            elif dx in (1, 2):
-                c = hexc("#6e4426")
-            elif dx == T - 2:
-                c = hexc("#2e1a10")
+            elif (dx == T - 2 and inner_right) or (dx == 1 and not inner_right):
+                c = hexc("#91533b")
+            elif (dx == T - 3 and inner_right) or (dx == 2 and not inner_right):
+                c = hexc("#743f39")
             px[x + dx, y] = c
 
 
-def beam_h(img, x0, x1, y):
+def wall_bottom(img, x0, x1, y):
     px = img.load()
     for x in range(x0, x1):
         for dy in range(T):
-            c = hexc("#4a2c1a")
+            c = hexc("#5a2f2a")
             if dy in (0, T - 1):
                 c = OUTLINE
-            elif dy in (1, 2):
-                c = hexc("#6e4426")
+            elif dy == 1:
+                c = hexc("#91533b")
+            elif dy == 2:
+                c = hexc("#743f39")
             px[x, y + dy] = c
 
 
-# ================================================================ этажи
+def shade_floor(img):
+    """Мягкие тени у стен и тёплый свет в середине комнаты."""
+    px = img.load()
+    fx0, fx1 = T, (W - 1) * T
+    fy0, fy1 = WALL_ROWS * T, (H - 1) * T
+    cx, cy = (fx0 + fx1) / 2, (fy0 + fy1) / 2
+    for y in range(fy0, fy1):
+        for x in range(fx0, fx1):
+            r, g, b, a = px[x, y]
+            k = 1.0
+            d = y - fy0
+            if d < 6:
+                k *= (0.62, 0.7, 0.78, 0.86, 0.92, 0.97)[d]
+            for dd in (x - fx0, fx1 - 1 - x):
+                if dd < 3:
+                    k *= (0.8, 0.88, 0.95)[dd]
+            dist = ((x - cx) / (fx1 - fx0)) ** 2 + ((y - cy) / (fy1 - fy0)) ** 2
+            k *= 1.06 - min(0.14, dist * 0.5)
+            px[x, y] = (min(255, int(r * k)), min(255, int(g * k)), min(255, int(b * k)), a)
 
-# Предметы: (спрайт, x, y, клетки-препятствия). x, y - точка опоры в клетках:
-# x - центр по горизонтали, y - нижний край (0 - верх карты).
-# Станции: (вид, x, y) - куда подойти. Места для украшений: (номер, x, y).
 
-def cells(c0, r0, c1=None, r1=None):
-    c1 = c0 if c1 is None else c1
-    r1 = r0 if r1 is None else r1
-    return [(c, r) for c in range(c0, c1 + 1) for r in range(r0, r1 + 1)]
+# ================================================================ комнаты
 
+# Мебель: (спрайт, клетки (c0, r0, c1, r1)) - стоит на этих клетках, низ картинки по нижнему краю.
+# Можно добавить сдвиг (dx, dy) в клетках третьим элементом.
+# На стене: (спрайт, x, y) - центр по x и низ по y в клетках, без препятствий.
+# Плоское на полу (ковры): (спрайт, x, y).
+# Станции: (вид, x, y) - точка, к которой подходит герой; она должна быть на свободной клетке.
+# Места для украшений: (x, y) - центр клетки у стены; украшение не пропускает героя.
 
 FLOORS = {
     "homeGround": dict(
-        floor="ground",
-        rooms=(("living", "wood"), ("kitchen", "stone")),
-        door=5,
-        props=[
-            ("hm_stairs_up", 2.0, 4.0, cells(1, 3, 2, 3)),
-            ("hm_trophy_board", 4.8, 2.9, []),
-            ("hm_fireplace", 8.3, 4.0, cells(7, 3, 9, 3)),
-            ("hm_rug_green", 5.0, 9.6, []),
-            ("hm_sofa", 5.0, 7.6, cells(4, 6, 5, 6)),
-            ("hm_table_round", 5.0, 10.0, cells(4, 9, 5, 9)),
-            ("hm_plant_big", 9.3, 6.0, cells(9, 5)),
-            ("hm_stairs_down", 1.8, 13.0, cells(1, 12, 2, 12)),
-            ("hm_doormat", 5.5, 13.0, []),
-            ("hm_easel", 8.2, 12.8, cells(8, 12)),
-            # кухня
-            ("hm_range", 12.6, 4.0, cells(11, 3, 13, 3)),
-            ("hm_counter", 16.0, 4.2, cells(15, 3, 17, 3)),
-            ("hm_calendar_wall", 16.0, 1.9, []),
-            ("hm_table_long", 14.5, 8.8, cells(13, 8, 15, 8)),
-            ("hm_chair_back", 13.4, 8.0, []),
-            ("hm_chair_back", 15.6, 8.0, []),
-            ("hm_chair", 14.5, 10.4, []),
-            ("hm_cupboard", 16.8, 12.9, cells(16, 12, 17, 12)),
-            ("hm_plant", 11.6, 12.8, cells(11, 12)),
+        floor="ground", theme="living", floor_style=("plank", "honey"),
+        furniture=[
+            ("hm_range", (1, 4, 3, 4)),
+            ("hm_counter", (4, 4, 6, 4)),
+            ("hm_plant_big", (10, 4, 10, 4)),
+            ("hm_table_round", (2, 9, 3, 9)),
+            ("hm_stool_red", (1, 9, 1, 9)),
+            ("hm_stool_red", (4, 9, 4, 9)),
+            ("hm_sofa", (8, 10, 10, 10)),
+            ("hm_easel", (10, 6, 10, 6)),
         ],
-        stations=[("exit", 5.5, 13.5), ("up", 2.0, 4.7), ("down", 1.8, 11.6), ("trophies", 4.8, 3.7),
-                  ("plan", 8.2, 11.9), ("stove", 12.6, 4.7), ("calendar", 16.0, 4.8)],
-        decor_slots=[(0, 2.2, 8.0), (1, 8.5, 9.0), (2, 3.0, 11.6), (3, 11.8, 7.0), (4, 17.2, 8.2), (5, 12.4, 10.6)],
+        wall=[("hm_calendar_wall", 5.5, 2.9), ("hm_trophy_board", 8.5, 3.7), ("hm_sconce", 10.4, 2.6)],
+        flat=[("hm_rug_red", 6.0, 9.0), ("hm_doormat", 6.0, 13.0)],
+        stations=[("stove", 2.5, 5.6), ("calendar", 5.5, 5.6), ("trophies", 8.5, 4.6), ("plan", 9.3, 6.6),
+                  ("exit", 6.0, 13.5)],
+        slots=[(1.5, 6.5), (1.5, 11.5), (3.5, 12.5), (8.5, 12.5), (10.5, 12.5), (10.5, 8.5)],
+        door=True,
     ),
     "homeUpper": dict(
-        floor="upper",
-        rooms=(("bedroom", "parquet"), ("library", "herring")),
-        props=[
-            ("hm_stairs_down", 1.8, 13.0, cells(1, 12, 2, 12)),
-            ("hm_window", 3.0, 2.3, []),
-            ("hm_bed", 3.0, 6.4, cells(2, 3, 3, 5)),
-            ("hm_wardrobe", 6.0, 4.0, cells(5, 3, 6, 3)),
-            ("painting", 8.4, 2.0, []),
-            ("rug", 5.2, 10.0, []),
-            ("hm_plant_pink", 9.3, 12.8, cells(9, 12)),
-            # библиотека
-            ("bookshelf", 12.0, 4.0, cells(11, 3, 12, 3)),
-            ("bookshelf", 13.4, 4.0, cells(13, 3)),
-            ("bookshelf", 14.8, 4.0, cells(14, 3)),
-            ("hm_stairs_up", 17.0, 4.0, cells(16, 3, 17, 3)),
-            ("hm_table_big", 14.0, 8.6, cells(13, 8, 14, 8)),
-            ("hm_chair_back", 14.0, 7.6, []),
-            ("hm_lectern", 17.0, 9.4, cells(17, 8)),
-            ("hm_plant", 11.6, 12.8, cells(11, 12)),
+        floor="upper", theme="bedroom", floor_style=("parquet",),
+        furniture=[
+            ("hm_bed", (1, 4, 3, 6)),
+            ("hm_wardrobe", (4, 4, 5, 4)),
+            ("bookshelf", (8, 4, 8, 4)),
+            ("bookshelf", (9, 4, 9, 4)),
+            ("hm_plant", (10, 4, 10, 4)),
+            ("hm_chair_back", (9, 7, 9, 7)),
+            ("hm_table_big", (8, 8, 10, 8)),
+            ("hm_lectern", (1, 10, 1, 10)),
+            ("hm_plant_pink", (10, 12, 10, 12)),
         ],
-        stations=[("down", 1.8, 11.6), ("bed", 3.0, 6.9), ("wardrobe", 6.0, 4.7), ("desk", 14.0, 9.6),
-                  ("lectern", 17.0, 10.1), ("up", 17.0, 4.7)],
-        decor_slots=[(0, 2.0, 9.0), (1, 8.0, 7.0), (2, 7.8, 11.2), (3, 11.8, 6.0), (4, 17.2, 12.2), (5, 12.2, 10.6)],
+        wall=[("hm_window", 6.9, 3.4), ("painting", 2.4, 2.6), ("hm_sconce", 8.5, 2.7)],
+        flat=[("hm_rug_blue", 5.0, 10.0)],
+        stations=[("bed", 2.5, 7.6), ("wardrobe", 5.0, 5.6), ("desk", 9.5, 9.6), ("lectern", 2.4, 10.6)],
+        slots=[(6.5, 4.6), (1.5, 8.5), (1.5, 12.5), (4.5, 12.5), (7.5, 12.5), (10.5, 6.0)],
     ),
     "homeBasement": dict(
-        floor="basement",
-        rooms=(("cellar", "stone"), ("workshop", "stone")),
-        props=[
-            ("hm_stairs_up", 2.0, 4.0, cells(1, 3, 2, 3)),
-            ("hm_shelf", 5.0, 2.4, []),
-            ("barrel_berries", 4.0, 4.0, cells(4, 3)),
-            ("barrel_water", 5.0, 4.0, cells(5, 3)),
-            ("barrel_berries", 6.0, 4.0, cells(6, 3)),
-            ("hm_crate", 8.8, 6.0, cells(8, 5)),
-            ("hm_crate", 8.8, 7.0, cells(8, 6)),
-            ("hm_pot", 2.0, 12.8, cells(2, 12)),
-            ("barrel_water", 7.5, 12.8, cells(7, 12)),
-            # мастерская
-            ("hm_workbench", 13.0, 4.2, cells(12, 3, 13, 3)),
-            ("hm_hearth", 16.4, 4.0, cells(15, 3, 17, 3)),
-            ("anvil", 14.0, 8.0, cells(14, 7)),
-            ("hm_bucket", 11.6, 12.8, []),
+        floor="basement", theme="cellar", floor_style=("tile", 0.82),
+        furniture=[
+            ("barrel_berries", (1, 4, 1, 4)),
+            ("barrel_water", (2, 4, 2, 4)),
+            ("barrel_berries", (3, 4, 3, 4)),
+            ("hm_crate", (1, 6, 1, 6)),
+            ("hm_workbench", (6, 4, 8, 4)),
+            ("hm_stove", (10, 4, 10, 4)),
+            ("anvil", (8, 8, 8, 8)),
+            ("hm_pot", (1, 12, 1, 12)),
+            ("hm_bucket", (10, 12, 10, 12)),
         ],
-        stations=[("up", 2.0, 4.7), ("pantry", 5.0, 4.7), ("workbench", 13.0, 4.9), ("anvil", 14.0, 8.6)],
-        decor_slots=[(0, 2.0, 8.0), (1, 5.5, 9.5), (2, 7.8, 10.8), (3, 11.8, 7.0), (4, 17.2, 10.0), (5, 13.4, 11.6)],
+        wall=[("hm_shelf", 2.5, 2.8), ("hm_sconce", 4.9, 2.6), ("hm_sconce", 9.2, 2.6)],
+        flat=[],
+        stations=[("pantry", 2.5, 5.6), ("workbench", 7.5, 5.6), ("anvil", 8.5, 9.6)],
+        slots=[(4.5, 4.6), (1.5, 9.0), (4.5, 12.5), (6.5, 12.5), (10.5, 7.0), (10.5, 10.0)],
     ),
     "homeAttic": dict(
-        floor="attic",
-        rooms=(("observatory", "wood"), ("attic", "wood")),
-        props=[
-            ("hm_stairs_down", 1.8, 13.0, cells(1, 12, 2, 12)),
-            ("hm_window_stone", 5.0, 2.2, []),
-            ("hm_telescope", 5.0, 7.6, cells(4, 6, 5, 6)),
-            ("hm_display", 8.4, 4.0, cells(7, 3, 9, 3)),
-            ("hm_rug_green", 5.0, 10.2, []),
-            # чердак
-            ("chest_anim", 12.0, 4.2, cells(12, 3)),
-            ("hm_crate", 13.2, 4.0, cells(13, 3)),
-            ("hm_cabinet", 15.0, 4.2, cells(14, 3, 15, 3)),
-            ("hm_stairs_up", 17.0, 4.0, cells(16, 3, 17, 3)),
-            ("hm_table_cloth", 14.5, 8.6, cells(14, 8)),
-            ("hm_broom", 11.5, 12.8, []),
+        floor="attic", theme="attic", floor_style=("plank", "oak"),
+        furniture=[
+            ("hm_telescope", (2, 5, 3, 5)),
+            ("hm_display", (5, 4, 7, 4)),
+            ("chest_anim", (9, 4, 9, 4)),
+            ("hm_crate", (10, 4, 10, 4)),
+            ("hm_map_table", (5, 9, 7, 9)),
+            ("hm_crate", (10, 8, 10, 8)),
+            ("hm_broom", (1, 12, 1, 12)),
         ],
-        stations=[("down", 1.8, 11.6), ("telescope", 5.0, 8.2), ("chest", 12.0, 4.9), ("map", 14.5, 9.6), ("up", 17.0, 4.7)],
-        decor_slots=[(0, 2.0, 9.0), (1, 8.5, 7.5), (2, 8.5, 11.2), (3, 11.8, 7.5), (4, 17.2, 9.2), (5, 13.4, 12.0)],
+        wall=[("hm_window_stone", 2.5, 3.5), ("hm_sconce", 8.0, 2.6)],
+        flat=[("hm_rug_yellow", 2.6, 9.6)],
+        stations=[("telescope", 2.5, 6.6), ("chest", 9.5, 5.6), ("map", 6.0, 10.6)],
+        slots=[(8.0, 4.6), (1.5, 8.5), (10.5, 10.5), (3.5, 12.5), (8.5, 12.5), (10.5, 12.5)],
     ),
     "homeGreenhouse": dict(
-        floor="greenhouse",
-        rooms=(("greenhouse", "parquet"), ("potting", "stone")),
-        props=[
-            ("hm_stairs_down", 1.8, 13.0, cells(1, 12, 2, 12)),
-            ("hm_planter", 4.5, 4.2, cells(4, 3, 5, 3)),
-            ("hm_planter", 4.5, 8.2, cells(4, 7, 5, 7)),
-            ("hm_planter", 7.6, 8.2, cells(7, 7, 8, 7)),
-            ("hm_plant_big", 8.5, 4.0, cells(8, 3)),
-            ("hm_plant_fern", 4.2, 12.8, cells(4, 12)),
-            ("hm_plant_pink", 9.3, 12.8, cells(9, 12)),
-            # рассадная
-            ("hm_alchemy", 13.0, 4.2, cells(12, 3, 13, 3)),
-            ("hm_seed_tray", 16.0, 4.2, cells(15, 3, 16, 3)),
-            ("hm_seed_tray", 14.5, 9.0, cells(14, 8, 15, 8)),
-            ("hm_bucket", 17.2, 12.8, []),
-            ("hm_plant", 11.6, 12.8, cells(11, 12)),
+        floor="greenhouse", theme="greenhouse", floor_style=("tile", 1.0, (190, 230, 190)),
+        furniture=[
+            ("hm_planter", (1, 4, 3, 4)),
+            ("hm_alchemy", (5, 4, 6, 4)),
+            ("hm_planter", (8, 4, 10, 4)),
+            ("hm_plant_big", (1, 7, 1, 7)),
+            ("hm_plant_fern", (10, 7, 10, 7)),
+            ("hm_seed_tray", (4, 9, 5, 9)),
+            ("hm_seed_tray", (7, 9, 8, 9)),
+            ("hm_bucket", (10, 12, 10, 12)),
         ],
-        stations=[("down", 1.8, 11.6), ("compost", 13.0, 4.9), ("seedlings", 16.0, 4.9)],
-        decor_slots=[(0, 2.4, 8.0), (1, 6.0, 10.6), (2, 8.6, 11.0), (3, 11.8, 7.0), (4, 17.2, 8.2), (5, 13.0, 11.6)],
+        wall=[("hm_sconce", 4.0, 2.6), ("hm_sconce", 7.9, 2.6)],
+        flat=[],
+        stations=[("compost", 5.5, 5.6), ("seedlings", 6.0, 10.6)],
+        slots=[(1.5, 10.0), (10.5, 10.0), (1.5, 12.5), (3.5, 12.5), (8.5, 12.5), (10.5, 5.6)],
     ),
 }
-
-# Предметы на стене, которые рисуются кодом (календарь берётся из иконки).
-EXTRA_WALL = {}
 
 
 def build_floor(src, fid, spec):
     img = Image.new("RGBA", (W * T, H * T))
-    (left, lfloor), (right, rfloor) = spec["rooms"]
-    # пол
-    tile_floor(img, src, lfloor, T, WALL_ROWS * T, PART * T, (H - 1) * T)
-    tile_floor(img, src, rfloor, (PART + 1) * T, WALL_ROWS * T, (W - 1) * T, (H - 1) * T)
-    # проём в перегородке - пол левой комнаты
-    tile_floor(img, src, lfloor, PART * T, DOOR_ROWS[0] * T, (PART + 1) * T, (DOOR_ROWS[-1] + 1) * T)
-    # стены
-    wall_face(img, left, T, PART * T)
-    wall_face(img, right, (PART + 1) * T, (W - 1) * T)
-    beam_v(img, 0, 0, H * T)
-    beam_v(img, (W - 1) * T, 0, H * T)
-    beam_v(img, PART * T, 0, DOOR_ROWS[0] * T)
-    beam_v(img, PART * T, (DOOR_ROWS[-1] + 1) * T, (H - 1) * T)
-    beam_h(img, 0, W * T, (H - 1) * T)
-    door = spec.get("door")
-    if door is not None:
-        # проём двери внизу: пол
-        tile_floor(img, src, lfloor, door * T, (H - 1) * T, (door + 1) * T, H * T)
-    # тень от стены на полу
-    px = img.load()
-    for x in range(T, (W - 1) * T):
-        for dy, k in ((0, 0.62), (1, 0.75), (2, 0.88)):
-            y = WALL_ROWS * T + dy
-            r, g, b, a = px[x, y]
-            px[x, y] = (int(r * k), int(g * k), int(b * k), a)
+    fx0, fx1, fy0, fy1 = T, (W - 1) * T, WALL_ROWS * T, (H - 1) * T
+    style = spec["floor_style"]
+    door = spec.get("door", False)
+    floor_rect = (fx0, fy0, fx1, fy1 + (T if door else 0))
+    if style[0] == "plank":
+        plank_floor(img, *floor_rect, style[1])
+    elif style[0] == "parquet":
+        parquet_floor(img, *floor_rect)
+    else:
+        tile_floor(img, src, *floor_rect, dark=style[1], tint=style[2] if len(style) > 2 else None)
+    shade_floor(img)
+    wall_face(img, spec["theme"], fx0, fx1)
+    wall_side(img, 0, 0, H * T, inner_right=True)
+    wall_side(img, (W - 1) * T, 0, H * T, inner_right=False)
+    wall_bottom(img, 0, W * T, (H - 1) * T)
+    if door:
+        # проём входной двери: пол и косяки
+        if style[0] == "plank":
+            plank_floor(img, DOOR[0] * T, fy1, (DOOR[-1] + 1) * T, H * T, style[1])
+        else:
+            tile_floor(img, src, DOOR[0] * T, fy1, (DOOR[-1] + 1) * T, H * T)
+        px = img.load()
+        for y in range(fy1, H * T):
+            for dx in (0, 1):
+                px[DOOR[0] * T + dx, y] = OUTLINE if dx == 0 else hexc("#91533b")
+                px[(DOOR[-1] + 1) * T - 1 - dx, y] = OUTLINE if dx == 0 else hexc("#91533b")
 
-    # клетки
     grid = [["L"] * W for _ in range(H)]
     for r in range(H):
         for c in range(W):
             if r < WALL_ROWS or r == H - 1 or c in (0, W - 1):
                 grid[r][c] = "B"
-            if c == PART and r not in DOOR_ROWS:
-                grid[r][c] = "B"
-    if door is not None:
-        grid[H - 1][door] = "L"
+    if door:
+        for c in DOOR:
+            grid[H - 1][c] = "L"
+
     props = []
-    for name, x, y, block in spec["props"]:
-        props.append([name, round(x * PT), round((H - y) * PT), 0])
-        for c, r in block:
-            grid[r][c] = "B"
-    for name, x, y in spec.get("props_wall", []):
-        props.append([name, round(x * PT), round((H - y) * PT), 0])
-    stations = [[k, round(x * PT), round((H - y) * PT)] for k, x, y in spec["stations"]]
-    slots = [[f"{spec['floor']}_{i}", round(x * PT), round((H - y) * PT)] for i, x, y in spec["decor_slots"]]
+
+    def at(x, y):
+        return [round(x * PT), round((H - y) * PT)]
+
+    for item in spec["furniture"]:
+        name, (c0, r0, c1, r1) = item[0], item[1]
+        dx, dy = item[2] if len(item) > 2 else (0, 0)
+        for r in range(r0, r1 + 1):
+            for c in range(c0, c1 + 1):
+                assert grid[r][c] == "L", f"{fid}: {name} перекрывает ({c},{r})"
+                grid[r][c] = "B"
+        props.append([name, *at((c0 + c1 + 1) / 2 + dx, r1 + 1 + dy), 0])
+    for name, x, y in spec["wall"] + spec["flat"]:
+        props.append([name, *at(x, y), 0])
+
+    def free(x, y):
+        c, r = int(x), int(min(y, H - 0.01))
+        return 0 <= c < W and 0 <= r < H and grid[r][c] == "L"
+
+    stations = []
+    for kind, x, y in spec["stations"]:
+        assert free(x, y), f"{fid}: станция {kind} на занятой клетке ({x},{y})"
+        stations.append([kind, *at(x, y)])
+    slots = []
+    for i, (x, y) in enumerate(spec["slots"]):
+        assert free(x, y), f"{fid}: место {i} на занятой клетке ({x},{y})"
+        for kind, sx, sy in spec["stations"]:
+            assert abs(sx - x) + abs(sy - y) > 1.2, f"{fid}: место {i} вплотную к станции {kind}"
+        slots.append([f"{spec['floor']}_{i}", *at(x, y)])
+
+    # Все станции достижимы от точки появления, даже если на все места поставить украшения
+    base = (6.0, 11.5)
+    blocked = {(int(x), int(y)) for x, y in spec["slots"]}
+    seen, todo = set(), [(int(base[0]), int(base[1]))]
+    while todo:
+        c, r = todo.pop()
+        if (c, r) in seen or not (0 <= c < W and 0 <= r < H) or grid[r][c] != "L" or (c, r) in blocked:
+            continue
+        seen.add((c, r))
+        todo += [(c + 1, r), (c - 1, r), (c, r + 1), (c, r - 1)]
+    for kind, x, y in spec["stations"]:
+        assert (int(x), int(min(y, H - 0.01))) in seen, f"{fid}: к станции {kind} не пройти"
+
     data = dict(
         id=fid, w=W, h=H, cell=PT, edge="void",
         rows=["".join(row) for row in grid],
-        base=[round((door + 0.5) * PT) if door is not None else 2 * PT, round(2.2 * PT)],
+        base=at(*base),
         gates=[], spots=[], props=props, border=[], farm=[],
         stations=stations, slots=slots,
     )

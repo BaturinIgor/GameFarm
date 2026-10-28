@@ -280,6 +280,7 @@ struct HUDView: View {
             ExpeditionPill()
             EventMapPill { sheet = .events }
             DungeonPill()
+            HomeFloorPill { sheet = .house }
             BossBar()
 
             ForEach(game.toasts) { toast in

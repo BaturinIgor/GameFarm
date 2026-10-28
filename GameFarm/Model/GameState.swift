@@ -1691,6 +1691,16 @@ extension GameState {
         markDirty()
     }
 
+    /// Перейти на другой этаж кнопкой: появляемся в середине комнаты.
+    func switchFloor(_ floor: HouseFloor) {
+        guard isBuilt(floor), currentFloor != floor else { return }
+        arrivalStation = nil
+        save.current = floor.location
+        homePrompt = nil
+        SoundFX.play(.tap)
+        markDirty()
+    }
+
     /// Поспать: здоровье полностью восстанавливается.
     func rest() {
         healFull()

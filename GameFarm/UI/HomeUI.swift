@@ -289,3 +289,59 @@ private struct FertilizerRow: View {
         }
     }
 }
+
+/// В доме: какой сейчас этаж и переход на другой этаж одной кнопкой.
+struct HomeFloorPill: View {
+    @Environment(GameState.self) private var game
+    let onPlan: () -> Void
+
+    var body: some View {
+        if let current = game.currentFloor {
+            Menu {
+                ForEach(HouseFloor.allCases.reversed()) { floor in
+                    if game.isBuilt(floor) {
+                        Button {
+                            game.switchFloor(floor)
+                        } label: {
+                            Label(floor.title, systemImage: floor == current ? "checkmark" : "arrow.up.arrow.down")
+                        }
+                        .disabled(floor == current)
+                    } else {
+                        Button {
+                            onPlan()
+                        } label: {
+                            Label(tr("home.floor.locked", floor.title, floor.level), systemImage: "lock.fill")
+                        }
+                    }
+                }
+                Divider()
+                Button {
+                    onPlan()
+                } label: {
+                    Label(tr("home.plan"), systemImage: "house")
+                }
+                Button {
+                    game.leaveHouse()
+                } label: {
+                    Label(tr("home.goOut"), systemImage: "door.left.hand.open")
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    PixelIcon(name: "stairs", size: 20)
+                    Text(current.title)
+                        .font(.game(13))
+                        .foregroundStyle(.white)
+                        .outlined(Palette.outline, width: 1)
+                        .lineLimit(1)
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 10, weight: .black))
+                        .foregroundStyle(.white)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .woodPill(radius: 14)
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+    }
+}

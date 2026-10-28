@@ -180,6 +180,7 @@ final class GameScene: SKScene {
         spots.removeAll()
         gates.removeAll()
         obstacles.removeAll()
+        decorObstacles.removeAll()
         companions.removeAll()
         companionSignature = []
         critters.removeAll()
@@ -260,8 +261,12 @@ final class GameScene: SKScene {
 
         player.removeAllActions()
         if spec.kind == .home {
-            let arrival = game.arrivalStation ?? .exit
-            player.position = layout.stations.first { $0.kind == arrival }?.position ?? layout.base
+            // С улицы - у двери, чуть внутри комнаты; при смене этажа - в середине
+            if let arrival = game.arrivalStation, let station = layout.stations.first(where: { $0.kind == arrival }) {
+                player.position = CGPoint(x: station.position.x, y: station.position.y + (arrival == .exit ? 52 : 0))
+            } else {
+                player.position = layout.base
+            }
             passageArmed = false
         } else if spec.kind == .dungeon {
             player.position = layout.base
@@ -912,6 +917,9 @@ final class GameScene: SKScene {
             if abs(obstacle.center.x - p.x) > 80 || abs(obstacle.center.y - p.y) > 80 { continue }
             p = push(p, from: obstacle.center, minDistance: obstacle.radius + radius)
         }
+        for obstacle in decorObstacles {
+            p = push(p, from: obstacle.center, minDistance: obstacle.radius + radius)
+        }
         p = push(p, outOf: houseRect, radius: radius)
         if !penRect.isNull { p = push(p, outOf: penRect, radius: radius) }
         p.x = max(radius, min(layout.size.width - radius, p.x))
@@ -998,9 +1006,11 @@ final class GameScene: SKScene {
     private var trophySignature = ""
     private var passageArmed = false
     private var homeTimer = 0.0
+    private var decorObstacles: [(center: CGPoint, radius: CGFloat)] = []
 
     private func buildHome() {
         slotNodes.removeAll()
+        decorObstacles.removeAll()
         trophyNodes.removeAll()
         decorSignature = ""
         trophySignature = ""
@@ -1015,11 +1025,15 @@ final class GameScene: SKScene {
         decorSignature = signature
         for node in slotNodes { node.removeFromParent() }
         slotNodes.removeAll()
+        decorObstacles.removeAll()
         for slot in layout.slots {
             if let decor = game.save.decor[slot.id], let node = Sprites.node(decor.sprite, x: slot.position.x, y: slot.position.y) {
-                node.zPosition = decor.sprite.contains("rug") ? 2 : zFor(slot.position.y)
+                let flat = decor.sprite.contains("rug")
+                node.zPosition = flat ? 2 : zFor(slot.position.y)
                 world.addChild(node)
                 slotNodes.append(node)
+                // Сквозь поставленное украшение не пройти
+                if !flat { decorObstacles.append((CGPoint(x: slot.position.x, y: slot.position.y + 6), 13)) }
             } else {
                 let mark = SKSpriteNode(texture: Effects.ringTexture, size: CGSize(width: 26, height: 13))
                 mark.position = slot.position
@@ -1043,7 +1057,7 @@ final class GameScene: SKScene {
         trophyNodes.removeAll()
         for (i, trophy) in Trophy.allCases.enumerated() where earned.contains(trophy) {
             let x = board.position.x + CGFloat(i % 3 - 1) * 36
-            let y = board.position.y + (i < 3 ? 38 : 4)
+            let y = board.position.y + (i < 3 ? 42 : 10)
             guard let node = Sprites.node(trophy.sprite, x: x, y: y) else { continue }
             node.zPosition = zFor(board.position.y) + 0.5
             world.addChild(node)

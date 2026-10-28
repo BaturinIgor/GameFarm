@@ -412,6 +412,8 @@
  "home.down.hint": "",
  "home.exit": "Door",
  "home.exit.hint": "Out to the meadow",
+ "home.floor.locked": "{0}: level {1}",
+ "home.goOut": "Go outside",
  "home.lectern": "Legacy book",
  "home.lectern.hint": "Rebirth and permanent upgrades for sparks",
  "home.map": "World map",
