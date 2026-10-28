@@ -2,17 +2,30 @@ import SpriteKit
 import UIKit
 
 enum Effects {
-    private static func label(_ text: String, size: CGFloat, color: UIColor) -> SKLabelNode {
-        let node = SKLabelNode()
-        node.attributedText = NSAttributedString(string: text, attributes: [
+    /// Готовые картинки надписей: "+3", "Крит!" и т.п. рисуются шрифтом один раз, дальше берутся из кеша.
+    nonisolated(unsafe) private static var textCache: [String: (SKTexture, CGSize)] = [:]
+
+    private static func label(_ text: String, size: CGFloat, color: UIColor) -> SKSpriteNode {
+        let key = "\(text)|\(size)|\(color.description)"
+        if let (tex, s) = textCache[key] { return SKSpriteNode(texture: tex, size: s) }
+        if textCache.count > 300 { textCache.removeAll() }
+        let attrs: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: size, weight: .heavy),
             .foregroundColor: color,
             .strokeColor: UIColor.black.withAlphaComponent(0.65),
             .strokeWidth: -4
-        ])
-        node.verticalAlignmentMode = .center
-        node.horizontalAlignmentMode = .center
-        return node
+        ]
+        let textSize = (text as NSString).size(withAttributes: attrs)
+        let canvas = CGSize(width: ceil(textSize.width) + 4, height: ceil(textSize.height) + 4)
+        let format = UIGraphicsImageRendererFormat()
+        format.opaque = false
+        format.scale = 2
+        let image = UIGraphicsImageRenderer(size: canvas, format: format).image { _ in
+            (text as NSString).draw(at: CGPoint(x: 2, y: 2), withAttributes: attrs)
+        }
+        let tex = SKTexture(image: image)
+        textCache[key] = (tex, canvas)
+        return SKSpriteNode(texture: tex, size: canvas)
     }
 
     private static func rise(_ node: SKNode, delay: Double, distance: CGFloat = 42, duration: Double = 0.9) {
@@ -46,7 +59,7 @@ enum Effects {
         container.zPosition = 900
         let size: CGFloat = small ? 14 : 18
         let text = label("+\(amount)", size: size, color: .white)
-        text.horizontalAlignmentMode = .right
+        text.anchorPoint = CGPoint(x: 1, y: 0.5)
         text.position = CGPoint(x: 2, y: 0)
         container.addChild(text)
         let icon = SKSpriteNode(texture: Art.iconTexture(kind), size: CGSize(width: size * 1.35, height: size * 1.35))
@@ -167,11 +180,50 @@ enum Effects {
         }
     }
 
+    /// Белое кольцо, нарисованное один раз: красится под нужный цвет без SKShapeNode.
+    static let ringTexture: SKTexture = {
+        let format = UIGraphicsImageRendererFormat()
+        format.opaque = false
+        format.scale = 2
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 66, height: 66), format: format).image { ctx in
+            ctx.cgContext.setStrokeColor(UIColor.white.cgColor)
+            ctx.cgContext.setLineWidth(3)
+            ctx.cgContext.strokeEllipse(in: CGRect(x: 1.5, y: 1.5, width: 63, height: 63))
+        }
+        return SKTexture(image: image)
+    }()
+
+    /// Мягкий белый круг для подложек (кружок под стрелкой, площадка склада).
+    static let discTexture: SKTexture = {
+        let format = UIGraphicsImageRendererFormat()
+        format.opaque = false
+        format.scale = 2
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 64, height: 64), format: format).image { ctx in
+            ctx.cgContext.setFillColor(UIColor.white.cgColor)
+            ctx.cgContext.fillEllipse(in: CGRect(x: 0, y: 0, width: 64, height: 64))
+        }
+        return SKTexture(image: image)
+    }()
+
+    /// Пунктирное кольцо площадки склада (радиус 92 при размере 187).
+    static let dashedRingTexture: SKTexture = {
+        let format = UIGraphicsImageRendererFormat()
+        format.opaque = false
+        format.scale = 2
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 187, height: 187), format: format).image { ctx in
+            let c = ctx.cgContext
+            c.setStrokeColor(UIColor.white.cgColor)
+            c.setLineWidth(3)
+            c.setLineDash(phase: 0, lengths: [14, 10])
+            c.strokeEllipse(in: CGRect(x: 1.5, y: 1.5, width: 184, height: 184))
+        }
+        return SKTexture(image: image)
+    }()
+
     static func ring(at point: CGPoint, in parent: SKNode, color: UIColor, radius: CGFloat = 30) {
-        let node = SKShapeNode(circleOfRadius: radius)
-        node.strokeColor = color
-        node.lineWidth = 3
-        node.fillColor = .clear
+        let node = SKSpriteNode(texture: ringTexture, size: CGSize(width: radius * 2 + 3, height: radius * 2 + 3))
+        node.color = color
+        node.colorBlendFactor = 1
         node.position = point
         node.zPosition = 870
         node.setScale(0.3)

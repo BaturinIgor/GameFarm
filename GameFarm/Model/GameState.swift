@@ -24,6 +24,12 @@ final class GameState {
     var gardenChestFound: Treasure?
     /// Открыта крупная карта текущей локации (по нажатию на мини-карту).
     var bigMap = false
+    /// Персонаж стоит у грядок.
+    private(set) var nearGarden = false
+    /// Рядом торговец: лавка у дома или бродячий.
+    private(set) var traderPrompt: TraderKind?
+    /// Бродячий торговец сейчас в одной из локаций.
+    private(set) var wanderer: WandererVisit?
     /// Локации, куда можно дойти через открытые проходы.
     private(set) var reachable: Set<LocationID> = [.meadow]
     /// Через какие ворота персонаж пришёл в локацию (сцена ставит его к ним).
@@ -1009,6 +1015,7 @@ final class GameState {
         s.yieldAll = 0.1 * r(.bounty) + 0.06 * r(.fertile) + (r(.abundance) > 0 ? 0.1 : 0)
             + (owns(.garden) ? RoyalGarden.capybaraYield : 0)
         s.yieldCategory[.food] = 0.2 * r(.farmer)
+        s.yieldCategory[.crop] = 0.2 * r(.farmer)
         s.yieldCategory[.ore] = 0.1 * r(.oreHunter)
         s.yieldCategory[.gem] = 0.1 * r(.oreHunter)
         s.regrowChance = 0.06 * r(.gardener)
@@ -1092,3 +1099,209 @@ final class GameState {
         stats = s
     }
 }
+
+enum TraderKind: Equatable {
+    case stall, wanderer
+}
+
+// MARK: Огород
+
+extension GameState {
+    var bedCount: Int { Garden.beds(at: save.level) }
+
+    func bed(_ index: Int) -> Bed {
+        index < save.beds.count ? save.beds[index] : Bed()
+    }
+
+    private func setBed(_ index: Int, _ bed: Bed) {
+        while save.beds.count <= index { save.beds.append(Bed()) }
+        save.beds[index] = bed
+        markDirty()
+    }
+
+    func seeds(_ crop: CropID) -> Int { save.seeds[crop] ?? 0 }
+
+    var totalSeeds: Int { save.seeds.values.reduce(0, +) }
+
+    func setNearGarden(_ value: Bool) {
+        if nearGarden != value { nearGarden = value }
+    }
+
+    func selectSeed(_ crop: CropID) {
+        guard save.selectedSeed != crop else { return }
+        save.selectedSeed = crop
+        markDirty()
+    }
+
+    func seedCost(_ crop: CropID, count: Int) -> Int {
+        max(1, Int((Double(crop.spec.seedPrice * count) * stats.shopMult).rounded(.up)))
+    }
+
+    @discardableResult
+    func buySeeds(_ crop: CropID, count: Int) -> Bool {
+        let cost = seedCost(crop, count: count)
+        guard save.level >= crop.spec.level, save.coins >= cost else { return false }
+        save.coins -= cost
+        save.seeds[crop, default: 0] += count
+        if save.selectedSeed == nil || seeds(save.selectedSeed!) == 0 { save.selectedSeed = crop }
+        SoundFX.play(.purchase)
+        markDirty()
+        return true
+    }
+
+    /// Какие семена сажать: выбранные, а если кончились, то любые другие, начиная с самых дорогих.
+    private func seedToPlant() -> CropID? {
+        if let chosen = save.selectedSeed, seeds(chosen) > 0 { return chosen }
+        let next = CropID.allCases.reversed().first { seeds($0) > 0 }
+        if let next { save.selectedSeed = next }
+        return next
+    }
+
+    /// Посадить на пустую грядку. Возвращает культуру или nil, если сажать нечего.
+    func plant(_ index: Int) -> CropID? {
+        guard index < bedCount, bed(index).isEmpty, let crop = seedToPlant() else { return nil }
+        save.seeds[crop] = seeds(crop) - 1
+        setBed(index, Bed(crop: crop, plantedAt: Date()))
+        return crop
+    }
+
+    /// Полить растущую грядку: оставшееся время роста сокращается.
+    func water(_ index: Int) -> Bool {
+        var b = bed(index)
+        let now = Date()
+        guard !b.isEmpty, !b.watered, !b.isRipe(at: now), let ready = b.readyAt else { return false }
+        b.boost += max(0, ready.timeIntervalSince(now)) * Garden.waterBoost
+        b.watered = true
+        setBed(index, b)
+        return true
+    }
+
+    /// Собрать спелый урожай: сразу на склад (огород у дома), плюс опыт.
+    func harvestBed(_ index: Int) -> ResourceAmount? {
+        let b = bed(index)
+        guard let crop = b.crop, b.isRipe(at: Date()) else { return nil }
+        let spec = crop.spec
+        let amount = max(1, Int((Double(spec.yield) * stats.yieldMultiplier(for: spec.produce)).rounded()))
+        addToStorage(spec.produce, amount)
+        setBed(index, Bed())
+        save.cropsHarvested += 1
+        gainXP(spec.xp)
+        return ResourceAmount(kind: spec.produce, amount: amount)
+    }
+
+    var ripeBeds: Int {
+        let now = Date()
+        return (0..<bedCount).filter { bed($0).isRipe(at: now) }.count
+    }
+
+    var emptyBeds: Int {
+        (0..<bedCount).filter { bed($0).isEmpty }.count
+    }
+}
+
+// MARK: Лавка и бродячий торговец
+
+extension GameState {
+    private var today: Int {
+        Int(Calendar.current.startOfDay(for: Date()).timeIntervalSince1970 / 86_400)
+    }
+
+    var nextDealsAt: Date {
+        let start = Calendar.current.startOfDay(for: Date())
+        return Calendar.current.date(byAdding: .day, value: 1, to: start) ?? start.addingTimeInterval(86_400)
+    }
+
+    func setTraderPrompt(_ value: TraderKind?) {
+        if traderPrompt != value { traderPrompt = value }
+    }
+
+    /// Три обмена дня. Одинаковые весь день, меняются в полночь.
+    var dailyDeals: [TradeDeal] {
+        var rng = DayRandom(seed: today * 7919 + save.rebirths * 31 + save.level / 10)
+        var pool = gatherableKinds.sorted { $0.rawValue < $1.rawValue }
+        if pool.isEmpty { pool = [.wood, .stone] }
+        let level = save.level
+        var deals: [TradeDeal] = []
+
+        // Ресурсы за монеты вдвое дороже обычной продажи
+        let a = rng.pick(pool)
+        let n = max(5, (40 + 15 * level) / max(1, a.price))
+        deals.append(TradeDeal(id: 0, give: [ResourceAmount(kind: a, amount: n)], coinsPrice: 0,
+                               reward: .coins(n * sellPrice(a) * 2)))
+
+        // Ресурсы за билет в экспедицию
+        let b = rng.pick(pool)
+        let m = max(8, (220 + 20 * level) / max(1, b.price))
+        deals.append(TradeDeal(id: 1, give: [ResourceAmount(kind: b, amount: m)], coinsPrice: 0, reward: .ticket))
+
+        // Набор семян за полцены
+        let crops = CropID.allCases.filter { $0.spec.level <= level }
+        let crop = crops.isEmpty ? CropID.wheat : rng.pick(crops)
+        deals.append(TradeDeal(id: 2, give: [], coinsPrice: max(1, crop.spec.seedPrice * 6 / 2), reward: .seeds(crop, 6)))
+        return deals
+    }
+
+    func dealBought(_ deal: TradeDeal) -> Bool {
+        save.dealsDay == today && save.dealsBought.contains(deal.id)
+    }
+
+    func canTrade(_ deal: TradeDeal) -> Bool {
+        !dealBought(deal) && canAfford(Cost(coins: deal.coinsPrice, items: deal.give))
+    }
+
+    @discardableResult
+    func trade(_ deal: TradeDeal) -> Bool {
+        guard canTrade(deal) else { return false }
+        pay(Cost(coins: deal.coinsPrice, items: deal.give))
+        switch deal.reward {
+        case .coins(let n): addCoins(n)
+        case .ticket: save.tickets += 1
+        case .seeds(let crop, let n): save.seeds[crop, default: 0] += n
+        }
+        if save.dealsDay != today {
+            save.dealsDay = today
+            save.dealsBought = []
+        }
+        save.dealsBought.append(deal.id)
+        SoundFX.play(.purchase)
+        markDirty()
+        return true
+    }
+
+    /// Бродячий торговец приходит в локацию на три минуты с тремя редкими товарами.
+    func spawnWanderer(at location: LocationID) {
+        var rng = DayRandom(seed: Int(Date().timeIntervalSince1970) / 60)
+        let level = save.level
+        var offers: [WandererOffer] = [WandererOffer(id: 0, goods: .ticket, price: 250 + 25 * level)]
+        let crops = CropID.allCases.filter { $0.spec.level <= level + 4 }
+        let crop = rng.pick(Array(crops.suffix(4)))
+        offers.append(WandererOffer(id: 1, goods: .seeds(crop, 6), price: max(10, Int(Double(crop.spec.seedPrice * 6) * 0.6))))
+        let rare: [ResourceKind] = [.crystal, .ruby, .diamond, .pearl, .coral, .honey, .goldenApple, .obsidian]
+        let kind = rng.pick(rare)
+        let count = rng.int(2...4)
+        offers.append(WandererOffer(id: 2, goods: .resource(kind, count), price: Int(Double(kind.price * count) * 1.6)))
+        wanderer = WandererVisit(location: location, until: Date().addingTimeInterval(180), offers: offers)
+    }
+
+    func dismissWanderer() {
+        if wanderer != nil { wanderer = nil }
+        if traderPrompt == .wanderer { traderPrompt = nil }
+    }
+
+    @discardableResult
+    func buyWanderer(_ offer: WandererOffer) -> Bool {
+        guard var visit = wanderer, !visit.bought.contains(offer.id), save.coins >= offer.price else { return false }
+        save.coins -= offer.price
+        switch offer.goods {
+        case .ticket: save.tickets += 1
+        case .seeds(let crop, let n): save.seeds[crop, default: 0] += n
+        case .resource(let kind, let n): addToStorage(kind, n, counts: false)
+        }
+        visit.bought.insert(offer.id)
+        wanderer = visit
+        SoundFX.play(.purchase)
+        markDirty()
+        return true
+    }
+}
+

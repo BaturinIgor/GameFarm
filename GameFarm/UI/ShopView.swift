@@ -81,7 +81,7 @@ struct BuyButton: View {
         } label: {
             HStack {
                 if store.busy == product {
-                    ProgressView().tint(.white)
+                    Image(systemName: "hourglass")
                 } else if owned {
                     Label(tr("shop.owned"), systemImage: "checkmark.seal.fill")
                 } else {

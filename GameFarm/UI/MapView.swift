@@ -116,7 +116,6 @@ struct WorldMapGraph: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     Text(spec.emoji).font(.system(size: 24))
                         .saturation(unlocked ? 1 : 0)
-                        .shadow(color: Palette.outline, radius: 0, x: 1, y: 1)
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .strokeBorder(here ? Palette.gold : (isSelected ? Color.white : Palette.outline),
                                       lineWidth: here || isSelected ? 3.5 : 2)

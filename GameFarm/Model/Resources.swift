@@ -2,7 +2,7 @@ import UIKit
 
 /// Группа ресурсов: для бонусов талантов и животных и для разделов склада.
 enum ResourceCategory: String, CaseIterable, Identifiable {
-    case wood, stone, ore, gem, food, farm, treasure
+    case wood, stone, ore, gem, food, crop, farm, treasure
 
     var id: String { rawValue }
 
@@ -14,6 +14,8 @@ enum ResourceKind: String, CaseIterable, Identifiable {
     case berries, apples, mushrooms, carrots, herbs, fish, cactus, coconut, banana, pineapple, goldenApple
     case egg, milk, wool, honey, feather
     case shell, coral, pearl, cloud, stardust
+    // Огород
+    case wheat, tomato, potato, strawberry, corn, cabbage, eggplant, pumpkin, sunflower, chili, grapes
 
     var id: String { rawValue }
 
@@ -48,6 +50,17 @@ enum ResourceKind: String, CaseIterable, Identifiable {
         case .coral: "🪸"
         case .cloud: "☁️"
         case .stardust: "🌟"
+        case .wheat: "🌾"
+        case .tomato: "🍅"
+        case .potato: "🥔"
+        case .strawberry: "🍓"
+        case .corn: "🌽"
+        case .cabbage: "🥬"
+        case .eggplant: "🍆"
+        case .pumpkin: "🎃"
+        case .sunflower: "🌻"
+        case .chili: "🌶️"
+        case .grapes: "🍇"
         }
     }
 
@@ -60,6 +73,7 @@ enum ResourceKind: String, CaseIterable, Identifiable {
         case .berries, .apples, .mushrooms, .carrots, .herbs, .fish, .cactus, .coconut, .banana, .pineapple, .goldenApple: .food
         case .egg, .milk, .wool, .honey, .feather: .farm
         case .shell, .coral, .pearl, .cloud, .stardust: .treasure
+        case .wheat, .tomato, .potato, .strawberry, .corn, .cabbage, .eggplant, .pumpkin, .sunflower, .chili, .grapes: .crop
         }
     }
 
@@ -100,6 +114,17 @@ enum ResourceKind: String, CaseIterable, Identifiable {
         case .pearl: 90
         case .cloud: 40
         case .stardust: 220
+        case .wheat: 3
+        case .tomato: 7
+        case .potato: 8
+        case .strawberry: 10
+        case .corn: 25
+        case .cabbage: 45
+        case .eggplant: 45
+        case .pumpkin: 140
+        case .sunflower: 130
+        case .chili: 110
+        case .grapes: 210
         }
     }
 

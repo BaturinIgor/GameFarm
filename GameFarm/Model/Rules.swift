@@ -76,6 +76,12 @@ extension GameRules {
                 lines.append(UnlockLine(icon: id.spec.emoji, text: tr("unlock.animal", id.spec.name)))
             }
         }
+        if level > 1 && Garden.beds(at: level) > Garden.beds(at: level - 1) {
+            lines.append(UnlockLine(icon: "🌱", text: tr("unlock.bed")))
+        }
+        for crop in CropID.allCases where crop.spec.level == level && level > 1 {
+            lines.append(UnlockLine(icon: crop.spec.produce.emoji ?? "🌱", text: tr("unlock.seed", crop.name)))
+        }
         if let tier = TalentSpec.tierLevels.firstIndex(of: level), tier > 0 {
             lines.append(UnlockLine(icon: "🌳", text: tr("unlock.talentRow", tier + 1)))
         }

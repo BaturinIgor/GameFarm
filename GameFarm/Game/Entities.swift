@@ -169,7 +169,8 @@ final class PlayerNode: SKNode {
     private let body = SKSpriteNode(texture: Art.emoji("🧑‍🌾", size: 56), size: CGSize(width: 46, height: 46))
     private let tool = SKSpriteNode(texture: Art.emoji("🪓", size: 32), size: CGSize(width: 24, height: 24))
     private let shadowNode = SKSpriteNode(texture: Art.shadow, size: CGSize(width: 32, height: 12))
-    private let ring = SKShapeNode(ellipseOf: CGSize(width: 40, height: 16))
+    private let ring = SKSpriteNode(texture: Effects.ringTexture, size: CGSize(width: 40, height: 16))
+    private let ringFill = SKSpriteNode(texture: Effects.discTexture, size: CGSize(width: 38, height: 14))
     /// Пиксельный персонаж, если спрайты есть в сборке.
     private let pixel: PixelPlayer?
     private var phase: Double = 0
@@ -180,9 +181,11 @@ final class PlayerNode: SKNode {
     override init() {
         pixel = Sprites.available ? PixelPlayer(skin: .farmer) : nil
         super.init()
-        ring.strokeColor = UIColor.white.withAlphaComponent(0.55)
-        ring.lineWidth = 2
-        ring.fillColor = UIColor.white.withAlphaComponent(0.08)
+        ring.alpha = 0.55
+        ring.zPosition = -1
+        ringFill.alpha = 0.08
+        ringFill.zPosition = -2
+        addChild(ringFill)
         addChild(ring)
         if let pixel {
             addChild(pixel.root)
@@ -418,11 +421,14 @@ final class WildNode: SKNode {
         mark.fontSize = 18
         mark.fontColor = .white
         mark.verticalAlignmentMode = .center
-        let bubble = SKShapeNode(circleOfRadius: 12)
-        bubble.fillColor = UIColor(red: 0.95, green: 0.4, blue: 0.6, alpha: 1)
-        bubble.strokeColor = .white
-        bubble.lineWidth = 2
+        let bubble = SKSpriteNode(texture: Effects.discTexture, size: CGSize(width: 24, height: 24))
+        bubble.color = UIColor(red: 0.95, green: 0.4, blue: 0.6, alpha: 1)
+        bubble.colorBlendFactor = 1
+        let bubbleEdge = SKSpriteNode(texture: Effects.ringTexture, size: CGSize(width: 26, height: 26))
+        bubbleEdge.zPosition = 1
+        bubble.addChild(bubbleEdge)
         bubble.position = CGPoint(x: 0, y: px == nil ? 54 : 56)
+        mark.zPosition = 2
         bubble.addChild(mark)
         addChild(bobbing(bubble, height: 4, duration: 0.5))
 
@@ -591,23 +597,29 @@ final class CritterNode: SKSpriteNode {
 }
 
 final class Joystick: SKNode {
-    private let base = SKShapeNode(circleOfRadius: 58)
-    private let knob = SKShapeNode(circleOfRadius: 26)
+    private let base = SKNode()
+    private let knob = SKNode()
     private(set) var vector = CGVector.zero
     private var origin = CGPoint.zero
     private let radius: CGFloat = 58
 
     override init() {
         super.init()
-        base.fillColor = UIColor.white.withAlphaComponent(0.12)
-        base.strokeColor = UIColor.white.withAlphaComponent(0.45)
-        base.lineWidth = 2
-        knob.fillColor = UIColor.white.withAlphaComponent(0.6)
-        knob.strokeColor = UIColor.white.withAlphaComponent(0.85)
-        knob.lineWidth = 2
+        func circle(_ radius: CGFloat, fill: CGFloat, stroke: CGFloat) -> [SKNode] {
+            let disc = SKSpriteNode(texture: Effects.discTexture, size: CGSize(width: radius * 2, height: radius * 2))
+            disc.alpha = fill
+            let edge = SKSpriteNode(texture: Effects.ringTexture, size: CGSize(width: radius * 2 + 2, height: radius * 2 + 2))
+            edge.alpha = stroke
+            edge.zPosition = 1
+            return [disc, edge]
+        }
+        circle(58, fill: 0.12, stroke: 0.45).forEach(base.addChild)
+        circle(26, fill: 0.6, stroke: 0.85).forEach(knob.addChild)
+        knob.zPosition = 2
         addChild(base)
         addChild(knob)
         alpha = 0
+        isHidden = true
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -618,6 +630,7 @@ final class Joystick: SKNode {
         knob.position = point
         vector = .zero
         removeAllActions()
+        isHidden = false
         setScale(0.85)
         run(.group([.fadeAlpha(to: 1, duration: 0.08), .scale(to: 1, duration: 0.1)]))
     }
@@ -640,7 +653,7 @@ final class Joystick: SKNode {
     func end() {
         vector = .zero
         removeAllActions()
-        run(.fadeAlpha(to: 0, duration: 0.15))
+        run(.sequence([.fadeAlpha(to: 0, duration: 0.15), .hide()]))
     }
 }
 
@@ -655,11 +668,18 @@ final class PointerArrow: SKNode {
         pointer.colorBlendFactor = 1
         iconNode = SKSpriteNode(texture: Art.emoji(icon, size: 40), size: CGSize(width: 26, height: 26))
         super.init()
-        let disc = SKShapeNode(circleOfRadius: 19)
-        disc.fillColor = UIColor.black.withAlphaComponent(0.45)
-        disc.strokeColor = color
-        disc.lineWidth = 2.5
+        let disc = SKSpriteNode(texture: Effects.discTexture, size: CGSize(width: 38, height: 38))
+        disc.color = .black
+        disc.colorBlendFactor = 1
+        disc.alpha = 0.45
         addChild(disc)
+        let edge = SKSpriteNode(texture: Effects.ringTexture, size: CGSize(width: 40, height: 40))
+        edge.color = color
+        edge.colorBlendFactor = 1
+        edge.zPosition = 1
+        addChild(edge)
+        iconNode.zPosition = 2
+        pointer.zPosition = 2
         addChild(iconNode)
         addChild(pointer)
         isHidden = true

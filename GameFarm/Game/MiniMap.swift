@@ -101,6 +101,25 @@ enum MiniMap {
                 CGPoint(x: b + p.x / layout.cell * ppc, y: b + (CGFloat(layout.rows) - p.y / layout.cell) * ppc)
             }
 
+            // Огород и лавка
+            UIColor(red: 0.72, green: 0.45, blue: 0.3, alpha: 1).setFill()
+            for bed in layout.farm {
+                let p = point(bed)
+                c.fill(CGRect(x: p.x - ppc * 0.4, y: p.y - ppc * 0.4, width: ppc * 0.8, height: ppc * 0.8))
+            }
+            if let stall = layout.stall {
+                let p = point(stall)
+                let w = ppc * 2.2
+                let awning = CGRect(x: p.x - w / 2, y: p.y - w * 0.9, width: w, height: w * 0.5)
+                UIColor(red: 0.95, green: 0.35, blue: 0.35, alpha: 1).setFill()
+                c.fill(awning)
+                UIColor.white.setFill()
+                c.fill(CGRect(x: awning.minX + w * 0.33, y: awning.minY, width: w * 0.33, height: awning.height))
+                outline.setStroke()
+                c.setLineWidth(1.5)
+                c.stroke(awning)
+            }
+
             // Ресурсы
             let dot = ppc * 1.15
             for spot in layout.spots {

@@ -45,6 +45,14 @@ struct SaveData: Codable {
     var sparks = 0
     var sparksEarned = 0
     var legacy: [LegacyPerk: Int] = [:]
+    // Огород и лавка
+    var beds: [Bed] = []
+    var seeds: [CropID: Int] = [:]
+    var selectedSeed: CropID?
+    var cropsHarvested = 0
+    /// День обменов в лавке и какие обмены уже сделаны.
+    var dealsDay = 0
+    var dealsBought: [Int] = []
 
     init() {}
 
@@ -55,6 +63,7 @@ struct SaveData: Codable {
         case purchases, granted, skin, starterOfferUntil, starterOffers, luckUntil, luckReadyAt, adsWatched
         case openGates, tickets, lastFreeTicket, gardenChestAt, expedition, consumed
         case rebirths, sparks, sparksEarned, legacy
+        case beds, seeds, selectedSeed, cropsHarvested, dealsDay, dealsBought
     }
 
     init(from decoder: Decoder) throws {
@@ -105,6 +114,12 @@ struct SaveData: Codable {
         sparks = try c.decodeIfPresent(Int.self, forKey: .sparks) ?? 0
         sparksEarned = try c.decodeIfPresent(Int.self, forKey: .sparksEarned) ?? 0
         legacy = try Self.map(c.decodeIfPresent([String: Int].self, forKey: .legacy)) ?? [:]
+        beds = (try? c.decodeIfPresent([Bed].self, forKey: .beds)) ?? []
+        seeds = try Self.map(c.decodeIfPresent([String: Int].self, forKey: .seeds)) ?? [:]
+        selectedSeed = (try? c.decodeIfPresent(String.self, forKey: .selectedSeed)).flatMap { CropID(rawValue: $0) }
+        cropsHarvested = try c.decodeIfPresent(Int.self, forKey: .cropsHarvested) ?? 0
+        dealsDay = try c.decodeIfPresent(Int.self, forKey: .dealsDay) ?? 0
+        dealsBought = try c.decodeIfPresent([Int].self, forKey: .dealsBought) ?? []
 
         if !unlocked.contains(.meadow) { unlocked.insert(.meadow, at: 0) }
         // Экспедиция и сад не открываются через список, туда попадают отдельно.
@@ -155,6 +170,12 @@ struct SaveData: Codable {
         try c.encode(sparks, forKey: .sparks)
         try c.encode(sparksEarned, forKey: .sparksEarned)
         try c.encode(Self.raw(legacy), forKey: .legacy)
+        try c.encode(beds, forKey: .beds)
+        try c.encode(Self.raw(seeds), forKey: .seeds)
+        try c.encodeIfPresent(selectedSeed?.rawValue, forKey: .selectedSeed)
+        try c.encode(cropsHarvested, forKey: .cropsHarvested)
+        try c.encode(dealsDay, forKey: .dealsDay)
+        try c.encode(dealsBought, forKey: .dealsBought)
     }
 
     private static func map<K: RawRepresentable & Hashable>(_ raw: [String: Int]?) -> [K: Int]? where K.RawValue == String {

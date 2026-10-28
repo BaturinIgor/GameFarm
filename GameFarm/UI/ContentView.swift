@@ -11,8 +11,8 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            // Пока открыто окно, мир почти не виден: рисуем его реже, чтобы телефон не грелся.
-            SpriteView(scene: scene, preferredFramesPerSecond: sheet == nil ? 60 : 30,
+            // Частоту кадров сцена подбирает сама: 60 в движении, 30 в покое и под окнами меню.
+            SpriteView(scene: scene, preferredFramesPerSecond: 60,
                        options: [.ignoresSiblingOrder, .shouldCullNonVisibleNodes])
                 .ignoresSafeArea()
 
@@ -121,7 +121,7 @@ struct ContentView: View {
         .onChange(of: sheet) { old, new in
             if new != nil && old == nil { Sound.shared.play(.open) }
             if new == nil && old != nil { Sound.shared.play(.close) }
-            scene.view?.preferredFramesPerSecond = new == nil ? 60 : 30
+            scene.windowOpen = new != nil
         }
     }
 
@@ -139,6 +139,8 @@ struct ContentView: View {
             case .shop: ShopView()
             case .wardrobe: WardrobeView()
             case .legacy: LegacyView()
+            case .trader: TraderView()
+            case .wanderer: WandererView()
             }
         }
         .environment(game)
@@ -254,6 +256,12 @@ struct HUDView: View {
             } else if let gate = game.gatePrompt {
                 GateCard(gateID: gate) { sheet = .shop }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+            } else if let trader = game.traderPrompt {
+                TraderCard(kind: trader) { sheet = trader == .stall ? .trader : .wanderer }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            } else if game.nearGarden {
+                BedsCard { sheet = .trader }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
             bottomBar
@@ -263,6 +271,8 @@ struct HUDView: View {
         .padding(.bottom, 4)
         .animation(.spring(duration: 0.35), value: game.encounter)
         .animation(.spring(duration: 0.35), value: game.gatePrompt)
+        .animation(.spring(duration: 0.35), value: game.traderPrompt)
+        .animation(.spring(duration: 0.35), value: game.nearGarden)
         .animation(.spring(duration: 0.35), value: game.toasts)
         .animation(.easeInOut(duration: 0.3), value: game.save.tutorialDone)
     }

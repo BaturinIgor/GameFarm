@@ -39,6 +39,8 @@ extension Font {
 
 // MARK: Обводка текста
 
+/// Обводка четырьмя тенями. Чтобы тени не перерисовывались каждый кадр поверх движущейся игры,
+/// результат один раз растеризуется в текстуру (drawingGroup) и дальше просто накладывается.
 struct OutlinedText: ViewModifier {
     var color: Color
     var width: CGFloat
@@ -49,6 +51,9 @@ struct OutlinedText: ViewModifier {
             .shadow(color: color, radius: 0, x: -width, y: 0)
             .shadow(color: color, radius: 0, x: 0, y: width)
             .shadow(color: color, radius: 0, x: 0, y: -width)
+            .padding(width + 1)
+            .drawingGroup()
+            .padding(-(width + 1))
     }
 }
 

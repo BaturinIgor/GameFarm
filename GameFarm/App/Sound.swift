@@ -22,7 +22,6 @@ final class Sound {
 
     private static let musicKey = "sound.music"
     private static let sfxKey = "sound.sfx"
-    private static let poolSize = 4
     private static let throttle: TimeInterval = 0.05
 
     /// Музыка. Выключение плавно глушит трек, включение продолжает текущий.
@@ -54,7 +53,7 @@ final class Sound {
 
     private var started = false
     private var appPaused = false
-    private var bank: [SFX: [SoundVariant]] = [:]
+    private let effects = EffectsEngine()
     private var lastPlay: [SFX: TimeInterval] = [:]
     private var lastVariant: [SFX: Int] = [:]
     private let music = SoundLoopChannel(volume: 0.35)
@@ -90,18 +89,7 @@ final class Sound {
     }
 
     private func loadBank() {
-        for sfx in SFX.allCases {
-            var variants: [SoundVariant] = []
-            for index in 0..<16 {
-                guard let url = Bundle.main.url(forResource: "sfx_\(sfx.rawValue)_\(index)", withExtension: "m4a") else { break }
-                let variant = SoundVariant(url: url)
-                if let player = Self.makePlayer(url) {
-                    variant.players.append(player)
-                }
-                variants.append(variant)
-            }
-            bank[sfx] = variants
-        }
+        effects.start()
     }
 
     private func observeInterruptions() {
@@ -122,6 +110,7 @@ final class Sound {
     private func recoverAfterInterruption() {
         guard !appPaused else { return }
         try? AVAudioSession.sharedInstance().setActive(true)
+        effects.resume()
         if musicOn { music.resume(fade: 0.6) }
         if sfxOn { ambience.resume(fade: 0.6) }
     }
@@ -129,56 +118,27 @@ final class Sound {
     // MARK: - Эффекты
 
     /// Играет случайный вариант эффекта. Один и тот же эффект не чаще раза в 0.05 с.
+    /// Звуки заранее раскодированы в память и играют через AVAudioEngine: на кадр это почти ничего не стоит.
     func play(_ sfx: SFX, volume: Float = 1) {
         guard sfxOn, !appPaused else { return }
         if !started { start() }
-        guard let variants = bank[sfx], !variants.isEmpty else { return }
+        let count = effects.variants(sfx)
+        guard count > 0 else { return }
         let now = ProcessInfo.processInfo.systemUptime
         if let last = lastPlay[sfx], now - last < Self.throttle { return }
         lastPlay[sfx] = now
 
-        var index = Int.random(in: 0..<variants.count)
-        if variants.count > 1, index == lastVariant[sfx] {
-            index = (index + Int.random(in: 1..<variants.count)) % variants.count
+        var index = Int.random(in: 0..<count)
+        if count > 1, index == lastVariant[sfx] {
+            index = (index + Int.random(in: 1..<count)) % count
         }
         lastVariant[sfx] = index
-
-        guard let player = freePlayer(in: variants[index]) else { return }
-        player.volume = max(0, min(1, volume * sfx.gain))
-        player.rate = sfx.varies ? Float.random(in: 0.94...1.06) : 1
-        player.currentTime = 0
-        player.play()
-    }
-
-    private func freePlayer(in variant: SoundVariant) -> AVAudioPlayer? {
-        if let idle = variant.players.first(where: { !$0.isPlaying }) {
-            return idle
-        }
-        if variant.players.count < Self.poolSize, let fresh = Self.makePlayer(variant.url) {
-            variant.players.append(fresh)
-            return fresh
-        }
-        // Все заняты: перезапускаем тот, что играет дольше всех.
-        let oldest = variant.players.max(by: { $0.currentTime < $1.currentTime })
-        oldest?.stop()
-        return oldest
+        effects.play(sfx, variant: index, volume: max(0, min(1, volume * sfx.gain)),
+                     rate: sfx.varies ? Float.random(in: 0.94...1.06) : 1)
     }
 
     private func stopAllEffects() {
-        for variants in bank.values {
-            for variant in variants {
-                for player in variant.players where player.isPlaying {
-                    player.stop()
-                }
-            }
-        }
-    }
-
-    private static func makePlayer(_ url: URL) -> AVAudioPlayer? {
-        guard let player = try? AVAudioPlayer(contentsOf: url) else { return nil }
-        player.enableRate = true
-        player.prepareToPlay()
-        return player
+        effects.stopAll()
     }
 
     // MARK: - Музыка и фон
@@ -203,6 +163,7 @@ final class Sound {
         music.pauseNow()
         ambience.pauseNow()
         stopAllEffects()
+        effects.pause()
     }
 
     /// Приложение вернулось.
@@ -211,6 +172,7 @@ final class Sound {
         appPaused = false
         guard started else { return }
         try? AVAudioSession.sharedInstance().setActive(true)
+        effects.resume()
         if musicOn { music.resume(fade: 0.6) }
         if sfxOn { ambience.resume(fade: 0.6) }
     }
@@ -218,13 +180,118 @@ final class Sound {
 
 // MARK: - Вспомогательное
 
-/// Один вариант эффекта и его небольшой пул плееров, чтобы частые повторы накладывались.
-private final class SoundVariant {
-    let url: URL
-    var players: [AVAudioPlayer] = []
+/// Эффекты через AVAudioEngine: все файлы один раз раскодированы в память (около 5 МБ),
+/// дальше звук просто ставится в очередь одного из голосов. Никаких плееров и чтения файлов во время игры.
+@MainActor
+private final class EffectsEngine {
+    private final class Voice {
+        let node = AVAudioPlayerNode()
+        let pitch = AVAudioUnitVarispeed()
+        var endsAt: TimeInterval = 0
+    }
 
-    init(url: URL) {
-        self.url = url
+    private let engine = AVAudioEngine()
+    private var voices: [Voice] = []
+    private var buffers: [SFX: [AVAudioPCMBuffer]] = [:]
+    private let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
+    private var running = false
+
+    func start() {
+        guard voices.isEmpty else { return }
+        for _ in 0..<10 {
+            let voice = Voice()
+            engine.attach(voice.node)
+            engine.attach(voice.pitch)
+            engine.connect(voice.node, to: voice.pitch, format: format)
+            engine.connect(voice.pitch, to: engine.mainMixerNode, format: format)
+            voices.append(voice)
+        }
+        engine.prepare()
+        resume()
+        let format = self.format
+        DispatchQueue.global(qos: .userInitiated).async {
+            let decoded = Self.decodeAll(format)
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated { self.buffers = decoded }
+            }
+        }
+    }
+
+    func variants(_ sfx: SFX) -> Int { buffers[sfx]?.count ?? 0 }
+
+    func play(_ sfx: SFX, variant: Int, volume: Float, rate: Float) {
+        guard let list = buffers[sfx], variant < list.count, !voices.isEmpty else { return }
+        if !running { resume() }
+        guard running else { return }
+        let buffer = list[variant]
+        let now = ProcessInfo.processInfo.systemUptime
+        // Свободный голос, а если все заняты, тот, что закончится раньше всех.
+        let voice = voices.first { $0.endsAt <= now } ?? voices.min { $0.endsAt < $1.endsAt }!
+        voice.node.volume = volume
+        voice.pitch.rate = rate
+        voice.node.scheduleBuffer(buffer, at: nil, options: .interrupts, completionHandler: nil)
+        if !voice.node.isPlaying { voice.node.play() }
+        voice.endsAt = now + Double(buffer.frameLength) / format.sampleRate / Double(rate)
+    }
+
+    func stopAll() {
+        for voice in voices {
+            voice.node.stop()
+            voice.endsAt = 0
+        }
+    }
+
+    func pause() {
+        guard running else { return }
+        engine.pause()
+        running = false
+    }
+
+    func resume() {
+        guard !running, !voices.isEmpty else { return }
+        do {
+            try engine.start()
+            running = true
+        } catch {
+            running = false
+        }
+    }
+
+    nonisolated private static func decodeAll(_ format: AVAudioFormat) -> [SFX: [AVAudioPCMBuffer]] {
+        var out: [SFX: [AVAudioPCMBuffer]] = [:]
+        for sfx in SFX.allCases {
+            var list: [AVAudioPCMBuffer] = []
+            for index in 0..<16 {
+                guard let url = Bundle.main.url(forResource: "sfx_\(sfx.rawValue)_\(index)", withExtension: "m4a") else { break }
+                if let buffer = decode(url, to: format) { list.append(buffer) }
+            }
+            out[sfx] = list
+        }
+        return out
+    }
+
+    nonisolated private static func decode(_ url: URL, to format: AVAudioFormat) -> AVAudioPCMBuffer? {
+        guard let file = try? AVAudioFile(forReading: url) else { return nil }
+        let source = file.processingFormat
+        guard file.length > 0,
+              let input = AVAudioPCMBuffer(pcmFormat: source, frameCapacity: AVAudioFrameCount(file.length)) else { return nil }
+        do { try file.read(into: input) } catch { return nil }
+        if source == format { return input }
+        guard let converter = AVAudioConverter(from: source, to: format) else { return nil }
+        let capacity = AVAudioFrameCount(Double(input.frameLength) * format.sampleRate / source.sampleRate) + 1024
+        guard let output = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: capacity) else { return nil }
+        var fed = false
+        var error: NSError?
+        converter.convert(to: output, error: &error) { _, status in
+            if fed {
+                status.pointee = .endOfStream
+                return nil
+            }
+            fed = true
+            status.pointee = .haveData
+            return input
+        }
+        return error == nil && output.frameLength > 0 ? output : nil
     }
 }
 

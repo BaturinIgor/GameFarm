@@ -26,6 +26,7 @@ final class GameScene: SKScene {
     private let baseArrow = PointerArrow(color: UIColor(red: 1, green: 0.78, blue: 0.2, alpha: 1), icon: "📦")
     private let wildArrow = PointerArrow(color: UIColor(red: 0.95, green: 0.4, blue: 0.6, alpha: 1), icon: "🐾")
     private let treasureArrow = PointerArrow(color: UIColor(red: 1, green: 0.9, blue: 0.3, alpha: 1), icon: "🎁")
+    private let wandererArrow = PointerArrow(color: UIColor(red: 0.65, green: 0.4, blue: 0.95, alpha: 1), icon: "🛒")
     private var darkness: SKSpriteNode?
     private var weather: SKEmitterNode?
 
@@ -48,6 +49,15 @@ final class GameScene: SKScene {
     private var chestBox: SKSpriteNode?
     private var chestTitle = SKLabelNode()
     private var royalChest: SKNode?
+    // Огород и торговцы
+    private var bedNodes: [BedNode] = []
+    private var gardenRect = CGRect.null
+    private var gardenTimer: Double = 0
+    private var bedCooldown: Double = 0
+    private var seedHintTimer: Double = 0
+    private var stallNode: TraderNode?
+    private var wandererNode: TraderNode?
+    private var wandererTimer: Double = 300
     private var builtLanguage = ""
     private var shownSkin = ""
 
@@ -82,15 +92,22 @@ final class GameScene: SKScene {
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    /// Открыто окно меню: мир почти не виден, рисуем реже.
+    var windowOpen = false
+    /// Сколько ещё секунд держать 60 кадров после движения или удара.
+    private var activeTime: Double = 1
+
     override func didMove(to view: SKView) {
         view.isMultipleTouchEnabled = false
+        // Пиксельной графике хватает двойного разрешения: на 3x экранах это в 2.25 раза меньше работы видеокарте.
+        if view.contentScaleFactor > 2 { view.contentScaleFactor = 2 }
         guard world.parent == nil else { return }
         addChild(world)
         addChild(cam)
         camera = cam
         joystick.zPosition = 1000
         cam.addChild(joystick)
-        for arrow in [baseArrow, wildArrow, treasureArrow] {
+        for arrow in [baseArrow, wildArrow, treasureArrow, wandererArrow] {
             arrow.zPosition = 960
             cam.addChild(arrow)
         }
@@ -143,6 +160,12 @@ final class GameScene: SKScene {
         wild = nil
         treasure = nil
         royalChest = nil
+        bedNodes.removeAll()
+        gardenRect = .null
+        stallNode = nil
+        wandererNode = nil
+        game.setNearGarden(false)
+        game.setTraderPrompt(nil)
         wildArrow.isHidden = true
         treasureArrow.isHidden = true
         game.setEncounter(nil)
@@ -175,6 +198,7 @@ final class GameScene: SKScene {
         buildBase()
         buildGates()
         if id == .garden { buildGarden() }
+        buildFarm()
 
         for placement in layout.spots {
             let spot = ResourceSpot(type: placement.type)
@@ -520,16 +544,13 @@ final class GameScene: SKScene {
     private func buildBase() {
         let base = layout.base
         let radius = CGFloat(game.stats.depositRadius)
-        let zone = SKShapeNode(circleOfRadius: radius)
+        let zone = SKSpriteNode(texture: Effects.discTexture, size: CGSize(width: radius * 2, height: radius * 2))
         zone.position = base
-        zone.fillColor = UIColor.white.withAlphaComponent(0.07)
-        zone.strokeColor = .clear
+        zone.alpha = 0.07
         zone.zPosition = 2
         world.addChild(zone)
-        let dashed = SKShapeNode(path: CGPath(ellipseIn: CGRect(x: -radius, y: -radius, width: radius * 2, height: radius * 2), transform: nil)
-            .copy(dashingWithPhase: 0, lengths: [14, 10]))
-        dashed.strokeColor = UIColor.white.withAlphaComponent(0.5)
-        dashed.lineWidth = 3
+        let dashed = SKSpriteNode(texture: Effects.dashedRingTexture, size: CGSize(width: radius * 2 + 3, height: radius * 2 + 3))
+        dashed.alpha = 0.5
         dashed.position = base
         dashed.zPosition = 2
         dashed.run(.repeatForever(.rotate(byAngle: .pi * 2, duration: 30)))
@@ -605,6 +626,7 @@ final class GameScene: SKScene {
         }
 
         let stats = game.stats
+        adaptFrameRate(dt)
         syncCompanions()
         syncLooks()
         if !transitioning {
@@ -627,6 +649,10 @@ final class GameScene: SKScene {
         updateProducers(dt, stats)
         updateWild(dt, stats)
         updateTreasure(dt, stats)
+        if !transitioning {
+            updateFarm(dt)
+            updateWanderer(dt)
+        }
         updateAmbient(dt)
         updateCamera(dt)
         updateArrows()
@@ -636,6 +662,19 @@ final class GameScene: SKScene {
         if saveTimer > 5 {
             saveTimer = 0
             game.saveIfNeeded()
+        }
+    }
+
+    /// 60 кадров, пока игрок двигается или добывает, и 30, когда всё стоит или открыто меню.
+    private func adaptFrameRate(_ dt: Double) {
+        if touch != nil || hypot(velocity.dx, velocity.dy) > 4 || transitioning {
+            activeTime = 1.2
+        } else {
+            activeTime -= dt
+        }
+        let want = windowOpen ? 30 : (activeTime > 0 ? 60 : 30)
+        if let view, view.preferredFramesPerSecond != want {
+            view.preferredFramesPerSecond = want
         }
     }
 
@@ -927,6 +966,7 @@ final class GameScene: SKScene {
     }
 
     private func strike(_ spot: ResourceSpot, _ stats: Stats) {
+        activeTime = max(activeTime, 1.2)
         player.swing(spot.spec.tool, toward: spot.position, interval: stats.hitInterval)
         switch spot.spec.tool {
         case .axe: Sound.shared.play(.chop)
@@ -1230,6 +1270,131 @@ final class GameScene: SKScene {
         }
     }
 
+    // MARK: Огород и торговцы
+
+    /// Грядки, пугало и лавка у дома (есть только на поляне).
+    private func buildFarm() {
+        for (i, point) in layout.farm.enumerated() {
+            bedNodes.append(BedNode(index: i, at: point, in: world, z: zFor(point.y - 8)))
+            let r = CGRect(x: point.x - layout.cell / 2, y: point.y - layout.cell / 2, width: layout.cell, height: layout.cell)
+            gardenRect = gardenRect.union(r)
+        }
+        if !gardenRect.isNull, let scarecrow = Sprites.node("scarecrow", x: gardenRect.maxX + 20, y: gardenRect.maxY - 6) {
+            scarecrow.zPosition = zFor(scarecrow.position.y)
+            world.addChild(scarecrow)
+        }
+        let now = Date()
+        for node in bedNodes {
+            node.refresh(bed: game.bed(node.index), unlocked: node.index < game.bedCount, now: now)
+        }
+        if let point = layout.stall {
+            let node = TraderNode(kind: .stall, title: "🛒 " + tr("trader.title"))
+            node.position = point
+            node.zPosition = zFor(point.y)
+            world.addChild(node)
+            stallNode = node
+            obstacles.append((CGPoint(x: point.x, y: point.y + 10), 34))
+        }
+    }
+
+    private func updateFarm(_ dt: Double) {
+        seedHintTimer -= dt
+        if let stall = stallNode {
+            updateTraderPrompt(stall)
+        }
+        guard !bedNodes.isEmpty else { return }
+        let now = Date()
+        gardenTimer -= dt
+        if gardenTimer <= 0 {
+            gardenTimer = 0.5
+            for node in bedNodes {
+                node.refresh(bed: game.bed(node.index), unlocked: node.index < game.bedCount, now: now)
+            }
+        }
+        game.setNearGarden(gardenRect.insetBy(dx: -44, dy: -44).contains(player.position))
+        bedCooldown -= dt
+        guard bedCooldown <= 0 else { return }
+        for node in bedNodes where node.index < game.bedCount && distance(node.position, player.position) < 20 {
+            let i = node.index
+            let bed = game.bed(i)
+            if bed.isRipe(at: now) {
+                guard let got = game.harvestBed(i) else { continue }
+                player.swing(.hand, toward: node.position, interval: 0.4)
+                Effects.gain(got.kind, got.amount, at: CGPoint(x: node.position.x, y: node.position.y + 30), in: world)
+                Effects.scatter(Art.spark, count: 6, at: CGPoint(x: node.position.x, y: node.position.y + 12), in: world,
+                                size: 10, color: .white, spread: 24, rise: 18, additive: true, duration: 0.5)
+                Sound.shared.play(.pickup)
+                haptic.impactOccurred()
+            } else if bed.isEmpty {
+                guard game.plant(i) != nil else {
+                    if seedHintTimer <= 0 {
+                        seedHintTimer = 8
+                        game.toast("🌱", tr("toast.noSeeds"))
+                    }
+                    continue
+                }
+                player.swing(.hand, toward: node.position, interval: 0.4)
+                Effects.puff(at: node.position, in: world, color: UIColor(red: 0.6, green: 0.42, blue: 0.3, alpha: 1), size: 18, z: 5)
+                Sound.shared.play(.pick)
+            } else if !bed.watered {
+                guard game.water(i) else { continue }
+                Effects.ring(at: node.position, in: world, color: UIColor(red: 0.6, green: 0.85, blue: 1, alpha: 1), radius: 18)
+                Effects.scatter(Art.spark, count: 5, at: CGPoint(x: node.position.x, y: node.position.y + 10), in: world,
+                                size: 9, color: UIColor(red: 0.55, green: 0.8, blue: 1, alpha: 1), spread: 18, rise: 10, additive: true, duration: 0.4)
+                Sound.shared.play(.splash)
+            } else {
+                continue
+            }
+            node.invalidate()
+            node.refresh(bed: game.bed(i), unlocked: true, now: Date())
+            bedCooldown = 0.3
+            break
+        }
+    }
+
+    /// Подсказка "торговать", когда персонаж рядом с торговцем.
+    private func updateTraderPrompt(_ node: TraderNode) {
+        let near = distance(node.position, player.position) < 96
+        if near {
+            game.setTraderPrompt(node.kind)
+        } else if game.traderPrompt == node.kind {
+            game.setTraderPrompt(nil)
+        }
+    }
+
+    /// Бродячий торговец приходит раз в несколько минут в обычную локацию и уходит через три минуты.
+    private func updateWanderer(_ dt: Double) {
+        if let visit = game.wanderer, visit.until < Date() {
+            game.dismissWanderer()
+            game.toast("🧳", tr("toast.wandererLeft"))
+        }
+        if let visit = game.wanderer, visit.location == loaded {
+            if wandererNode == nil, let point = randomOpenPoint(minFromPlayer: 220) {
+                let node = TraderNode(kind: .wanderer, title: "🧳 " + tr("wanderer.title"))
+                node.position = point
+                node.zPosition = zFor(point.y)
+                node.setScale(0.1)
+                node.run(.scale(to: 1, duration: 0.35))
+                world.addChild(node)
+                wandererNode = node
+            }
+        } else if let node = wandererNode {
+            node.run(.sequence([.group([.fadeOut(withDuration: 0.4), .scale(to: 0.3, duration: 0.4)]), .removeFromParent()]))
+            wandererNode = nil
+            if game.traderPrompt == .wanderer { game.setTraderPrompt(nil) }
+        }
+        if let node = wandererNode {
+            updateTraderPrompt(node)
+        }
+        guard game.wanderer == nil, spec.kind == .world, let here = loaded else { return }
+        wandererTimer -= dt
+        if wandererTimer <= 0 {
+            wandererTimer = Double.random(in: 360...600)
+            game.spawnWanderer(at: here)
+            game.toast("🧳", tr("toast.wanderer"))
+        }
+    }
+
     /// Центр ближайшей клетки воды (не у самого берега) в пределах radius клеток.
     private func nearestWater(to p: CGPoint, within radius: Int) -> CGPoint? {
         let (col, row) = layout.colRow(p)
@@ -1362,6 +1527,8 @@ final class GameScene: SKScene {
             if distance(p, player.position) < minFromPlayer { continue }
             if spots.contains(where: { distance(p, $0.position) < 44 }) { continue }
             if gates.contains(where: { distance(p, $0.place.barrier) < 120 }) { continue }
+            if !gardenRect.isNull && gardenRect.insetBy(dx: -48, dy: -48).contains(p) { continue }
+            if let stall = layout.stall, distance(p, stall) < 120 { continue }
             return p
         }
         return nil
@@ -1495,6 +1662,7 @@ final class GameScene: SKScene {
         place(baseArrow, target: wantBase ? layout.base : nil)
         place(wildArrow, target: wild?.position)
         place(treasureArrow, target: treasure?.position)
+        place(wandererArrow, target: wandererNode?.position)
         darkness?.position = CGPoint(x: player.position.x - cam.position.x, y: player.position.y + 20 - cam.position.y)
     }
 

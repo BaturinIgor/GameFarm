@@ -129,6 +129,10 @@ struct LocationLayout {
     let spots: [(type: NodeType, position: CGPoint)]
     let props: [PropPlacement]
     let border: [PropPlacement]
+    /// Центры грядок огорода (только у дома на поляне).
+    var farm: [CGPoint] = []
+    /// Где стоит лавка торговца.
+    var stall: CGPoint?
 
     var size: CGSize { CGSize(width: CGFloat(cols) * cell, height: CGFloat(rows) * cell) }
 
@@ -231,6 +235,8 @@ struct LocationLayout {
         let spots: [Entry]
         let props: [Entry]
         let border: [Entry]
+        let farm: [[Double]]?
+        let stall: [Double]?
     }
 
     private static func point(_ v: [Double]) -> CGPoint {
@@ -268,7 +274,9 @@ struct LocationLayout {
             id: id, cols: raw.w, rows: raw.h, cell: CGFloat(raw.cell), edge: raw.edge, cells: cells,
             base: point(raw.base), gates: gates, spots: spots,
             props: raw.props.map { PropPlacement(name: $0.name, position: CGPoint(x: $0.x, y: $0.y), fixed: $0.flag == 1) },
-            border: raw.border.map { PropPlacement(name: $0.name, position: CGPoint(x: $0.x, y: $0.y), fixed: false) }
+            border: raw.border.map { PropPlacement(name: $0.name, position: CGPoint(x: $0.x, y: $0.y), fixed: false) },
+            farm: (raw.farm ?? []).map(point),
+            stall: raw.stall.map(point)
         )
     }
 
