@@ -4,49 +4,38 @@ struct TalentsView: View {
     @Environment(GameState.self) private var game
     @State private var branch: TalentBranch = .mining
     @State private var selected: TalentID?
-    @State private var confirmReset = false
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                header
-                branchPicker
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 8)
+        VStack(spacing: 0) {
+            header
+            branchPicker
+                .padding(.horizontal, 12)
+                .padding(.bottom, 8)
 
-                GeometryReader { geo in
-                    ScrollView {
-                        TalentTreeCanvas(branch: branch, width: geo.size.width, selected: $selected)
-                            .padding(.bottom, 20)
-                            .id(branch)
-                            .transition(.opacity.combined(with: .scale(scale: 0.98)))
-                    }
-                    .background(
-                        LinearGradient(colors: [branch.color.opacity(0.10), Color.clear],
-                                       startPoint: .top, endPoint: .bottom)
-                    )
+            GeometryReader { geo in
+                ScrollView {
+                    TalentTreeCanvas(branch: branch, width: geo.size.width, selected: $selected)
+                        .padding(.bottom, 20)
+                        .id(branch)
+                        .transition(.opacity.combined(with: .scale(scale: 0.98)))
                 }
-            }
-            .safeAreaInset(edge: .bottom) {
-                if let id = selected {
-                    TalentDetail(id: id)
-                        .padding(.horizontal, 12)
-                        .padding(.bottom, 6)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
-            .animation(.spring(duration: 0.3), value: selected)
-            .onChange(of: branch) { _, _ in selected = nil }
-            .sheetChrome(tr("hud.talents"), coins: game.save.coins)
-            .confirmationDialog(tr("talents.reset.confirm"), isPresented: $confirmReset, titleVisibility: .visible) {
-                Button(tr("talents.reset.action", Fmt.n(game.respecCost)), role: .destructive) {
-                    game.resetTalents()
-                    selected = nil
-                }
-            } message: {
-                Text(tr("talents.reset.message"))
+                .background(
+                    LinearGradient(colors: [branch.color.opacity(0.10), Color.clear],
+                                   startPoint: .top, endPoint: .bottom)
+                )
             }
         }
+        .safeAreaInset(edge: .bottom) {
+            if let id = selected {
+                TalentDetail(id: id)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 6)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(duration: 0.3), value: selected)
+        .onChange(of: branch) { _, _ in selected = nil }
+        .sheetChrome(tr("hud.talents"), coins: game.save.coins)
     }
 
     private var branchPicker: some View {
@@ -59,27 +48,30 @@ struct TalentsView: View {
                     VStack(spacing: 2) {
                         Text(b.emoji).font(.system(size: 20))
                         Text(b.title)
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.game(11, .bold))
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                         Text("\(game.pointsSpent(in: b))")
-                            .font(.system(size: 10, weight: .heavy, design: .rounded))
-                            .foregroundStyle(active ? Color.white : Color.secondary)
+                            .font(.game(10, .heavy))
+                            .foregroundStyle(.white)
                             .padding(.horizontal, 6)
-                            .background(Capsule().fill(active ? b.color : Color.secondary.opacity(0.15)))
+                            .background(Capsule().fill(active ? Palette.woodDark : Palette.inkSoft.opacity(0.6)))
                     }
+                    .foregroundStyle(active ? Color.white : Palette.ink)
+                    .outlined(active ? Palette.outline : .clear, width: 1)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 7)
                     .background(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(active ? b.color.opacity(0.22) : Color(uiColor: .secondarySystemGroupedBackground))
+                            .fill(active ? b.color : Palette.parchmentLight)
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(active ? b.color : Color.clear, lineWidth: 2)
+                            .strokeBorder(active ? Palette.outline : Palette.woodDark.opacity(0.4), lineWidth: active ? 2 : 1.5)
                     )
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.woodDark.opacity(0.3)).offset(y: 3))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.press)
             }
         }
     }
@@ -88,20 +80,23 @@ struct TalentsView: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(tr("talents.free", game.talentPointsFree))
-                    .font(.headline)
+                    .font(.game(16))
                 Text(tr("talents.hint"))
-                    .font(.caption)
+                    .font(.game(12, .semibold))
                     .foregroundStyle(.secondary)
             }
             Spacer()
             Button {
-                confirmReset = true
+                Dialogs.shared.confirm(tr("talents.reset.confirm"), message: tr("talents.reset.message"), icon: "🔄",
+                                       confirm: tr("talents.reset.action", Fmt.n(game.respecCost)), tone: .orange) {
+                    game.resetTalents()
+                    selected = nil
+                }
             } label: {
                 Image(systemName: "arrow.counterclockwise")
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.game(15, .black))
             }
-            .buttonStyle(.bordered)
-            .buttonBorderShape(.circle)
+            .buttonStyle(.game(.wood, small: true))
             .disabled(game.talentPointsSpent == 0 || game.save.coins < game.respecCost)
         }
         .padding(.horizontal, 16)
@@ -144,13 +139,13 @@ struct TalentTreeCanvas: View {
             ForEach(Array(TalentSpec.tierLevels.enumerated()), id: \.offset) { item in
                 let reached = game.save.level >= item.element
                 Text(tr("talents.rowLevel", item.element))
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .font(.game(11, .bold))
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(reached ? Color.primary : Color.secondary)
+                    .foregroundStyle(reached ? Palette.ink : Palette.inkSoft)
                     .frame(width: 40)
                     .position(x: 26, y: top + CGFloat(item.offset) * rowHeight)
                 Rectangle()
-                    .fill(Color.secondary.opacity(0.08))
+                    .fill(Palette.inkSoft.opacity(0.08))
                     .frame(width: max(0, width - 60), height: 1)
                     .position(x: 30 + (width - 60) / 2 + 12, y: top + CGFloat(item.offset) * rowHeight + rowHeight / 2)
             }
@@ -163,7 +158,7 @@ struct TalentTreeCanvas: View {
                         path.move(to: ends.0)
                         path.addLine(to: ends.1)
                     }
-                    .stroke(active ? branch.color : Color.secondary.opacity(0.3),
+                    .stroke(active ? branch.color : Palette.inkSoft.opacity(0.3),
                             style: StrokeStyle(lineWidth: active ? 4 : 3, lineCap: .round, dash: active ? [] : [6, 6]))
                 }
             }
@@ -198,38 +193,45 @@ struct TalentNode: View {
             // Центр круга совпадает с точкой узла, подпись ранга висит под кругом и не сдвигает его.
             ZStack {
                     Circle()
-                        .fill(rank > 0 ? color.opacity(0.25) : Color(uiColor: .secondarySystemGroupedBackground))
+                        .fill(Palette.woodDark.opacity(0.35))
+                        .offset(y: 3)
                     Circle()
-                        .strokeBorder(rank > 0 ? color : Color.secondary.opacity(0.35), lineWidth: isSelected ? 4 : 2.5)
+                        .fill(rank > 0 ? color.mix(with: .white, by: 0.55) : Palette.parchmentLight)
+                    Circle()
+                        .strokeBorder(rank > 0 ? color : Palette.woodDark.opacity(0.35), lineWidth: 4)
+                        .padding(2)
+                    Circle()
+                        .strokeBorder(isSelected ? Palette.gold : Palette.outline, lineWidth: isSelected ? 3 : 2)
                     Text(spec.emoji)
                         .font(.system(size: 26))
                         .grayscale(available ? 0 : 1)
                     if !available {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.game(11, .bold))
                             .foregroundStyle(.white)
                             .padding(4)
-                            .background(Circle().fill(Color.black.opacity(0.55)))
+                            .background(Circle().fill(Palette.woodDark))
+                            .overlay(Circle().strokeBorder(Palette.outline, lineWidth: 1.5))
                             .offset(x: 20, y: -20)
                     } else if learnable {
                         Image(systemName: "plus")
-                            .font(.system(size: 11, weight: .heavy))
+                            .font(.game(11, .heavy))
                             .foregroundStyle(.white)
                             .padding(4)
-                            .background(Circle().fill(Color.green))
+                            .background(Circle().fill(ButtonTone.green.base))
+                            .overlay(Circle().strokeBorder(Palette.outline, lineWidth: 1.5))
                             .offset(x: 20, y: -20)
                     }
                 }
                 .frame(width: Self.radius * 2, height: Self.radius * 2)
-                .shadow(color: rank > 0 ? color.opacity(0.4) : .clear, radius: 8)
                 .overlay(alignment: .bottom) {
                     Text("\(rank)/\(spec.maxRank)")
-                        .font(.system(size: 11, weight: .heavy, design: .rounded))
+                        .font(.game(11, .heavy))
                         .padding(.horizontal, 7)
                         .padding(.vertical, 2)
-                        .background(Capsule().fill(maxed ? color : Color(uiColor: .secondarySystemGroupedBackground)))
-                        .overlay(Capsule().strokeBorder(maxed ? Color.clear : Color.secondary.opacity(0.25), lineWidth: 1))
-                        .foregroundStyle(maxed ? Color.white : Color.primary)
+                        .background(Capsule().fill(maxed ? color : Palette.parchmentLight))
+                        .overlay(Capsule().strokeBorder(Palette.outline, lineWidth: 1.5))
+                        .foregroundStyle(maxed ? Color.white : Palette.ink)
                         .fixedSize()
                         .offset(y: 20)
                 }
@@ -251,21 +253,21 @@ struct TalentDetail: View {
             HStack(spacing: 10) {
                 Text(spec.emoji).font(.system(size: 30))
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(spec.name).font(.headline)
+                    Text(spec.name).font(.game(16))
                     Text(tr("talents.rank", rank, spec.maxRank))
-                        .font(.caption)
+                        .font(.game(12, .semibold))
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
             }
             if rank > 0 {
                 Text(tr("talents.now", spec.effect(at: rank)))
-                    .font(.subheadline)
+                    .font(.game(14, .semibold))
             }
             if !maxed {
                 Text(rank > 0 ? tr("talents.next", spec.effect(at: rank + 1)) : spec.effect(at: 1))
-                    .font(.subheadline)
-                    .foregroundStyle(rank > 0 ? Color.secondary : Color.primary)
+                    .font(.game(14, .semibold))
+                    .foregroundStyle(rank > 0 ? Palette.inkSoft : Palette.ink)
             }
             requirements(spec)
             if !maxed {
@@ -277,16 +279,13 @@ struct TalentDetail: View {
                     }
                 } label: {
                     Text(game.talentPointsFree > 0 ? tr("talents.learn") : tr("talents.noPoints"))
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.glassProminent)
-                .controlSize(.large)
+                .buttonStyle(.game(.green, wide: true))
                 .disabled(!game.canLearn(id))
             }
         }
         .padding(16)
-        .glassEffect(.regular, in: .rect(cornerRadius: 24))
+        .gamePanel(fill: Palette.parchmentLight, radius: 18, border: 3)
     }
 
     @ViewBuilder
@@ -302,8 +301,8 @@ struct TalentDetail: View {
                     Label(tr("talents.needParent", parent.spec.name), systemImage: "arrow.up.circle")
                 }
             }
-            .font(.caption.bold())
-            .foregroundStyle(.orange)
+            .font(.game(12))
+            .foregroundStyle(ButtonTone.orange.lip)
         }
     }
 }

@@ -25,46 +25,41 @@ struct AnimalsView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 14) {
-                    slots
-                    Picker(tr("common.section"), selection: $tab) {
-                        ForEach(Tab.allCases) { t in Text(t.title).tag(t) }
-                    }
-                    .pickerStyle(.segmented)
+        ScrollView {
+            VStack(spacing: 14) {
+                slots
+                GameTabs(selection: $tab, items: Tab.allCases.map { ($0, $0.title) })
 
-                    switch tab {
-                    case .mine:
-                        if owned.isEmpty {
-                            Card {
-                                Text(tr("animals.empty")).font(.headline)
-                                Text(tr("animals.empty.hint"))
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
+                switch tab {
+                case .mine:
+                    if owned.isEmpty {
+                        Card {
+                            Text(tr("animals.empty")).font(.game(16))
+                            Text(tr("animals.empty.hint"))
+                                .font(.game(14, .semibold))
+                                .foregroundStyle(.secondary)
                         }
-                        ForEach(owned) { AnimalRow(id: $0, mode: .mine) }
-                    case .shop:
-                        ForEach(shopAnimals) { AnimalRow(id: $0, mode: .shop) }
-                    case .wild:
-                        Text(tr("animals.wild.hint"))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        ForEach(wildAnimals) { AnimalRow(id: $0, mode: .wild) }
                     }
+                    ForEach(owned) { AnimalRow(id: $0, mode: .mine) }
+                case .shop:
+                    ForEach(shopAnimals) { AnimalRow(id: $0, mode: .shop) }
+                case .wild:
+                    Text(tr("animals.wild.hint"))
+                        .font(.game(14, .semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    ForEach(wildAnimals) { AnimalRow(id: $0, mode: .wild) }
                 }
-                .padding(16)
             }
-            .sheetChrome(tr("hud.animals"), coins: game.save.coins)
+            .padding(16)
         }
+        .sheetChrome(tr("hud.animals"), coins: game.save.coins)
     }
 
     private var slots: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(tr("animals.withYou", game.save.active.count, GameRules.maxActiveAnimals))
-                .font(.subheadline.bold())
+                .font(.game(14, .semibold).bold())
             HStack(spacing: 8) {
                 ForEach(0..<GameRules.maxActiveAnimals, id: \.self) { i in
                     let id = i < game.save.active.count ? game.save.active[i] : nil
@@ -75,30 +70,34 @@ struct AnimalsView: View {
                     } label: {
                         ZStack {
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(id == nil ? Color.secondary.opacity(0.1) : Color.green.opacity(0.18))
+                                .fill(id == nil ? Palette.parchmentDeep.opacity(0.6) : Color(hex: 0xDDEFC8))
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .strokeBorder(id == nil ? Color.secondary.opacity(0.3) : Color.green.opacity(0.6),
-                                              style: StrokeStyle(lineWidth: 1.5, dash: id == nil ? [5, 4] : []))
+                                .strokeBorder(id == nil ? Palette.woodDark.opacity(0.4) : Palette.outline,
+                                              style: StrokeStyle(lineWidth: id == nil ? 1.5 : 2, dash: id == nil ? [5, 4] : []))
                             if let id {
                                 AnimalIcon(id: id, size: 40)
-                                Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: 14))
-                                    .foregroundStyle(.secondary)
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 8, weight: .black))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 16, height: 16)
+                                    .background(Circle().fill(ButtonTone.red.base))
+                                    .overlay(Circle().strokeBorder(Palette.outline, lineWidth: 1.5))
                                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                                    .padding(3)
+                                    .padding(4)
                             } else {
                                 Image(systemName: "plus")
-                                    .foregroundStyle(.secondary)
+                                    .font(.game(16))
+                                    .foregroundStyle(Palette.woodDark.opacity(0.5))
                             }
                         }
                         .frame(height: 58)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.press)
                     .disabled(id == nil)
                 }
             }
             Text(tr("animals.slots.hint"))
-                .font(.caption)
+                .font(.game(12, .semibold))
                 .foregroundStyle(.secondary)
         }
     }
@@ -115,31 +114,33 @@ struct AnimalRow: View {
         let spec = id.spec
         let stars = game.stars(id)
         let multiplier = game.stats.starMultiplier(max(1, stars)) * game.stats.animalMult
-        Card(tint: game.isActive(id) ? .green : .clear) {
+        Card(tint: game.isActive(id) ? ButtonTone.green.base : .clear) {
             HStack(alignment: .top, spacing: 12) {
                 AnimalIcon(id: id, size: 46)
                     .frame(width: 58, height: 58)
-                    .background(Circle().fill(Color.secondary.opacity(0.1)))
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.parchmentDeep.opacity(0.7)))
+                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Palette.woodDark.opacity(0.4), lineWidth: 1.5))
                     .opacity(stars == 0 && mode == .wild ? 0.6 : 1)
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
-                        Text(spec.name).font(.headline)
+                        Text(spec.name).font(.game(16))
                         Text(spec.role)
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.game(10, .bold))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Capsule().fill(Color.secondary.opacity(0.15)))
+                            .background(Capsule().fill(Palette.parchmentDeep))
+                            .overlay(Capsule().strokeBorder(Palette.woodDark.opacity(0.35), lineWidth: 1))
                     }
                     if stars > 0 { StarsView(stars: stars) }
                     ForEach(Array(spec.effects.enumerated()), id: \.offset) { item in
                         Text(item.element.text(multiplier: multiplier))
-                            .font(.caption)
+                            .font(.game(12, .semibold))
                             .foregroundStyle(.secondary)
                     }
                     if let location = spec.wildLocation {
                         Text(tr("animals.where", location.spec.emoji, location.spec.name))
-                            .font(.caption.bold())
-                            .foregroundStyle(game.isUnlocked(location) ? Color.primary : Color.orange)
+                            .font(.game(12, .semibold).bold())
+                            .foregroundStyle(game.isUnlocked(location) ? Palette.ink : ButtonTone.orange.lip)
                     }
                 }
                 Spacer(minLength: 0)
@@ -158,18 +159,15 @@ struct AnimalRow: View {
                 withAnimation(.spring(duration: 0.3)) { _ = game.toggleActive(id) }
             } label: {
                 Text(active ? tr("animals.remove") : (full ? tr("animals.full") : tr("animals.take")))
-                    .font(.subheadline.bold())
-                    .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
-            .tint(active ? .red : .green)
+            .buttonStyle(.game(active ? .red : .green, small: true, wide: true))
             .disabled(!active && full)
         case .shop:
             if let level = spec.shopLevel {
                 if stars >= AnimalSpec.maxStars {
                     Label(tr("animals.maxStars"), systemImage: "checkmark.seal.fill")
-                        .font(.subheadline.bold())
-                        .foregroundStyle(.green)
+                        .font(.game(14))
+                        .foregroundStyle(Palette.good)
                 } else if let price = game.shopPrice(id) {
                     let levelOK = game.save.level >= level
                     Button {
@@ -182,24 +180,23 @@ struct AnimalRow: View {
                         HStack {
                             Text(!levelOK ? tr("common.needLevel", level) : (stars > 0 ? tr("animals.moreStar") : tr("common.buy")))
                             Spacer()
-                            Text("🪙 \(Fmt.n(price))").monospacedDigit()
+                            CoinIcon(size: 18)
+                            Text(Fmt.n(price)).monospacedDigit()
                         }
-                        .font(.subheadline.bold())
-                        .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.glassProminent)
+                    .buttonStyle(.game(.green, wide: true))
                     .disabled(!levelOK || game.save.coins < price)
                 }
             }
         case .wild:
             if stars >= AnimalSpec.maxStars {
                 Label(tr("animals.maxStars"), systemImage: "checkmark.seal.fill")
-                    .font(.subheadline.bold())
-                    .foregroundStyle(.green)
+                    .font(.game(14))
+                    .foregroundStyle(Palette.good)
             } else if let cost = game.tameCost(id) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(stars > 0 ? tr("animals.nextStarCost") : tr("animals.tameCost"))
-                        .font(.caption)
+                        .font(.game(12, .semibold))
                         .foregroundStyle(.secondary)
                     CostView(cost: cost)
                 }

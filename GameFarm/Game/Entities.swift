@@ -320,6 +320,13 @@ final class CompanionNode: SKNode {
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    var canSwim: Bool { pixel?.canSwim ?? false }
+
+    func setSwimming(_ on: Bool) {
+        guard let pixel, pixel.swimming != on else { return }
+        pixel.swimming = on
+    }
+
     /// Плавно двигается к точке с разгоном и подпрыгивает при ходьбе.
     func move(toward point: CGPoint, dt: Double, speed: Double, stopAt: CGFloat = 8) {
         let dx = point.x - position.x
@@ -337,7 +344,9 @@ final class CompanionNode: SKNode {
         position.y += velocity.dy * CGFloat(dt)
         let moving = hypot(velocity.dx, velocity.dy)
         let flies = pixel?.sheet.flies ?? false
-        if flies {
+        if pixel?.swimming == true {
+            body.position.y = 0
+        } else if flies {
             phase += dt * 4
             body.position.y = 10 + CGFloat(sin(phase)) * 5
         } else if moving > 12 {
@@ -414,6 +423,13 @@ final class WildNode: SKNode {
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    var canSwim: Bool { pixel?.canSwim ?? false }
+
+    func setSwimming(_ on: Bool) {
+        guard let pixel, pixel.swimming != on else { return }
+        pixel.swimming = on
+    }
 
     func wander(_ dt: Double) {
         life -= dt

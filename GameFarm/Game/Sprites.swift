@@ -13,6 +13,10 @@ enum Sprites {
         let anchor: [Double]
         let frame: Double?
         let rows: [Int]?
+        /// Место в общем атласе: x, y, ширина, высота в пикселях (от левого верхнего угла).
+        let atlas: [Double]?
+        /// Сколько непустых кадров в каждом ряду листа зверя.
+        let counts: [Int]?
     }
 
     private static let manifest: [String: Info] = {
@@ -31,6 +35,12 @@ enum Sprites {
 
     static func has(_ name: String) -> Bool { manifest[name] != nil }
 
+    /// Непустых кадров в ряду листа (если известно).
+    static func frameCount(_ name: String, row: Int) -> Int? {
+        guard let counts = manifest[name]?.counts, row >= 0, row < counts.count else { return nil }
+        return counts[row]
+    }
+
     static func image(_ name: String) -> UIImage? {
         if let cached = images[name] { return cached }
         guard let url = Bundle.main.url(forResource: "sp_\(name)", withExtension: "png"),
@@ -39,8 +49,25 @@ enum Sprites {
         return img
     }
 
+    /// Общий атлас одиночных спрайтов: всё из него рисуется одной пачкой.
+    private static let atlasTexture: SKTexture? = {
+        guard let img = image("atlas") else { return nil }
+        let tex = SKTexture(image: img)
+        tex.filteringMode = .nearest
+        return tex
+    }()
+
     static func texture(_ name: String) -> SKTexture? {
         if let cached = textures[name] { return cached }
+        if let r = manifest[name]?.atlas, r.count == 4, let atlas = atlasTexture {
+            let size = atlas.size()
+            let rect = CGRect(x: r[0] / size.width, y: 1 - (r[1] + r[3]) / size.height,
+                              width: r[2] / size.width, height: r[3] / size.height)
+            let tex = SKTexture(rect: rect, in: atlas)
+            tex.filteringMode = .nearest
+            textures[name] = tex
+            return tex
+        }
         guard let img = image(name) else { return nil }
         let tex = SKTexture(image: img)
         tex.filteringMode = .nearest
@@ -181,7 +208,7 @@ enum Sprites {
     /// Первый кадр зверя для интерфейса.
     static func animalImage(_ id: AnimalID) -> UIImage? {
         guard available, let sheet = AnimalSheet.of(id) else { return nil }
-        let row = sheet.idle.last ?? (0, 1)
+        let row = sheet.idle.first ?? (0, 1)
         let rect = CGRect(x: 0, y: CGFloat(row.0) * sheet.cell + sheet.rowOffset, width: sheet.cell, height: sheet.cell)
         return crisp(sheet.name, crop: sheet.iconRect ?? rect, scale: sheet.cell <= 16 ? 6 : 4)
     }
@@ -208,6 +235,9 @@ struct AnimalSheet {
     var iconRect: CGRect? = nil
     /// Летает: качается вверх-вниз.
     var flies = false
+    /// Плавает: ряды "стоит в воде" и "плывёт".
+    var swimIdle: (Int, Int)? = nil
+    var swim: (Int, Int)? = nil
 
     static func of(_ id: AnimalID) -> AnimalSheet? {
         let four = { (name: String) in
@@ -215,6 +245,9 @@ struct AnimalSheet {
         }
         let bird = { (name: String) in
             AnimalSheet(name: name, cell: 32, idle: [(0, 2)], walk: [(1, 6)], fps: 10)
+        }
+        let swimmer = { (name: String) in
+            AnimalSheet(name: name, cell: 32, idle: [(0, 2)], walk: [(1, 6)], fps: 10, swimIdle: (7, 2), swim: (8, 4))
         }
         let sheet: AnimalSheet
         switch id {
@@ -225,11 +258,11 @@ struct AnimalSheet {
         case .unicorn: sheet = four("an_unicorn")
         case .chicken: sheet = bird("an_chicken")
         case .rooster: sheet = bird("an_rooster")
-        case .duck: sheet = bird("an_duck")
-        case .duckHat: sheet = bird("an_duckHat")
+        case .duck: sheet = swimmer("an_duck")
+        case .duckHat: sheet = swimmer("an_duckHat")
         case .goose: sheet = bird("an_goose")
         case .goldenGoose: sheet = bird("an_goldenGoose")
-        case .swan: sheet = bird("an_swan")
+        case .swan: sheet = swimmer("an_swan")
         case .frog: sheet = AnimalSheet(name: "an_frog", cell: 32, idle: [(0, 2)], walk: [(1, 8)], facesLeft: false, fps: 12)
         case .mouse: sheet = AnimalSheet(name: "an_mouse", cell: 32, idle: [(0, 6)], walk: [(1, 6)], fps: 12)
         case .bee: sheet = AnimalSheet(name: "an_bee", cell: 16, idle: [(0, 4)], walk: [(0, 4)], fps: 14, flies: true)
@@ -346,9 +379,15 @@ final class PixelAnimal {
     let sheet: AnimalSheet
     private var idle: [[SKTexture]] = []
     private var walk: [[SKTexture]] = []
+    private var swimIdle: [SKTexture] = []
+    private var swimMove: [SKTexture] = []
     private var clock = Double.random(in: 0...2)
     private var facing = 0
     private var right = false
+    /// Зверь сейчас в воде (только для тех, кто умеет плавать).
+    var swimming = false
+
+    var canSwim: Bool { !swimMove.isEmpty }
 
     init?(_ id: AnimalID) {
         guard let sheet = AnimalSheet.of(id) else { return nil }
@@ -357,12 +396,18 @@ final class PixelAnimal {
         guard let tex = Sprites.texture(sheet.name) else { return nil }
         let cols = Int(tex.size().width / sheet.cell)
         func row(_ r: (Int, Int)) -> [SKTexture] {
+            // Пустые кадры в конце ряда не берём: иначе зверь мигает.
+            let n = min(r.1, Sprites.frameCount(sheet.name, row: r.0) ?? r.1)
             let start = r.0 * cols
-            guard start + r.1 <= all.count else { return [] }
-            return Array(all[start..<(start + r.1)])
+            guard n > 0, start + n <= all.count else { return [] }
+            return Array(all[start..<(start + n)])
         }
         idle = sheet.idle.map(row).filter { !$0.isEmpty }
         walk = sheet.walk.map(row).filter { !$0.isEmpty }
+        if let r = sheet.swimIdle { swimIdle = row(r) }
+        if let r = sheet.swim { swimMove = row(r) }
+        if swimIdle.isEmpty { swimMove = [] }
+        if walk.isEmpty { walk = idle }
         guard let first = idle.first?.first else { return nil }
         let scale: CGFloat = sheet.cell <= 8 ? Sprites.scale * 2 : Sprites.scale
         node = SKSpriteNode(texture: first, size: CGSize(width: sheet.cell * scale, height: sheet.cell * scale))
@@ -373,7 +418,7 @@ final class PixelAnimal {
     func update(velocity: CGVector, dt: Double) {
         let moving = hypot(velocity.dx, velocity.dy) > 12
         if moving {
-            if idle.count >= 3 {
+            if idle.count >= 3 && !swimming {
                 if abs(velocity.dx) > abs(velocity.dy) * 0.8 {
                     facing = 0
                 } else {
@@ -382,8 +427,14 @@ final class PixelAnimal {
             }
             if abs(velocity.dx) > 6 { right = velocity.dx > 0 }
         }
-        let set = moving ? walk : idle
-        let frames = set[min(facing, set.count - 1)]
+        let frames: [SKTexture]
+        if swimming && canSwim {
+            facing = 0
+            frames = moving ? swimMove : swimIdle
+        } else {
+            let set = moving ? walk : idle
+            frames = set[min(facing, set.count - 1)]
+        }
         clock += dt * (moving ? sheet.fps : 2.5)
         node.texture = frames[Int(clock) % frames.count]
         applyFlip()

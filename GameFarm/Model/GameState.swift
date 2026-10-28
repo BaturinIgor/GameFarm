@@ -22,6 +22,8 @@ final class GameState {
     private(set) var gatePrompt: String?
     var expeditionReport: ExpeditionReport?
     var gardenChestFound: Treasure?
+    /// Открыта крупная карта текущей локации (по нажатию на мини-карту).
+    var bigMap = false
     /// Локации, куда можно дойти через открытые проходы.
     private(set) var reachable: Set<LocationID> = [.meadow]
     /// Через какие ворота персонаж пришёл в локацию (сцена ставит его к ним).

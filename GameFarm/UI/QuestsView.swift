@@ -10,32 +10,26 @@ struct QuestsView: View {
     @State private var tab: Tab = .quests
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 14) {
-                    Picker(tr("common.section"), selection: $tab) {
-                        Text(tr("hud.quests")).tag(Tab.quests)
-                        Text(tr("quests.achievements")).tag(Tab.achievements)
-                    }
-                    .pickerStyle(.segmented)
+        ScrollView {
+            VStack(spacing: 14) {
+                GameTabs(selection: $tab, items: [(Tab.quests, tr("hud.quests")), (Tab.achievements, tr("quests.achievements"))])
 
-                    switch tab {
-                    case .quests: questsList
-                    case .achievements: achievementsList
-                    }
+                switch tab {
+                case .quests: questsList
+                case .achievements: achievementsList
                 }
-                .padding(16)
-                .animation(.spring(duration: 0.35), value: game.save.quests)
             }
-            .sheetChrome(tr("hud.quests"), coins: game.save.coins)
+            .padding(16)
+            .animation(.spring(duration: 0.35), value: game.save.quests)
         }
+        .sheetChrome(tr("hud.quests"), coins: game.save.coins)
     }
 
     private var questsList: some View {
         VStack(spacing: 12) {
             HStack {
                 Text(tr("quests.done", game.save.questsDone))
-                    .font(.subheadline.bold())
+                    .font(.game(14, .semibold).bold())
                 Spacer()
             }
             ForEach(game.save.quests) { quest in
@@ -44,7 +38,7 @@ struct QuestsView: View {
                                             removal: .move(edge: .leading).combined(with: .opacity)))
             }
             Text(tr("quests.hint"))
-                .font(.caption)
+                .font(.game(12, .semibold))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -58,10 +52,10 @@ struct QuestsView: View {
         return VStack(spacing: 10) {
             HStack {
                 Text(tr("achievements.count", done.count, all.count))
-                    .font(.subheadline.bold())
+                    .font(.game(14, .semibold).bold())
                 Spacer()
                 Text(tr("achievements.points", game.save.bonusTalentPoints))
-                    .font(.caption.bold())
+                    .font(.game(12, .semibold).bold())
                     .foregroundStyle(.secondary)
             }
             ForEach(ready) { AchievementRow(achievement: $0) }
@@ -80,8 +74,10 @@ struct QuestCard: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
                 ZStack {
-                    Circle()
-                        .fill(done ? Color.green.opacity(0.22) : Color.orange.opacity(0.16))
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(done ? Color(hex: 0xDDEFC8) : Color(hex: 0xFBE3C2))
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(Palette.outline.opacity(0.7), lineWidth: 2)
                     if quest.type == .gather, let kind = quest.kind {
                         ResourceIcon(kind: kind, size: 30)
                     } else {
@@ -91,54 +87,34 @@ struct QuestCard: View {
                 .frame(width: 52, height: 52)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(quest.title)
-                        .font(.headline)
+                        .font(.game(16))
                         .fixedSize(horizontal: false, vertical: true)
                     HStack(spacing: 10) {
-                        Label("\(Fmt.n(quest.coins))", systemImage: "circle.fill")
-                            .labelStyle(RewardLabelStyle(icon: "🪙"))
-                        Label("\(Fmt.n(quest.xp))", systemImage: "star.fill")
-                            .labelStyle(RewardLabelStyle(icon: "✨"))
+                        RewardTag(icon: AnyView(CoinIcon(size: 15)), text: Fmt.n(quest.coins))
+                        RewardTag(icon: AnyView(Text("✨").font(.system(size: 13))), text: Fmt.n(quest.xp))
                     }
                 }
                 Spacer(minLength: 0)
             }
-            VStack(alignment: .leading, spacing: 4) {
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Color.secondary.opacity(0.15))
-                        Capsule()
-                            .fill(LinearGradient(colors: done ? [.green, .mint] : [.orange, .yellow],
-                                                 startPoint: .leading, endPoint: .trailing))
-                            .frame(width: max(8, geo.size.width * quest.fraction))
-                            .animation(.easeOut(duration: 0.4), value: quest.fraction)
-                    }
-                }
-                .frame(height: 9)
-                Text("\(Fmt.n(quest.progress)) / \(Fmt.n(quest.target))")
-                    .font(.caption.bold())
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-            }
+            GameBar(value: quest.fraction, tone: done ? .green : .orange, height: 16,
+                    label: "\(Fmt.n(quest.progress)) / \(Fmt.n(quest.target))")
+                .animation(.easeOut(duration: 0.4), value: quest.fraction)
             if done {
                 Button {
                     withAnimation(.spring(duration: 0.4)) { game.claimQuest(quest.id) }
                     UINotificationFeedbackGenerator().notificationOccurred(.success)
                 } label: {
-                    Text(tr("quests.claim")).font(.headline).frame(maxWidth: .infinity)
+                    Text(tr("quests.claim"))
                 }
-                .buttonStyle(.glassProminent)
-                .tint(.green)
-                .controlSize(.large)
+                .buttonStyle(.game(.green, wide: true))
             } else {
                 HStack(spacing: 8) {
                     Button {
                         withAnimation(.spring(duration: 0.4)) { game.rerollQuest(quest.id) }
                     } label: {
                         Label(tr("quests.reroll", Fmt.n(game.rerollCost)), systemImage: "arrow.triangle.2.circlepath")
-                            .font(.footnote.bold())
-                            .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.game(.wood, small: true, wide: true))
                     .disabled(game.save.coins < game.rerollCost)
                     Button {
                         let id = quest.id
@@ -147,34 +123,33 @@ struct QuestCard: View {
                         }
                     } label: {
                         Label(tr("quests.rerollFree"), systemImage: game.hasPro ? "crown.fill" : "play.rectangle.fill")
-                            .font(.footnote.bold())
-                            .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered)
-                    .tint(.green)
+                    .buttonStyle(.game(.blue, small: true, wide: true))
                 }
             }
         }
         .padding(14)
         .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Palette.parchmentLight)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .strokeBorder(done ? Color.green.opacity(0.6) : Color.clear, lineWidth: 2)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(done ? ButtonTone.green.base : Palette.woodDark.opacity(0.45), lineWidth: done ? 2.5 : 1.5)
         )
+        .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Palette.woodDark.opacity(0.25)).offset(y: 3))
     }
 }
 
-struct RewardLabelStyle: LabelStyle {
-    let icon: String
+struct RewardTag: View {
+    let icon: AnyView
+    let text: String
 
-    func makeBody(configuration: Configuration) -> some View {
+    var body: some View {
         HStack(spacing: 3) {
-            Text(icon).font(.system(size: 13))
-            configuration.title
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+            icon
+            Text(text)
+                .font(.game(13, .bold))
                 .monospacedDigit()
         }
     }
@@ -193,53 +168,49 @@ struct AchievementRow: View {
             Text(achievement.icon)
                 .font(.system(size: 28))
                 .frame(width: 48, height: 48)
-                .background(Circle().fill(ready ? Color.yellow.opacity(0.3) : Color.secondary.opacity(0.12)))
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(ready ? Palette.gold.opacity(0.5) : Palette.parchmentDeep.opacity(0.7)))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Palette.outline.opacity(ready ? 0.8 : 0.3), lineWidth: 2))
                 .grayscale(claimed || ready ? 0 : 0.8)
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(achievement.title).font(.subheadline.bold())
+                    Text(achievement.title).font(.game(14, .semibold).bold())
                     Spacer()
                     HStack(spacing: 6) {
-                        Text("🪙 \(Fmt.n(achievement.coins))")
+                        RewardTag(icon: AnyView(CoinIcon(size: 14)), text: Fmt.n(achievement.coins))
                         if achievement.talentPoints > 0 { Text("🌟 +\(achievement.talentPoints)") }
                     }
-                    .font(.caption.bold())
+                    .font(.game(12, .semibold).bold())
                     .foregroundStyle(.secondary)
                 }
                 Text(achievement.detail)
-                    .font(.caption)
+                    .font(.game(12, .semibold))
                     .foregroundStyle(.secondary)
                 if claimed {
                     Label(tr("achievements.earned"), systemImage: "checkmark.seal.fill")
-                        .font(.caption.bold())
-                        .foregroundStyle(.green)
+                        .font(.game(12))
+                        .foregroundStyle(Palette.good)
                 } else if ready {
                     Button {
                         withAnimation(.spring(duration: 0.35)) { game.claim(achievement) }
                         UINotificationFeedbackGenerator().notificationOccurred(.success)
                     } label: {
-                        Text(tr("achievements.claim")).font(.subheadline.bold()).frame(maxWidth: .infinity)
+                        Text(tr("achievements.claim"))
                     }
-                    .buttonStyle(.glassProminent)
-                    .tint(.orange)
+                    .buttonStyle(.game(.orange, small: true, wide: true))
                 } else {
-                    ProgressView(value: fraction)
-                        .tint(.orange)
-                    Text("\(Fmt.n(min(progress, achievement.target))) / \(Fmt.n(achievement.target))")
-                        .font(.caption2.bold())
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
+                    GameBar(value: fraction, tone: .orange, height: 14,
+                            label: "\(Fmt.n(min(progress, achievement.target))) / \(Fmt.n(achievement.target))")
                 }
             }
         }
         .padding(12)
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Palette.parchmentLight)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(ready ? Color.orange.opacity(0.7) : Color.clear, lineWidth: 2)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(ready ? ButtonTone.orange.base : Palette.woodDark.opacity(0.4), lineWidth: ready ? 2.5 : 1.5)
         )
         .opacity(claimed ? 0.7 : 1)
     }

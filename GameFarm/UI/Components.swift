@@ -26,7 +26,7 @@ struct CostView: View {
     var body: some View {
         FlowLayout(spacing: 6) {
             if cost.coins > 0 {
-                chip(icon: AnyView(Text("🪙").font(.system(size: 15))),
+                chip(icon: AnyView(CoinIcon(size: 16)),
                      text: Fmt.n(cost.coins), ok: game.save.coins >= cost.coins)
             }
             ForEach(cost.items) { item in
@@ -42,15 +42,16 @@ struct CostView: View {
         HStack(spacing: 4) {
             icon
             Text(text)
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .font(.game(13, .bold))
                 .monospacedDigit()
-                .foregroundStyle(ok ? Color.primary : Color.red)
+                .foregroundStyle(ok ? Palette.good : Palette.bad)
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 5)
+        .padding(.vertical, 4)
         .background(
-            Capsule().fill(ok ? Color.green.opacity(0.14) : Color.red.opacity(0.12))
+            Capsule().fill(ok ? Color(hex: 0xDDEFC8) : Color(hex: 0xF6D3C8))
         )
+        .overlay(Capsule().strokeBorder((ok ? Palette.good : Palette.bad).opacity(0.55), lineWidth: 1.5))
     }
 }
 
@@ -102,9 +103,10 @@ struct StarsView: View {
     var body: some View {
         HStack(spacing: 1) {
             ForEach(0..<AnimalSpec.maxStars, id: \.self) { i in
-                Image(systemName: i < stars ? "star.fill" : "star")
-                    .font(.system(size: size, weight: .bold))
-                    .foregroundStyle(i < stars ? Color.yellow : Color.secondary.opacity(0.5))
+                Image(systemName: "star.fill")
+                    .font(.system(size: size, weight: .black))
+                    .foregroundStyle(i < stars ? Palette.gold : Palette.inkSoft.opacity(0.3))
+                    .outlined(i < stars ? Palette.goldDark : .clear, width: 0.8)
             }
         }
     }
@@ -118,34 +120,49 @@ struct NodeChip: View {
         HStack(spacing: 4) {
             ResourceIcon(kind: type.spec.mainResource, size: 16)
             Text(type.spec.name)
-                .font(.caption.weight(.medium))
+                .font(.game(12, .bold))
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(Capsule().fill(Color.secondary.opacity(0.12)))
+        .background(Capsule().fill(Palette.parchmentDeep))
+        .overlay(Capsule().strokeBorder(Palette.woodDark.opacity(0.35), lineWidth: 1))
         .opacity(dimmed ? 0.5 : 1)
     }
 }
 
-/// Карточка в списках меню.
+/// Карточка в списках меню: светлый пергамент с тонкой рамкой.
 struct Card<Content: View>: View {
     var tint: Color = .clear
     @ViewBuilder var content: Content
 
     var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
         VStack(alignment: .leading, spacing: 10) {
             content
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemGroupedBackground))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .strokeBorder(tint.opacity(0.35), lineWidth: tint == .clear ? 0 : 1.5)
-        )
+        .background(shape.fill(Palette.parchmentLight))
+        .overlay(shape.strokeBorder(tint == .clear ? Palette.woodDark.opacity(0.45) : tint, lineWidth: tint == .clear ? 1.5 : 2.5))
+        .background(shape.fill(Palette.woodDark.opacity(0.25)).offset(y: 3))
+    }
+}
+
+/// Заголовок раздела внутри окна.
+struct SectionTitle: View {
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Rectangle().fill(Palette.woodDark.opacity(0.35)).frame(height: 2)
+            Text(text)
+                .font(.game(14))
+                .foregroundStyle(Palette.inkSoft)
+                .textCase(.uppercase)
+                .lineLimit(1)
+                .fixedSize()
+            Rectangle().fill(Palette.woodDark.opacity(0.35)).frame(height: 2)
+        }
     }
 }
 
@@ -153,46 +170,34 @@ struct CoinsBadge: View {
     let coins: Int
 
     var body: some View {
-        HStack(spacing: 4) {
-            Text("🪙")
+        HStack(spacing: 5) {
+            CoinIcon(size: 18)
             Text(Fmt.n(coins))
-                .font(.system(.subheadline, design: .rounded).weight(.bold))
+                .font(.game(15))
+                .foregroundStyle(.white)
+                .outlined(Palette.outline, width: 1)
                 .monospacedDigit()
                 .lineLimit(1)
                 .fixedSize()
                 .contentTransition(.numericText())
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(Capsule().fill(Color.yellow.opacity(0.18)))
-    }
-}
-
-struct SheetCloseButton: View {
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        Button {
-            dismiss()
-        } label: {
-            Image(systemName: "xmark")
-                .font(.system(size: 15, weight: .bold))
-        }
-        .accessibilityLabel(tr("common.close"))
+        .padding(.leading, 6)
+        .padding(.trailing, 10)
+        .padding(.vertical, 5)
+        .background(Capsule().fill(Palette.woodDark))
+        .overlay(Capsule().strokeBorder(Palette.outline, lineWidth: 2))
     }
 }
 
 extension View {
+    /// Оформление окна меню: деревянная шапка и пергамент вместо системной панели.
     func sheetChrome(_ title: String, coins: Int) -> some View {
         self
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                // fixedSize: иначе панель iOS 26 сжимает бейдж и обрезает сумму.
-                ToolbarItem(placement: .topBarLeading) { CoinsBadge(coins: coins).fixedSize() }
-                    .sharedBackgroundVisibility(.hidden)
-                ToolbarItem(placement: .topBarTrailing) { SheetCloseButton() }
+            .toolbar(.hidden, for: .navigationBar)
+            .scrollContentBackground(.hidden)
+            .background(Palette.parchment)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                WindowHeader(title: title, coins: coins)
             }
-            .background(Color(uiColor: .systemGroupedBackground))
     }
 }

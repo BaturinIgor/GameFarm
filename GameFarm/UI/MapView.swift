@@ -8,23 +8,21 @@ struct MapView: View {
     @State private var selected: LocationID?
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 16) {
-                    WorldMapGraph(selected: $selected)
-                    if let id = selected ?? Optional(game.save.current), id.spec.kind == .world {
-                        LocationCard(id: id, onTravel: onTravel)
-                            .id(id)
-                            .transition(.opacity)
-                    }
-                    ExpeditionsCard(onTravel: onTravel)
-                    GardenMapCard(onTravel: onTravel, onShop: onShop)
+        ScrollView {
+            VStack(spacing: 16) {
+                WorldMapGraph(selected: $selected)
+                if let id = selected ?? Optional(game.save.current), id.spec.kind == .world {
+                    LocationCard(id: id, onTravel: onTravel)
+                        .id(id)
+                        .transition(.opacity)
                 }
-                .padding(16)
-                .animation(.spring(duration: 0.3), value: selected)
+                ExpeditionsCard(onTravel: onTravel)
+                GardenMapCard(onTravel: onTravel, onShop: onShop)
             }
-            .sheetChrome(tr("hud.map"), coins: game.save.coins)
+            .padding(16)
+            .animation(.spring(duration: 0.3), value: selected)
         }
+        .sheetChrome(tr("hud.map"), coins: game.save.coins)
     }
 }
 
@@ -54,14 +52,22 @@ struct WorldMapGraph: View {
                         path.move(to: center(gate.a, in: size))
                         path.addLine(to: center(gate.b, in: size))
                     }
-                    .stroke(open ? Color.green.opacity(0.75) : Color.secondary.opacity(known ? 0.55 : 0.2),
-                            style: StrokeStyle(lineWidth: open ? 6 : 3, lineCap: .round, dash: open ? [] : [6, 7]))
+                    .stroke(open ? Palette.outline : Palette.woodDark.opacity(known ? 0.5 : 0.18),
+                            style: StrokeStyle(lineWidth: open ? 9 : 3, lineCap: .round, dash: open ? [] : [5, 7]))
+                    if open {
+                        Path { path in
+                            path.move(to: center(gate.a, in: size))
+                            path.addLine(to: center(gate.b, in: size))
+                        }
+                        .stroke(Color(hex: 0xE2B77A), style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                    }
                     if !open && known {
                         let a = center(gate.a, in: size), b = center(gate.b, in: size)
                         Text(game.canOpenGate(gate) ? "🔓" : "🔒")
-                            .font(.system(size: 13))
-                            .padding(4)
-                            .background(Circle().fill(Color(uiColor: .systemBackground)))
+                            .font(.system(size: 12))
+                            .frame(width: 24, height: 24)
+                            .background(Circle().fill(game.canOpenGate(gate) ? Palette.gold : Palette.parchmentLight))
+                            .overlay(Circle().strokeBorder(Palette.outline, lineWidth: 1.5))
                             .position(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
                     }
                 }
@@ -71,13 +77,19 @@ struct WorldMapGraph: View {
                 }
             }
         }
-        .frame(height: 420)
-        .padding(.vertical, 6)
+        .frame(height: 440)
+        .padding(.vertical, 8)
         .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(LinearGradient(colors: [Color.green.opacity(0.16), Color.blue.opacity(0.12), Color.purple.opacity(0.12)],
-                                     startPoint: .bottom, endPoint: .top))
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Palette.parchmentDeep)
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Palette.woodDark.opacity(0.35), style: StrokeStyle(lineWidth: 1.5, dash: [6, 5]))
+                .padding(6)
+        )
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Palette.outline, lineWidth: 2))
+        .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Palette.woodDark.opacity(0.3)).offset(y: 3))
     }
 
     private func node(_ id: LocationID) -> some View {
@@ -89,35 +101,62 @@ struct WorldMapGraph: View {
             withAnimation(.spring(duration: 0.3)) { selected = id }
             SoundFX.play(.tap)
         } label: {
-            VStack(spacing: 2) {
+            VStack(spacing: 3) {
                 ZStack {
-                    Circle()
-                        .fill(Color(uiColor: spec.ground).gradient)
-                        .overlay(Circle().strokeBorder(here ? Color.yellow : (isSelected ? Color.white : Color.black.opacity(0.25)),
-                                                       lineWidth: here || isSelected ? 3 : 1.5))
-                        .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
-                    Text(spec.emoji).font(.system(size: 28))
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Palette.outline.opacity(0.45))
+                        .offset(y: 3)
+                    Image(uiImage: MiniMap.image(id, framed: false))
+                        .resizable()
+                        .interpolation(.medium)
+                        .scaledToFill()
+                        .frame(width: 58, height: 58)
                         .saturation(unlocked ? 1 : 0)
-                        .opacity(unlocked ? 1 : 0.55)
+                        .opacity(unlocked ? 1 : 0.6)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    Text(spec.emoji).font(.system(size: 24))
+                        .saturation(unlocked ? 1 : 0)
+                        .shadow(color: Palette.outline, radius: 0, x: 1, y: 1)
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(here ? Palette.gold : (isSelected ? Color.white : Palette.outline),
+                                      lineWidth: here || isSelected ? 3.5 : 2)
+                    if here || isSelected {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(Palette.outline, lineWidth: 1.5)
+                            .padding(-2)
+                    }
                     if !unlocked {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.game(11, .bold))
                             .foregroundStyle(.white)
-                            .padding(5)
-                            .background(Circle().fill(Color.black.opacity(0.55)))
-                            .offset(x: 20, y: 20)
+                            .frame(width: 22, height: 22)
+                            .background(Circle().fill(Palette.woodDark))
+                            .overlay(Circle().strokeBorder(Palette.outline, lineWidth: 1.5))
+                            .offset(x: 24, y: 24)
+                    }
+                    if here {
+                        SkinIcon(skin: game.currentSkin, size: 24)
+                            .frame(width: 30, height: 30)
+                            .background(Circle().fill(Palette.parchmentLight))
+                            .clipShape(Circle())
+                            .overlay(Circle().strokeBorder(Palette.outline, lineWidth: 2))
+                            .offset(x: 24, y: -26)
                     }
                 }
-                .frame(width: 60, height: 60)
+                .frame(width: 58, height: 58)
                 Text(spec.name)
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.game(11))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
-                    .frame(width: 96)
-                    .foregroundStyle(unlocked ? Color.primary : Color.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 1)
+                    .background(Capsule().fill(unlocked ? Palette.parchmentLight : Palette.parchmentDeep))
+                    .overlay(Capsule().strokeBorder(Palette.woodDark.opacity(0.5), lineWidth: 1))
+                    .frame(maxWidth: 104)
+                    .foregroundStyle(unlocked ? Palette.ink : Palette.inkSoft)
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.press)
     }
 }
 
@@ -137,11 +176,11 @@ struct LocationCard: View {
                 Text(spec.emoji).font(.system(size: 40))
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
-                        Text(spec.name).font(.headline)
-                        if !unlocked { Image(systemName: "lock.fill").font(.system(size: 12, weight: .bold)) }
+                        Text(spec.name).font(.game(16))
+                        if !unlocked { Image(systemName: "lock.fill").font(.game(12, .bold)) }
                     }
                     Text(spec.blurb)
-                        .font(.caption)
+                        .font(.game(12, .semibold))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -151,29 +190,30 @@ struct LocationCard: View {
                 ForEach(spec.resources) { kind in
                     ResourceIcon(kind: kind, size: 22)
                         .padding(4)
-                        .background(Circle().fill(Color.secondary.opacity(0.12)))
+                        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Palette.parchmentDeep.opacity(0.7)))
+                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Palette.woodDark.opacity(0.3), lineWidth: 1))
                 }
                 ForEach(spec.wild) { animal in
                     AnimalIcon(id: animal, size: 22)
                         .padding(4)
-                        .background(Circle().fill(Color.pink.opacity(0.14)))
+                        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color(hex: 0xF6D9E0)))
+                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Palette.woodDark.opacity(0.3), lineWidth: 1))
                         .opacity(game.stars(animal) > 0 ? 1 : 0.55)
                 }
             }
 
             if here {
                 Label(tr("map.here"), systemImage: "mappin.circle.fill")
-                    .font(.subheadline.bold())
-                    .foregroundStyle(.green)
+                    .font(.game(14))
+                    .foregroundStyle(Palette.good)
             } else if unlocked {
                 Button {
                     game.travel(to: id)
                     onTravel()
                 } label: {
-                    Text(tr("map.go")).font(.headline).frame(maxWidth: .infinity)
+                    Text(tr("map.go"))
                 }
-                .buttonStyle(.glassProminent)
-                .controlSize(.large)
+                .buttonStyle(.game(.green, wide: true))
                 .disabled(game.save.expedition != nil)
             }
 
@@ -184,13 +224,10 @@ struct LocationCard: View {
             }
         }
         .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemGroupedBackground))
-        )
+        .listBox(radius: 18)
         .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .strokeBorder(here ? Color.green.opacity(0.6) : ground.opacity(0.6), lineWidth: here ? 2 : 1.5)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(here ? ButtonTone.green.base : ground, lineWidth: 2.5)
         )
     }
 }
@@ -206,30 +243,24 @@ struct GateRow: View {
         let open = game.isGateOpen(gate.id)
         let known = game.reachable.contains(gate.a) || game.reachable.contains(gate.b)
         VStack(alignment: .leading, spacing: 8) {
-            Divider()
+            PaperDivider()
             HStack(spacing: 6) {
                 Text(open ? "🚪" : "🔒")
-                Text(tr("gate.to", other.spec.emoji + " " + other.spec.name)).font(.subheadline.bold())
+                Text(tr("gate.to", other.spec.emoji + " " + other.spec.name)).font(.game(14))
                 Spacer()
                 if open {
-                    Text(tr("gate.open.done")).font(.caption.bold()).foregroundStyle(.green)
+                    Text(tr("gate.open.done")).font(.game(12)).foregroundStyle(Palette.good)
                 } else {
-                    let levelOK = game.save.level >= gate.level
-                    Text(tr("common.lvl", gate.level))
-                        .font(.caption.bold())
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(Capsule().fill(levelOK ? Color.green.opacity(0.18) : Color.red.opacity(0.15)))
-                        .foregroundStyle(levelOK ? Color.primary : Color.red)
+                    LevelTag(level: gate.level, ok: game.save.level >= gate.level)
                 }
             }
             if !open && known {
                 if gate.group != nil {
                     let names = WorldGraph.bundle(gate).map { "\($0.a.spec.emoji)↔\($0.b.spec.emoji)" }.joined(separator: "  ")
-                    Text(tr("gate.bundle", names)).font(.caption).foregroundStyle(.secondary)
+                    Text(tr("gate.bundle", names)).font(.game(12, .semibold)).foregroundStyle(.secondary)
                 }
                 if game.reachable.contains(gate.a) && game.reachable.contains(gate.b) {
-                    Text(tr("gate.shortcut")).font(.caption).foregroundStyle(.secondary)
+                    Text(tr("gate.shortcut")).font(.game(12, .semibold)).foregroundStyle(.secondary)
                 }
                 CostView(cost: game.gateCost(gate))
                 Button {
@@ -240,13 +271,11 @@ struct GateRow: View {
                     }
                 } label: {
                     Text(game.save.level >= gate.level ? tr("gate.open") : tr("common.needLevel", gate.level))
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.glassProminent)
+                .buttonStyle(.game(.green, wide: true))
                 .disabled(!game.canOpenGate(gate))
             } else if !open {
-                Text(tr("gate.far")).font(.caption).foregroundStyle(.secondary)
+                Text(tr("gate.far")).font(.game(12, .semibold)).foregroundStyle(.secondary)
             }
         }
     }
@@ -258,33 +287,32 @@ struct ExpeditionsCard: View {
     let onTravel: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("🧭 " + tr("exp.title")).font(.title3.bold())
-                Spacer()
+        ShopCard(title: "🧭 " + tr("exp.title"), tone: .blue) {
+            HStack(alignment: .top) {
+                Text(tr("exp.subtitle", Int(Expedition.duration / 60)))
+                    .font(.game(12, .semibold))
+                    .foregroundStyle(.secondary)
+                Spacer(minLength: 8)
                 HStack(spacing: 4) {
                     TicketIcon(size: 20)
-                    Text("\(game.save.tickets)").font(.headline).monospacedDigit()
+                    Text("\(game.save.tickets)").font(.game(16)).monospacedDigit()
                 }
                 .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(Capsule().fill(Color.yellow.opacity(0.2)))
+                .padding(.vertical, 4)
+                .background(Capsule().fill(Palette.parchmentDeep))
+                .overlay(Capsule().strokeBorder(Palette.woodDark.opacity(0.5), lineWidth: 1.5))
             }
-            Text(tr("exp.subtitle", Int(Expedition.duration / 60)))
-                .font(.caption)
-                .foregroundStyle(.secondary)
             if game.freeTicketReady {
                 Button {
                     game.claimFreeTicket()
                 } label: {
-                    Label(tr("exp.freeTicket"), systemImage: "gift.fill").font(.subheadline.bold()).frame(maxWidth: .infinity)
+                    Label(tr("exp.freeTicket"), systemImage: "gift.fill")
                 }
-                .buttonStyle(.glassProminent)
-                .tint(.orange)
+                .buttonStyle(.game(.orange, wide: true))
             } else if let next = game.nextFreeTicket {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     Label(tr("exp.nextTicket", Countdown.text(next.timeIntervalSince(context.date))), systemImage: "clock")
-                        .font(.caption.bold())
+                        .font(.game(12, .semibold).bold())
                         .foregroundStyle(.secondary)
                 }
             }
@@ -292,8 +320,8 @@ struct ExpeditionsCard: View {
                 HStack(spacing: 12) {
                     Text(id.spec.emoji).font(.system(size: 34))
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(id.spec.name).font(.subheadline.bold())
-                        Text(Expedition.perk(id)).font(.caption).foregroundStyle(.secondary)
+                        Text(id.spec.name).font(.game(14, .semibold).bold())
+                        Text(Expedition.perk(id)).font(.game(12, .semibold)).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     Spacer(minLength: 0)
@@ -304,21 +332,15 @@ struct ExpeditionsCard: View {
                             Text(tr("exp.go"))
                             TicketIcon(size: 14)
                         }
-                        .font(.subheadline.bold())
                     }
-                    .buttonStyle(.glassProminent)
+                    .buttonStyle(.game(.green, small: true))
                     .disabled(game.save.tickets <= 0 || game.save.expedition != nil)
                 }
                 .padding(10)
-                .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.secondary.opacity(0.08)))
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.parchmentDeep.opacity(0.55)))
+                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Palette.woodDark.opacity(0.3), lineWidth: 1))
             }
         }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(LinearGradient(colors: [Color.yellow.opacity(0.18), Color.orange.opacity(0.1)],
-                                     startPoint: .topLeading, endPoint: .bottomTrailing))
-        )
     }
 }
 
@@ -330,52 +352,37 @@ struct GardenMapCard: View {
 
     var body: some View {
         let owned = game.owns(.garden)
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
-                Text("🏰").font(.system(size: 36))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(LocationID.garden.spec.name).font(.headline)
-                    Text(LocationID.garden.spec.blurb).font(.caption).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
+        ShopCard(title: "🏰 " + LocationID.garden.spec.name, tone: .gold) {
+            Text(LocationID.garden.spec.blurb).font(.game(12, .semibold)).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             if owned {
                 if game.gardenChestReady {
-                    Label(tr("garden.chestReady"), systemImage: "crown.fill").font(.caption.bold()).foregroundStyle(.orange)
+                    Label(tr("garden.chestReady"), systemImage: "crown.fill").font(.game(12)).foregroundStyle(ButtonTone.orange.lip)
                 } else if let at = game.save.gardenChestAt {
                     TimelineView(.periodic(from: .now, by: 1)) { context in
                         Label(tr("garden.chestIn", Countdown.text(at.timeIntervalSince(context.date))), systemImage: "clock")
-                            .font(.caption.bold())
+                            .font(.game(12, .semibold).bold())
                             .foregroundStyle(.secondary)
                     }
                 }
                 if game.save.current == .garden {
-                    Label(tr("map.here"), systemImage: "mappin.circle.fill").font(.subheadline.bold()).foregroundStyle(.green)
+                    Label(tr("map.here"), systemImage: "mappin.circle.fill").font(.game(14)).foregroundStyle(Palette.good)
                 } else {
                     Button {
                         game.travel(to: .garden)
                         onTravel()
                     } label: {
-                        Text(tr("map.go")).font(.headline).frame(maxWidth: .infinity)
+                        Text(tr("map.go"))
                     }
-                    .buttonStyle(.glassProminent)
-                    .tint(.orange)
+                    .buttonStyle(.game(.orange, wide: true))
                     .disabled(game.save.expedition != nil)
                 }
             } else {
                 Button(action: onShop) {
-                    Text(tr("garden.more")).font(.headline).frame(maxWidth: .infinity)
+                    Text(tr("garden.more"))
                 }
-                .buttonStyle(.glassProminent)
-                .tint(.orange)
+                .buttonStyle(.game(.orange, wide: true))
             }
         }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(LinearGradient(colors: [Color.yellow.opacity(0.25), Color.green.opacity(0.15)],
-                                     startPoint: .topLeading, endPoint: .bottomTrailing))
-        )
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Color.orange.opacity(0.5), lineWidth: 1.5))
     }
 }

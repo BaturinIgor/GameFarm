@@ -591,6 +591,11 @@ icon("tool_axe", cell(TOOL_ICONS, 3, 0))
 icon("tool_pickaxe", cell(TOOL_ICONS, 2, 0))
 icon("tool_rod", cell(TOOL_ICONS, 7, 0))
 icon("tool_hoe", cell(TOOL_ICONS, 5, 0))
+icon("tool_sword", cell(TOOL_ICONS, 4, 0))
+icon("tool_hammer", cell(TOOL_ICONS, 8, 0))
+icon("tool_can", cell(TOOL_ICONS, 6, 0))
+icon("chest", load("Buildings", "House_Decor", "Chest_Anim.png").crop((0, 0, 16, 16)))
+icon("chest_gold", load("Buildings", "House_Decor", "Golden_Chest_Anim.png").crop((0, 0, 16, 16)))
 for name, im in handmade.icons().items():
     icon(name, im)
 
@@ -667,6 +672,53 @@ save("cloud_shadow2", crop_opaque(clouds.crop((64, 0, 128, 64))), anchor=[0.5, 0
 
 for name, im in handmade.sprites().items():
     save(name, im)
+
+# ================================================================ счётчики кадров зверей
+
+ANIMAL_CELL = {"an_bee": 16, "an_butterfly": 8}
+for name in [n for n in manifest if n.startswith("an_")]:
+    cell_size = ANIMAL_CELL.get(name, 32)
+    sheet = Image.open(os.path.join(OUT, f"sp_{name}.png")).convert("RGBA")
+    counts = []
+    for r in range(sheet.height // cell_size):
+        n = 0
+        for c in range(sheet.width // cell_size):
+            if sheet.crop((c * cell_size, r * cell_size, (c + 1) * cell_size, (r + 1) * cell_size)).getchannel("A").getbbox():
+                n = c + 1
+        counts.append(n)
+    manifest[name]["counts"] = counts
+
+# ================================================================ атлас
+# Одиночные спрайты (деревья, камни, декор, постройки) складываются в один лист:
+# так SpriteKit рисует их пачкой, а не по отдельному вызову на каждый спрайт.
+
+def pack_atlas(width=1024, pad=2):
+    names = [n for n, e in manifest.items()
+             if "frame" not in e and not n.startswith(("an_", "ic_", "pl")) and os.path.exists(os.path.join(OUT, f"sp_{n}.png"))]
+    ims = {n: Image.open(os.path.join(OUT, f"sp_{n}.png")).convert("RGBA") for n in names}
+    order = sorted(names, key=lambda n: (-ims[n].height, -ims[n].width, n))
+    x = y = pad
+    shelf = 0
+    rects = {}
+    for n in order:
+        w, h = ims[n].size
+        if x + w + pad > width:
+            x = pad
+            y += shelf + pad
+            shelf = 0
+        rects[n] = (x, y, w, h)
+        x += w + pad
+        shelf = max(shelf, h)
+    height = y + shelf + pad
+    sheet = Image.new("RGBA", (width, height))
+    for n, (x, y, w, h) in rects.items():
+        sheet.alpha_composite(ims[n], (x, y))
+        manifest[n]["atlas"] = [x, y, w, h]
+    sheet.save(os.path.join(OUT, "sp_atlas.png"))
+    print(f"atlas {width}x{height}, {len(rects)} sprites")
+
+
+pack_atlas()
 
 with open(os.path.join(OUT, "sp_manifest.json"), "w") as f:
     json.dump(manifest, f, indent=1, sort_keys=True)

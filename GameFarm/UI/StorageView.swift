@@ -4,65 +4,57 @@ struct StorageView: View {
     @Environment(GameState.self) private var game
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 14) {
-                    if game.backpackCount > 0 {
-                        backpackCard
+        ScrollView {
+            VStack(spacing: 14) {
+                if game.backpackCount > 0 {
+                    backpackCard
+                }
+                if totalStored == 0 {
+                    Card {
+                        Text(tr("storage.empty"))
+                            .font(.game(16))
+                        Text(tr("storage.empty.hint"))
+                            .font(.game(14, .semibold))
+                            .foregroundStyle(.secondary)
                     }
-                    if totalStored == 0 {
-                        Card {
-                            Text(tr("storage.empty"))
-                                .font(.headline)
-                            Text(tr("storage.empty.hint"))
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    ForEach(ResourceCategory.allCases) { category in
-                        let kinds = ResourceKind.ordered(in: category).filter { (game.save.storage[$0] ?? 0) > 0 }
-                        if !kinds.isEmpty {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(category.title)
-                                    .font(.subheadline.bold())
-                                    .foregroundStyle(.secondary)
-                                    .padding(.leading, 6)
-                                VStack(spacing: 0) {
-                                    ForEach(kinds) { kind in
-                                        StorageRow(kind: kind)
-                                        if kind != kinds.last {
-                                            Divider().padding(.leading, 56)
-                                        }
+                }
+                ForEach(ResourceCategory.allCases) { category in
+                    let kinds = ResourceKind.ordered(in: category).filter { (game.save.storage[$0] ?? 0) > 0 }
+                    if !kinds.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            SectionTitle(text: category.title)
+                            VStack(spacing: 0) {
+                                ForEach(kinds) { kind in
+                                    StorageRow(kind: kind)
+                                    if kind != kinds.last {
+                                        PaperDivider().padding(.leading, 56)
                                     }
                                 }
-                                .background(
-                                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                        .fill(Color(uiColor: .secondarySystemGroupedBackground))
-                                )
                             }
+                            .listBox()
                         }
                     }
-                    Text(tr("storage.priceHint"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 4)
                 }
-                .padding(16)
+                Text(tr("storage.priceHint"))
+                    .font(.game(12, .semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 4)
             }
-            .sheetChrome(tr("hud.storage"), coins: game.save.coins)
+            .padding(16)
         }
+        .sheetChrome(tr("hud.storage"), coins: game.save.coins)
     }
 
     private var totalStored: Int { game.save.storage.values.reduce(0, +) }
 
     private var backpackCard: some View {
-        Card(tint: .orange) {
+        Card(tint: ButtonTone.orange.base) {
             HStack {
                 Text(tr("storage.inBackpack"))
-                    .font(.headline)
+                    .font(.game(16))
                 Spacer()
                 Text("\(game.backpackCount)/\(game.stats.capacity)")
-                    .font(.subheadline.bold())
+                    .font(.game(14, .semibold).bold())
                     .monospacedDigit()
             }
             FlowLayout(spacing: 6) {
@@ -70,15 +62,16 @@ struct StorageView: View {
                     HStack(spacing: 4) {
                         ResourceIcon(kind: kind, size: 18)
                         Text(Fmt.n(game.save.backpack[kind] ?? 0))
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .font(.game(13, .semibold))
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Capsule().fill(Color.orange.opacity(0.15)))
+                    .background(Capsule().fill(Color(hex: 0xFBE3C2)))
+                    .overlay(Capsule().strokeBorder(ButtonTone.orange.base.opacity(0.5), lineWidth: 1.5))
                 }
             }
             Text(tr("storage.backpackHint"))
-                .font(.caption)
+                .font(.game(12, .semibold))
                 .foregroundStyle(.secondary)
         }
     }
@@ -94,9 +87,9 @@ struct StorageRow: View {
         HStack(spacing: 12) {
             ResourceIcon(kind: kind, size: 34)
             VStack(alignment: .leading, spacing: 2) {
-                Text(kind.name).font(.system(size: 15, weight: .semibold))
+                Text(kind.name).font(.game(15, .semibold))
                 Text(tr("storage.row", Fmt.n(have), price))
-                    .font(.caption)
+                    .font(.game(12, .semibold))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
@@ -118,11 +111,7 @@ struct StorageRow: View {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         } label: {
             Text(title)
-                .font(.system(size: 13, weight: .bold))
-                .padding(.horizontal, 4)
         }
-        .buttonStyle(.bordered)
-        .buttonBorderShape(.capsule)
-        .tint(.green)
+        .buttonStyle(.game(amount == 10 ? .wood : .green, small: true))
     }
 }

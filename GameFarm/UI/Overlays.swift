@@ -16,20 +16,27 @@ struct LevelUpOverlay: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.45).ignoresSafeArea()
+            Palette.dim.ignoresSafeArea()
                 .onTapGesture(perform: onClose)
             ConfettiView()
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
             VStack(spacing: 14) {
-                Text("🎉").font(.system(size: 56))
-                    .scaleEffect(appeared ? 1 : 0.4)
-                    .rotationEffect(.degrees(appeared ? 0 : -30))
-                Text(tr("levelup.title", info.to))
-                    .font(.system(size: 32, weight: .heavy, design: .rounded))
+                ZStack {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 92, weight: .black))
+                        .foregroundStyle(LinearGradient(colors: [ButtonTone.gold.top, ButtonTone.gold.base], startPoint: .top, endPoint: .bottom))
+                        .outlined(Palette.outline, width: 2)
+                    Text("\(info.to)")
+                        .gameTitle(30, outline: ButtonTone.orange.lip)
+                        .offset(y: 4)
+                }
+                .scaleEffect(appeared ? 1 : 0.4)
+                .rotationEffect(.degrees(appeared ? 0 : -30))
+                .padding(.top, 14)
                 if info.to - info.from > 1 {
                     Text(tr("levelup.multi", info.to - info.from))
-                        .font(.subheadline)
+                        .font(.game(14, .semibold))
                         .foregroundStyle(.secondary)
                 }
                 VStack(alignment: .leading, spacing: 8) {
@@ -37,21 +44,28 @@ struct LevelUpOverlay: View {
                         row(line)
                     }
                     if !lines.isEmpty {
-                        Divider().padding(.vertical, 2)
-                        Text(tr("levelup.unlocked")).font(.caption.bold()).foregroundStyle(.secondary)
+                        PaperDivider().padding(.vertical, 2)
+                        Text(tr("levelup.unlocked")).font(.game(12)).foregroundStyle(.secondary)
                         ForEach(lines) { line in
                             row(line)
                         }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .listBox(radius: 14)
                 Button(tr("common.great"), action: onClose)
-                    .buttonStyle(.glassProminent)
-                    .controlSize(.large)
+                    .buttonStyle(.game(.green, wide: true))
             }
+            .foregroundStyle(Palette.ink)
             .padding(22)
             .frame(maxWidth: 360)
-            .glassEffect(.regular, in: .rect(cornerRadius: 28))
+            .gamePanel()
+            .overlay(alignment: .top) {
+                RibbonTitle(text: tr("levelup.title", info.to), tone: .orange, size: 22)
+                    .padding(.horizontal, 16)
+                    .offset(y: -20)
+            }
             .padding(24)
         }
         .onAppear {
@@ -63,7 +77,7 @@ struct LevelUpOverlay: View {
     private func row(_ line: UnlockLine) -> some View {
         HStack(spacing: 10) {
             Text(line.icon).font(.system(size: 20)).frame(width: 28)
-            Text(line.text).font(.system(size: 14, weight: .medium))
+            Text(line.text).font(.game(14, .semibold))
         }
     }
 }
@@ -74,30 +88,22 @@ struct OfflineOverlay: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.45).ignoresSafeArea()
+            Palette.dim.ignoresSafeArea()
                 .onTapGesture(perform: onClose)
             VStack(spacing: 14) {
                 Text("🏡").font(.system(size: 50))
-                Text(tr("offline.title"))
-                    .font(.system(size: 26, weight: .heavy, design: .rounded))
+                    .padding(.top, 12)
                 Text(tr("offline.text", Fmt.seconds(report.duration)))
-                    .font(.subheadline)
+                    .font(.game(14, .semibold))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                 FlowLayout(spacing: 8) {
                     ForEach(report.items) { item in
-                        HStack(spacing: 5) {
-                            ResourceIcon(kind: item.kind, size: 24)
-                            Text("+\(Fmt.n(item.amount))")
-                                .font(.system(size: 16, weight: .bold, design: .rounded))
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(Capsule().fill(Color.green.opacity(0.15)))
+                        RewardChip(text: "+\(Fmt.n(item.amount))") { ResourceIcon(kind: item.kind, size: 24) }
                     }
                 }
                 Text(tr("offline.inStorage"))
-                    .font(.caption)
+                    .font(.game(12, .semibold))
                     .foregroundStyle(.secondary)
                 if !report.doubled {
                     Button {
@@ -108,26 +114,26 @@ struct OfflineOverlay: View {
                     } label: {
                         Label(GameState.shared.hasPro ? tr("offline.double.pro") : tr("offline.double"),
                               systemImage: GameState.shared.hasPro ? "crown.fill" : "play.rectangle.fill")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.glassProminent)
-                    .tint(.green)
-                    .controlSize(.large)
+                    .buttonStyle(.game(.green, wide: true))
                 }
                 if report.doubled {
                     Button(tr("offline.collect"), action: onClose)
-                        .buttonStyle(.glassProminent)
-                        .controlSize(.large)
+                        .buttonStyle(.game(.green, wide: true))
                 } else {
                     Button(tr("offline.collect"), action: onClose)
-                        .buttonStyle(.bordered)
-                        .controlSize(.large)
+                        .buttonStyle(.game(.wood, small: true))
                 }
             }
+            .foregroundStyle(Palette.ink)
             .padding(22)
             .frame(maxWidth: 360)
-            .glassEffect(.regular, in: .rect(cornerRadius: 28))
+            .gamePanel()
+            .overlay(alignment: .top) {
+                RibbonTitle(text: tr("offline.title"), tone: .green, size: 20)
+                    .padding(.horizontal, 20)
+                    .offset(y: -18)
+            }
             .padding(24)
         }
     }
@@ -151,9 +157,11 @@ struct ConfettiView: View {
               color: [Color.yellow, .orange, .pink, .mint, .cyan, .purple, .red].randomElement() ?? .yellow)
     }
     @State private var start = Date()
+    /// Когда всё конфетти упало, перестаём перерисовывать каждый кадр.
+    @State private var finished = false
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: finished)) { timeline in
             Canvas { context, size in
                 let t = timeline.date.timeIntervalSince(start)
                 for piece in pieces {
@@ -169,6 +177,11 @@ struct ConfettiView: View {
                     c.fill(Path(roundedRect: rect, cornerRadius: 1.5), with: .color(piece.color))
                 }
             }
+        }
+        .opacity(finished ? 0 : 1)
+        .task {
+            try? await Task.sleep(for: .seconds(6))
+            finished = true
         }
     }
 }

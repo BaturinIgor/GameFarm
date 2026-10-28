@@ -18,6 +18,7 @@ final class GameScene: SKScene {
 
     private let world = SKNode()
     private let cam = SKCameraNode()
+    private let minimap = MiniMapNode()
     private let player = PlayerNode()
     private let joystick = Joystick()
     private let fader = SKSpriteNode(color: .black, size: CGSize(width: 5000, height: 5000))
@@ -95,8 +96,11 @@ final class GameScene: SKScene {
         }
         tintNode.zPosition = 920
         cam.addChild(tintNode)
+        minimap.zPosition = 950
+        cam.addChild(minimap)
         fader.zPosition = 2000
         fader.alpha = 0
+        fader.isHidden = true
         cam.addChild(fader)
         build(game.save.current)
     }
@@ -104,6 +108,17 @@ final class GameScene: SKScene {
     override func didChangeSize(_ oldSize: CGSize) {
         super.didChangeSize(oldSize)
         weather?.particlePositionRange = CGVector(dx: size.width * 1.4, dy: size.height * 1.4)
+        layoutMiniMap()
+    }
+
+    /// Позиция персонажа для крупной карты в интерфейсе.
+    var playerPosition: CGPoint { player.position }
+
+    /// Мини-карта слева под плашкой уровня.
+    private func layoutMiniMap() {
+        let top = view?.safeAreaInsets.top ?? 47
+        minimap.position = CGPoint(x: -size.width / 2 + 12 + minimap.size.width / 2,
+                                   y: size.height / 2 - top - 80 - minimap.size.height / 2)
     }
 
     // MARK: Построение локации
@@ -132,6 +147,9 @@ final class GameScene: SKScene {
         treasureArrow.isHidden = true
         game.setEncounter(nil)
         game.setGatePrompt(nil)
+
+        minimap.configure(id)
+        layoutMiniMap()
 
         switch layout.edge {
         case "sea", "lava": backgroundColor = spec.water
@@ -343,9 +361,9 @@ final class GameScene: SKScene {
         if let tint = spec.tint {
             tintNode.color = tint
             tintNode.alpha = 1
+            tintNode.isHidden = false
         } else {
-            tintNode.color = .clear
-            tintNode.alpha = 0
+            tintNode.isHidden = true
         }
         darkness?.removeFromParent()
         darkness = nil
@@ -612,6 +630,7 @@ final class GameScene: SKScene {
         updateAmbient(dt)
         updateCamera(dt)
         updateArrows()
+        minimap.update(player: player.position)
 
         saveTimer += dt
         if saveTimer > 5 {
@@ -651,6 +670,7 @@ final class GameScene: SKScene {
         touch = nil
         joystick.end()
         fader.removeAllActions()
+        fader.isHidden = false
         Sound.shared.play(.whoosh)
         let fadeIn = SKAction.fadeAlpha(to: 1, duration: 0.3)
         fadeIn.timingMode = .easeIn
@@ -661,7 +681,10 @@ final class GameScene: SKScene {
             .run { [weak self] in self?.build(id) },
             .wait(forDuration: 0.1),
             fadeOut,
-            .run { [weak self] in self?.transitioning = false }
+            .run { [weak self] in
+                self?.transitioning = false
+                self?.fader.isHidden = true
+            }
         ]))
     }
 
@@ -1197,8 +1220,33 @@ final class GameScene: SKScene {
             } else {
                 companion.move(toward: slot, dt: dt, speed: followSpeed)
             }
+            if !transitioning && distance(companion.position, player.position) > 420 {
+                // Отстал за препятствием: догоняет прыжком к персонажу.
+                companion.position = CGPoint(x: player.position.x + CGFloat.random(in: -24...24), y: player.position.y - 20)
+                Effects.puff(at: companion.position, in: world, color: .white, size: 26, z: companion.zPosition + 1)
+            }
+            companion.position = keepOnGround(companion.position, swims: companion.canSwim) { companion.setSwimming($0) }
             companion.zPosition = zFor(companion.position.y)
         }
+    }
+
+    /// Звери ходят только по суше, а утки и лебеди могут плавать.
+    private func keepOnGround(_ point: CGPoint, swims: Bool, swimming: (Bool) -> Void) -> CGPoint {
+        let (col, row) = layout.colRow(point)
+        if swims && layout.at(col, row) == .water {
+            swimming(true)
+            return point
+        }
+        swimming(false)
+        var p = point
+        for dr in -1...1 {
+            for dc in -1...1 {
+                let c = col + dc, r = row + dr
+                if layout.walkable(c, r) || (swims && layout.at(c, r) == .water) { continue }
+                p = push(p, outOf: layout.rect(c, r), radius: 6)
+            }
+        }
+        return p
     }
 
     private func updateHelper(_ c: CompanionNode, _ helper: Helper, slot: CGPoint, dt: Double, stats: Stats, followSpeed: Double) {
@@ -1301,7 +1349,7 @@ final class GameScene: SKScene {
     private func updateWild(_ dt: Double, _ stats: Stats) {
         if let w = wild {
             w.wander(dt)
-            if !layout.walkable(w.position) { w.position = resolve(w.position, radius: 8) }
+            w.position = keepOnGround(w.position, swims: w.canSwim) { w.setSwimming($0) }
             w.zPosition = zFor(w.position.y)
             let d = distance(w.position, player.position)
             if d < 80 {
@@ -1433,7 +1481,11 @@ final class GameScene: SKScene {
         let sx = insetX / max(abs(rel.x), 0.001)
         let sy = (rel.y > 0 ? insetTop : insetBottom) / max(abs(rel.y), 0.001)
         let k = min(sx, sy, 1)
-        arrow.position = CGPoint(x: rel.x * k, y: rel.y * k)
+        var pos = CGPoint(x: rel.x * k, y: rel.y * k)
+        // Не прячем стрелку под мини-картой.
+        let mapRect = minimap.frameRect.insetBy(dx: -22, dy: -22)
+        if mapRect.contains(pos) { pos.y = mapRect.minY }
+        arrow.position = pos
         arrow.point(atan2(rel.y, rel.x))
         arrow.isHidden = false
     }
@@ -1442,6 +1494,11 @@ final class GameScene: SKScene {
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard touch == nil, !transitioning, let t = touches.first else { return }
+        if minimap.frameRect.insetBy(dx: -6, dy: -6).contains(t.location(in: cam)) {
+            SoundFX.play(.tap)
+            game.bigMap = true
+            return
+        }
         touch = t
         joystick.begin(at: t.location(in: cam))
         if !game.save.tutorialDone { game.finishTutorial() }

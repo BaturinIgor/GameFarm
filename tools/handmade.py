@@ -518,6 +518,52 @@ def icons():
         p[x, y] = hexc("#c42430")
     out["ticket"] = im
 
+    # Свиток (задания)
+    c = icon_canvas()
+    c.rect(4, 3, 11, 12, "sand")
+    c.rect(3, 2, 12, 3, "trunklight")
+    c.rect(3, 12, 12, 13, "trunklight")
+    im = c.render()
+    p = im.load()
+    for y in (5, 7, 9):
+        for x in range(5, 11):
+            p[x, y] = hexc("#be7c60")
+    p[10, 10] = hexc("#c42430")
+    p[9, 10] = hexc("#c42430")
+    out["scroll"] = im
+
+    # Карта
+    c = icon_canvas()
+    c.rect(2, 3, 13, 12, "sand")
+    im = c.render()
+    p = im.load()
+    for x in (6, 10):
+        for y in range(3, 13):
+            p[x, y] = hexc("#be7c60")
+    for x, y in ((3, 10), (4, 9), (5, 9), (7, 8), (8, 7), (9, 6)):
+        p[x, y] = hexc("#c42430")
+    for x, y in ((10, 4), (12, 4), (11, 5), (10, 6), (12, 6)):
+        p[x, y] = hexc("#891e2b")
+    out["map"] = im
+
+    # Лапка (звери)
+    c = icon_canvas()
+    c.ellipse(8, 10.5, 3.6, 3, "trunklight")
+    for x, y in ((3.5, 6.5), (6.5, 4), (9.5, 4), (12.5, 6.5)):
+        c.disc(x, y, 1.6, "trunklight")
+    out["paw"] = c.render()
+
+    # Рюкзак
+    c = icon_canvas()
+    c.rect(4, 4, 11, 13, "trunk")
+    c.rect(4, 4, 11, 7, "trunklight")
+    c.rect(6, 1, 9, 3, "trunk")
+    im = c.render()
+    p = im.load()
+    for x, y in ((7, 8), (8, 8), (7, 9), (8, 9)):
+        p[x, y] = hexc("#ffc825")
+    out["bag"] = im
+
     c = icon_canvas()
     c.disc(8, 8, 6, "gold")
     im = c.render()

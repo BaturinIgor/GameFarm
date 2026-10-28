@@ -3,51 +3,67 @@ import SwiftUI
 struct ShopView: View {
     @Environment(GameState.self) private var game
     @Environment(Store.self) private var store
-    @State private var showWardrobe = false
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 16) {
-                    if Store.testMode {
-                        Label(tr("shop.testMode"), systemImage: "testtube.2")
-                            .font(.caption.bold())
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    if game.starterAvailable || game.owns(.starter) {
-                        StarterCard()
-                    }
-                    ProCard()
-                    GardenCard()
-                    TicketsCard()
-                    SkinsCard(showWardrobe: $showWardrobe)
-                    FreeCard()
-                    Button {
-                        Task { await store.restore() }
-                    } label: {
-                        Label(tr("shop.restore"), systemImage: "arrow.clockwise")
-                            .font(.subheadline.bold())
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    Text(tr("shop.footer"))
-                        .font(.caption2)
+        ScrollView {
+            VStack(spacing: 18) {
+                if Store.testMode {
+                    Label(tr("shop.testMode"), systemImage: "testtube.2")
+                        .font(.game(12))
                         .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(16)
+                if game.starterAvailable || game.owns(.starter) {
+                    StarterCard()
+                }
+                ProCard()
+                GardenCard()
+                TicketsCard()
+                SkinsCard()
+                FreeCard()
+                Button {
+                    Task { await store.restore() }
+                } label: {
+                    Label(tr("shop.restore"), systemImage: "arrow.clockwise")
+                }
+                .buttonStyle(.game(.wood, small: true, wide: true))
+                Text(tr("shop.footer"))
+                    .font(.game(11, .semibold))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
             }
-            .sheetChrome(tr("shop.title"), coins: game.save.coins)
-            .sheet(isPresented: $showWardrobe) {
-                WardrobeView().environment(game)
-            }
-            .alert(tr("shop.error"), isPresented: Binding(get: { store.errorMessage != nil }, set: { if !$0 { store.errorMessage = nil } })) {
-                Button(tr("common.ok"), role: .cancel) {}
-            } message: {
-                Text(store.errorMessage ?? "")
-            }
+            .padding(16)
         }
+        .sheetChrome(tr("shop.title"), coins: game.save.coins)
+        .onChange(of: store.errorMessage) { _, message in
+            guard let message else { return }
+            Dialogs.shared.info(tr("shop.error"), message: message)
+            store.errorMessage = nil
+        }
+    }
+}
+
+/// Карточка товара: цветная рамка и лента с названием.
+struct ShopCard<Content: View>: View {
+    let title: String
+    var tone: ButtonTone = .orange
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            content
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 26)
+        .padding(.bottom, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .gamePanel(fill: Palette.parchmentLight, frame: tone.base, radius: 18, border: 4)
+        .overlay(alignment: .top) {
+            RibbonTitle(text: title, tone: tone, size: 17)
+                .padding(.horizontal, 30)
+                .offset(y: -15)
+        }
+        .padding(.top, 14)
     }
 }
 
@@ -56,7 +72,7 @@ struct BuyButton: View {
     @Environment(GameState.self) private var game
     @Environment(Store.self) private var store
     let product: ProductID
-    var tint: Color = .orange
+    var tone: ButtonTone = .orange
 
     var body: some View {
         let owned = game.owns(product)
@@ -72,12 +88,8 @@ struct BuyButton: View {
                     Text(tr("shop.buyFor", store.price(product)))
                 }
             }
-            .font(.headline)
-            .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.glassProminent)
-        .tint(owned ? .green : tint)
-        .controlSize(.large)
+        .buttonStyle(.game(owned ? .green : tone, wide: true))
         .disabled(owned || store.busy != nil)
     }
 }
@@ -89,7 +101,7 @@ private struct Perk: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Text(icon).font(.system(size: 18)).frame(width: 26)
-            Text(text).font(.subheadline)
+            Text(text).font(.game(14, .semibold))
             Spacer(minLength: 0)
         }
     }
@@ -99,50 +111,38 @@ struct StarterCard: View {
     @Environment(GameState.self) private var game
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("🎁 " + ProductID.starter.title)
-                        .font(.title3.bold())
-                    if game.starterAvailable, let until = game.save.starterOfferUntil {
-                        TimelineView(.periodic(from: .now, by: 1)) { context in
-                            Label(tr("shop.endsIn", Countdown.text(until.timeIntervalSince(context.date))), systemImage: "clock")
-                                .font(.caption.bold())
-                                .foregroundStyle(.orange)
-                        }
+        ShopCard(title: "🎁 " + ProductID.starter.title, tone: .red) {
+            HStack {
+                if game.starterAvailable, let until = game.save.starterOfferUntil {
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        Label(tr("shop.endsIn", Countdown.text(until.timeIntervalSince(context.date))), systemImage: "clock")
+                            .font(.game(12))
+                            .foregroundStyle(ButtonTone.red.lip)
                     }
                 }
                 Spacer()
                 Text(tr("shop.bestValue"))
-                    .font(.system(size: 11, weight: .heavy))
+                    .font(.game(11, .heavy))
+                    .foregroundStyle(Palette.ink)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Capsule().fill(Color.red))
-                    .foregroundStyle(.white)
+                    .background(Capsule().fill(Palette.gold))
+                    .overlay(Capsule().strokeBorder(Palette.outline, lineWidth: 1.5))
             }
             Perk(icon: "🦆", text: tr("starter.duck"))
             Perk(icon: "🪙", text: tr("starter.coins", Fmt.n(Premium.starterCoins)))
             Perk(icon: "🎒", text: tr("starter.backpack", Premium.starterBackpack))
             Perk(icon: "🤖", text: tr("starter.skin"))
-            BuyButton(product: .starter, tint: .red)
+            BuyButton(product: .starter, tone: .red)
         }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(LinearGradient(colors: [Color.orange.opacity(0.28), Color.pink.opacity(0.22)],
-                                     startPoint: .topLeading, endPoint: .bottomTrailing))
-        )
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Color.orange.opacity(0.6), lineWidth: 2))
     }
 }
 
 struct ProCard: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("👑 " + ProductID.pro.title)
-                .font(.title3.bold())
+        ShopCard(title: "👑 " + ProductID.pro.title, tone: .purple) {
             Text(tr("pro.subtitle"))
-                .font(.caption)
+                .font(.game(12, .semibold))
                 .foregroundStyle(.secondary)
             Perk(icon: "🌙", text: tr("pro.offline", Int(Premium.proOfflineHours)))
             Perk(icon: "🌀", text: tr("pro.autoDeposit"))
@@ -151,40 +151,24 @@ struct ProCard: View {
             Perk(icon: "🎟️", text: tr("pro.tickets"))
             Perk(icon: "📺", text: tr("pro.noAds"))
             Perk(icon: "🧞", text: tr("pro.skin"))
-            BuyButton(product: .pro, tint: .purple)
+            BuyButton(product: .pro, tone: .purple)
         }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(LinearGradient(colors: [Color.purple.opacity(0.25), Color.indigo.opacity(0.2)],
-                                     startPoint: .topLeading, endPoint: .bottomTrailing))
-        )
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Color.purple.opacity(0.5), lineWidth: 2))
     }
 }
 
 struct GardenCard: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("🏰 " + ProductID.garden.title)
-                .font(.title3.bold())
+        ShopCard(title: "🏰 " + ProductID.garden.title, tone: .gold) {
             Text(tr("garden.subtitle"))
-                .font(.caption)
+                .font(.game(12, .semibold))
                 .foregroundStyle(.secondary)
             Perk(icon: "🍒", text: tr("garden.trees"))
             Perk(icon: "🍯", text: tr("garden.bees"))
             Perk(icon: "👑", text: tr("garden.chest"))
             Perk(icon: "🦫", text: tr("garden.capybara", Fmt.pct(RoyalGarden.capybaraYield)))
             Perk(icon: "⚔️", text: tr("garden.skin"))
-            BuyButton(product: .garden, tint: .orange)
+            BuyButton(product: .garden, tone: .orange)
         }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(LinearGradient(colors: [Color.yellow.opacity(0.28), Color.green.opacity(0.2)],
-                                     startPoint: .topLeading, endPoint: .bottomTrailing))
-        )
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Color.orange.opacity(0.55), lineWidth: 2))
     }
 }
 
@@ -192,56 +176,47 @@ struct TicketsCard: View {
     @Environment(GameState.self) private var game
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        ShopCard(title: "🎟️ " + ProductID.tickets.title, tone: .blue) {
             HStack {
-                Text("🎟️ " + ProductID.tickets.title)
-                    .font(.title3.bold())
+                Text(tr("tickets.subtitle", Expedition.ticketPack))
+                    .font(.game(12, .semibold))
+                    .foregroundStyle(.secondary)
                 Spacer()
                 HStack(spacing: 4) {
                     TicketIcon(size: 18)
-                    Text("\(game.save.tickets)").font(.subheadline.bold()).monospacedDigit()
+                    Text("\(game.save.tickets)").font(.game(14)).monospacedDigit()
                 }
             }
-            Text(tr("tickets.subtitle", Expedition.ticketPack))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            BuyButton(product: .tickets, tint: .yellow)
+            BuyButton(product: .tickets, tone: .blue)
         }
-        .padding(16)
-        .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Color(uiColor: .secondarySystemGroupedBackground)))
     }
 }
 
 struct SkinsCard: View {
-    @Binding var showWardrobe: Bool
+    @Environment(\.gameActions) private var actions
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("🎭 " + ProductID.skins.title)
-                .font(.title3.bold())
+        ShopCard(title: "🎭 " + ProductID.skins.title, tone: .green) {
             Text(tr("skins.subtitle", Skin.collection.count))
-                .font(.caption)
+                .font(.game(12, .semibold))
                 .foregroundStyle(.secondary)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 5), spacing: 6) {
                 ForEach(Skin.collection) { skin in
                     SkinIcon(skin: skin, size: 36)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
-                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.secondary.opacity(0.12)))
+                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Palette.parchmentDeep.opacity(0.7)))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Palette.woodDark.opacity(0.35), lineWidth: 1.5))
                 }
             }
-            BuyButton(product: .skins, tint: .teal)
+            BuyButton(product: .skins, tone: .green)
             Button {
-                showWardrobe = true
+                actions.open(.wardrobe)
             } label: {
                 Label(tr("wardrobe.open"), systemImage: "tshirt")
-                    .font(.subheadline.bold())
-                    .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.game(.wood, small: true, wide: true))
         }
-        .padding(16)
-        .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Color(uiColor: .secondarySystemGroupedBackground)))
     }
 }
 
@@ -250,16 +225,12 @@ struct FreeCard: View {
     @Environment(GameState.self) private var game
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(tr("free.title")).font(.title3.bold())
+        ShopCard(title: "🍀 " + tr("free.title"), tone: .green) {
             Text(game.hasPro ? tr("free.subtitle.pro") : tr("free.subtitle"))
-                .font(.caption)
+                .font(.game(12, .semibold))
                 .foregroundStyle(.secondary)
             LuckButton(style: .wide)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Color(uiColor: .secondarySystemGroupedBackground)))
     }
 }
 
@@ -301,26 +272,28 @@ struct LuckButton: View {
             } label: {
                 HStack(spacing: 5) {
                     Text("🍀").font(.system(size: 15))
-                    if active, let until = game.save.luckUntil {
-                        Text(Countdown.text(until.timeIntervalSince(now)))
-                            .font(.system(size: 13, weight: .bold, design: .rounded))
-                            .monospacedDigit()
-                            .foregroundStyle(.green)
-                    } else if ready {
-                        Text("x2").font(.system(size: 13, weight: .heavy, design: .rounded))
-                        if !game.hasPro { Image(systemName: "play.rectangle.fill").font(.system(size: 11)) }
-                    } else {
-                        Text(Countdown.text((game.save.luckReadyAt ?? now).timeIntervalSince(now)))
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .monospacedDigit()
-                            .foregroundStyle(.secondary)
+                    Group {
+                        if active, let until = game.save.luckUntil {
+                            Text(Countdown.text(until.timeIntervalSince(now)))
+                                .monospacedDigit()
+                        } else if ready {
+                            Text("x2")
+                            if !game.hasPro { Image(systemName: "play.rectangle.fill").font(.system(size: 11, weight: .bold)) }
+                        } else {
+                            Text(Countdown.text((game.save.luckReadyAt ?? now).timeIntervalSince(now)))
+                                .monospacedDigit()
+                                .opacity(0.8)
+                        }
                     }
+                    .font(.game(12))
+                    .foregroundStyle(.white)
+                    .outlined(Palette.outline, width: 1)
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .woodPill(radius: 13, tint: active ? ButtonTone.green.base : Palette.wood)
             }
-            .buttonStyle(.plain)
-            .glassEffect(active ? .regular.tint(Color.green.opacity(0.35)) : .regular.interactive(), in: .capsule)
+            .buttonStyle(.press)
         case .wide:
             Button {
                 if ready { watch() }
@@ -328,22 +301,20 @@ struct LuckButton: View {
                 HStack(spacing: 10) {
                     Text("🍀").font(.system(size: 24))
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(tr("luck.title")).font(.headline)
+                        Text(tr("luck.title")).font(.game(16))
                         if active, let until = game.save.luckUntil {
-                            Text(tr("luck.active", Countdown.text(until.timeIntervalSince(now)))).font(.caption)
+                            Text(tr("luck.active", Countdown.text(until.timeIntervalSince(now)))).font(.game(12, .semibold))
                         } else if ready {
-                            Text(game.hasPro ? tr("luck.ready.pro") : tr("luck.ready")).font(.caption)
+                            Text(game.hasPro ? tr("luck.ready.pro") : tr("luck.ready")).font(.game(12, .semibold))
                         } else {
-                            Text(tr("luck.cooldown", Countdown.text((game.save.luckReadyAt ?? now).timeIntervalSince(now)))).font(.caption)
+                            Text(tr("luck.cooldown", Countdown.text((game.save.luckReadyAt ?? now).timeIntervalSince(now)))).font(.game(12, .semibold))
                         }
                     }
                     Spacer()
-                    if ready && !game.hasPro { Image(systemName: "play.rectangle.fill").font(.title3) }
+                    if ready && !game.hasPro { Image(systemName: "play.rectangle.fill").font(.game(19)) }
                 }
-                .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
-            .tint(.green)
+            .buttonStyle(.game(.green, wide: true))
             .disabled(!ready)
         }
     }
@@ -358,25 +329,17 @@ struct LuckButton: View {
 
 struct WardrobeView: View {
     @Environment(GameState.self) private var game
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
-                    ForEach(Skin.allCases) { skin in
-                        SkinTile(skin: skin)
-                    }
+        ScrollView {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 12) {
+                ForEach(Skin.allCases) { skin in
+                    SkinTile(skin: skin)
                 }
-                .padding(16)
             }
-            .navigationTitle(tr("wardrobe.title"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { SheetCloseButton() }
-            }
-            .background(Color(uiColor: .systemGroupedBackground))
+            .padding(16)
         }
+        .sheetChrome(tr("wardrobe.title"), coins: game.save.coins)
     }
 }
 
@@ -404,31 +367,32 @@ private struct SkinTile: View {
                     .grayscale(unlocked ? 0 : 1)
                     .opacity(unlocked ? 1 : 0.45)
                 Text(skin.name)
-                    .font(.caption.bold())
+                    .font(.game(12))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 if !unlocked {
                     Label(lockText, systemImage: "lock.fill")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.game(10, .semibold))
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                         .foregroundStyle(.secondary)
                 } else if selected {
-                    Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                    Image(systemName: "checkmark.circle.fill").font(.game(16)).foregroundStyle(Palette.good)
                 }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
             .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(selected ? Color.green.opacity(0.18) : Color(uiColor: .secondarySystemGroupedBackground))
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(selected ? Color(hex: 0xDDEFC8) : Palette.parchmentLight)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(selected ? Color.green : Color.clear, lineWidth: 2)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(selected ? Palette.outline : Palette.woodDark.opacity(0.4), lineWidth: selected ? 2.5 : 1.5)
             )
+            .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Palette.woodDark.opacity(0.25)).offset(y: 3))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.press)
         .disabled(!unlocked)
     }
 }
@@ -440,14 +404,13 @@ struct OfferPopup: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.45).ignoresSafeArea()
+            Palette.dim.ignoresSafeArea()
                 .onTapGesture { close() }
             VStack(spacing: 14) {
                 Text("🎁").font(.system(size: 54))
-                Text(ProductID.starter.title)
-                    .font(.system(size: 26, weight: .heavy, design: .rounded))
+                    .padding(.top, 14)
                 Text(tr("offer.text"))
-                    .font(.subheadline)
+                    .font(.game(14, .semibold))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                 HStack(spacing: 14) {
@@ -456,14 +419,19 @@ struct OfferPopup: View {
                     Text("🎒").font(.system(size: 30))
                     Text("🤖").font(.system(size: 34))
                 }
-                BuyButton(product: .starter, tint: .red)
+                BuyButton(product: .starter, tone: .red)
                 Button(tr("offer.later")) { close() }
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .buttonStyle(.game(.wood, small: true))
             }
+            .foregroundStyle(Palette.ink)
             .padding(22)
             .frame(maxWidth: 360)
-            .glassEffect(.regular, in: .rect(cornerRadius: 28))
+            .gamePanel()
+            .overlay(alignment: .top) {
+                RibbonTitle(text: ProductID.starter.title, tone: .red, size: 20)
+                    .padding(.horizontal, 20)
+                    .offset(y: -18)
+            }
             .padding(24)
         }
         .onChange(of: game.owns(.starter)) { _, owned in

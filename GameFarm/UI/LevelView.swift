@@ -3,69 +3,61 @@ import SwiftUI
 struct LevelView: View {
     @Environment(GameState.self) private var game
     @Environment(Store.self) private var store
-    @State private var confirmReset = false
-    @State private var showWardrobe = false
+    @Environment(\.gameActions) private var actions
     @State private var musicOn = Sound.shared.musicOn
     @State private var sfxOn = Sound.shared.sfxOn
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 14) {
-                    progressCard
-                    settingsCard
-                    bonusesCard
-                    upcomingCard
-                    statsCard
-                    Button(role: .destructive) {
-                        confirmReset = true
-                    } label: {
-                        Text(tr("profile.reset"))
-                            .font(.subheadline.bold())
-                            .frame(maxWidth: .infinity)
+        ScrollView {
+            VStack(spacing: 14) {
+                progressCard
+                settingsCard
+                bonusesCard
+                upcomingCard
+                statsCard
+                Button {
+                    Dialogs.shared.confirm(tr("profile.reset.confirm"), message: tr("profile.reset.message"), icon: "🗑️",
+                                           confirm: tr("profile.reset.action"), tone: .red) {
+                        game.resetProgress()
                     }
-                    .buttonStyle(.bordered)
-                    .padding(.top, 6)
+                } label: {
+                    Text(tr("profile.reset"))
                 }
-                .padding(16)
+                .buttonStyle(.game(.red, small: true, wide: true))
+                .padding(.top, 6)
             }
-            .sheetChrome(tr("profile.title"), coins: game.save.coins)
-            .sheet(isPresented: $showWardrobe) {
-                WardrobeView().environment(game)
-            }
-            .confirmationDialog(tr("profile.reset.confirm"), isPresented: $confirmReset, titleVisibility: .visible) {
-                Button(tr("profile.reset.action"), role: .destructive) { game.resetProgress() }
-            } message: {
-                Text(tr("profile.reset.message"))
-            }
+            .padding(16)
         }
+        .sheetChrome(tr("profile.title"), coins: game.save.coins)
     }
 
     private var progressCard: some View {
-        Card(tint: .yellow) {
+        Card(tint: Palette.goldDark) {
             HStack(spacing: 14) {
-                ZStack {
-                    Circle().stroke(Color.yellow.opacity(0.2), lineWidth: 8)
-                    Circle()
-                        .trim(from: 0, to: game.levelProgress)
-                        .stroke(Color.yellow, style: StrokeStyle(lineWidth: 8, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
+                ZStack(alignment: .bottomTrailing) {
+                    SkinIcon(skin: game.currentSkin, size: 64)
+                        .frame(width: 78, height: 78)
+                        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Palette.parchmentDeep))
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Palette.outline, lineWidth: 2.5))
                     Text("\(game.save.level)")
-                        .font(.system(size: 30, weight: .heavy, design: .rounded))
+                        .gameTitle(18)
+                        .padding(.horizontal, 6)
+                        .frame(minWidth: 34, minHeight: 34)
+                        .background(Capsule().fill(LinearGradient(colors: [ButtonTone.orange.top, ButtonTone.orange.base], startPoint: .top, endPoint: .bottom)))
+                        .overlay(Capsule().strokeBorder(Palette.outline, lineWidth: 2))
+                        .offset(x: 8, y: 8)
                 }
-                .frame(width: 82, height: 82)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(tr("level.n", game.save.level)).font(.title3.bold())
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(tr("level.n", game.save.level)).font(.game(19))
                     if game.save.level < GameRules.maxLevel {
-                        Text(tr("level.xpOf", Fmt.n(game.save.xp), Fmt.n(game.xpToNext)))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
+                        GameBar(value: game.levelProgress, tone: .gold, height: 16,
+                                label: "\(Fmt.n(game.save.xp)) / \(Fmt.n(game.xpToNext))")
                         Text(tr("level.xpHint"))
-                            .font(.caption)
+                            .font(.game(12, .semibold))
                             .foregroundStyle(.secondary)
                     } else {
-                        Text(tr("level.maxReached")).font(.subheadline)
+                        Text(tr("level.maxReached")).font(.game(14, .semibold))
                     }
                 }
             }
@@ -76,59 +68,72 @@ struct LevelView: View {
         Card {
             HStack {
                 Label(tr("settings.language"), systemImage: "globe")
-                    .font(.subheadline.bold())
+                    .font(.game(14, .semibold).bold())
                 Spacer()
-                Picker(tr("settings.language"), selection: Binding(get: { Lang.shared.code }, set: { Lang.shared.set($0) })) {
+                Menu {
                     ForEach(Lang.options) { option in
-                        Text(option.name).tag(option.code)
+                        Button(option.name) { Lang.shared.set(option.code) }
                     }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(Lang.options.first { $0.code == Lang.shared.code }?.name ?? Lang.shared.code)
+                        Image(systemName: "chevron.down").font(.system(size: 10, weight: .black))
+                    }
+                    .font(.game(13))
+                    .foregroundStyle(.white)
+                    .outlined(Palette.woodDark, width: 1)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .woodPill(radius: 10)
                 }
-                .pickerStyle(.menu)
             }
-            Divider()
+            PaperDivider()
             Toggle(isOn: $musicOn) {
-                Label(tr("settings.music"), systemImage: "music.note").font(.subheadline.bold())
+                Label(tr("settings.music"), systemImage: "music.note").font(.game(14))
             }
+            .toggleStyle(GameToggleStyle())
             .onChange(of: musicOn) { _, on in Sound.shared.musicOn = on }
             Toggle(isOn: $sfxOn) {
-                Label(tr("settings.sounds"), systemImage: "speaker.wave.2.fill").font(.subheadline.bold())
+                Label(tr("settings.sounds"), systemImage: "speaker.wave.2.fill").font(.game(14))
             }
+            .toggleStyle(GameToggleStyle())
             .onChange(of: sfxOn) { _, on in Sound.shared.sfxOn = on }
-            Divider()
+            PaperDivider()
             Button {
-                showWardrobe = true
+                actions.open(.wardrobe)
             } label: {
                 HStack {
                     SkinIcon(skin: game.currentSkin, size: 32)
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(tr("wardrobe.title")).font(.subheadline.bold())
-                        Text(game.currentSkin.name).font(.caption).foregroundStyle(.secondary)
+                        Text(tr("wardrobe.title")).font(.game(14, .semibold).bold())
+                        Text(game.currentSkin.name).font(.game(12, .semibold)).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Image(systemName: "chevron.right").foregroundStyle(.secondary)
+                    Image(systemName: "chevron.right").font(.game(14)).foregroundStyle(.secondary)
                 }
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-            Divider()
+            .buttonStyle(.press)
+            PaperDivider()
             HStack {
                 if game.hasPro {
                     Label(ProductID.pro.title, systemImage: "crown.fill")
-                        .font(.subheadline.bold())
-                        .foregroundStyle(.purple)
+                        .font(.game(14, .semibold).bold())
+                        .foregroundStyle(ButtonTone.purple.lip)
                 }
                 Spacer()
                 Button(tr("shop.restore")) {
                     Task { await store.restore() }
                 }
-                .font(.subheadline)
+                .buttonStyle(.game(.wood, small: true))
             }
             #if SIDELOAD
-            Button(role: .destructive) {
+            Button {
                 game.resetTestPurchases()
             } label: {
-                Text(tr("settings.resetTest")).font(.caption)
+                Text(tr("settings.resetTest"))
             }
+            .buttonStyle(.game(.gray, small: true))
             #endif
         }
     }
@@ -136,7 +141,7 @@ struct LevelView: View {
     private var bonusesCard: some View {
         let s = game.stats
         return Card {
-            Text(tr("stats.title")).font(.headline)
+            Text(tr("stats.title")).font(.game(16))
             statRow("💪", tr("stats.damage"), "x" + Fmt.decimal(s.damageMult, digits: 2))
             statRow("⚡", tr("stats.hitEvery"), tr("stats.seconds", Fmt.decimal(s.hitInterval, digits: 2)))
             statRow("🎒", tr("stats.backpack"), tr("stats.slots", s.capacity))
@@ -153,10 +158,10 @@ struct LevelView: View {
     private func statRow(_ icon: String, _ title: String, _ value: String) -> some View {
         HStack {
             Text(icon).frame(width: 26)
-            Text(title).font(.subheadline)
+            Text(title).font(.game(14, .semibold))
             Spacer()
             Text(value)
-                .font(.subheadline.bold())
+                .font(.game(14, .semibold).bold())
                 .monospacedDigit()
         }
     }
@@ -167,20 +172,20 @@ struct LevelView: View {
         let levels = start <= end ? Array(start...end) : []
         let items = levels.map { UpcomingLevel(level: $0, lines: GameRules.unlocks(at: $0)) }.filter { !$0.lines.isEmpty }
         return Card {
-            Text(tr("upcoming.title")).font(.headline)
+            Text(tr("upcoming.title")).font(.game(16))
             Text(tr("upcoming.each"))
-                .font(.caption)
+                .font(.game(12, .semibold))
                 .foregroundStyle(.secondary)
             if items.isEmpty {
-                Text(tr("upcoming.none")).font(.subheadline)
+                Text(tr("upcoming.none")).font(.game(14, .semibold))
             }
             ForEach(items) { item in
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(tr("level.n", item.level)).font(.subheadline.bold())
+                    Text(tr("level.n", item.level)).font(.game(14, .semibold).bold())
                     ForEach(item.lines) { line in
                         HStack(spacing: 8) {
                             Text(line.icon).frame(width: 24)
-                            Text(line.text).font(.caption)
+                            Text(line.text).font(.game(12, .semibold))
                         }
                     }
                 }
@@ -195,22 +200,23 @@ struct LevelView: View {
             return n > 0 ? ResourceAmount(kind: kind, amount: n) : nil
         }
         return Card {
-            Text(tr("stats.statistics")).font(.headline)
+            Text(tr("stats.statistics")).font(.game(16))
             statRow("⛏️", tr("stats.harvests"), Fmt.n(game.save.harvests))
             statRow("🪙", tr("stats.coinsEarned"), Fmt.n(game.save.coinsEarned))
             statRow("🐾", tr("stats.animals"), tr("common.ofN", AnimalID.allCases.filter { game.stars($0) > 0 }.count, AnimalID.allCases.count))
             statRow("🗺️", tr("stats.locations"), tr("common.ofN", game.save.unlocked.count, LocationID.world.count))
             if !gathered.isEmpty {
-                Text(tr("stats.gathered")).font(.caption.bold()).foregroundStyle(.secondary)
+                Text(tr("stats.gathered")).font(.game(12, .semibold).bold()).foregroundStyle(.secondary)
                 FlowLayout(spacing: 6) {
                     ForEach(gathered) { item in
                         HStack(spacing: 4) {
                             ResourceIcon(kind: item.kind, size: 18)
-                            Text(Fmt.n(item.amount)).font(.system(size: 13, weight: .semibold, design: .rounded))
+                            Text(Fmt.n(item.amount)).font(.game(13, .semibold))
                         }
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(Capsule().fill(Color.secondary.opacity(0.12)))
+                        .background(Capsule().fill(Palette.parchmentDeep))
+                        .overlay(Capsule().strokeBorder(Palette.woodDark.opacity(0.35), lineWidth: 1))
                     }
                 }
             }
