@@ -1,8 +1,9 @@
 import Foundation
 
 /// Этажи дома. Первый есть сразу, остальные строятся за уровень, монеты и ресурсы.
+/// На каждом этаже две комнаты, по которым ходит герой.
 enum HouseFloor: String, CaseIterable, Identifiable, Codable {
-    case attic, upper, ground, basement
+    case greenhouse, attic, upper, ground, basement
 
     var id: String { rawValue }
 
@@ -16,6 +17,7 @@ enum HouseFloor: String, CaseIterable, Identifiable, Codable {
         case .upper: 8
         case .basement: 14
         case .attic: 22
+        case .greenhouse: 30
         }
     }
 
@@ -25,16 +27,160 @@ enum HouseFloor: String, CaseIterable, Identifiable, Codable {
         case .upper: Cost(coins: 1500, (.wood, 60), (.stone, 40))
         case .basement: Cost(coins: 4000, (.stone, 120), (.iron, 30))
         case .attic: Cost(coins: 10000, (.wood, 200), (.gold, 15))
+        case .greenhouse: Cost(coins: 25000, (.ice, 60), (.crystal, 10), (.pumpkin, 10))
         }
     }
 
-    /// Места для украшений на этаже.
-    var slots: [String] { (0..<3).map { "\(rawValue)_\($0)" } }
+    /// Локация этажа, по которой ходит герой.
+    var location: LocationID {
+        switch self {
+        case .ground: .homeGround
+        case .upper: .homeUpper
+        case .basement: .homeBasement
+        case .attic: .homeAttic
+        case .greenhouse: .homeGreenhouse
+        }
+    }
+
+    /// Куда ведут лестницы.
+    var up: HouseFloor? {
+        switch self {
+        case .basement: .ground
+        case .ground: .upper
+        case .upper: .attic
+        case .attic: .greenhouse
+        case .greenhouse: nil
+        }
+    }
+
+    var down: HouseFloor? {
+        switch self {
+        case .ground: .basement
+        case .upper: .ground
+        case .attic: .upper
+        case .greenhouse: .attic
+        case .basement: nil
+        }
+    }
+
+    /// Места для украшений на этаже: по три в каждой комнате.
+    var slots: [String] { (0..<6).map { "\(rawValue)_\($0)" } }
+}
+
+/// Что стоит в доме и с чем можно взаимодействовать.
+enum HomeStation: String {
+    case exit, up, down, trophies, plan, stove, calendar
+    case bed, wardrobe, desk, lectern
+    case pantry, workbench, anvil
+    case telescope, chest, map
+    case compost, seedlings
+
+    /// Переход между этажами или выход: срабатывает, когда герой подходит вплотную.
+    var isPassage: Bool { self == .exit || self == .up || self == .down }
+
+    var title: String { tr("home.\(rawValue)") }
+    var hint: String { tr("home.\(rawValue).hint") }
+
+    /// Пиксельная иконка для карточки (ic_<имя>).
+    var icon: String {
+        switch self {
+        case .exit: "door"
+        case .up, .down: "stairs"
+        case .trophies: "trophy"
+        case .plan: "plan"
+        case .stove: "stove"
+        case .calendar: "calendar"
+        case .bed: "bed"
+        case .wardrobe: "wardrobe"
+        case .desk: "book"
+        case .lectern: "spark"
+        case .pantry: "chest"
+        case .workbench, .anvil: "hammer"
+        case .telescope: "telescope"
+        case .chest: "ticket"
+        case .map: "map"
+        case .compost: "compost"
+        case .seedlings: "seed_wheat"
+        }
+    }
+}
+
+/// Что показывает карточка внизу экрана в доме.
+enum HomePrompt: Equatable {
+    case station(HomeStation)
+    /// Лестница на ещё не построенный этаж.
+    case build(HouseFloor)
+    /// Место для украшения.
+    case slot(String)
+}
+
+/// Трофеи на стене гостиной: появляются за достижения.
+enum Trophy: String, CaseIterable, Identifiable {
+    case wolf, bear, shield, sword, star, cup
+
+    var id: String { rawValue }
+    var name: String { tr("trophy.\(rawValue)") }
+
+    var sprite: String {
+        switch self {
+        case .wolf: "hm_wolf"
+        case .bear: "hm_bear"
+        case .shield: "hm_shield"
+        case .sword: "hm_sword"
+        case .star: "hm_star"
+        case .cup: "hm_cup"
+        }
+    }
+
+    /// Сколько нужно и для чего (текст условия).
+    var target: Int {
+        switch self {
+        case .wolf: 50
+        case .bear: 300
+        case .shield: 15
+        case .sword: 4
+        case .star: 1
+        case .cup: 1
+        }
+    }
+
+    var condition: String { tr("trophy.\(rawValue).how", target) }
+}
+
+/// Кухня прокачивается: больше плит, готовка быстрее, больше блюд сразу.
+enum Kitchen {
+    static let maxLevel = 5
+
+    static func slots(_ level: Int) -> Int { max(1, min(maxLevel, level)) }
+
+    /// Множитель времени готовки.
+    static func speed(_ level: Int) -> Double { 1 - 0.08 * Double(max(1, level) - 1) }
+
+    static func mealSlots(_ level: Int) -> Int { 3 + (level >= 3 ? 1 : 0) + (level >= 5 ? 1 : 0) }
+
+    static func requiredLevel(_ next: Int) -> Int {
+        switch next {
+        case 2: 6
+        case 3: 14
+        case 4: 24
+        default: 34
+        }
+    }
+
+    static func cost(_ next: Int) -> Cost {
+        switch next {
+        case 2: Cost(coins: 800, (.wood, 80), (.stone, 40))
+        case 3: Cost(coins: 3000, (.iron, 40), (.clay, 30))
+        case 4: Cost(coins: 9000, (.gold, 30), (.ice, 30))
+        default: Cost(coins: 25000, (.diamond, 10), (.crystal, 10))
+        }
+    }
 }
 
 /// Украшения для дома: дают уют, а уют прибавляет добычу и опыт.
 enum DecorID: String, CaseIterable, Identifiable, Codable {
     case potGreen, potRed, potBlue, lantern, clock, painting, stool, table, bench, rug, bookshelf, barrel, anvil, hay
+    case plantPink, plantFern, plantLush, redStool, roundTable, greenRug, sofa, displayCase, cupboard, bathtub
     // Награды ивентов
     case jackLantern, slimeLamp, snowman, sandcastle
 
@@ -52,6 +198,16 @@ enum DecorID: String, CaseIterable, Identifiable, Codable {
         case .hay: "hay_big"
         case .jackLantern: "jack_lantern"
         case .slimeLamp: "slime_lamp"
+        case .plantPink: "hm_plant_pink"
+        case .plantFern: "hm_plant_fern"
+        case .plantLush: "hm_plant_big"
+        case .redStool: "hm_stool_red"
+        case .roundTable: "hm_table_round"
+        case .greenRug: "hm_rug_green"
+        case .sofa: "hm_sofa"
+        case .displayCase: "hm_display"
+        case .cupboard: "hm_cupboard"
+        case .bathtub: "hm_bath"
         default: rawValue
         }
     }
@@ -61,10 +217,12 @@ enum DecorID: String, CaseIterable, Identifiable, Codable {
 
     var comfort: Int {
         switch self {
-        case .potGreen, .potRed, .potBlue, .stool, .hay: 1
-        case .lantern, .clock, .barrel, .table: 2
-        case .painting, .bench, .anvil: 3
-        case .rug, .bookshelf: 4
+        case .potGreen, .potRed, .potBlue, .stool, .hay, .redStool: 1
+        case .lantern, .clock, .barrel, .table, .plantPink, .plantFern: 2
+        case .painting, .bench, .anvil, .plantLush, .roundTable: 3
+        case .rug, .bookshelf, .greenRug, .cupboard: 4
+        case .sofa, .displayCase: 6
+        case .bathtub: 8
         case .jackLantern, .slimeLamp, .snowman, .sandcastle: 5
         }
     }
@@ -85,6 +243,16 @@ enum DecorID: String, CaseIterable, Identifiable, Codable {
         case .anvil: Cost(coins: 1500, (.iron, 20))
         case .rug: Cost(coins: 2500, (.wool, 15))
         case .bookshelf: Cost(coins: 3000, (.wood, 120))
+        case .redStool: Cost(coins: 150, (.wood, 10))
+        case .plantPink: Cost(coins: 400, (.berries, 20), (.clay, 4))
+        case .plantFern: Cost(coins: 450, (.herbs, 10), (.clay, 4))
+        case .plantLush: Cost(coins: 1100, (.herbs, 20), (.clay, 10))
+        case .roundTable: Cost(coins: 1200, (.wood, 80))
+        case .greenRug: Cost(coins: 2800, (.wool, 20), (.herbs, 10))
+        case .cupboard: Cost(coins: 3500, (.wood, 150), (.iron, 10))
+        case .sofa: Cost(coins: 6000, (.wool, 40), (.wood, 100))
+        case .displayCase: Cost(coins: 9000, (.ice, 30), (.gold, 10))
+        case .bathtub: Cost(coins: 15000, (.iron, 80), (.pearl, 3))
         case .jackLantern, .slimeLamp, .snowman, .sandcastle: Cost()
         }
     }

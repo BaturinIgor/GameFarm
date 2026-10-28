@@ -82,6 +82,11 @@ struct SaveData: Codable {
     var eventSkins: [String] = []
     /// Самый высокий уровень за все перерождения: образы за уровень остаются открытыми.
     var bestLevel = 1
+    // Огород и кухня
+    var canLevel = 1
+    var fertilizers: [FertilizerID: Int] = [:]
+    var selectedFertilizer: FertilizerID?
+    var kitchenLevel = 1
 
     init() {}
 
@@ -97,7 +102,7 @@ struct SaveData: Codable {
         case hunts, huntDay, kills
         case cards, awaken, shiny
         case eventKey, eventPoints, eventFree, eventVip, eventBonus, vipKeys, eventSeen, eventDecor, eventSkins
-        case bestLevel
+        case bestLevel, canLevel, fertilizers, selectedFertilizer, kitchenLevel
     }
 
     init(from decoder: Decoder) throws {
@@ -195,6 +200,11 @@ struct SaveData: Codable {
         eventDecor = try c.decodeIfPresent([String].self, forKey: .eventDecor) ?? []
         eventSkins = try c.decodeIfPresent([String].self, forKey: .eventSkins) ?? []
         bestLevel = max(level, try c.decodeIfPresent(Int.self, forKey: .bestLevel) ?? 1)
+        canLevel = max(1, try c.decodeIfPresent(Int.self, forKey: .canLevel) ?? 1)
+        fertilizers = try Self.map(c.decodeIfPresent([String: Int].self, forKey: .fertilizers)) ?? [:]
+        selectedFertilizer = (try? c.decodeIfPresent(String.self, forKey: .selectedFertilizer)).flatMap { FertilizerID(rawValue: $0) }
+        // Раньше вторая плита давалась подвалом: такие сохранения начинают со второго уровня кухни.
+        kitchenLevel = max(houseFloors.contains(.basement) ? 2 : 1, try c.decodeIfPresent(Int.self, forKey: .kitchenLevel) ?? 1)
 
         if !unlocked.contains(.meadow) { unlocked.insert(.meadow, at: 0) }
         // Экспедиция и сад не открываются через список, туда попадают отдельно.
@@ -202,6 +212,7 @@ struct SaveData: Codable {
         if current.spec.kind == .expedition && expedition == nil { current = .meadow }
         // Ивент закончился, пока игра была закрыта: возвращаемся домой.
         if current.spec.kind == .event && Events.current.event.location != current { current = .meadow }
+        if let floor = current.floor, !houseFloors.contains(floor) { current = .meadow }
         for tool in ToolKind.upgradable where tools[tool] == nil { tools[tool] = 1 }
         active = active.filter { animals[$0] != nil }
     }
@@ -276,6 +287,10 @@ struct SaveData: Codable {
         try c.encode(eventDecor, forKey: .eventDecor)
         try c.encode(eventSkins, forKey: .eventSkins)
         try c.encode(bestLevel, forKey: .bestLevel)
+        try c.encode(canLevel, forKey: .canLevel)
+        try c.encode(Self.raw(fertilizers), forKey: .fertilizers)
+        try c.encodeIfPresent(selectedFertilizer?.rawValue, forKey: .selectedFertilizer)
+        try c.encode(kitchenLevel, forKey: .kitchenLevel)
     }
 
     private static func map<K: RawRepresentable & Hashable>(_ raw: [String: Int]?) -> [K: Int]? where K.RawValue == String {
@@ -328,9 +343,39 @@ enum SaveFile {
     }
 
     static func write(_ save: SaveData) {
+        guard let data = encode(save) else { return }
+        try? data.write(to: url, options: .atomic)
+    }
+
+    static func encode(_ save: SaveData) -> Data? {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .secondsSince1970
-        guard let data = try? encoder.encode(save) else { return }
-        try? data.write(to: url, options: .atomic)
+        return try? encoder.encode(save)
+    }
+
+    static func decode(_ data: Data) -> SaveData? {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        return try? decoder.decode(SaveData.self, from: data)
+    }
+
+    /// Автокопия в папке приложения, её видно в Файлах (На iPhone > GameFarm).
+    static var autoBackupURL: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("GameFarm-backup.json")
+    }
+
+    static func writeAutoBackup(_ save: SaveData) {
+        guard let data = encode(save) else { return }
+        try? data.write(to: autoBackupURL, options: .atomic)
+    }
+
+    /// Копия для отправки: временный файл с датой в имени.
+    static func exportFile(_ save: SaveData) -> URL? {
+        guard let data = encode(save) else { return nil }
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd-HHmm"
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("GameFarm-\(f.string(from: Date())).json")
+        try? data.write(to: file, options: .atomic)
+        return file
     }
 }

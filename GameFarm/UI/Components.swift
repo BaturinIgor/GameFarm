@@ -2,7 +2,7 @@ import SwiftUI
 
 enum GameSheet: String, Identifiable {
     case storage, workshop, talents, animals, quests, map, level, shop, wardrobe, legacy, trader, wanderer
-    case house, kitchen, calendar, hunt, collection, events
+    case house, kitchen, calendar, hunt, collection, events, trophies, garden
     var id: String { rawValue }
 }
 
@@ -32,9 +32,15 @@ struct CostView: View {
             }
             ForEach(cost.items) { item in
                 let have = game.amount(item.kind)
-                chip(icon: AnyView(ResourceIcon(kind: item.kind, size: 18)),
-                     text: "\(Fmt.n(min(have, item.amount)))/\(Fmt.n(item.amount))",
-                     ok: have >= item.amount)
+                // Нажми на ресурс, чтобы узнать, где его взять.
+                Button {
+                    Dialogs.shared.info(item.kind.name, message: game.sources(of: item.kind), icon: "res:\(item.kind.rawValue)")
+                } label: {
+                    chip(icon: AnyView(ResourceIcon(kind: item.kind, size: 18)),
+                         text: "\(Fmt.n(min(have, item.amount)))/\(Fmt.n(item.amount))",
+                         ok: have >= item.amount)
+                }
+                .buttonStyle(.press)
             }
         }
     }

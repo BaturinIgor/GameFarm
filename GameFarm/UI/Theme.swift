@@ -329,6 +329,8 @@ struct IconView: View {
             CoinIcon(size: size)
         } else if icon.hasPrefix("px:") {
             PixelIcon(name: String(icon.dropFirst(3)), size: size)
+        } else if icon.hasPrefix("res:"), let kind = ResourceKind(rawValue: String(icon.dropFirst(4))) {
+            ResourceIcon(kind: kind, size: size)
         } else {
             Text(icon).font(.system(size: size * 0.85))
         }

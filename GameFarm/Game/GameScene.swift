@@ -203,12 +203,14 @@ final class GameScene: SKScene {
         game.setNearGarden(false)
         game.setTraderPrompt(nil)
         game.setPlacePrompt(nil)
+        game.setHomePrompt(nil)
         wildArrow.isHidden = true
         treasureArrow.isHidden = true
         game.setEncounter(nil)
         game.setGatePrompt(nil)
 
         minimap.configure(id)
+        minimap.isHidden = spec.kind == .home
         layoutMiniMap()
 
         switch layout.edge {
@@ -232,10 +234,14 @@ final class GameScene: SKScene {
         buildBorder()
         buildProps()
         decorateWater()
-        buildBase()
-        buildGates()
-        if id == .garden { buildGarden() }
-        buildFarm()
+        if spec.kind == .home {
+            buildHome()
+        } else {
+            buildBase()
+            buildGates()
+            if id == .garden { buildGarden() }
+            buildFarm()
+        }
 
         for placement in layout.spots {
             let spot = ResourceSpot(type: placement.type)
@@ -248,12 +254,20 @@ final class GameScene: SKScene {
         buildMonsters(id)
 
         player.removeAllActions()
-        if let gateID = game.arrivalGate, let g = layout.gates.first(where: { $0.id == gateID }) {
+        if spec.kind == .home {
+            let arrival = game.arrivalStation ?? .exit
+            player.position = layout.stations.first { $0.kind == arrival }?.position ?? layout.base
+            passageArmed = false
+        } else if game.arriveAtDoor, let door = doorPoint {
+            player.position = CGPoint(x: door.x, y: door.y - 30)
+        } else if let gateID = game.arrivalGate, let g = layout.gates.first(where: { $0.id == gateID }) {
             player.position = g.inner
         } else {
             player.position = CGPoint(x: layout.base.x, y: layout.base.y - 56)
         }
         game.arrivalGate = nil
+        game.arrivalStation = nil
+        game.arriveAtDoor = false
         velocity = .zero
         world.addChild(player)
         syncCompanions()
@@ -262,7 +276,7 @@ final class GameScene: SKScene {
         cam.position = clampedCamera(player.position)
         wildTimer = Double.random(in: 14...24)
         treasureTimer = Double.random(in: 30...50)
-        game.showBanner(id)
+        if spec.kind != .home { game.showBanner(id) }
         Sound.shared.playMusic(spec.music)
         Sound.shared.playAmbience(spec.ambience)
     }
@@ -286,14 +300,17 @@ final class GameScene: SKScene {
 
     /// Крупный декор: кусты, брёвна, камыши, фонтан.
     private func buildProps() {
+        let indoor = spec.kind == .home
         for item in layout.props {
-            guard let node = Sprites.animated(item.name, fps: 8, x: item.position.x, y: item.position.y) else { continue }
-            let flat = item.name.hasPrefix("lily")
+            let made = indoor ? Sprites.node(item.name, x: item.position.x, y: item.position.y)
+                : Sprites.animated(item.name, fps: 8, x: item.position.x, y: item.position.y)
+            guard let node = made else { continue }
+            let flat = item.name.hasPrefix("lily") || item.name.contains("rug") || item.name == "hm_doormat"
             node.zPosition = flat ? 2 : zFor(item.position.y)
             world.addChild(node)
             if item.fixed {
                 obstacles.append((item.position, 30))
-            } else if Self.solidProp(item.name) {
+            } else if !indoor && Self.solidProp(item.name) {
                 // Камни, брёвна и пни: сквозь них не пройти.
                 let r = max(10, node.size.width * 0.32)
                 obstacles.append((CGPoint(x: item.position.x, y: item.position.y + r * 0.35), r))
@@ -687,6 +704,7 @@ final class GameScene: SKScene {
             checkRoyalChest()
             checkExpedition()
             checkEvent(dt)
+            updateHome(dt)
         }
         for spot in spots where spot.tick(dt) {
             if distance(spot.position, player.position) < 500 {
@@ -962,6 +980,105 @@ final class GameScene: SKScene {
             finishing = true
             game.finishExpedition()
         }
+    }
+
+    // MARK: Дом изнутри
+
+    private var slotNodes: [SKNode] = []
+    private var decorSignature = ""
+    private var trophyNodes: [SKNode] = []
+    private var trophySignature = ""
+    private var passageArmed = false
+    private var homeTimer = 0.0
+
+    private func buildHome() {
+        slotNodes.removeAll()
+        trophyNodes.removeAll()
+        decorSignature = ""
+        trophySignature = ""
+        syncDecor()
+        syncTrophies()
+    }
+
+    /// Украшения на местах: поставленные видны, пустые места отмечены кружком.
+    private func syncDecor() {
+        let signature = layout.slots.map { game.save.decor[$0.id]?.rawValue ?? "-" }.joined(separator: ",")
+        guard signature != decorSignature else { return }
+        decorSignature = signature
+        for node in slotNodes { node.removeFromParent() }
+        slotNodes.removeAll()
+        for slot in layout.slots {
+            if let decor = game.save.decor[slot.id], let node = Sprites.node(decor.sprite, x: slot.position.x, y: slot.position.y) {
+                node.zPosition = decor.sprite.contains("rug") ? 2 : zFor(slot.position.y)
+                world.addChild(node)
+                slotNodes.append(node)
+            } else {
+                let mark = SKSpriteNode(texture: Effects.ringTexture, size: CGSize(width: 26, height: 13))
+                mark.position = slot.position
+                mark.zPosition = 3
+                mark.alpha = 0.35
+                mark.run(.repeatForever(.sequence([.fadeAlpha(to: 0.15, duration: 1.2), .fadeAlpha(to: 0.4, duration: 1.2)])))
+                world.addChild(mark)
+                slotNodes.append(mark)
+            }
+        }
+    }
+
+    /// Трофеи висят на доске в гостиной: два ряда по три.
+    private func syncTrophies() {
+        guard let board = layout.props.first(where: { $0.name == "hm_trophy_board" }) else { return }
+        let earned = Trophy.allCases.filter { game.isEarned($0) }
+        let signature = earned.map(\.rawValue).joined(separator: ",")
+        guard signature != trophySignature else { return }
+        trophySignature = signature
+        for node in trophyNodes { node.removeFromParent() }
+        trophyNodes.removeAll()
+        for (i, trophy) in Trophy.allCases.enumerated() where earned.contains(trophy) {
+            let x = board.position.x + CGFloat(i % 3 - 1) * 36
+            let y = board.position.y + (i < 3 ? 38 : 4)
+            guard let node = Sprites.node(trophy.sprite, x: x, y: y) else { continue }
+            node.zPosition = zFor(board.position.y) + 0.5
+            world.addChild(node)
+            trophyNodes.append(node)
+        }
+    }
+
+    /// Лестницы и дверь срабатывают, когда герой подходит вплотную; у остальных станций - карточка.
+    private func updateHome(_ dt: Double) {
+        guard spec.kind == .home, let floor = loaded?.floor else { return }
+        homeTimer -= dt
+        guard homeTimer <= 0 else { return }
+        homeTimer = 0.12
+        syncDecor()
+        if floor == .ground { syncTrophies() }
+        let p = player.position
+        var best: (HomePrompt, CGFloat)?
+        var nearPassage = false
+        for station in layout.stations {
+            let d = distance(station.position, p)
+            if station.kind.isPassage {
+                if d < 50 { nearPassage = true }
+                guard d < 26 else { continue }
+                let target: HouseFloor? = station.kind == .up ? floor.up : (station.kind == .down ? floor.down : nil)
+                if station.kind == .exit {
+                    if passageArmed { passageArmed = false; game.leaveHouse(); return }
+                } else if let target {
+                    if game.isBuilt(target) {
+                        if passageArmed { passageArmed = false; game.goFloor(target, via: station.kind); return }
+                    } else if best == nil || d < best!.1 {
+                        best = (.build(target), d)
+                    }
+                }
+            } else if d < 40, best == nil || d < best!.1 {
+                best = (.station(station.kind), d)
+            }
+        }
+        if !nearPassage { passageArmed = true }
+        for slot in layout.slots {
+            let d = distance(slot.position, p)
+            if d < 26, best == nil || d < best!.1 { best = (.slot(slot.id), d) }
+        }
+        game.setHomePrompt(best?.0)
     }
 
     private var eventCheckTimer = 0.0
@@ -1285,7 +1402,7 @@ final class GameScene: SKScene {
 
     private func checkBase(_ dt: Double, _ stats: Stats) {
         depositCooldown -= dt
-        guard depositCooldown <= 0, game.backpackCount > 0 else { return }
+        guard depositCooldown <= 0, game.backpackCount > 0, spec.kind != .home else { return }
         guard distance(player.position, layout.base) < CGFloat(stats.depositRadius) else { return }
         let kinds = ResourceKind.allCases.filter { (game.save.backpack[$0] ?? 0) > 0 }
         let moved = game.depositBackpack()
@@ -1716,6 +1833,10 @@ final class GameScene: SKScene {
                     Effects.gain(got.kind, got.amount, at: CGPoint(x: node.position.x, y: node.position.y + 30), in: world)
                     Effects.scatter(Art.spark, count: 5, at: CGPoint(x: node.position.x, y: node.position.y + 12), in: world,
                                     size: 10, color: .white, spread: 24, rise: 18, additive: true, duration: 0.5)
+                case .boosted:
+                    Effects.scatter(Art.spark, count: 6, at: CGPoint(x: node.position.x, y: node.position.y + 10), in: world,
+                                    size: 9, color: UIColor(red: 0.7, green: 1, blue: 0.6, alpha: 1), spread: 20, rise: 16,
+                                    additive: true, duration: 0.5)
                 }
             }
             game.gardenEvents.removeAll()
@@ -2033,7 +2154,7 @@ final class GameScene: SKScene {
             }
             return
         }
-        guard !transitioning, spec.kind != .expedition else { return }
+        guard !transitioning, spec.kind != .expedition, spec.kind != .home else { return }
         treasureTimer -= dt * stats.spawnMult
         if treasureTimer <= 0 {
             treasureTimer = Double.random(in: 60...110)

@@ -22,6 +22,8 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import handmade  # noqa: E402
 import interior  # noqa: E402
+import house  # noqa: E402
+import icons  # noqa: E402
 
 SRC = sys.argv[1]
 OUT = sys.argv[2]
@@ -662,6 +664,8 @@ icon("dish_omelette", cell(FOOD, 7, 1))
 icon("dish_pancakes", cell(FOOD, 6, 0))
 for name, im in interior.icons().items():
     icon(name, im)
+for name, im in icons.icons().items():
+    icon(name, im)
 
 # ================================================================ постройки и предметы
 
@@ -767,6 +771,9 @@ save("mo_skeleton_dark", lum_map(skeleton, ["#0e071b", "#262b44", "#3c4258", "#5
 # ================================================================ дом: мебель и загон
 
 for name, im in interior.sprites().items():
+    save(name, im)
+# Мебель дома изнутри
+for name, im in house.props(SRC).items():
     save(name, im)
 furn = load("Buildings", "House_Decor", "Furnaces.png")
 save("stove", crop_opaque(furn.crop((16, 0, 32, 32))))

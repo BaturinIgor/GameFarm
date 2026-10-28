@@ -11,6 +11,7 @@ TMP="$(mktemp -d)"
 DIR="$(dirname "$0")"
 python3 "$DIR/sprites.py" "$SRC" "$TMP/Sprites"
 python3 "$DIR/world.py" "$SRC" "$TMP/Sprites" GameFarm/Resources/Layouts
+python3 "$DIR/house.py" "$SRC" "$TMP/Sprites" GameFarm/Resources/Layouts
 tar -C "$TMP" -czf "$TMP/sprites.tar.gz" Sprites
 mkdir -p Art
 openssl enc -aes-256-cbc -md sha256 -salt -in "$TMP/sprites.tar.gz" -out Art/sprites.enc -pass env:ASSETS_KEY

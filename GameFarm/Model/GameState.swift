@@ -32,6 +32,8 @@ final class GameState {
     private(set) var wanderer: WandererVisit?
     /// Персонаж у двери дома или у загона.
     private(set) var placePrompt: PlaceKind?
+    /// В доме: у какой станции или места стоит герой.
+    private(set) var homePrompt: HomePrompt?
     /// Показать календарь наград при запуске.
     var loginPopup = false
     /// Здоровье героя (не сохраняется: после запуска герой здоров).
@@ -42,11 +44,16 @@ final class GameState {
     private(set) var reachable: Set<LocationID> = [.meadow]
     /// Через какие ворота персонаж пришёл в локацию (сцена ставит его к ним).
     @ObservationIgnored var arrivalGate: String?
+    /// В какой точке дома появиться после перехода (лестница или дверь).
+    @ObservationIgnored var arrivalStation: HomeStation?
+    /// Вышли из дома: появляемся у двери на поляне.
+    @ObservationIgnored var arriveAtDoor = false
     /// Посадки и сбор с кнопок интерфейса: сцена забирает и показывает эффекты.
     @ObservationIgnored var gardenEvents: [GardenEvent] = []
 
     @ObservationIgnored private var dirty = false
     @ObservationIgnored private var lastWrite = Date.distantPast
+    @ObservationIgnored private var lastBackup = Date.distantPast
     @ObservationIgnored private var bannerToken = 0
 
     private init() {
@@ -75,6 +82,38 @@ final class GameState {
         SaveFile.write(save)
         dirty = false
         lastWrite = Date()
+        if Date().timeIntervalSince(lastBackup) > 300 {
+            lastBackup = Date()
+            SaveFile.writeAutoBackup(save)
+        }
+    }
+
+    // MARK: Резервная копия
+
+    func exportBackup() -> URL? {
+        save.lastSeen = Date()
+        return SaveFile.exportFile(save)
+    }
+
+    /// Проверить файл копии: какой там уровень (nil, если файл не подходит).
+    func peekBackup(_ data: Data) -> SaveData? { SaveFile.decode(data) }
+
+    /// Заменить прогресс копией из файла.
+    func restoreBackup(_ restored: SaveData) {
+        save = restored
+        save.lastSeen = Date()
+        refreshReachable()
+        encounter = nil
+        gatePrompt = nil
+        homePrompt = nil
+        levelUp = nil
+        offlineReport = nil
+        expeditionReport = nil
+        recalc()
+        ensureQuests()
+        SaveFile.write(save)
+        toast("💾", tr("backup.restored", save.level))
+        SoundFX.play(.success)
     }
 
     // MARK: Перерождение
@@ -511,6 +550,7 @@ final class GameState {
         case .garden: return owns(.garden)
         case .expedition: return save.expedition?.id == id
         case .event: return eventsOpen && Events.current.event.location == id
+        case .home: return id.floor.map { isBuilt($0) } ?? false
         }
     }
 
@@ -1233,7 +1273,8 @@ extension GameState {
     func plant(_ index: Int, crop: CropID? = nil) -> Bool {
         guard let crop = crop ?? chosenSeed, seeds(crop) > 0, index < bedCount, bed(index).isEmpty else { return false }
         save.seeds[crop] = seeds(crop) - 1
-        setBed(index, Bed(crop: crop, plantedAt: Date()))
+        let speed = isBuilt(.greenhouse) ? Garden.greenhouseSpeed : 1
+        setBed(index, Bed(crop: crop, plantedAt: Date(), speed: speed))
         gardenEvents.append(GardenEvent(bed: index, kind: .planted))
         SoundFX.play(.pick)
         return true
@@ -1273,15 +1314,108 @@ extension GameState {
         return n
     }
 
-    /// Полить растущую грядку: оставшееся время роста сокращается.
+    /// Полить растущую грядку: оставшееся время роста сокращается. Хорошая лейка поливает всё сразу.
     func water(_ index: Int) -> Bool {
+        guard waterOne(index) else { return false }
+        if WateringCan.waterAll(save.canLevel) {
+            for i in 0..<bedCount where i != index && waterOne(i) {
+                gardenEvents.append(GardenEvent(bed: i, kind: .boosted))
+            }
+        }
+        return true
+    }
+
+    private func waterOne(_ index: Int) -> Bool {
         var b = bed(index)
         let now = Date()
         guard !b.isEmpty, !b.watered, !b.isRipe(at: now), let ready = b.readyAt else { return false }
-        b.boost += max(0, ready.timeIntervalSince(now)) * Garden.waterBoost
+        b.boost += max(0, ready.timeIntervalSince(now)) * WateringCan.boost(save.canLevel)
         b.watered = true
         setBed(index, b)
         return true
+    }
+
+    // MARK: Удобрения и лейка
+
+    func fertilizers(_ id: FertilizerID) -> Int { save.fertilizers[id] ?? 0 }
+
+    var chosenFertilizer: FertilizerID? {
+        guard let id = save.selectedFertilizer, fertilizers(id) > 0 else { return nil }
+        return id
+    }
+
+    func selectFertilizer(_ id: FertilizerID?) {
+        guard save.selectedFertilizer != id else { return }
+        save.selectedFertilizer = id
+        markDirty()
+    }
+
+    func canCraft(_ id: FertilizerID, count: Int = 1) -> Bool {
+        save.level >= id.level && canAfford(id.recipe.scaled(Double(count)))
+    }
+
+    @discardableResult
+    func craft(_ id: FertilizerID, count: Int = 1) -> Bool {
+        guard canCraft(id, count: count) else { return false }
+        pay(id.recipe.scaled(Double(count)))
+        save.fertilizers[id, default: 0] += count
+        if chosenFertilizer == nil { save.selectedFertilizer = id }
+        SoundFX.play(.pick)
+        markDirty()
+        return true
+    }
+
+    /// Удобрить растущую грядку выбранным удобрением.
+    @discardableResult
+    func fertilize(_ index: Int, with id: FertilizerID? = nil) -> Bool {
+        guard let id = id ?? chosenFertilizer, fertilizers(id) > 0 else { return false }
+        var b = bed(index)
+        let now = Date()
+        guard !b.isEmpty, b.fertilized != true, !b.isRipe(at: now), let ready = b.readyAt else { return false }
+        b.boost += max(0, ready.timeIntervalSince(now)) * id.cut + (id.cut >= 1 ? 1 : 0)
+        b.fertilized = true
+        b.extra = (b.extra ?? 0) + id.extra
+        save.fertilizers[id] = fertilizers(id) - 1
+        setBed(index, b)
+        gardenEvents.append(GardenEvent(bed: index, kind: .boosted))
+        SoundFX.play(.success)
+        return true
+    }
+
+    /// Удобрить все растущие грядки, пока хватает удобрения.
+    @discardableResult
+    func fertilizeAll() -> Int {
+        guard let id = chosenFertilizer else { return 0 }
+        var n = 0
+        for i in 0..<bedCount where fertilizers(id) > 0 {
+            if fertilize(i, with: id) { n += 1 }
+        }
+        return n
+    }
+
+    /// Сколько грядок можно удобрить прямо сейчас.
+    var fertilizableBeds: Int {
+        let now = Date()
+        return (0..<bedCount).filter { let b = bed($0); return !b.isEmpty && b.fertilized != true && !b.isRipe(at: now) }.count
+    }
+
+    var nextCanCost: Cost? {
+        let next = save.canLevel + 1
+        return next <= WateringCan.maxLevel ? WateringCan.cost(next) : nil
+    }
+
+    func canUpgradeCan() -> Bool {
+        guard let cost = nextCanCost else { return false }
+        return save.level >= WateringCan.requiredLevel(save.canLevel + 1) && canAfford(cost)
+    }
+
+    func upgradeCan() {
+        guard canUpgradeCan(), let cost = nextCanCost else { return }
+        pay(cost)
+        save.canLevel += 1
+        SoundFX.play(.levelUp)
+        toast("💧", tr("toast.can", save.canLevel))
+        saveNow()
     }
 
     /// Собрать спелый урожай: сразу на склад (огород у дома), плюс опыт.
@@ -1289,7 +1423,7 @@ extension GameState {
         let b = bed(index)
         guard let crop = b.crop, b.isRipe(at: Date()) else { return nil }
         let spec = crop.spec
-        let amount = max(1, Int((Double(spec.yield) * stats.yieldMultiplier(for: spec.produce)).rounded()))
+        let amount = max(1, Int((Double(spec.yield) * stats.yieldMultiplier(for: spec.produce)).rounded())) + (b.extra ?? 0)
         addToStorage(spec.produce, amount)
         rollCard(for: spec.produce, chance: 0.05)
         setBed(index, Bed())
@@ -1438,6 +1572,83 @@ extension GameState {
         return true
     }
 
+    // MARK: Прогулка по дому
+
+    var currentFloor: HouseFloor? { save.current.floor }
+
+    func setHomePrompt(_ value: HomePrompt?) {
+        if homePrompt != value { homePrompt = value }
+    }
+
+    /// Войти в дом с поляны: появляемся у двери на первом этаже.
+    func enterHouse() {
+        arrivalStation = .exit
+        arrivalGate = nil
+        save.current = .homeGround
+        encounter = nil
+        gatePrompt = nil
+        placePrompt = nil
+        markDirty()
+    }
+
+    /// Выйти из дома на поляну, к двери.
+    func leaveHouse() {
+        arrivalStation = nil
+        arriveAtDoor = true
+        arrivalGate = nil
+        save.current = .meadow
+        homePrompt = nil
+        markDirty()
+    }
+
+    /// Подняться или спуститься по лестнице.
+    func goFloor(_ floor: HouseFloor, via stairs: HomeStation) {
+        guard isBuilt(floor) else { return }
+        arrivalStation = stairs == .up ? .down : .up
+        save.current = floor.location
+        homePrompt = nil
+        markDirty()
+    }
+
+    /// Поспать: здоровье полностью восстанавливается.
+    func rest() {
+        healFull()
+        toast("😴", tr("toast.rest"))
+        SoundFX.play(.success)
+    }
+
+    func isEarned(_ trophy: Trophy) -> Bool { trophyProgress(trophy) >= trophy.target }
+
+    func trophyProgress(_ trophy: Trophy) -> Int {
+        switch trophy {
+        case .wolf, .bear: save.kills
+        case .shield: save.claimed.count
+        case .sword: save.tools[.sword] ?? 1
+        case .star: ConstellationID.allCases.filter { isComplete($0) }.count
+        case .cup: save.rebirths
+        }
+    }
+
+    // MARK: Уровень кухни
+
+    var nextKitchenCost: Cost? {
+        save.kitchenLevel < Kitchen.maxLevel ? Kitchen.cost(save.kitchenLevel + 1) : nil
+    }
+
+    func canUpgradeKitchen() -> Bool {
+        guard let cost = nextKitchenCost else { return false }
+        return save.level >= Kitchen.requiredLevel(save.kitchenLevel + 1) && canAfford(cost)
+    }
+
+    func upgradeKitchen() {
+        guard canUpgradeKitchen(), let cost = nextKitchenCost else { return }
+        pay(cost)
+        save.kitchenLevel += 1
+        SoundFX.play(.levelUp)
+        toast("🍳", tr("toast.kitchen", save.kitchenLevel))
+        saveNow()
+    }
+
     func decor(at slot: String) -> DecorID? { save.decor[slot] }
 
     var comfort: Int { save.decor.values.reduce(0) { $0 + $1.comfort } }
@@ -1479,7 +1690,9 @@ extension GameState {
 
     // MARK: Кухня
 
-    var cookSlots: Int { isBuilt(.basement) ? 2 : 1 }
+    var cookSlots: Int { Kitchen.slots(save.kitchenLevel) }
+
+    func cookTime(_ dish: DishID) -> Double { dish.cookTime * Kitchen.speed(save.kitchenLevel) }
 
     func dishes(_ dish: DishID) -> Int { save.dishes[dish] ?? 0 }
 
@@ -1494,7 +1707,7 @@ extension GameState {
         collectDishes()
         guard canCook(dish) else { return false }
         pay(Cost(coins: 0, items: dish.ingredients))
-        save.cooking.append(CookJob(dish: dish, readyAt: Date().addingTimeInterval(dish.cookTime)))
+        save.cooking.append(CookJob(dish: dish, readyAt: Date().addingTimeInterval(cookTime(dish))))
         SoundFX.play(.pick)
         markDirty()
         return true
@@ -1513,7 +1726,7 @@ extension GameState {
     }
 
     /// Сколько блюд может действовать одновременно.
-    var mealSlots: Int { 3 }
+    var mealSlots: Int { Kitchen.mealSlots(save.kitchenLevel) }
 
     /// Действующие блюда: ближайшее к концу первым.
     var activeMeals: [ActiveMeal] {
@@ -1985,5 +2198,45 @@ extension GameState {
         encounter = nil
         gatePrompt = nil
         markDirty()
+    }
+}
+
+// MARK: Где добыть ресурс
+
+extension GameState {
+    /// Подсказка, где взять ресурс: огород, звери, локации, монстры.
+    func sources(of kind: ResourceKind) -> String {
+        var lines: [String] = []
+        if let crop = CropID.allCases.first(where: { $0.spec.produce == kind }) {
+            lines.append(tr("source.garden", crop.name, crop.spec.level))
+        }
+        let animals = AnimalID.allCases.filter { id in
+            id.spec.effects.contains { if case .produce(let k, _) = $0 { return k == kind } else { return false } }
+        }
+        if !animals.isEmpty {
+            lines.append(tr("source.animals", animals.map { $0.spec.name }.joined(separator: ", ")))
+        }
+        let places = LocationID.allCases.filter { id in
+            let kindOK = id.spec.kind == .world || id.spec.kind == .garden || id.spec.kind == .expedition
+            return kindOK && id.layout.nodeTypes.contains { type in type.spec.yields.contains { $0.kind == kind } }
+        }
+        if !places.isEmpty {
+            let open = places.filter { isUnlocked($0) || $0.spec.kind == .expedition }
+            let names = (open.isEmpty ? places : open).prefix(4).map { $0.spec.name }
+            lines.append(tr("source.places", names.joined(separator: ", ")))
+            if let node = LocationID.allCases.lazy.flatMap({ $0.layout.nodeTypes }).first(where: { t in t.spec.yields.first?.kind == kind }) {
+                let spec = node.spec
+                if spec.tool != .hand {
+                    lines.append(tr("source.tool", spec.name, ToolTier.name(spec.tool, tier: spec.tier)))
+                }
+            }
+        }
+        let monsters = MonsterKind.allCases.filter { $0.loot == kind }
+        if !monsters.isEmpty {
+            lines.append(tr("source.monsters", monsters.prefix(3).map(\.name).joined(separator: ", ")))
+        }
+        if lines.isEmpty { lines.append(tr("source.unknown")) }
+        lines.append(tr("source.have", Fmt.n(amount(kind))))
+        return lines.joined(separator: "\n")
     }
 }

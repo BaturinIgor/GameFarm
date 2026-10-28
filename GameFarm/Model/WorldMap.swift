@@ -137,6 +137,9 @@ struct LocationLayout {
     var pen: CGRect?
     /// Доска заказов и стражник.
     var board: CGPoint?
+    /// Дом изнутри: станции (плита, лестницы, кровать...) и места для украшений.
+    var stations: [(kind: HomeStation, position: CGPoint)] = []
+    var slots: [(id: String, position: CGPoint)] = []
 
     var size: CGSize { CGSize(width: CGFloat(cols) * cell, height: CGFloat(rows) * cell) }
 
@@ -243,6 +246,8 @@ struct LocationLayout {
         let stall: [Double]?
         let pen: [Double]?
         let board: [Double]?
+        let stations: [Entry]?
+        let slots: [Entry]?
     }
 
     private static func point(_ v: [Double]) -> CGPoint {
@@ -284,7 +289,11 @@ struct LocationLayout {
             farm: (raw.farm ?? []).map(point),
             stall: raw.stall.map(point),
             pen: raw.pen.flatMap { v in v.count == 4 ? CGRect(x: v[0], y: v[1], width: v[2], height: v[3]) : nil },
-            board: raw.board.map(point)
+            board: raw.board.map(point),
+            stations: (raw.stations ?? []).compactMap { e in
+                HomeStation(rawValue: e.name).map { (kind: $0, position: CGPoint(x: e.x, y: e.y)) }
+            },
+            slots: (raw.slots ?? []).map { (id: $0.name, position: CGPoint(x: $0.x, y: $0.y)) }
         )
     }
 

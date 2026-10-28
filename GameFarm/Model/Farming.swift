@@ -44,22 +44,32 @@ struct CropSpec {
 struct Bed: Codable, Equatable {
     var crop: CropID?
     var plantedAt: Date?
-    /// Сколько секунд роста сэкономил полив.
+    /// Сколько секунд роста сэкономили полив и удобрения.
     var boost: Double = 0
     var watered = false
+    /// Множитель времени роста на момент посадки (оранжерея ускоряет). Нет в старых сохранениях.
+    var speed: Double?
+    /// Удобрена ли и сколько урожая сверху.
+    var fertilized: Bool?
+    var extra: Int?
 
     var isEmpty: Bool { crop == nil }
 
+    /// Полное время роста с учётом оранжереи и полива.
+    var growTime: Double {
+        guard let crop else { return 0 }
+        return max(0, crop.spec.growTime * (speed ?? 1) - boost)
+    }
+
     var readyAt: Date? {
-        guard let crop, let plantedAt else { return nil }
-        return plantedAt.addingTimeInterval(max(0, crop.spec.growTime - boost))
+        guard crop != nil, let plantedAt else { return nil }
+        return plantedAt.addingTimeInterval(growTime)
     }
 
     /// Доля роста от 0 до 1.
     func progress(at now: Date) -> Double {
-        guard let crop, let plantedAt else { return 0 }
-        let total = max(1, crop.spec.growTime - boost)
-        return min(1, max(0, now.timeIntervalSince(plantedAt) / total))
+        guard crop != nil, let plantedAt else { return 0 }
+        return min(1, max(0, now.timeIntervalSince(plantedAt) / max(1, growTime)))
     }
 
     func isRipe(at now: Date) -> Bool { crop != nil && progress(at: now) >= 1 }
@@ -72,11 +82,92 @@ struct Bed: Codable, Equatable {
     }
 }
 
+/// Удобрения: ускоряют рост и прибавляют урожай. Делаются из ресурсов.
+enum FertilizerID: String, CaseIterable, Identifiable, Codable {
+    case compost, superGrow, magic
+
+    var id: String { rawValue }
+    var name: String { tr("fert.\(rawValue)") }
+    var icon: String {
+        switch self {
+        case .compost: "fert_compost"
+        case .superGrow: "fert_super"
+        case .magic: "fert_magic"
+        }
+    }
+
+    /// Какая доля оставшегося времени роста пропадает.
+    var cut: Double {
+        switch self {
+        case .compost: 0.4
+        case .superGrow: 0.7
+        case .magic: 1
+        }
+    }
+
+    /// Сколько урожая сверху.
+    var extra: Int {
+        switch self {
+        case .compost: 0
+        case .superGrow: 1
+        case .magic: 2
+        }
+    }
+
+    var level: Int {
+        switch self {
+        case .compost: 3
+        case .superGrow: 10
+        case .magic: 22
+        }
+    }
+
+    var recipe: Cost {
+        switch self {
+        case .compost: Cost(coins: 10, (.berries, 6), (.wood, 6), (.wheat, 3))
+        case .superGrow: Cost(coins: 60, (.fish, 5), (.mushrooms, 6), (.carrots, 6))
+        case .magic: Cost(coins: 400, (.herbs, 10), (.honey, 3), (.crystal, 1))
+        }
+    }
+
+    var effectText: String {
+        extra > 0 ? tr("fert.effect.extra", Fmt.pct(cut), extra) : tr("fert.effect", Fmt.pct(cut))
+    }
+}
+
+/// Лейка: чем лучше, тем сильнее полив; с 3 уровня поливает весь огород сразу.
+enum WateringCan {
+    static let maxLevel = 5
+
+    static func boost(_ level: Int) -> Double { 0.3 + 0.1 * Double(max(1, min(maxLevel, level)) - 1) }
+
+    static func waterAll(_ level: Int) -> Bool { level >= 3 }
+
+    static func requiredLevel(_ next: Int) -> Int {
+        switch next {
+        case 2: 5
+        case 3: 12
+        case 4: 20
+        default: 28
+        }
+    }
+
+    static func cost(_ next: Int) -> Cost {
+        switch next {
+        case 2: Cost(coins: 300, (.iron, 10))
+        case 3: Cost(coins: 1500, (.iron, 30), (.bamboo, 20))
+        case 4: Cost(coins: 5000, (.gold, 20), (.ice, 20))
+        default: Cost(coins: 15000, (.diamond, 6), (.crystal, 4))
+        }
+    }
+}
+
 /// Что случилось с грядкой по кнопке в интерфейсе: сцена покажет эффект.
 struct GardenEvent {
     enum Kind {
         case planted
         case harvested(ResourceAmount)
+        case boosted
     }
 
     let bed: Int
@@ -85,8 +176,8 @@ struct GardenEvent {
 
 enum Garden {
     static let maxBeds = 12
-    /// Полив сокращает оставшееся время роста.
-    static let waterBoost = 0.3
+    /// Оранжерея: растения растут на 20% быстрее.
+    static let greenhouseSpeed = 0.8
 
     /// Грядки открываются с уровнем: 4 сразу и ещё по одной каждые 4 уровня.
     static func beds(at level: Int) -> Int {

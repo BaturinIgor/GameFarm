@@ -4,6 +4,7 @@ import SwiftUI
 struct BedsCard: View {
     @Environment(GameState.self) private var game
     let onShop: () -> Void
+    var onShed: () -> Void = {}
 
     var body: some View {
         let owned = CropID.allCases.filter { game.seeds($0) > 0 }
@@ -54,6 +55,39 @@ struct BedsCard: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            let ferts = FertilizerID.allCases.filter { game.fertilizers($0) > 0 }
+            if !ferts.isEmpty {
+                HStack(spacing: 6) {
+                    ForEach(ferts) { id in
+                        let selected = game.chosenFertilizer == id
+                        Button {
+                            game.selectFertilizer(selected ? nil : id)
+                            UISelectionFeedbackGenerator().selectionChanged()
+                        } label: {
+                            HStack(spacing: 3) {
+                                PixelIcon(name: id.icon, size: 20)
+                                Text("\(game.fertilizers(id))").font(.game(13)).monospacedDigit()
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Capsule().fill(selected ? Color(hex: 0xC8EBA0) : Palette.parchmentLight))
+                            .overlay(Capsule().strokeBorder(selected ? Palette.outline : Palette.woodDark.opacity(0.4),
+                                                            lineWidth: selected ? 2 : 1.5))
+                        }
+                        .buttonStyle(.press)
+                    }
+                    Spacer(minLength: 0)
+                    if game.chosenFertilizer != nil {
+                        Button {
+                            game.fertilizeAll()
+                        } label: {
+                            Text(tr("beds.fertAll", game.fertilizableBeds))
+                        }
+                        .buttonStyle(.game(.purple, small: true))
+                        .disabled(game.fertilizableBeds == 0)
+                    }
+                }
+            }
             HStack(spacing: 8) {
                 let empty = game.emptyBeds
                 let can = game.chosenSeed.map { min(empty, game.seeds($0)) } ?? 0
@@ -76,6 +110,10 @@ struct BedsCard: View {
                     .buttonStyle(.game(.orange, small: true, wide: true))
                     .disabled(ripe == 0)
                 }
+                Button(action: onShed) {
+                    PixelIcon(name: "watering_can", size: 18)
+                }
+                .buttonStyle(.game(.blue, small: true))
                 Button(action: onShop) {
                     Image(systemName: "cart.fill")
                 }
@@ -102,6 +140,8 @@ private struct BedTile: View {
         Button {
             if ripe {
                 if game.harvestOne(index) { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
+            } else if !bed.isEmpty, game.chosenFertilizer != nil {
+                if game.fertilize(index) { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
             } else if bed.isEmpty, !locked {
                 if game.plant(index) {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -124,6 +164,11 @@ private struct BedTile: View {
                         }
                     }
                     .frame(maxHeight: .infinity)
+                    if bed.fertilized == true && !ripe {
+                        Circle().fill(ButtonTone.purple.top).frame(width: 6, height: 6)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                            .padding(3)
+                    }
                     if !ripe {
                         GeometryReader { geo in
                             Rectangle().fill(ButtonTone.green.base)

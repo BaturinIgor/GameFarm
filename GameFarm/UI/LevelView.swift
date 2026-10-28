@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct LevelView: View {
     @Environment(GameState.self) private var game
@@ -16,6 +17,7 @@ struct LevelView: View {
                 upcomingCard
                 statsCard
                 rebirthCard
+                BackupCard()
             }
             .padding(16)
         }
@@ -242,4 +244,55 @@ struct UpcomingLevel: Identifiable {
     let level: Int
     let lines: [UnlockLine]
     var id: Int { level }
+}
+
+
+/// Резервная копия прогресса: сохранить в файл и восстановить из файла.
+struct BackupCard: View {
+    @Environment(GameState.self) private var game
+    @State private var exportURL: URL?
+    @State private var importing = false
+
+    var body: some View {
+        Card {
+            HStack(spacing: 10) {
+                PixelIcon(name: "scroll2", size: 30)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(tr("backup.title")).font(.game(15))
+                    Text(tr("backup.hint"))
+                        .font(.game(11, .semibold))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            HStack(spacing: 8) {
+                if let url = exportURL {
+                    ShareLink(item: url) {
+                        Label(tr("backup.save"), systemImage: "square.and.arrow.up")
+                    }
+                    .buttonStyle(.game(.green, small: true, wide: true))
+                }
+                Button {
+                    importing = true
+                } label: {
+                    Label(tr("backup.load"), systemImage: "square.and.arrow.down")
+                }
+                .buttonStyle(.game(.wood, small: true, wide: true))
+            }
+        }
+        .onAppear { exportURL = game.exportBackup() }
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.json, .data]) { result in
+            guard case .success(let url) = result else { return }
+            let access = url.startAccessingSecurityScopedResource()
+            defer { if access { url.stopAccessingSecurityScopedResource() } }
+            guard let data = try? Data(contentsOf: url), let restored = game.peekBackup(data) else {
+                Dialogs.shared.info(tr("backup.bad"), message: tr("backup.bad.message"))
+                return
+            }
+            Dialogs.shared.confirm(tr("backup.confirm", restored.level), message: tr("backup.confirm.message", game.save.level),
+                                   icon: "px:scroll2", confirm: tr("backup.load"), tone: .orange) {
+                game.restoreBackup(restored)
+            }
+        }
+    }
 }

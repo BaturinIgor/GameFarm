@@ -7,6 +7,8 @@ struct ContentView: View {
     @State private var sheet: GameSheet?
     /// Окно, в которое вернёт крестик (гардероб из магазина или профиля).
     @State private var returnTo: GameSheet?
+    /// Выбор украшения для места в доме.
+    @State private var decorSlot: String?
     private let dialogs = Dialogs.shared
 
     var body: some View {
@@ -16,7 +18,7 @@ struct ContentView: View {
                        options: [.ignoresSiblingOrder, .shouldCullNonVisibleNodes])
                 .ignoresSafeArea()
 
-            HUDView(scene: scene, sheet: $sheet)
+            HUDView(scene: scene, sheet: $sheet, pickDecor: { decorSlot = $0 })
 
             if let id = game.banner {
                 LocationBanner(id: id)
@@ -74,6 +76,12 @@ struct ContentView: View {
                     .transition(.move(edge: .bottom))
                     .zIndex(16)
                     .id(which)
+            }
+
+            if let slot = decorSlot {
+                DecorPicker(slot: slot) { withAnimation(.snappy(duration: 0.2)) { decorSlot = nil } }
+                    .transition(.opacity)
+                    .zIndex(17)
             }
 
             if let report = game.expeditionReport, game.levelUp == nil {
@@ -156,6 +164,8 @@ struct ContentView: View {
             case .hunt: HuntView()
             case .collection: CollectionView()
             case .events: EventsView(onTravel: { closeAll() })
+            case .trophies: TrophyView()
+            case .garden: GardenShedView()
             }
         }
         .environment(game)
@@ -236,6 +246,7 @@ struct HUDView: View {
     @Environment(GameState.self) private var game
     let scene: GameScene
     @Binding var sheet: GameSheet?
+    var pickDecor: (String) -> Void = { _ in }
 
     var body: some View {
         VStack(spacing: 8) {
@@ -277,20 +288,23 @@ struct HUDView: View {
             } else if let gate = game.gatePrompt {
                 GateCard(gateID: gate) { sheet = .shop }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+            } else if let home = game.homePrompt {
+                HomeCard(prompt: home, open: { sheet = $0 }, pickDecor: pickDecor)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             } else if let trader = game.traderPrompt {
                 TraderCard(kind: trader) { sheet = trader == .stall ? .trader : .wanderer }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             } else if let place = game.placePrompt {
                 PlaceCard(kind: place) {
                     switch place {
-                    case .house: sheet = .house
+                    case .house: game.enterHouse()
                     case .pen: sheet = .animals
                     case .hunter: sheet = .hunt
                     }
                 }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             } else if game.nearGarden {
-                BedsCard { sheet = .trader }
+                BedsCard(onShop: { sheet = .trader }, onShed: { sheet = .garden })
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
@@ -304,6 +318,7 @@ struct HUDView: View {
         .animation(.spring(duration: 0.35), value: game.traderPrompt)
         .animation(.spring(duration: 0.35), value: game.nearGarden)
         .animation(.spring(duration: 0.35), value: game.placePrompt)
+        .animation(.spring(duration: 0.35), value: game.homePrompt)
         .animation(.spring(duration: 0.35), value: game.toasts)
         .animation(.easeInOut(duration: 0.3), value: game.save.tutorialDone)
     }
