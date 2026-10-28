@@ -76,6 +76,9 @@ extension GameRules {
                 lines.append(UnlockLine(icon: id.spec.emoji, text: tr("unlock.animal", id.spec.name)))
             }
         }
+        for floor in HouseFloor.allCases where floor.level == level && level > 1 {
+            lines.append(UnlockLine(icon: "🏠", text: tr("unlock.floor", floor.title + " · " + floor.room)))
+        }
         if level > 1 && Garden.beds(at: level) > Garden.beds(at: level - 1) {
             lines.append(UnlockLine(icon: "🌱", text: tr("unlock.bed")))
         }

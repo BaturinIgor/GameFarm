@@ -30,6 +30,10 @@ final class GameState {
     private(set) var traderPrompt: TraderKind?
     /// Бродячий торговец сейчас в одной из локаций.
     private(set) var wanderer: WandererVisit?
+    /// Персонаж у двери дома или у загона.
+    private(set) var placePrompt: PlaceKind?
+    /// Показать календарь наград при запуске.
+    var loginPopup = false
     /// Локации, куда можно дойти через открытые проходы.
     private(set) var reachable: Set<LocationID> = [.meadow]
     /// Через какие ворота персонаж пришёл в локацию (сцена ставит его к ним).
@@ -118,6 +122,8 @@ final class GameState {
         save.adsWatched = old.adsWatched
         save.skin = old.skin
         save.legacy = old.legacy
+        save.loginDay = old.loginDay
+        save.loginClaims = old.loginClaims
         save.rebirths = old.rebirths + (reward > 0 ? 1 : 0)
         save.sparks = old.sparks + reward
         save.sparksEarned = old.sparksEarned + reward
@@ -581,12 +587,12 @@ final class GameState {
 
     var freeTicketReady: Bool {
         save.tickets < Expedition.maxTickets
-            && (save.lastFreeTicket ?? .distantPast).addingTimeInterval(Expedition.freeTicketEvery) <= Date()
+            && (save.lastFreeTicket ?? .distantPast).addingTimeInterval(freeTicketInterval) <= Date()
     }
 
     var nextFreeTicket: Date? {
         guard let last = save.lastFreeTicket else { return nil }
-        let next = last.addingTimeInterval(Expedition.freeTicketEvery)
+        let next = last.addingTimeInterval(freeTicketInterval)
         return next > Date() ? next : nil
     }
 
@@ -771,6 +777,7 @@ final class GameState {
         case .talents: return talentPointsSpent
         case .quests: return save.questsDone
         case .treasures: return save.treasures
+        case .floors: return save.houseFloors.count
         }
     }
 
@@ -969,6 +976,7 @@ final class GameState {
     // MARK: Пока игры не было
 
     func applyOfflineProgress() {
+        if canClaimLogin && save.tutorialDone { loginPopup = true }
         repairTimers()
         let elapsed = min(Date().timeIntervalSince(save.lastSeen), stats.offlineHours * 3600)
         save.lastSeen = Date()
@@ -1054,12 +1062,21 @@ final class GameState {
         // Наследие: вечные бонусы за перерождения.
         func legacy(_ perk: LegacyPerk) -> Double { Double(legacyRank(perk)) * perk.perRank }
         s.yieldAll += legacy(.harvest)
+        // Уют дома и блюдо, которое сейчас действует.
+        let cozy = Comfort.bonus(comfort)
+        s.yieldAll += cozy
+        let meal = activeMeal?.buff ?? MealBuff()
+        s.yieldAll += meal.yield
+        if isBuilt(.upper) { s.offlineHours += 2 }
 
         var speedBonus = 0.07 * r(.swift) + 0.05 * r(.tailwind) + legacy(.boots)
         var critBonus = 0.05 * r(.crit)
         var respawnBonus = 0.08 * r(.regrowth) + (r(.abundance) > 0 ? 0.5 : 0) + legacy(.growth)
-        var xpBonus = 0.1 * r(.scholar) + 0.06 * r(.sage) + legacy(.wisdom)
-        var sellBonus = 0.08 * r(.trader) + legacy(.merchant)
+        var xpBonus = 0.1 * r(.scholar) + 0.06 * r(.sage) + legacy(.wisdom) + cozy + meal.xp
+        var sellBonus = 0.08 * r(.trader) + legacy(.merchant) + meal.sell
+        speedBonus += meal.speed
+        critBonus += meal.crit
+        s.animalMult *= 1 + meal.animals
         var capacity = Double(GameRules.capacity(at: save.level)) + 15 * r(.bigPack)
             + (owns(.starter) ? Double(Premium.starterBackpack) : 0) + legacy(.pack)
 
@@ -1302,6 +1319,159 @@ extension GameState {
         SoundFX.play(.purchase)
         markDirty()
         return true
+    }
+}
+
+enum PlaceKind: Equatable {
+    case house, pen
+}
+
+// MARK: Дом
+
+extension GameState {
+    func isBuilt(_ floor: HouseFloor) -> Bool { save.houseFloors.contains(floor) }
+
+    func canBuild(_ floor: HouseFloor) -> Bool {
+        !isBuilt(floor) && save.level >= floor.level && canAfford(floor.cost)
+    }
+
+    @discardableResult
+    func build(_ floor: HouseFloor) -> Bool {
+        guard canBuild(floor) else { return false }
+        pay(floor.cost)
+        save.houseFloors.append(floor)
+        recalc()
+        SoundFX.play(.unlock)
+        saveNow()
+        return true
+    }
+
+    func decor(at slot: String) -> DecorID? { save.decor[slot] }
+
+    var comfort: Int { save.decor.values.reduce(0) { $0 + $1.comfort } }
+
+    func canPlace(_ decor: DecorID) -> Bool { canAfford(decor.cost) }
+
+    @discardableResult
+    func place(_ decor: DecorID, at slot: String) -> Bool {
+        guard save.decor[slot] == nil, canPlace(decor) else { return false }
+        pay(decor.cost)
+        save.decor[slot] = decor
+        recalc()
+        SoundFX.play(.purchase)
+        markDirty()
+        return true
+    }
+
+    func removeDecor(at slot: String) {
+        guard save.decor[slot] != nil else { return }
+        save.decor[slot] = nil
+        recalc()
+        markDirty()
+    }
+
+    func setPlacePrompt(_ value: PlaceKind?) {
+        if placePrompt != value { placePrompt = value }
+    }
+
+    /// Чердак с подзорной трубой: бесплатный билет вдвое чаще.
+    var freeTicketInterval: Double {
+        isBuilt(.attic) ? Expedition.freeTicketEvery / 2 : Expedition.freeTicketEvery
+    }
+
+    // MARK: Кухня
+
+    var cookSlots: Int { isBuilt(.basement) ? 2 : 1 }
+
+    func dishes(_ dish: DishID) -> Int { save.dishes[dish] ?? 0 }
+
+    var totalDishes: Int { save.dishes.values.reduce(0, +) }
+
+    func canCook(_ dish: DishID) -> Bool {
+        save.cooking.count < cookSlots && canAfford(Cost(coins: 0, items: dish.ingredients))
+    }
+
+    @discardableResult
+    func cook(_ dish: DishID) -> Bool {
+        collectDishes()
+        guard canCook(dish) else { return false }
+        pay(Cost(coins: 0, items: dish.ingredients))
+        save.cooking.append(CookJob(dish: dish, readyAt: Date().addingTimeInterval(dish.cookTime)))
+        SoundFX.play(.pick)
+        markDirty()
+        return true
+    }
+
+    /// Готовые блюда с плиты переходят в запасы.
+    @discardableResult
+    func collectDishes() -> Int {
+        let now = Date()
+        let ready = save.cooking.filter { $0.readyAt <= now }
+        guard !ready.isEmpty else { return 0 }
+        for job in ready { save.dishes[job.dish, default: 0] += 1 }
+        save.cooking.removeAll { $0.readyAt <= now }
+        markDirty()
+        return ready.count
+    }
+
+    var activeMeal: DishID? {
+        guard let meal = save.meal, let until = save.mealUntil, until > Date() else { return nil }
+        return meal
+    }
+
+    func eat(_ dish: DishID) {
+        guard dishes(dish) > 0 else { return }
+        save.dishes[dish] = dishes(dish) - 1
+        save.meal = dish
+        save.mealUntil = Date().addingTimeInterval(dish.duration * (isBuilt(.basement) ? 1.5 : 1))
+        recalc()
+        SoundFX.play(.success)
+        toast(dish.emoji, tr("toast.meal", dish.name))
+        saveNow()
+    }
+
+    /// Блюдо закончилось: убираем бонус.
+    func refreshMeal() {
+        if save.meal != nil, activeMeal == nil {
+            save.meal = nil
+            save.mealUntil = nil
+            recalc()
+            markDirty()
+        }
+        collectDishes()
+    }
+
+    // MARK: Календарь
+
+    private var dayIndex: Int {
+        Int(Calendar.current.startOfDay(for: Date()).timeIntervalSince1970 / 86_400)
+    }
+
+    var canClaimLogin: Bool { save.loginDay != dayIndex }
+
+    func loginReward(_ claim: Int) -> LoginCalendar.Reward {
+        LoginCalendar.reward(claim: claim, level: save.level)
+    }
+
+    func claimLogin() {
+        guard canClaimLogin else { return }
+        switch loginReward(save.loginClaims) {
+        case .coins(let n): addCoins(n)
+        case .seeds(let crop, let n): save.seeds[crop, default: 0] += n
+        case .tickets(let n): save.tickets += n
+        case .coinsAndWood(let n, let wood):
+            addCoins(n)
+            addToStorage(.wood, wood, counts: false)
+        case .dish(let dish): save.dishes[dish, default: 0] += 1
+        case .resource(let kind, let n): addToStorage(kind, n, counts: false)
+        case .chest(let tickets, let coins):
+            save.tickets += tickets
+            addCoins(coins)
+        }
+        save.loginDay = dayIndex
+        save.loginClaims += 1
+        SoundFX.play(.treasure)
+        saveNow()
     }
 }
 

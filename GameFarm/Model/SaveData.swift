@@ -53,6 +53,15 @@ struct SaveData: Codable {
     /// День обменов в лавке и какие обмены уже сделаны.
     var dealsDay = 0
     var dealsBought: [Int] = []
+    // Дом, кухня и календарь
+    var houseFloors: [HouseFloor] = [.ground]
+    var decor: [String: DecorID] = [:]
+    var dishes: [DishID: Int] = [:]
+    var cooking: [CookJob] = []
+    var meal: DishID?
+    var mealUntil: Date?
+    var loginDay = 0
+    var loginClaims = 0
 
     init() {}
 
@@ -64,6 +73,7 @@ struct SaveData: Codable {
         case openGates, tickets, lastFreeTicket, gardenChestAt, expedition, consumed
         case rebirths, sparks, sparksEarned, legacy
         case beds, seeds, selectedSeed, cropsHarvested, dealsDay, dealsBought
+        case houseFloors, decor, dishes, cooking, meal, mealUntil, loginDay, loginClaims
     }
 
     init(from decoder: Decoder) throws {
@@ -120,6 +130,19 @@ struct SaveData: Codable {
         cropsHarvested = try c.decodeIfPresent(Int.self, forKey: .cropsHarvested) ?? 0
         dealsDay = try c.decodeIfPresent(Int.self, forKey: .dealsDay) ?? 0
         dealsBought = try c.decodeIfPresent([Int].self, forKey: .dealsBought) ?? []
+        houseFloors = Self.list(try c.decodeIfPresent([String].self, forKey: .houseFloors)) ?? [.ground]
+        if !houseFloors.contains(.ground) { houseFloors.append(.ground) }
+        var decorMap: [String: DecorID] = [:]
+        for (slot, raw) in try c.decodeIfPresent([String: String].self, forKey: .decor) ?? [:] {
+            if let id = DecorID(rawValue: raw) { decorMap[slot] = id }
+        }
+        decor = decorMap
+        dishes = try Self.map(c.decodeIfPresent([String: Int].self, forKey: .dishes)) ?? [:]
+        cooking = (try? c.decodeIfPresent([CookJob].self, forKey: .cooking)) ?? []
+        meal = (try? c.decodeIfPresent(String.self, forKey: .meal)).flatMap { DishID(rawValue: $0) }
+        mealUntil = try c.decodeIfPresent(Date.self, forKey: .mealUntil)
+        loginDay = try c.decodeIfPresent(Int.self, forKey: .loginDay) ?? 0
+        loginClaims = try c.decodeIfPresent(Int.self, forKey: .loginClaims) ?? 0
 
         if !unlocked.contains(.meadow) { unlocked.insert(.meadow, at: 0) }
         // Экспедиция и сад не открываются через список, туда попадают отдельно.
@@ -176,6 +199,14 @@ struct SaveData: Codable {
         try c.encode(cropsHarvested, forKey: .cropsHarvested)
         try c.encode(dealsDay, forKey: .dealsDay)
         try c.encode(dealsBought, forKey: .dealsBought)
+        try c.encode(houseFloors.map(\.rawValue), forKey: .houseFloors)
+        try c.encode(decor.mapValues(\.rawValue), forKey: .decor)
+        try c.encode(Self.raw(dishes), forKey: .dishes)
+        try c.encode(cooking, forKey: .cooking)
+        try c.encodeIfPresent(meal?.rawValue, forKey: .meal)
+        try c.encodeIfPresent(mealUntil, forKey: .mealUntil)
+        try c.encode(loginDay, forKey: .loginDay)
+        try c.encode(loginClaims, forKey: .loginClaims)
     }
 
     private static func map<K: RawRepresentable & Hashable>(_ raw: [String: Int]?) -> [K: Int]? where K.RawValue == String {

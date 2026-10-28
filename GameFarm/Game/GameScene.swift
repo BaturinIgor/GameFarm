@@ -58,6 +58,12 @@ final class GameScene: SKScene {
     private var stallNode: TraderNode?
     private var wandererNode: TraderNode?
     private var wandererTimer: Double = 300
+    // Загон и дом
+    private var penRect = CGRect.null
+    private var penAnimals: [PenAnimal] = []
+    private var penSignature: [AnimalID] = []
+    private var penTimer: Double = 0
+    private var doorPoint: CGPoint?
     private var builtLanguage = ""
     private var shownSkin = ""
 
@@ -164,8 +170,13 @@ final class GameScene: SKScene {
         gardenRect = .null
         stallNode = nil
         wandererNode = nil
+        penRect = .null
+        penAnimals.removeAll()
+        penSignature = []
+        doorPoint = nil
         game.setNearGarden(false)
         game.setTraderPrompt(nil)
+        game.setPlacePrompt(nil)
         wildArrow.isHidden = true
         treasureArrow.isHidden = true
         game.setEncounter(nil)
@@ -566,6 +577,7 @@ final class GameScene: SKScene {
             world.addChild(house)
             let w = house.size.width * 0.84
             houseRect = CGRect(x: houseFoot.x - w / 2, y: houseFoot.y, width: w, height: min(46, house.size.height * 0.3))
+            if houseName == "house" && loaded == .meadow { doorPoint = CGPoint(x: houseFoot.x, y: houseFoot.y - 12) }
             if houseName == "house", let smoke = Sprites.animated("smoke_anim", fps: 6, x: houseFoot.x + house.size.width * 0.17,
                                                                   y: houseFoot.y + house.size.height * 0.86) {
                 smoke.zPosition = 300
@@ -661,6 +673,7 @@ final class GameScene: SKScene {
         saveTimer += dt
         if saveTimer > 5 {
             saveTimer = 0
+            game.refreshMeal()
             game.saveIfNeeded()
         }
     }
@@ -824,6 +837,7 @@ final class GameScene: SKScene {
             p = push(p, from: obstacle.center, minDistance: obstacle.radius + radius)
         }
         p = push(p, outOf: houseRect, radius: radius)
+        if !penRect.isNull { p = push(p, outOf: penRect, radius: radius) }
         p.x = max(radius, min(layout.size.width - radius, p.x))
         p.y = max(radius, min(layout.size.height - radius, p.y))
         return p
@@ -1287,6 +1301,7 @@ final class GameScene: SKScene {
         for node in bedNodes {
             node.refresh(bed: game.bed(node.index), unlocked: node.index < game.bedCount, now: now)
         }
+        if let rect = layout.pen { buildPen(rect) }
         if let point = layout.stall {
             let node = TraderNode(kind: .stall, title: "🛒 " + tr("trader.title"))
             node.position = point
@@ -1297,8 +1312,91 @@ final class GameScene: SKScene {
         }
     }
 
+    /// Загон у дома: забор, сено, поилка, а внутри гуляют все найденные звери, кроме тех, что ходят с героем.
+    private func buildPen(_ rect: CGRect) {
+        penRect = rect
+        let cols = Int((rect.width / 32).rounded())
+        let rows = Int((rect.height / 32).rounded())
+        func fence(_ name: String, _ x: CGFloat, _ y: CGFloat) {
+            guard let node = Sprites.node(name, x: x, y: y) else { return }
+            node.zPosition = zFor(y - 10)
+            world.addChild(node)
+        }
+        let top = rect.maxY - 16, bottom = rect.minY + 16, left = rect.minX + 16, right = rect.maxX - 16
+        fence("fence_tl", left, top)
+        fence("fence_tr", right, top)
+        fence("fence_bl", left, bottom)
+        fence("fence_br", right, bottom)
+        for i in 1..<max(1, cols - 1) {
+            fence("fence_h", left + CGFloat(i) * 32, top)
+            fence("fence_h", left + CGFloat(i) * 32, bottom)
+        }
+        for j in 1..<max(1, rows - 1) {
+            fence("fence_v", left, bottom + CGFloat(j) * 32)
+            fence("fence_v", right, bottom + CGFloat(j) * 32)
+        }
+        for (name, x, y) in [("hay_big", rect.minX + 64, rect.maxY - 46), ("trough", rect.maxX - 70, rect.maxY - 44),
+                             ("nest", rect.minX + 44, rect.minY + 36)] {
+            if let node = Sprites.node(name, x: x, y: y) {
+                node.zPosition = zFor(y)
+                world.addChild(node)
+            }
+        }
+        if let sign = Sprites.node("ic_pen", x: rect.midX, y: rect.minY - 2) {
+            sign.zPosition = zFor(rect.minY - 2)
+            world.addChild(sign)
+        }
+        syncPen()
+    }
+
+    /// Звери в загоне совпадают с найденными (кроме тех, что сейчас с героем).
+    private func syncPen() {
+        guard !penRect.isNull else { return }
+        let want = AnimalID.allCases.filter { game.stars($0) > 0 && !game.isActive($0) }
+        guard want != penSignature else { return }
+        penSignature = want
+        for animal in penAnimals { animal.node.removeFromParent() }
+        penAnimals = want.map { id in
+            let area = penRect.insetBy(dx: 40, dy: 36)
+            let p = CGPoint(x: CGFloat.random(in: area.minX...area.maxX), y: CGFloat.random(in: area.minY...area.maxY))
+            let pen = PenAnimal(animal: id, at: p, area: area)
+            pen.node.zPosition = zFor(p.y)
+            world.addChild(pen.node)
+            return pen
+        }
+    }
+
+    private func updatePen(_ dt: Double) {
+        guard !penRect.isNull else { return }
+        penTimer -= dt
+        if penTimer <= 0 {
+            penTimer = 1
+            syncPen()
+        }
+        // Звери далеко от камеры не двигаются: не тратим на них кадры.
+        let near = distance(cam.position, CGPoint(x: penRect.midX, y: penRect.midY)) < max(size.width, size.height)
+        guard near else { return }
+        for animal in penAnimals {
+            animal.update(dt)
+            animal.node.zPosition = zFor(animal.node.position.y)
+        }
+    }
+
+    /// Подсказки у двери дома и у загона.
+    private func updatePlaces() {
+        if let door = doorPoint, distance(door, player.position) < 46 {
+            game.setPlacePrompt(.house)
+        } else if !penRect.isNull, penRect.insetBy(dx: -40, dy: -40).contains(player.position) {
+            game.setPlacePrompt(.pen)
+        } else {
+            game.setPlacePrompt(nil)
+        }
+    }
+
     private func updateFarm(_ dt: Double) {
         seedHintTimer -= dt
+        updatePen(dt)
+        updatePlaces()
         if let stall = stallNode {
             updateTraderPrompt(stall)
         }

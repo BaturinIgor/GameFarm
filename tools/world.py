@@ -411,7 +411,7 @@ LOCATIONS = {
         land=[("ellipse", 0.5, 0.5, 0.44, 0.45), ("ellipse", 0.3, 0.3, 0.3, 0.25), ("ellipse", 0.72, 0.7, 0.26, 0.24)],
         water=[("ellipse", 0.76, 0.2, 0.09, 0.06), ("ellipse", 0.2, 0.7, 0.07, 0.06)],
         base=(0.5, 0.3), bare=[("ellipse", 0.3, 0.55, 0.06, 0.05)],
-        farm=dict(dx=5, dy=-1, cols=4, rows=3), stall=(-6, 3),
+        farm=dict(dx=5, dy=-1, cols=4, rows=3), stall=(-6, 3), pen=dict(dx=-2, dy=4, cols=6, rows=4),
         clusters=[C("tree", 9, 0.22, 0.42, 5), C("tree", 8, 0.78, 0.55, 5), C("tree", 8, 0.32, 0.8, 5),
                   C("appleTree", 4, 0.66, 0.78, 3), C("bush", 6, 0.5, 0.5, 4), C("bush", 5, 0.8, 0.36, 3),
                   C("mushroom", 6, 0.14, 0.6, 3), C("rock", 6, 0.68, 0.24, 4), C("rock", 4, 0.4, 0.66, 3)],
@@ -756,7 +756,13 @@ def generate(lid, spec):
     stall_cell = None
     if spec.get("stall"):
         stall_cell = (base[0] + spec["stall"][0], base[1] + spec["stall"][1])
-    for c, r in farm_cells + ([stall_cell] if stall_cell else []):
+    pen_cells = []
+    if spec.get("pen"):
+        pn = spec["pen"]
+        for j in range(pn["rows"]):
+            for i in range(pn["cols"]):
+                pen_cells.append((base[0] + pn["dx"] + i, base[1] + pn["dy"] + j))
+    for c, r in farm_cells + pen_cells + ([stall_cell] if stall_cell else []):
         for dr in range(-2, 3):
             for dc in range(-2, 3):
                 cc, rr = c + dc, r + dr
@@ -1014,7 +1020,7 @@ def generate(lid, spec):
                         props.append((rng.choice(["cattail", "cattail2", "reed"]), (round(q[0]), round(q[1])), 0))
 
     return dict(grid=g, base=base, gates=gate_info, spots=spots, props=props, border=border, flat=flat, reach=reach,
-                farm=farm_cells, stall=stall_cell)
+                farm=farm_cells, stall=stall_cell, pen=pen_cells)
 
 
 def nearest_land(g, cell):
@@ -1187,6 +1193,11 @@ def export(lid, spec, gen):
     )
     if gen["stall"]:
         data["stall"] = cell_to_pt(g, *gen["stall"])
+    if gen["pen"]:
+        cs = [c for c, r in gen["pen"]]
+        rs = [r for c, r in gen["pen"]]
+        # Прямоугольник загона в точках сцены: x, y (левый нижний угол), ширина, высота.
+        data["pen"] = [min(cs) * PT, (g.h - 1 - max(rs)) * PT, (max(cs) - min(cs) + 1) * PT, (max(rs) - min(rs) + 1) * PT]
     with open(os.path.join(LAYOUTS, f"layout_{lid}.json"), "w") as f:
         json.dump(data, f, separators=(",", ":"))
 

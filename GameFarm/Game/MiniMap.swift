@@ -107,6 +107,14 @@ enum MiniMap {
                 let p = point(bed)
                 c.fill(CGRect(x: p.x - ppc * 0.4, y: p.y - ppc * 0.4, width: ppc * 0.8, height: ppc * 0.8))
             }
+            if let pen = layout.pen {
+                let a = point(CGPoint(x: pen.minX, y: pen.maxY))
+                let b = point(CGPoint(x: pen.maxX, y: pen.minY))
+                let r = CGRect(x: a.x, y: a.y, width: b.x - a.x, height: b.y - a.y).insetBy(dx: 1, dy: 1)
+                UIColor(red: 0.55, green: 0.36, blue: 0.2, alpha: 1).setStroke()
+                c.setLineWidth(2)
+                c.stroke(r)
+            }
             if let stall = layout.stall {
                 let p = point(stall)
                 let w = ppc * 2.2

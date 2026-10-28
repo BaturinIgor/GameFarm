@@ -103,3 +103,29 @@ final class TraderNode: SKNode {
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
+
+/// Зверь в загоне: бродит внутри забора и иногда стоит.
+final class PenAnimal {
+    let node: CompanionNode
+    private let area: CGRect
+    private var goal: CGPoint
+    private var wait = Double.random(in: 0.5...3)
+
+    init(animal: AnimalID, at point: CGPoint, area: CGRect) {
+        node = CompanionNode(animal: animal)
+        node.position = point
+        self.area = area
+        goal = point
+    }
+
+    func update(_ dt: Double) {
+        if distance(node.position, goal) < 6 {
+            wait -= dt
+            if wait <= 0 {
+                wait = Double.random(in: 1.5...5)
+                goal = CGPoint(x: CGFloat.random(in: area.minX...area.maxX), y: CGFloat.random(in: area.minY...area.maxY))
+            }
+        }
+        node.move(toward: goal, dt: dt, speed: 38, stopAt: 4)
+    }
+}

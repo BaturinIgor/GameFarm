@@ -98,6 +98,14 @@ struct ContentView: View {
                 .zIndex(19)
             }
 
+            if game.loginPopup && game.levelUp == nil && game.offlineReport == nil && game.expeditionReport == nil && sheet == nil {
+                CalendarPopup {
+                    withAnimation(.spring(duration: 0.3)) { game.loginPopup = false }
+                }
+                .transition(.scale(scale: 0.85).combined(with: .opacity))
+                .zIndex(17)
+            }
+
             if let item = dialogs.current {
                 DialogView(item: item) {
                     withAnimation(.spring(duration: 0.25)) { dialogs.current = nil }
@@ -117,6 +125,7 @@ struct ContentView: View {
         .animation(.spring(duration: 0.4, bounce: 0.4), value: game.gardenChestFound)
         .animation(.spring(duration: 0.32, bounce: 0.12), value: sheet)
         .animation(.spring(duration: 0.3), value: game.bigMap)
+        .animation(.spring(duration: 0.3), value: game.loginPopup)
         .animation(.spring(duration: 0.25), value: dialogs.current?.id)
         .onChange(of: sheet) { old, new in
             if new != nil && old == nil { Sound.shared.play(.open) }
@@ -141,6 +150,9 @@ struct ContentView: View {
             case .legacy: LegacyView()
             case .trader: TraderView()
             case .wanderer: WandererView()
+            case .house: HouseView()
+            case .kitchen: KitchenView()
+            case .calendar: CalendarView()
             }
         }
         .environment(game)
@@ -148,8 +160,9 @@ struct ContentView: View {
         .environment(Ads.shared)
     }
 
+    /// Окно, открытое из другого окна, по крестику возвращает назад.
     private func open(_ which: GameSheet) {
-        returnTo = which == .wardrobe || which == .legacy ? sheet : nil
+        returnTo = sheet != which ? sheet : nil
         sheet = which
     }
 
@@ -233,6 +246,7 @@ struct HUDView: View {
                         LuckButton(style: .pill)
                         shopPill
                     }
+                    MealPill { sheet = .kitchen }
                 }
             }
 
@@ -259,6 +273,9 @@ struct HUDView: View {
             } else if let trader = game.traderPrompt {
                 TraderCard(kind: trader) { sheet = trader == .stall ? .trader : .wanderer }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+            } else if let place = game.placePrompt {
+                PlaceCard(kind: place) { sheet = place == .house ? .house : .animals }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             } else if game.nearGarden {
                 BedsCard { sheet = .trader }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -273,6 +290,7 @@ struct HUDView: View {
         .animation(.spring(duration: 0.35), value: game.gatePrompt)
         .animation(.spring(duration: 0.35), value: game.traderPrompt)
         .animation(.spring(duration: 0.35), value: game.nearGarden)
+        .animation(.spring(duration: 0.35), value: game.placePrompt)
         .animation(.spring(duration: 0.35), value: game.toasts)
         .animation(.easeInOut(duration: 0.3), value: game.save.tutorialDone)
     }

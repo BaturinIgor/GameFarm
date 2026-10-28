@@ -133,6 +133,8 @@ struct LocationLayout {
     var farm: [CGPoint] = []
     /// Где стоит лавка торговца.
     var stall: CGPoint?
+    /// Загон для зверей (прямоугольник в точках сцены).
+    var pen: CGRect?
 
     var size: CGSize { CGSize(width: CGFloat(cols) * cell, height: CGFloat(rows) * cell) }
 
@@ -237,6 +239,7 @@ struct LocationLayout {
         let border: [Entry]
         let farm: [[Double]]?
         let stall: [Double]?
+        let pen: [Double]?
     }
 
     private static func point(_ v: [Double]) -> CGPoint {
@@ -276,7 +279,8 @@ struct LocationLayout {
             props: raw.props.map { PropPlacement(name: $0.name, position: CGPoint(x: $0.x, y: $0.y), fixed: $0.flag == 1) },
             border: raw.border.map { PropPlacement(name: $0.name, position: CGPoint(x: $0.x, y: $0.y), fixed: false) },
             farm: (raw.farm ?? []).map(point),
-            stall: raw.stall.map(point)
+            stall: raw.stall.map(point),
+            pen: raw.pen.flatMap { v in v.count == 4 ? CGRect(x: v[0], y: v[1], width: v[2], height: v[3]) : nil }
         )
     }
 

@@ -21,6 +21,7 @@ from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import handmade  # noqa: E402
+import interior  # noqa: E402
 
 SRC = sys.argv[1]
 OUT = sys.argv[2]
@@ -620,6 +621,19 @@ icon("chest", load("Buildings", "House_Decor", "Chest_Anim.png").crop((0, 0, 16,
 icon("chest_gold", load("Buildings", "House_Decor", "Golden_Chest_Anim.png").crop((0, 0, 16, 16)))
 for name, im in handmade.icons().items():
     icon(name, im)
+# Урожай огорода и семена: иконки с обводкой из того же листа еды
+for crop_name, (c0, r0) in {"wheat": (0, 3), "tomato": (0, 4), "potato": (0, 10), "strawberry": (0, 11), "corn": (0, 7),
+                            "cabbage": (2, 5), "eggplant": (4, 7), "pumpkin": (0, 6), "sunflower": (0, 8),
+                            "chili": (4, 6), "grapes": (0, 5), "carrot": (2, 4)}.items():
+    if crop_name != "carrot":
+        icon(crop_name, cell(FOOD, c0, r0))
+    icon(f"seed_{crop_name}", cell(FOOD, c0 + 1, r0))
+# Блюда кухни
+icon("dish_bread", cell(FOOD, 3, 0))
+icon("dish_omelette", cell(FOOD, 7, 1))
+icon("dish_pancakes", cell(FOOD, 6, 0))
+for name, im in interior.icons().items():
+    icon(name, im)
 
 # ================================================================ постройки и предметы
 
@@ -694,6 +708,35 @@ save("cloud_shadow2", crop_opaque(clouds.crop((64, 0, 128, 64))), anchor=[0.5, 0
 
 for name, im in handmade.sprites().items():
     save(name, im)
+
+# ================================================================ дом: мебель и загон
+
+for name, im in interior.sprites().items():
+    save(name, im)
+furn = load("Buildings", "House_Decor", "Furnaces.png")
+save("stove", crop_opaque(furn.crop((16, 0, 32, 32))))
+camp = load("Outdoor decoration", "Camp_Decor.png")
+save("table_small", crop_opaque(camp.crop((16, 0, 48, 16))))
+save("stool", crop_opaque(camp.crop((48, 0, 64, 16))))
+benches = load("Outdoor decoration", "Benches.png")
+save("bench", crop_opaque(benches.crop((32, 0, 64, 32))))
+barrels = load("Outdoor decoration", "barrels.png")
+for i, flower in enumerate(["green", "purple", "red", "pink", "coral", "blue"]):
+    save(f"pot_{flower}", crop_opaque(barrels.crop((i * 16, 32, i * 16 + 16, 64))))
+save("barrel_berries", crop_opaque(barrels.crop((0, 0, 16, 32))))
+save("barrel_water", crop_opaque(barrels.crop((16, 0, 32, 32))))
+save("lantern", crop_opaque(load("Outdoor decoration", "Lantern.png")))
+save("anvil", crop_opaque(load("Buildings", "House_Decor", "Anvil_Anim.png").crop((0, 0, 16, 16))))
+hay = load("Outdoor decoration", "Hay_Bales.png")
+save("hay_small", crop_opaque(hay.crop((0, 0, 16, 16))))
+save("hay_big", crop_opaque(hay.crop((16, 0, 48, 16))))
+save("trough", crop_opaque(load("Outdoor decoration", "Water_Troughs.png").crop((16, 0, 48, 16))))
+nests = load("Outdoor decoration", "Nests.png")
+save("nest", crop_opaque(nests.crop((32, 0, 48, 16))))
+fences = load("Outdoor decoration", "Fences.png")
+for name, (fc, fr) in {"fence_h": (2, 0), "fence_v": (0, 1), "fence_tl": (1, 1), "fence_tr": (3, 1),
+                       "fence_bl": (1, 3), "fence_br": (3, 3)}.items():
+    save(name, fences.crop((fc * 16, fr * 16, fc * 16 + 16, fr * 16 + 16)), anchor=[0.5, 0.5])
 
 # ================================================================ счётчики кадров зверей
 
