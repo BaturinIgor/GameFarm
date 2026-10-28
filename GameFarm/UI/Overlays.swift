@@ -76,7 +76,7 @@ struct LevelUpOverlay: View {
 
     private func row(_ line: UnlockLine) -> some View {
         HStack(spacing: 10) {
-            Text(line.icon).font(.system(size: 20)).frame(width: 28)
+            IconView(icon: line.icon, size: 22).frame(width: 28)
             Text(line.text).font(.game(14, .semibold))
         }
     }

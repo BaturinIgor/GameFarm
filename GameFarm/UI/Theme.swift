@@ -319,6 +319,57 @@ struct CoinIcon: View {
     var body: some View { PixelIcon(name: "coin", size: size, fallback: "🪙") }
 }
 
+/// Иконка по строке: "px:имя" - пиксельная иконка, монета - золотая из пака, иначе эмодзи.
+struct IconView: View {
+    let icon: String
+    var size: CGFloat = 20
+
+    var body: some View {
+        if icon == "🪙" {
+            CoinIcon(size: size)
+        } else if icon.hasPrefix("px:") {
+            PixelIcon(name: String(icon.dropFirst(3)), size: size)
+        } else {
+            Text(icon).font(.system(size: size * 0.85))
+        }
+    }
+}
+
+/// Маленькие картинки для вставки прямо в текст.
+@MainActor
+enum InlineIcons {
+    private static var cache: [String: UIImage] = [:]
+
+    static func image(_ name: String, size: CGFloat) -> UIImage? {
+        let key = "\(name)|\(size)"
+        if let cached = cache[key] { return cached }
+        guard let source = Sprites.icon(named: name) else { return nil }
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 3
+        let out = UIGraphicsImageRenderer(size: CGSize(width: size, height: size), format: format).image { ctx in
+            ctx.cgContext.interpolationQuality = .none
+            source.draw(in: CGRect(x: 0, y: 0, width: size, height: size))
+        }
+        cache[key] = out
+        return out
+    }
+}
+
+extension Text {
+    /// Текст, в котором эмодзи монеты заменена золотой монетой из пака.
+    @MainActor
+    static func withCoins(_ string: String, size: CGFloat = 14) -> Text {
+        guard string.contains("🪙"), let coin = InlineIcons.image("coin", size: size) else { return Text(string) }
+        let parts = string.components(separatedBy: "🪙")
+        var text = Text(parts[0])
+        for part in parts.dropFirst() {
+            let image = Text(Image(uiImage: coin)).baselineOffset(-size * 0.18)
+            text = Text("\(text)\(image)\(part)")
+        }
+        return text
+    }
+}
+
 /// Красный кружок со счётчиком.
 struct CountBadge: View {
     let count: Int
@@ -375,6 +426,8 @@ struct GameBar: View {
 struct GameTabs<T: Hashable>: View {
     @Binding var selection: T
     let items: [(T, String)]
+    /// Красные счётчики на вкладках (например, незабранные награды).
+    var badges: [T: Int] = [:]
 
     var body: some View {
         HStack(spacing: 4) {
@@ -401,6 +454,11 @@ struct GameTabs<T: Hashable>: View {
                                 .strokeBorder(on ? Palette.outline : .clear, lineWidth: 1.5)
                         )
                         .contentShape(Rectangle())
+                        .overlay(alignment: .topTrailing) {
+                            if let n = badges[item.0], n > 0 {
+                                CountBadge(count: n).scaleEffect(0.85).offset(x: 4, y: -8)
+                            }
+                        }
                 }
                 .buttonStyle(.plain)
             }
@@ -567,10 +625,12 @@ struct DialogView: View {
                         Button(cancel) { onClose() }
                             .buttonStyle(.game(.wood, wide: true))
                     }
-                    Button(item.confirm) {
+                    Button {
                         let action = item.action
                         onClose()
                         action?()
+                    } label: {
+                        Text.withCoins(item.confirm, size: 15)
                     }
                     .buttonStyle(.game(item.tone, wide: true))
                 }
@@ -581,8 +641,7 @@ struct DialogView: View {
             .frame(maxWidth: 340)
             .gamePanel()
             .overlay(alignment: .top) {
-                Text(item.icon)
-                    .font(.system(size: 34))
+                IconView(icon: item.icon, size: 36)
                     .frame(width: 62, height: 62)
                     .background(Circle().fill(LinearGradient(colors: [item.tone.top, item.tone.base], startPoint: .top, endPoint: .bottom)))
                     .overlay(Circle().strokeBorder(Palette.outline, lineWidth: 2.5))

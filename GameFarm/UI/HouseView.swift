@@ -369,8 +369,9 @@ struct KitchenView: View {
         ScrollView {
             VStack(spacing: 14) {
                 stoveCard
-                if let meal = game.activeMeal {
-                    mealCard(meal)
+                if !game.activeMeals.isEmpty {
+                    SectionTitle(text: tr("kitchen.active", game.activeMeals.count, game.mealSlots))
+                    ForEach(game.activeMeals) { mealCard($0.dish, until: $0.until) }
                 }
                 if game.totalDishes > 0 {
                     SectionTitle(text: tr("kitchen.pantry"))
@@ -418,19 +419,17 @@ struct KitchenView: View {
         }
     }
 
-    private func mealCard(_ meal: DishID) -> some View {
+    private func mealCard(_ meal: DishID, until: Date) -> some View {
         Card(tint: ButtonTone.green.base) {
             HStack(spacing: 10) {
                 PixelIcon(name: meal.icon, size: 34, fallback: meal.emoji)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(tr("kitchen.eaten", meal.name)).font(.game(14))
                     Text(meal.effectText).font(.game(12, .semibold)).foregroundStyle(Palette.good)
-                    if let until = game.save.mealUntil {
-                        TimelineView(.periodic(from: .now, by: 1)) { context in
-                            Label(Countdown.text(until.timeIntervalSince(context.date)), systemImage: "clock")
-                                .font(.game(12))
-                                .foregroundStyle(.secondary)
-                        }
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        Label(Countdown.text(until.timeIntervalSince(context.date)), systemImage: "clock")
+                            .font(.game(12))
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -446,9 +445,10 @@ struct KitchenView: View {
             }
             Spacer(minLength: 4)
             Button(tr("kitchen.eat")) {
-                withAnimation(.snappy) { game.eat(dish) }
+                withAnimation(.snappy) { _ = game.eat(dish) }
             }
             .buttonStyle(.game(.green, small: true))
+            .disabled(!game.canEat(dish))
         }
         .padding(10)
         .listBox(radius: 14)
@@ -492,16 +492,20 @@ struct MealPill: View {
     let onTap: () -> Void
 
     var body: some View {
-        if let meal = game.activeMeal, let until = game.save.mealUntil {
+        let meals = game.activeMeals
+        if let first = meals.first {
             Button(action: onTap) {
-                HStack(spacing: 4) {
-                    PixelIcon(name: meal.icon, size: 18, fallback: meal.emoji)
+                HStack(spacing: 2) {
+                    ForEach(meals) { meal in
+                        PixelIcon(name: meal.dish.icon, size: 18, fallback: meal.dish.emoji)
+                    }
                     TimelineView(.periodic(from: .now, by: 1)) { context in
-                        Text(Countdown.text(until.timeIntervalSince(context.date)))
+                        Text(Countdown.text(first.until.timeIntervalSince(context.date)))
                             .font(.game(12))
                             .foregroundStyle(.white)
                             .outlined(Palette.outline, width: 1)
                             .monospacedDigit()
+                            .padding(.leading, 2)
                     }
                 }
                 .padding(.horizontal, 8)

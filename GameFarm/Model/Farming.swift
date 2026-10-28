@@ -72,6 +72,17 @@ struct Bed: Codable, Equatable {
     }
 }
 
+/// Что случилось с грядкой по кнопке в интерфейсе: сцена покажет эффект.
+struct GardenEvent {
+    enum Kind {
+        case planted
+        case harvested(ResourceAmount)
+    }
+
+    let bed: Int
+    let kind: Kind
+}
+
 enum Garden {
     static let maxBeds = 12
     /// Полив сокращает оставшееся время роста.

@@ -42,6 +42,8 @@ final class GameState {
     private(set) var reachable: Set<LocationID> = [.meadow]
     /// Через какие ворота персонаж пришёл в локацию (сцена ставит его к ним).
     @ObservationIgnored var arrivalGate: String?
+    /// Посадки и сбор с кнопок интерфейса: сцена забирает и показывает эффекты.
+    @ObservationIgnored var gardenEvents: [GardenEvent] = []
 
     @ObservationIgnored private var dirty = false
     @ObservationIgnored private var lastWrite = Date.distantPast
@@ -139,6 +141,7 @@ final class GameState {
         save.eventSeen = old.eventSeen
         save.eventDecor = old.eventDecor
         save.eventSkins = old.eventSkins
+        save.bestLevel = max(old.bestLevel, old.level)
         save.rebirths = old.rebirths + (reward > 0 ? 1 : 0)
         save.sparks = old.sparks + reward
         save.sparksEarned = old.sparksEarned + reward
@@ -197,6 +200,7 @@ final class GameState {
             save.coins += GameRules.levelCoinReward(save.level)
         }
         if save.level >= GameRules.maxLevel { save.xp = 0 }
+        if save.level > save.bestLevel { save.bestLevel = save.level }
         if save.level > from {
             recalc()
             levelUp = LevelUpInfo(from: levelUp?.from ?? from, to: save.level)
@@ -917,7 +921,7 @@ final class GameState {
     func isSkinUnlocked(_ skin: Skin) -> Bool {
         switch skin.unlock {
         case .free: return true
-        case .level(let level): return save.level >= level
+        case .level(let level): return max(save.level, save.bestLevel) >= level
         case .product(let product): return owns(product)
         case .constellation(let c): return isComplete(c)
         case .event: return save.eventSkins.contains(skin.rawValue)
@@ -1093,7 +1097,16 @@ final class GameState {
         // Уют дома и блюдо, которое сейчас действует.
         let cozy = Comfort.bonus(comfort)
         s.yieldAll += cozy
-        let meal = activeMeal?.buff ?? MealBuff()
+        var meal = MealBuff()
+        for dish in activeMeals.map(\.dish) {
+            let b = dish.buff
+            meal.yield += b.yield
+            meal.xp += b.xp
+            meal.speed += b.speed
+            meal.sell += b.sell
+            meal.crit += b.crit
+            meal.animals += b.animals
+        }
         s.yieldAll += meal.yield
         // Созвездия
         let cHarvest = constellationBonus(.harvest)
@@ -1209,20 +1222,55 @@ extension GameState {
         return true
     }
 
-    /// Какие семена сажать: выбранные, а если кончились, то любые другие, начиная с самых дорогих.
-    private func seedToPlant() -> CropID? {
-        if let chosen = save.selectedSeed, seeds(chosen) > 0 { return chosen }
-        let next = CropID.allCases.reversed().first { seeds($0) > 0 }
-        if let next { save.selectedSeed = next }
-        return next
+    /// Выбранные семена, если они ещё есть.
+    var chosenSeed: CropID? {
+        guard let chosen = save.selectedSeed, seeds(chosen) > 0 else { return nil }
+        return chosen
     }
 
-    /// Посадить на пустую грядку. Возвращает культуру или nil, если сажать нечего.
-    func plant(_ index: Int) -> CropID? {
-        guard index < bedCount, bed(index).isEmpty, let crop = seedToPlant() else { return nil }
+    /// Посадить выбранные семена на пустую грядку.
+    @discardableResult
+    func plant(_ index: Int, crop: CropID? = nil) -> Bool {
+        guard let crop = crop ?? chosenSeed, seeds(crop) > 0, index < bedCount, bed(index).isEmpty else { return false }
         save.seeds[crop] = seeds(crop) - 1
         setBed(index, Bed(crop: crop, plantedAt: Date()))
-        return crop
+        gardenEvents.append(GardenEvent(bed: index, kind: .planted))
+        SoundFX.play(.pick)
+        return true
+    }
+
+    /// Засадить все пустые грядки выбранными семенами. Возвращает, сколько посажено.
+    @discardableResult
+    func plantAll() -> Int {
+        guard let crop = chosenSeed else { return 0 }
+        var n = 0
+        for i in 0..<bedCount where bed(i).isEmpty && seeds(crop) > 0 {
+            if plant(i, crop: crop) { n += 1 }
+        }
+        return n
+    }
+
+    /// Собрать одну грядку с кнопки.
+    @discardableResult
+    func harvestOne(_ index: Int) -> Bool {
+        guard let got = harvestBed(index) else { return false }
+        gardenEvents.append(GardenEvent(bed: index, kind: .harvested(got)))
+        SoundFX.play(.pickup)
+        return true
+    }
+
+    /// Собрать все спелые грядки.
+    @discardableResult
+    func harvestAll() -> Int {
+        var n = 0
+        for i in 0..<bedCount where bed(i).isRipe(at: Date()) {
+            if let got = harvestBed(i) {
+                gardenEvents.append(GardenEvent(bed: i, kind: .harvested(got)))
+                n += 1
+            }
+        }
+        if n > 0 { SoundFX.play(.pickup) }
+        return n
     }
 
     /// Полить растущую грядку: оставшееся время роста сокращается.
@@ -1464,28 +1512,47 @@ extension GameState {
         return ready.count
     }
 
-    var activeMeal: DishID? {
-        guard let meal = save.meal, let until = save.mealUntil, until > Date() else { return nil }
-        return meal
+    /// Сколько блюд может действовать одновременно.
+    var mealSlots: Int { 3 }
+
+    /// Действующие блюда: ближайшее к концу первым.
+    var activeMeals: [ActiveMeal] {
+        let now = Date()
+        return save.meals.filter { $0.value > now }.map { ActiveMeal(dish: $0.key, until: $0.value) }.sorted { $0.until < $1.until }
     }
 
-    func eat(_ dish: DishID) {
-        guard dishes(dish) > 0 else { return }
+    func mealDuration(_ dish: DishID) -> Double { dish.duration * (isBuilt(.basement) ? 1.5 : 1) }
+
+    /// Можно ли съесть: есть в запасах и есть свободное место (или это блюдо уже действует и продлится).
+    func canEat(_ dish: DishID) -> Bool {
+        guard dishes(dish) > 0 else { return false }
+        return save.meals[dish].map { $0 > Date() } == true || activeMeals.count < mealSlots
+    }
+
+    @discardableResult
+    func eat(_ dish: DishID) -> Bool {
+        guard dishes(dish) > 0 else { return false }
+        guard canEat(dish) else {
+            toast("🍽️", tr("toast.mealsFull", mealSlots))
+            return false
+        }
         heal(0.4)
         save.dishes[dish] = dishes(dish) - 1
-        save.meal = dish
-        save.mealUntil = Date().addingTimeInterval(dish.duration * (isBuilt(.basement) ? 1.5 : 1))
+        // То же блюдо ещё раз продлевает его действие.
+        let start = max(Date(), save.meals[dish] ?? .distantPast)
+        save.meals[dish] = min(start.addingTimeInterval(mealDuration(dish)), Date().addingTimeInterval(mealDuration(dish) * 3))
         recalc()
         SoundFX.play(.success)
         toast(dish.emoji, tr("toast.meal", dish.name))
         saveNow()
+        return true
     }
 
     /// Блюдо закончилось: убираем бонус.
     func refreshMeal() {
-        if save.meal != nil, activeMeal == nil {
-            save.meal = nil
-            save.mealUntil = nil
+        let now = Date()
+        if save.meals.contains(where: { $0.value <= now }) {
+            save.meals = save.meals.filter { $0.value > now }
             recalc()
             markDirty()
         }

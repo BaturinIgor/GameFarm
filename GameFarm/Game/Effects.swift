@@ -69,6 +69,25 @@ enum Effects {
         rise(container, delay: delay)
     }
 
+    /// Золотая монета из пака (или эмодзи, если спрайтов нет).
+    static var coinTexture: SKTexture { Sprites.texture("ic_coin") ?? Art.emoji("🪙", size: 32) }
+
+    /// "+12" и золотая монета.
+    static func coins(_ amount: Int, at point: CGPoint, in parent: SKNode, size: CGFloat = 15, delay: Double = 0) {
+        let container = SKNode()
+        container.position = point
+        container.zPosition = 900
+        let text = label("+\(amount)", size: size, color: UIColor(red: 1, green: 0.88, blue: 0.35, alpha: 1))
+        text.anchorPoint = CGPoint(x: 1, y: 0.5)
+        text.position = CGPoint(x: 2, y: 0)
+        container.addChild(text)
+        let icon = SKSpriteNode(texture: coinTexture, size: CGSize(width: size * 1.3, height: size * 1.3))
+        icon.position = CGPoint(x: 4 + size * 0.65, y: 0)
+        container.addChild(icon)
+        parent.addChild(container)
+        rise(container, delay: delay)
+    }
+
     static func chips(at point: CGPoint, color: UIColor, in parent: SKNode, count: Int = 5) {
         for _ in 0..<count {
             let chip = SKSpriteNode(color: color, size: CGSize(width: 5, height: 5))

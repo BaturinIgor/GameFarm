@@ -88,7 +88,7 @@ struct StorageRow: View {
             ResourceIcon(kind: kind, size: 34)
             VStack(alignment: .leading, spacing: 2) {
                 Text(kind.name).font(.game(15, .semibold))
-                Text(tr("storage.row", Fmt.n(have), price))
+                Text.withCoins(tr("storage.row", Fmt.n(have), price), size: 12)
                     .font(.game(12, .semibold))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()

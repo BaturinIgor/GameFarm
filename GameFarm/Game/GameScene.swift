@@ -293,8 +293,17 @@ final class GameScene: SKScene {
             world.addChild(node)
             if item.fixed {
                 obstacles.append((item.position, 30))
+            } else if Self.solidProp(item.name) {
+                // Камни, брёвна и пни: сквозь них не пройти.
+                let r = max(10, node.size.width * 0.32)
+                obstacles.append((CGPoint(x: item.position.x, y: item.position.y + r * 0.35), r))
             }
         }
+    }
+
+    private static func solidProp(_ name: String) -> Bool {
+        for prefix in ["rock", "boulder", "log", "stump", "crystal_", "barrel", "hay_"] where name.hasPrefix(prefix) { return true }
+        return false
     }
 
     /// Блики на воде, пузыри лавы и кувшинки.
@@ -874,6 +883,7 @@ final class GameScene: SKScene {
             p = push(p, outOf: gate.blockRect, radius: radius)
         }
         for obstacle in obstacles {
+            if abs(obstacle.center.x - p.x) > 80 || abs(obstacle.center.y - p.y) > 80 { continue }
             p = push(p, from: obstacle.center, minDistance: obstacle.radius + radius)
         }
         p = push(p, outOf: houseRect, radius: radius)
@@ -979,7 +989,7 @@ final class GameScene: SKScene {
         }
         guard ready, distance(chest.position, player.position) < 50 else { return }
         game.openGardenChest()
-        Effects.scatter(Art.emoji("🪙", size: 32), count: 14, at: CGPoint(x: chest.position.x, y: chest.position.y + 20), in: world,
+        Effects.scatter(Effects.coinTexture, count: 14, at: CGPoint(x: chest.position.x, y: chest.position.y + 20), in: world,
                         size: 18, spread: 70, rise: 50, duration: 0.9)
         Effects.ring(at: chest.position, in: world, color: UIColor(red: 1, green: 0.85, blue: 0.3, alpha: 1), radius: 50)
         player.celebrate()
@@ -1158,8 +1168,7 @@ final class GameScene: SKScene {
             let bonusCoins = 40 + game.save.level * 12
             game.addCoins(bonusCoins)
             game.noteExpeditionCoins(bonusCoins)
-            Effects.text("+\(bonusCoins) 🪙", at: CGPoint(x: spot.position.x, y: spot.position.y + 70), in: world,
-                         color: UIColor(red: 1, green: 0.85, blue: 0.3, alpha: 1), size: 17)
+            Effects.coins(bonusCoins, at: CGPoint(x: spot.position.x, y: spot.position.y + 70), in: world, size: 17)
             Sound.shared.play(.coinBig)
         }
 
@@ -1178,8 +1187,7 @@ final class GameScene: SKScene {
         }
         if coins > 0 {
             game.noteExpeditionCoins(coins)
-            Effects.text("+\(coins) 🪙", at: CGPoint(x: top.x + 38, y: top.y - 4), in: world,
-                         color: UIColor(red: 1, green: 0.85, blue: 0.3, alpha: 1), size: 14, delay: 0.15)
+            Effects.coins(coins, at: CGPoint(x: top.x + 38, y: top.y - 4), in: world, size: 14, delay: 0.15)
             Sound.shared.play(.coin, volume: 0.5)
         }
 
@@ -1433,8 +1441,7 @@ final class GameScene: SKScene {
                       in: world, count: strong ? 7 : 4)
         guard foe.hit(damage, from: point) else { return }
         let reward = game.noteKill(foe.kind, level: foe.level)
-        Effects.text("+\(reward.coins) 🪙", at: CGPoint(x: foe.position.x, y: foe.position.y + 58), in: world,
-                     color: UIColor(red: 1, green: 0.85, blue: 0.3, alpha: 1), size: 15)
+        Effects.coins(reward.coins, at: CGPoint(x: foe.position.x, y: foe.position.y + 58), in: world, size: 15)
         if spec.kind == .event {
             Effects.text("+\(Events.points(for: foe.kind)) \(Events.current.event.emoji)",
                          at: CGPoint(x: foe.position.x, y: foe.position.y + 80), in: world,
@@ -1692,8 +1699,27 @@ final class GameScene: SKScene {
         if let stall = stallNode {
             updateTraderPrompt(stall)
         }
-        guard !bedNodes.isEmpty else { return }
+        guard !bedNodes.isEmpty else {
+            game.gardenEvents.removeAll()
+            return
+        }
         let now = Date()
+        if !game.gardenEvents.isEmpty {
+            for event in game.gardenEvents {
+                guard let node = bedNodes.first(where: { $0.index == event.bed }) else { continue }
+                node.invalidate()
+                node.refresh(bed: game.bed(node.index), unlocked: true, now: now)
+                switch event.kind {
+                case .planted:
+                    Effects.puff(at: node.position, in: world, color: UIColor(red: 0.6, green: 0.42, blue: 0.3, alpha: 1), size: 18, z: 5)
+                case .harvested(let got):
+                    Effects.gain(got.kind, got.amount, at: CGPoint(x: node.position.x, y: node.position.y + 30), in: world)
+                    Effects.scatter(Art.spark, count: 5, at: CGPoint(x: node.position.x, y: node.position.y + 12), in: world,
+                                    size: 10, color: .white, spread: 24, rise: 18, additive: true, duration: 0.5)
+                }
+            }
+            game.gardenEvents.removeAll()
+        }
         gardenTimer -= dt
         if gardenTimer <= 0 {
             gardenTimer = 0.5
@@ -1716,16 +1742,8 @@ final class GameScene: SKScene {
                 Sound.shared.play(.pickup)
                 haptic.impactOccurred()
             } else if bed.isEmpty {
-                guard game.plant(i) != nil else {
-                    if seedHintTimer <= 0 {
-                        seedHintTimer = 8
-                        game.toast("🌱", tr("toast.noSeeds"))
-                    }
-                    continue
-                }
-                player.swing(.hand, toward: node.position, interval: 0.4)
-                Effects.puff(at: node.position, in: world, color: UIColor(red: 0.6, green: 0.42, blue: 0.3, alpha: 1), size: 18, z: 5)
-                Sound.shared.play(.pick)
+                // Сажаем только по выбору игрока: в карточке огорода.
+                continue
             } else if !bed.watered {
                 guard game.water(i) else { continue }
                 Effects.ring(at: node.position, in: world, color: UIColor(red: 0.6, green: 0.85, blue: 1, alpha: 1), radius: 18)
@@ -2033,12 +2051,11 @@ final class GameScene: SKScene {
         treasure = nil
         let reward = game.openTreasure()
         let p = t.position
-        Effects.scatter(Art.emoji("🪙", size: 32), count: 10, at: CGPoint(x: p.x, y: p.y + 20), in: world, size: 18, spread: 60, rise: 40, duration: 0.8)
+        Effects.scatter(Effects.coinTexture, count: 10, at: CGPoint(x: p.x, y: p.y + 20), in: world, size: 18, spread: 60, rise: 40, duration: 0.8)
         Effects.scatter(Art.spark, count: 8, at: CGPoint(x: p.x, y: p.y + 24), in: world, size: 14,
                         color: UIColor(red: 1, green: 0.9, blue: 0.4, alpha: 1), spread: 50, rise: 30, additive: true)
         Effects.ring(at: p, in: world, color: UIColor(red: 1, green: 0.85, blue: 0.3, alpha: 1), radius: 40)
-        Effects.text("+\(reward.coins) 🪙", at: CGPoint(x: p.x, y: p.y + 60), in: world,
-                     color: UIColor(red: 1, green: 0.85, blue: 0.3, alpha: 1), size: 18)
+        Effects.coins(reward.coins, at: CGPoint(x: p.x, y: p.y + 60), in: world, size: 18)
         t.run(.sequence([.scale(to: 1.4, duration: 0.12), .group([.fadeOut(withDuration: 0.2), .scale(to: 0.2, duration: 0.2)]), .removeFromParent()]))
         shake = max(shake, 4)
         player.celebrate()

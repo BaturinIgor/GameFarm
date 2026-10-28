@@ -22,7 +22,6 @@ final class Sound {
 
     private static let musicKey = "sound.music"
     private static let sfxKey = "sound.sfx"
-    private static let throttle: TimeInterval = 0.05
 
     /// Музыка. Выключение плавно глушит трек, включение продолжает текущий.
     var musicOn: Bool {
@@ -56,6 +55,7 @@ final class Sound {
     private let effects = EffectsEngine()
     private var lastPlay: [SFX: TimeInterval] = [:]
     private var lastVariant: [SFX: Int] = [:]
+    private var lastJingle: TimeInterval = 0
     private let music = SoundLoopChannel(volume: 0.35)
     private let ambience = SoundLoopChannel(volume: 0.25)
     private var observers: [NSObjectProtocol] = []
@@ -125,7 +125,12 @@ final class Sound {
         let count = effects.variants(sfx)
         guard count > 0 else { return }
         let now = ProcessInfo.processInfo.systemUptime
-        if let last = lastPlay[sfx], now - last < Self.throttle { return }
+        if let last = lastPlay[sfx], now - last < sfx.cooldown { return }
+        // Мелодии наград не накладываются друг на друга: при быстром сборе звучит одна.
+        if sfx.isJingle {
+            if now - lastJingle < 0.45 { return }
+            lastJingle = now
+        }
         lastPlay[sfx] = now
 
         var index = Int.random(in: 0..<count)
@@ -380,6 +385,25 @@ private extension SFX {
         case .footstepGrass, .footstepSnow, .footstepStone, .footstepSand: return 0.35
         case .tap, .open, .close: return 0.8
         default: return 1
+        }
+    }
+
+    /// Как часто может звучать один и тот же эффект.
+    var cooldown: TimeInterval {
+        switch self {
+        case .levelUp, .success, .treasure, .unlock, .purchase, .gateOpen, .tame, .luck: return 0.6
+        case .coinBig, .wildAppear: return 0.3
+        case .coin, .pickup, .deposit: return 0.07
+        case .tap, .open, .close: return 0.08
+        default: return 0.05
+        }
+    }
+
+    /// Короткие мелодии наград.
+    var isJingle: Bool {
+        switch self {
+        case .levelUp, .success, .treasure, .unlock, .purchase, .tame, .luck, .gateOpen: return true
+        default: return false
         }
     }
 

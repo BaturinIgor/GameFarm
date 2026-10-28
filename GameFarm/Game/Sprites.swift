@@ -184,8 +184,8 @@ enum Sprites {
             }
         }
         guard maxX >= minX else { return nil }
-        // В буфере контекста строки идут снизу вверх.
-        return image.cropping(to: CGRect(x: minX, y: h - 1 - maxY, width: maxX - minX + 1, height: maxY - minY + 1))
+        // В памяти контекста первая строка - верх картинки, как и у cropping(to:).
+        return image.cropping(to: CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1))
     }
 
     /// Иконка ресурса в пиксельном стиле.

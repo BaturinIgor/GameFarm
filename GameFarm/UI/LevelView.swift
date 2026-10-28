@@ -171,7 +171,7 @@ struct LevelView: View {
 
     private func statRow(_ icon: String, _ title: String, _ value: String) -> some View {
         HStack {
-            Text(icon).frame(width: 26)
+            IconView(icon: icon, size: 20).frame(width: 26)
             Text(title).font(.game(14, .semibold))
             Spacer()
             Text(value)
@@ -198,7 +198,7 @@ struct LevelView: View {
                     Text(tr("level.n", item.level)).font(.game(14, .semibold).bold())
                     ForEach(item.lines) { line in
                         HStack(spacing: 8) {
-                            Text(line.icon).frame(width: 24)
+                            IconView(icon: line.icon, size: 18).frame(width: 24)
                             Text(line.text).font(.game(12, .semibold))
                         }
                     }

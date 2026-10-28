@@ -58,8 +58,8 @@ struct SaveData: Codable {
     var decor: [String: DecorID] = [:]
     var dishes: [DishID: Int] = [:]
     var cooking: [CookJob] = []
-    var meal: DishID?
-    var mealUntil: Date?
+    /// Блюда, которые сейчас действуют, и до какого времени.
+    var meals: [DishID: Date] = [:]
     var loginDay = 0
     var loginClaims = 0
     // Охота
@@ -80,6 +80,8 @@ struct SaveData: Codable {
     var eventSeen = ""
     var eventDecor: [String] = []
     var eventSkins: [String] = []
+    /// Самый высокий уровень за все перерождения: образы за уровень остаются открытыми.
+    var bestLevel = 1
 
     init() {}
 
@@ -91,10 +93,11 @@ struct SaveData: Codable {
         case openGates, tickets, lastFreeTicket, gardenChestAt, expedition, consumed
         case rebirths, sparks, sparksEarned, legacy
         case beds, seeds, selectedSeed, cropsHarvested, dealsDay, dealsBought
-        case houseFloors, decor, dishes, cooking, meal, mealUntil, loginDay, loginClaims
+        case houseFloors, decor, dishes, cooking, meal, mealUntil, meals, loginDay, loginClaims
         case hunts, huntDay, kills
         case cards, awaken, shiny
         case eventKey, eventPoints, eventFree, eventVip, eventBonus, vipKeys, eventSeen, eventDecor, eventSkins
+        case bestLevel
     }
 
     init(from decoder: Decoder) throws {
@@ -160,8 +163,16 @@ struct SaveData: Codable {
         decor = decorMap
         dishes = try Self.map(c.decodeIfPresent([String: Int].self, forKey: .dishes)) ?? [:]
         cooking = (try? c.decodeIfPresent([CookJob].self, forKey: .cooking)) ?? []
-        meal = (try? c.decodeIfPresent(String.self, forKey: .meal)).flatMap { DishID(rawValue: $0) }
-        mealUntil = try c.decodeIfPresent(Date.self, forKey: .mealUntil)
+        var mealMap: [DishID: Date] = [:]
+        for (key, until) in (try? c.decodeIfPresent([String: Date].self, forKey: .meals)) ?? [:] {
+            if let dish = DishID(rawValue: key) { mealMap[dish] = until }
+        }
+        // Старые сохранения: одно блюдо.
+        if let old = (try? c.decodeIfPresent(String.self, forKey: .meal)).flatMap({ DishID(rawValue: $0) }),
+           let until = try? c.decodeIfPresent(Date.self, forKey: .mealUntil) {
+            mealMap[old] = until
+        }
+        meals = mealMap
         loginDay = try c.decodeIfPresent(Int.self, forKey: .loginDay) ?? 0
         loginClaims = try c.decodeIfPresent(Int.self, forKey: .loginClaims) ?? 0
         hunts = (try? c.decodeIfPresent([HuntContract].self, forKey: .hunts)) ?? []
@@ -183,6 +194,7 @@ struct SaveData: Codable {
         eventSeen = try c.decodeIfPresent(String.self, forKey: .eventSeen) ?? ""
         eventDecor = try c.decodeIfPresent([String].self, forKey: .eventDecor) ?? []
         eventSkins = try c.decodeIfPresent([String].self, forKey: .eventSkins) ?? []
+        bestLevel = max(level, try c.decodeIfPresent(Int.self, forKey: .bestLevel) ?? 1)
 
         if !unlocked.contains(.meadow) { unlocked.insert(.meadow, at: 0) }
         // Экспедиция и сад не открываются через список, туда попадают отдельно.
@@ -245,8 +257,7 @@ struct SaveData: Codable {
         try c.encode(decor.mapValues(\.rawValue), forKey: .decor)
         try c.encode(Self.raw(dishes), forKey: .dishes)
         try c.encode(cooking, forKey: .cooking)
-        try c.encodeIfPresent(meal?.rawValue, forKey: .meal)
-        try c.encodeIfPresent(mealUntil, forKey: .mealUntil)
+        try c.encode(Dictionary(uniqueKeysWithValues: meals.map { ($0.key.rawValue, $0.value) }), forKey: .meals)
         try c.encode(loginDay, forKey: .loginDay)
         try c.encode(loginClaims, forKey: .loginClaims)
         try c.encode(hunts, forKey: .hunts)
@@ -264,6 +275,7 @@ struct SaveData: Codable {
         try c.encode(eventSeen, forKey: .eventSeen)
         try c.encode(eventDecor, forKey: .eventDecor)
         try c.encode(eventSkins, forKey: .eventSkins)
+        try c.encode(bestLevel, forKey: .bestLevel)
     }
 
     private static func map<K: RawRepresentable & Hashable>(_ raw: [String: Int]?) -> [K: Int]? where K.RawValue == String {

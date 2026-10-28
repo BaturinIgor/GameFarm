@@ -13,7 +13,9 @@ struct QuestsView: View {
         ScrollView {
             VStack(spacing: 14) {
                 GameTabs(selection: $tab, items: [(Tab.quests, tr("hud.quests")), (Tab.hunts, tr("hunt.tab")),
-                                                  (Tab.achievements, tr("quests.achievements"))])
+                                                  (Tab.achievements, tr("quests.achievements"))],
+                         badges: [.quests: game.claimableQuests, .hunts: game.claimableHunts,
+                                  .achievements: game.claimableAchievements])
 
                 switch tab {
                 case .quests: questsList
@@ -83,7 +85,7 @@ struct QuestCard: View {
                     if quest.type == .gather, let kind = quest.kind {
                         ResourceIcon(kind: kind, size: 30)
                     } else {
-                        Text(quest.icon).font(.system(size: 26))
+                        IconView(icon: quest.icon, size: 28)
                     }
                 }
                 .frame(width: 52, height: 52)
@@ -114,7 +116,7 @@ struct QuestCard: View {
                     Button {
                         withAnimation(.spring(duration: 0.4)) { game.rerollQuest(quest.id) }
                     } label: {
-                        Label(tr("quests.reroll", Fmt.n(game.rerollCost)), systemImage: "arrow.triangle.2.circlepath")
+                        Label { Text.withCoins(tr("quests.reroll", Fmt.n(game.rerollCost))) } icon: { Image(systemName: "arrow.triangle.2.circlepath") }
                     }
                     .buttonStyle(.game(.wood, small: true, wide: true))
                     .disabled(game.save.coins < game.rerollCost)
@@ -167,8 +169,7 @@ struct AchievementRow: View {
         let ready = game.canClaim(achievement)
         let fraction = min(1, Double(progress) / Double(max(1, achievement.target)))
         HStack(spacing: 12) {
-            Text(achievement.icon)
-                .font(.system(size: 28))
+            IconView(icon: achievement.icon, size: 30)
                 .frame(width: 48, height: 48)
                 .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(ready ? Palette.gold.opacity(0.5) : Palette.parchmentDeep.opacity(0.7)))
                 .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Palette.outline.opacity(ready ? 0.8 : 0.3), lineWidth: 2))

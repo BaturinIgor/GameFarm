@@ -492,7 +492,7 @@ struct ToastView: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Text(toast.icon).font(.system(size: 18))
+            IconView(icon: toast.icon, size: 20)
             Text(toast.text)
                 .font(.game(13, .bold))
                 .foregroundStyle(Palette.ink)

@@ -97,6 +97,13 @@ enum Comfort {
 
 // MARK: Кухня
 
+/// Блюдо, которое сейчас действует.
+struct ActiveMeal: Identifiable {
+    let dish: DishID
+    let until: Date
+    var id: DishID { dish }
+}
+
 /// Что даёт блюдо, пока действует.
 struct MealBuff {
     var yield = 0.0

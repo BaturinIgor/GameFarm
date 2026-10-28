@@ -101,7 +101,7 @@ private struct Perk: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            Text(icon).font(.system(size: 18)).frame(width: 26)
+            IconView(icon: icon, size: 20).frame(width: 26)
             Text(text).font(.game(14, .semibold))
             Spacer(minLength: 0)
         }
@@ -418,7 +418,7 @@ struct OfferPopup: View {
                     .multilineTextAlignment(.center)
                 HStack(spacing: 14) {
                     Text("🦁").font(.system(size: 34))
-                    Text("🪙").font(.system(size: 30))
+                    CoinIcon(size: 34)
                     Text("🎒").font(.system(size: 30))
                     Text("🤖").font(.system(size: 34))
                 }
