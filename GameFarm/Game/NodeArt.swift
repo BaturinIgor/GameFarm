@@ -108,6 +108,7 @@ enum NodeArt {
 
     /// Живой вид точки и вид после добычи.
     static func build(_ type: NodeType) -> (alive: SKNode, dead: SKNode) {
+        if let pixel = PixelNodeArt.build(type) { return pixel }
         let alive = SKNode()
         let dead = SKNode()
         let snow = UIColor.white

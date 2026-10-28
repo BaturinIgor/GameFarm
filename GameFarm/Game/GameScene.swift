@@ -130,15 +130,26 @@ final class GameScene: SKScene {
         world.addChild(ground)
 
         for decor in WorldLayout.decorations(spec, avoiding: placements) {
-            let node = SKSpriteNode(texture: Art.emoji(decor.emoji, size: 32), size: CGSize(width: decor.size, height: decor.size))
-            node.position = decor.position
+            let node: SKSpriteNode
+            if let name = Sprites.decor(decor.emoji), let pixel = Sprites.node(name, scale: 2, x: decor.position.x, y: decor.position.y - decor.size * 0.3) {
+                node = pixel
+            } else {
+                node = SKSpriteNode(texture: Art.emoji(decor.emoji, size: 32), size: CGSize(width: decor.size, height: decor.size))
+                node.position = decor.position
+            }
             node.alpha = decor.alpha
             node.zPosition = 1
             world.addChild(node)
         }
         for decor in WorldLayout.border(spec) {
-            let node = SKSpriteNode(texture: Art.emoji(decor.emoji, size: 72), size: CGSize(width: decor.size, height: decor.size))
-            node.position = decor.position
+            let node: SKSpriteNode
+            if let art = Sprites.border(decor.emoji),
+               let pixel = Sprites.node(art.name, scale: art.scale * decor.size / 64, x: decor.position.x, y: decor.position.y - decor.size * 0.4) {
+                node = pixel
+            } else {
+                node = SKSpriteNode(texture: Art.emoji(decor.emoji, size: 72), size: CGSize(width: decor.size, height: decor.size))
+                node.position = decor.position
+            }
             node.zPosition = zFor(decor.position.y)
             world.addChild(node)
         }
@@ -441,13 +452,21 @@ final class GameScene: SKScene {
         houseShadow.position = houseCenter
         houseShadow.zPosition = 3
         world.addChild(houseShadow)
-        let house = SKSpriteNode(texture: Art.emoji("🏡", size: 96), size: CGSize(width: 86, height: 86))
-        house.anchorPoint = CGPoint(x: 0.5, y: 0.12)
-        house.position = CGPoint(x: houseCenter.x, y: houseCenter.y - 6)
+        let house: SKSpriteNode
+        var chimney = CGPoint(x: houseCenter.x + 18, y: houseCenter.y + 78)
+        if let pixel = Sprites.node("house", scale: 1.05, x: houseCenter.x, y: houseCenter.y - 14) {
+            house = pixel
+            houseShadow.isHidden = true
+            chimney = CGPoint(x: houseCenter.x + pixel.size.width * 0.23, y: houseCenter.y - 14 + pixel.size.height * 0.82)
+        } else {
+            house = SKSpriteNode(texture: Art.emoji("🏡", size: 96), size: CGSize(width: 86, height: 86))
+            house.anchorPoint = CGPoint(x: 0.5, y: 0.12)
+            house.position = CGPoint(x: houseCenter.x, y: houseCenter.y - 6)
+        }
         house.zPosition = zFor(houseCenter.y)
         world.addChild(house)
         let smoke = SKSpriteNode(texture: Art.puff, size: CGSize(width: 18, height: 18))
-        smoke.position = CGPoint(x: houseCenter.x + 18, y: houseCenter.y + 78)
+        smoke.position = chimney
         smoke.zPosition = 300
         smoke.alpha = 0
         smoke.run(.repeatForever(.sequence([
@@ -530,7 +549,7 @@ final class GameScene: SKScene {
                                 size: 12, color: .white, spread: 36, rise: 20, additive: true)
             }
             shownSkin = skin.rawValue
-            player.setSkin(skin.emoji)
+            player.setSkin(skin)
         }
         if builtLanguage != Lang.shared.code {
             builtLanguage = Lang.shared.code

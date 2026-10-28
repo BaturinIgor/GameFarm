@@ -21,6 +21,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Unpack sprites
+        env:
+          ASSETS_KEY: ${{ secrets.ASSETS_KEY }}
+        run: |
+          set -o pipefail
+          if [ -z "$ASSETS_KEY" ]; then
+            echo "::warning::ASSETS_KEY secret is not set, building with emoji graphics"
+            exit 0
+          fi
+          if openssl enc -d -aes-256-cbc -md sha256 -in Art/sprites.enc -pass env:ASSETS_KEY | tar -xz -C GameFarm/Resources; then
+            echo "::notice::Sprites unpacked: $(ls GameFarm/Resources/Sprites | wc -l | tr -d ' ') files"
+          else
+            echo "::warning::Could not decrypt sprites, building with emoji graphics"
+            rm -rf GameFarm/Resources/Sprites
+          fi
+
       - name: Install tools
         run: |
           brew install xcodegen ldid
@@ -81,7 +97,7 @@ jobs:
             for f in "$APP"/Frameworks/*.framework; do ldid -S "$f/$(basename "$f" .framework)" || true; done
           fi
           ldid -S "$APP/GameFarm"
-          echo "::notice::Bundle: $(ls "$APP"/*.json 2>/dev/null | wc -l | tr -d ' ') language files, $(ls -d "$APP"/*.lproj 2>/dev/null | wc -l | tr -d ' ') lproj, frameworks: $(ls "$APP/Frameworks" 2>/dev/null | tr '\n' ' ')"
+          echo "::notice::Bundle: $(ls "$APP"/sp_*.png 2>/dev/null | wc -l | tr -d ' ') sprites, $(ls "$APP"/*.json 2>/dev/null | wc -l | tr -d ' ') json files, $(ls -d "$APP"/*.lproj 2>/dev/null | wc -l | tr -d ' ') lproj, frameworks: $(ls "$APP/Frameworks" 2>/dev/null | tr '\n' ' ')"
           rm -rf Payload GameFarm.ipa
           mkdir Payload
           cp -R "$APP" Payload/

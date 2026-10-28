@@ -170,22 +170,29 @@ final class PlayerNode: SKNode {
     private let tool = SKSpriteNode(texture: Art.emoji("🪓", size: 32), size: CGSize(width: 24, height: 24))
     private let shadowNode = SKSpriteNode(texture: Art.shadow, size: CGSize(width: 32, height: 12))
     private let ring = SKShapeNode(ellipseOf: CGSize(width: 40, height: 16))
+    /// Пиксельный персонаж, если спрайты есть в сборке.
+    private let pixel: PixelPlayer?
     private var phase: Double = 0
     private var idle: Double = 0
     private var facing: CGFloat = 1
     private var currentTool: ToolKind = .axe
 
     override init() {
+        pixel = Sprites.available ? PixelPlayer(skin: .farmer) : nil
         super.init()
         ring.strokeColor = UIColor.white.withAlphaComponent(0.55)
         ring.lineWidth = 2
         ring.fillColor = UIColor.white.withAlphaComponent(0.08)
         addChild(ring)
-        shadowNode.alpha = 0.28
-        addChild(shadowNode)
-        body.anchorPoint = CGPoint(x: 0.5, y: 0.08)
-        body.position = CGPoint(x: 0, y: 0)
-        addChild(body)
+        if let pixel {
+            addChild(pixel.root)
+        } else {
+            shadowNode.alpha = 0.28
+            addChild(shadowNode)
+            body.anchorPoint = CGPoint(x: 0.5, y: 0.08)
+            body.position = CGPoint(x: 0, y: 0)
+            addChild(body)
+        }
         tool.position = CGPoint(x: 16, y: 22)
         tool.alpha = 0
         tool.zPosition = 1
@@ -194,8 +201,15 @@ final class PlayerNode: SKNode {
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    /// Узел, который прыгает при празднике.
+    private var art: SKNode { pixel?.root ?? body }
+
     /// speedRatio от 0 до 1: насколько быстро бежит персонаж.
     func animate(velocity: CGVector, speedRatio: CGFloat, dt: Double) {
+        if let pixel {
+            pixel.update(velocity: velocity, speedRatio: speedRatio, dt: dt)
+            return
+        }
         if speedRatio > 0.05 {
             idle = 0
             phase += dt * (8 + 8 * Double(speedRatio))
@@ -220,18 +234,41 @@ final class PlayerNode: SKNode {
         }
     }
 
-    func setSkin(_ emoji: String) {
-        body.texture = Art.emoji(emoji, size: 56)
-        body.removeAction(forKey: "pop")
-        body.setScale(0.6)
+    func setSkin(_ skin: Skin) {
+        if let pixel {
+            pixel.setSkin(skin)
+        } else {
+            body.texture = Art.emoji(skin.emoji, size: 56)
+        }
+        art.removeAction(forKey: "pop")
+        art.setScale(0.6)
         let grow = SKAction.scale(to: 1, duration: 0.25)
         grow.timingMode = .easeOut
-        body.run(grow, withKey: "pop")
+        art.run(grow, withKey: "pop")
     }
 
     func swing(_ kind: ToolKind, toward target: CGPoint) {
         let dir: CGFloat = target.x >= position.x ? 1 : -1
         facing = dir
+        if let pixel {
+            let dx = target.x - position.x
+            let dy = target.y - position.y
+            switch kind {
+            case .axe: pixel.act(.axe, dx: dx, dy: dy)
+            case .pickaxe: pixel.act(.pickaxe, dx: dx, dy: dy)
+            case .hand: pixel.act(.hoe, dx: dx, dy: dy)
+            case .rod:
+                pixel.look(dx: dx, dy: dy)
+                swingEmojiTool(kind, dir: dir)
+            }
+            return
+        }
+        swingEmojiTool(kind, dir: dir)
+        body.removeAction(forKey: "swing")
+        body.run(.sequence([.moveBy(x: 3 * dir, y: 0, duration: 0.06), .moveBy(x: -3 * dir, y: 0, duration: 0.1)]), withKey: "swing")
+    }
+
+    private func swingEmojiTool(_ kind: ToolKind, dir: CGFloat) {
         if kind != currentTool {
             currentTool = kind
             tool.texture = Art.emoji(kind.emoji, size: 32)
@@ -246,8 +283,6 @@ final class PlayerNode: SKNode {
         let back = SKAction.rotate(toAngle: 0.2 * dir, duration: 0.12)
         back.timingMode = .easeOut
         tool.run(.sequence([down, back, .wait(forDuration: 0.18), .fadeOut(withDuration: 0.18)]))
-        body.removeAction(forKey: "swing")
-        body.run(.sequence([.moveBy(x: 3 * dir, y: 0, duration: 0.06), .moveBy(x: -3 * dir, y: 0, duration: 0.1)]), withKey: "swing")
     }
 
     func celebrate() {
@@ -255,13 +290,14 @@ final class PlayerNode: SKNode {
         jump.timingMode = .easeOut
         let land = SKAction.moveBy(x: 0, y: -18, duration: 0.15)
         land.timingMode = .easeIn
-        body.run(.sequence([jump, land, jump, land]))
+        art.run(.sequence([jump, land, jump, land]))
     }
 }
 
 final class CompanionNode: SKNode {
     let animal: AnimalID
     private let body: SKSpriteNode
+    private let pixel: PixelAnimal?
     private let shadowNode = SKSpriteNode(texture: Art.shadow, size: CGSize(width: 24, height: 9))
     weak var target: ResourceSpot?
     var hitTimer: Double = 0
@@ -271,11 +307,15 @@ final class CompanionNode: SKNode {
 
     init(animal: AnimalID) {
         self.animal = animal
-        body = SKSpriteNode(texture: Art.emoji(animal.spec.emoji, size: 48), size: CGSize(width: 34, height: 34))
+        let px = PixelAnimal(animal)
+        pixel = px
+        body = px?.node ?? SKSpriteNode(texture: Art.emoji(animal.spec.emoji, size: 48), size: CGSize(width: 34, height: 34))
         super.init()
-        shadowNode.alpha = 0.24
-        addChild(shadowNode)
-        body.anchorPoint = CGPoint(x: 0.5, y: 0.1)
+        if px == nil {
+            shadowNode.alpha = 0.24
+            addChild(shadowNode)
+            body.anchorPoint = CGPoint(x: 0.5, y: 0.1)
+        }
         addChild(body)
     }
 
@@ -299,11 +339,12 @@ final class CompanionNode: SKNode {
         let moving = hypot(velocity.dx, velocity.dy)
         if moving > 12 {
             phase += dt * 15
-            body.position.y = CGFloat(abs(sin(phase))) * 6
+            body.position.y = CGFloat(abs(sin(phase))) * (pixel == nil ? 6 : 1.5)
             if abs(velocity.dx) > 6 { body.xScale = velocity.dx > 0 ? -1 : 1 }
         } else {
             body.position.y += (0 - body.position.y) * 0.3
         }
+        pixel?.update(moving: moving > 12, dt: dt)
     }
 
     func attack(toward point: CGPoint) {
@@ -325,20 +366,25 @@ final class WildNode: SKNode {
     private var goal: CGPoint
     private var wait: Double = 1
     private let body: SKSpriteNode
+    private let pixel: PixelAnimal?
 
     init(animal: AnimalID, at point: CGPoint, life: Double) {
         self.animal = animal
         self.life = life
         home = point
         goal = point
-        body = SKSpriteNode(texture: Art.emoji(animal.spec.emoji, size: 56), size: CGSize(width: 40, height: 40))
+        let px = PixelAnimal(animal)
+        pixel = px
+        body = px?.node ?? SKSpriteNode(texture: Art.emoji(animal.spec.emoji, size: 56), size: CGSize(width: 40, height: 40))
         super.init()
         position = point
         addChild(glowSprite(UIColor(red: 1, green: 0.85, blue: 0.4, alpha: 1), size: 90, y: 18, alpha: 0.4))
-        let shadowNode = SKSpriteNode(texture: Art.shadow, size: CGSize(width: 28, height: 10))
-        shadowNode.alpha = 0.24
-        addChild(shadowNode)
-        body.anchorPoint = CGPoint(x: 0.5, y: 0.1)
+        if px == nil {
+            let shadowNode = SKSpriteNode(texture: Art.shadow, size: CGSize(width: 28, height: 10))
+            shadowNode.alpha = 0.24
+            addChild(shadowNode)
+            body.anchorPoint = CGPoint(x: 0.5, y: 0.1)
+        }
         addChild(body)
 
         let mark = SKLabelNode(fontNamed: "AvenirNext-Heavy")
@@ -350,7 +396,7 @@ final class WildNode: SKNode {
         bubble.fillColor = UIColor(red: 0.95, green: 0.4, blue: 0.6, alpha: 1)
         bubble.strokeColor = .white
         bubble.lineWidth = 2
-        bubble.position = CGPoint(x: 0, y: 54)
+        bubble.position = CGPoint(x: 0, y: px == nil ? 54 : 64)
         bubble.addChild(mark)
         addChild(bobbing(bubble, height: 4, duration: 0.5))
 
@@ -366,6 +412,7 @@ final class WildNode: SKNode {
         life -= dt
         wait -= dt
         let d = distance(position, goal)
+        pixel?.update(moving: d >= 4, dt: dt)
         if d < 4 {
             body.position.y += (0 - body.position.y) * 0.3
             if wait <= 0 {
@@ -378,7 +425,7 @@ final class WildNode: SKNode {
             let step = min(d, CGFloat(40 * dt))
             position.x += (goal.x - position.x) / d * step
             position.y += (goal.y - position.y) / d * step
-            body.position.y = CGFloat(abs(sin(life * 12))) * 4
+            body.position.y = CGFloat(abs(sin(life * 12))) * (pixel == nil ? 4 : 1)
             if abs(goal.x - position.x) > 1 { body.xScale = goal.x > position.x ? -1 : 1 }
         }
     }
@@ -397,8 +444,9 @@ final class TreasureNode: SKNode {
         super.init()
         position = point
         addChild(glowSprite(UIColor(red: 1, green: 0.8, blue: 0.2, alpha: 1), size: 110, y: 16, alpha: 0.6))
-        addChild(shadowSprite(36))
-        let box = emojiSprite("🎁", 40, y: 20)
+        let pixelBox = Sprites.node("chest")
+        if pixelBox == nil { addChild(shadowSprite(36)) }
+        let box = pixelBox ?? emojiSprite("🎁", 40, y: 20)
         let wobble = SKAction.sequence([
             .rotate(toAngle: 0.12, duration: 0.12), .rotate(toAngle: -0.12, duration: 0.12), .rotate(toAngle: 0, duration: 0.1),
             .wait(forDuration: 1.4)

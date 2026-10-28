@@ -172,8 +172,7 @@ struct SkinsCard: View {
                 .foregroundStyle(.secondary)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 5), spacing: 6) {
                 ForEach(Skin.collection) { skin in
-                    Text(skin.emoji)
-                        .font(.system(size: 30))
+                    SkinIcon(skin: skin, size: 36)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                         .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.secondary.opacity(0.12)))
@@ -349,8 +348,7 @@ private struct SkinTile: View {
             UISelectionFeedbackGenerator().selectionChanged()
         } label: {
             VStack(spacing: 6) {
-                Text(skin.emoji)
-                    .font(.system(size: 44))
+                SkinIcon(skin: skin, size: 52)
                     .grayscale(unlocked ? 0 : 1)
                     .opacity(unlocked ? 1 : 0.45)
                 Text(skin.name)
@@ -423,5 +421,24 @@ struct OfferPopup: View {
 
     private func close() {
         withAnimation(.spring(duration: 0.3)) { game.offerPopup = false }
+    }
+}
+
+/// Образ персонажа: пиксельный портрет, а если спрайтов нет, эмодзи.
+struct SkinIcon: View {
+    let skin: Skin
+    let size: CGFloat
+
+    var body: some View {
+        if let image = Sprites.portrait(skin) {
+            Image(uiImage: image)
+                .interpolation(.none)
+                .resizable()
+                .scaledToFit()
+                .frame(width: size, height: size)
+        } else {
+            Text(skin.emoji)
+                .font(.system(size: size * 0.82))
+        }
     }
 }

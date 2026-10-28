@@ -88,7 +88,7 @@ struct LevelView: View {
                 showWardrobe = true
             } label: {
                 HStack {
-                    Text(game.currentSkin.emoji).font(.system(size: 26))
+                    SkinIcon(skin: game.currentSkin, size: 32)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(tr("wardrobe.title")).font(.subheadline.bold())
                         Text(game.currentSkin.name).font(.caption).foregroundStyle(.secondary)
