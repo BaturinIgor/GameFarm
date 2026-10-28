@@ -126,6 +126,7 @@ struct DungeonReport: Equatable {
     let essence: Int
     let weapon: WeaponID?
     let potions: Int
+    var maps = 0
 }
 
 enum Dungeon {

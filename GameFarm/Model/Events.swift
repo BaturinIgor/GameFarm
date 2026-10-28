@@ -148,15 +148,67 @@ enum Events {
 
     // MARK: Очки
 
-    /// Очки за добычу на карте ивента: особая точка даёт больше.
+    /// Очки за добычу на карте ивента: их дают только особые точки праздника.
     static func points(for type: NodeType) -> Int {
         switch type {
-        case .pumpkinPatch, .giftBox, .sandCastle, .slimeCrystal: 3
-        default: 1
+        case .pumpkinPatch, .giftBox, .sandCastle, .slimeCrystal: 1
+        default: 0
         }
     }
 
-    static func points(for monster: MonsterKind) -> Int { monster == .slimeGold ? 15 : 5 }
+    static func points(for monster: MonsterKind) -> Int { monster == .slimeGold ? 5 : 2 }
+
+    /// Очки за босса этапа.
+    static let bossPoints = 15
+
+    // MARK: Этапы
+
+    /// Сколько разных карт у ивента: этапы идут по кругу через все.
+    static let variants = 5
+
+    /// Какая карта на этапе. С каждой неделей порядок сдвигается.
+    static func variant(stage: Int, run: Int) -> Int { ((stage - 1) + run) % variants }
+
+    /// Цель этапа: столько очков нужно набрать на этой карте, чтобы открылся портал.
+    static func target(stage: Int) -> Int { 30 + 6 * (stage - 1) }
+
+    /// Каждый пятый этап охраняет босс: без победы над ним портал не откроется.
+    static func isBossStage(_ stage: Int) -> Bool { stage % 5 == 0 }
+
+    /// Награда за этап: очки пропуска и монеты.
+    static func clearPoints(stage: Int) -> Int { 30 + 5 * stage + (isBossStage(stage) ? 40 : 0) }
+
+    static func clearCoins(stage: Int, level: Int) -> Int { coins(60 + 15 * stage, level: level) }
+
+    /// Монстры становятся сильнее с каждым этапом.
+    static func monsterLevel(playerLevel: Int, stage: Int) -> Int {
+        max(2, playerLevel / 2 + 1) + (stage - 1) * 2 / 3
+    }
+
+    static func monsterCount(_ base: Int, stage: Int) -> Int { base + (stage - 1) / 3 }
+
+    /// Сколько особых свойств у монстра на этапе.
+    static func traits(stage: Int) -> Int {
+        let r = Double.random(in: 0..<1)
+        switch stage {
+        case ..<4: return 0
+        case 4..<8: return r < 0.35 ? 1 : 0
+        case 8..<13: return r < 0.25 ? 2 : 1
+        default: return r < 0.5 ? 2 : 1
+        }
+    }
+
+    static func bossTraits(stage: Int) -> Int { min(4, 1 + stage / 5) }
+
+    /// Босс этапа у каждого праздника.
+    static func boss(_ event: EventID) -> MonsterKind {
+        switch event {
+        case .harvestFest: .skelKnight
+        case .slimeNight: .slimeGold
+        case .winterTale: .slimeIce
+        case .beachParty: .orcWarrior
+        }
+    }
 
     /// Монстры на картах ивентов.
     static func monsters(_ event: EventID) -> [(MonsterKind, Int)] {
@@ -175,10 +227,10 @@ enum Events {
 
     static let tiers = 20
     /// После последней ступени каждые столько очков дают бонусный сундук.
-    static let bonusEvery = 150
+    static let bonusEvery = 300
 
-    /// Сколько очков нужно на ступень (с единицы).
-    static func cost(tier: Int) -> Int { 40 + 5 * tier }
+    /// Сколько очков нужно на ступень (с единицы). Весь пропуск - около 20 этапов, 3-4 часа игры за неделю.
+    static func cost(tier: Int) -> Int { 60 + 10 * tier }
 
     /// Сколько всего очков нужно, чтобы открыть ступень.
     static func threshold(tier: Int) -> Int {
@@ -263,4 +315,53 @@ enum Events {
 
     /// Бонусный сундук после всех ступеней.
     static func bonusCoins(level: Int) -> Int { coins(600, level: level) }
+}
+
+
+/// Усиления этапов: после каждого этапа игрок выбирает одно из трёх.
+/// Действуют только на картах ивента и сбрасываются с новым ивентом.
+enum EventBoon: String, CaseIterable, Identifiable, Codable {
+    case points, damage, vitality, swift, harvest, hunter, regen, lucky, regrowth
+
+    var id: String { rawValue }
+    var name: String { tr("boon.\(rawValue)") }
+
+    static let maxRank = 3
+
+    var perRank: Double {
+        switch self {
+        case .points: 0.2
+        case .damage: 0.15
+        case .vitality: 0.15
+        case .swift: 0.08
+        case .harvest: 1
+        case .hunter: 2
+        case .regen: 0.01
+        case .lucky: 0.06
+        case .regrowth: 0.2
+        }
+    }
+
+    /// Описание с силой на этом ранге.
+    func text(rank: Int) -> String {
+        let value = perRank * Double(max(1, rank))
+        switch self {
+        case .harvest, .hunter: return tr("boon.\(rawValue).text", Int(value))
+        default: return tr("boon.\(rawValue).text", Fmt.pct(value))
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .points: "star"
+        case .damage: "fist"
+        case .vitality: "heart"
+        case .swift: "boots"
+        case .harvest: "basket"
+        case .hunter: "sword"
+        case .regen: "heart_plus"
+        case .lucky: "clover"
+        case .regrowth: "sprout"
+        }
+    }
 }

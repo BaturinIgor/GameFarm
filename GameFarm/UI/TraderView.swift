@@ -275,6 +275,7 @@ struct WandererRow: View {
     private var icon: some View {
         switch offer.goods {
         case .ticket: TicketIcon(size: 30)
+        case .map: PixelIcon(name: "tmap", size: 30)
         case .seeds(let crop, _): PixelIcon(name: crop.seedIcon, size: 30, fallback: "🌱")
         case .resource(let kind, _): ResourceIcon(kind: kind, size: 30)
         }
@@ -283,6 +284,7 @@ struct WandererRow: View {
     private var title: String {
         switch offer.goods {
         case .ticket: return tr("wanderer.ticket")
+        case .map: return tr("wanderer.map")
         case .seeds(let crop, let n): return "\(crop.name) x\(n)"
         case .resource(let kind, let n): return "\(kind.name) x\(n)"
         }

@@ -78,6 +78,12 @@ struct ContentView: View {
                     .id(which)
             }
 
+            if game.inEvent && !game.save.eventChoice.isEmpty {
+                EventBoonPicker()
+                    .transition(.opacity)
+                    .zIndex(17)
+            }
+
             if let slot = decorSlot {
                 DecorPicker(slot: slot) { withAnimation(.snappy(duration: 0.2)) { decorSlot = nil } }
                     .transition(.opacity)

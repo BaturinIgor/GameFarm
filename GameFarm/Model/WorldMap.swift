@@ -195,15 +195,23 @@ struct LocationLayout {
 
     // MARK: Загрузка
 
-    nonisolated(unsafe) private static var cache: [LocationID: LocationLayout] = [:]
+    nonisolated(unsafe) private static var cache: [String: LocationLayout] = [:]
     private static let lock = NSLock()
+    /// Какая карта этапа сейчас у ивентов (0 - основная). Меняет состояние игры при смене этапа.
+    nonisolated(unsafe) static var eventVariant = 0
+
+    /// Имя файла карты: у ивентов на каждом этапе своя карта.
+    static func resourceName(_ id: LocationID) -> String {
+        id.spec.kind == .event && eventVariant > 0 ? "\(id.rawValue)_\(eventVariant)" : id.rawValue
+    }
 
     static func get(_ id: LocationID) -> LocationLayout {
         lock.lock()
         defer { lock.unlock() }
-        if let layout = cache[id] { return layout }
-        let layout = load(id) ?? fallback(id)
-        cache[id] = layout
+        let name = resourceName(id)
+        if let layout = cache[name] { return layout }
+        let layout = load(id, name: name) ?? load(id, name: id.rawValue) ?? fallback(id)
+        cache[name] = layout
         return layout
     }
 
@@ -254,8 +262,8 @@ struct LocationLayout {
         CGPoint(x: v.count > 0 ? v[0] : 0, y: v.count > 1 ? v[1] : 0)
     }
 
-    private static func load(_ id: LocationID) -> LocationLayout? {
-        guard let url = Bundle.main.url(forResource: "layout_\(id.rawValue)", withExtension: "json"),
+    private static func load(_ id: LocationID, name: String) -> LocationLayout? {
+        guard let url = Bundle.main.url(forResource: "layout_\(name)", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let raw = try? JSONDecoder().decode(Raw.self, from: data) else { return nil }
         var cells: [Cell] = []

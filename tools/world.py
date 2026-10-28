@@ -564,46 +564,67 @@ LOCATIONS = {
                   C("herbPatch", 6, 0.5, 0.4, 5), C("mushroom", 5, 0.3, 0.72, 3), C("tree", 4, 0.72, 0.75, 3)],
         decor=dict(flowers=0.14, tufts=0.04, props=0.01), props=["flowers_purple", "flowers_red", "bush_leafy"],
     ),
+    "crystalCaves": dict(
+        size=(36, 42), biome="caves", seed=241, edge="void", trees=["boulder", "boulder2", "boulder3"],
+        land=[("ellipse", 0.5, 0.48, 0.4, 0.4), ("ellipse", 0.5, 0.12, 0.14, 0.12), ("ellipse", 0.22, 0.72, 0.16, 0.14)],
+        holes=[("ellipse", 0.66, 0.6, 0.05, 0.05)],
+        water=[("ellipse", 0.3, 0.42, 0.07, 0.05)],
+        base=(0.5, 0.18), bare=[],
+        clusters=[C("crystalOre", 9, 0.5, 0.58, 8), C("diamondOre", 5, 0.72, 0.38, 4), C("rubyOre", 4, 0.24, 0.72, 3),
+                  C("glowShroom", 6, 0.36, 0.3, 4), C("goldOre", 4, 0.74, 0.76, 3), C("glowTree", 3, 0.2, 0.5, 2)],
+        decor=dict(flowers=0.0, tufts=0.0, props=0.02), props=["crystal_amethyst", "crystal_diamond", "rubble"],
+    ),
+    "skyIsles": dict(
+        size=(38, 44), biome="sky", seed=251, edge="void", trees=[],
+        land=[("ellipse", 0.5, 0.42, 0.32, 0.28), ("ellipse", 0.26, 0.74, 0.16, 0.13), ("ellipse", 0.74, 0.76, 0.16, 0.13),
+              ("rect", 0.46, 0.0, 0.54, 0.18)],
+        water=[("ellipse", 0.5, 0.46, 0.09, 0.07)],
+        base=(0.5, 0.2), bare=[],
+        bridges=[((0.4, 0.62), (0.28, 0.7)), ((0.6, 0.62), (0.72, 0.72))],
+        clusters=[C("starPond", 4, 0.5, 0.46, 0), C("starRock", 6, 0.3, 0.76, 3), C("goldenTree", 5, 0.72, 0.44, 4),
+                  C("cloudBush", 6, 0.74, 0.78, 3), C("skyTree", 4, 0.28, 0.42, 3), C("crystalOre", 3, 0.5, 0.66, 2)],
+        decor=dict(flowers=0.06, tufts=0.02, props=0.006), props=["bush_cloud", "bush_cloud_star"],
+    ),
     # Карты ивентов
     "harvestFest": dict(
-        size=(38, 46), biome="autumn", seed=301, edge="forest", trees=["tree_autumn_big", "tree_oak_big", "tree_autumn_big"],
+        size=(42, 52), biome="autumn", seed=301, edge="forest", trees=["tree_autumn_big", "tree_oak_big", "tree_autumn_big"],
         land=[("ellipse", 0.5, 0.5, 0.42, 0.42), ("ellipse", 0.3, 0.72, 0.18, 0.14)],
         water=[("ellipse", 0.74, 0.7, 0.07, 0.05)],
         base=(0.5, 0.2), bare=[("ellipse", 0.5, 0.52, 0.07, 0.05)],
-        clusters=[C("pumpkinPatch", 10, 0.5, 0.55, 8), C("pumpkinPatch", 6, 0.3, 0.72, 4), C("pumpkinPatch", 4, 0.75, 0.4, 3),
+        clusters=[C("pumpkinPatch", 6, 0.5, 0.55, 8), C("pumpkinPatch", 4, 0.3, 0.72, 4), C("pumpkinPatch", 3, 0.75, 0.4, 3),
                   C("tree", 6, 0.22, 0.42, 4), C("appleTree", 4, 0.78, 0.78, 3), C("bush", 5, 0.66, 0.26, 3),
                   C("mushroom", 5, 0.2, 0.6, 3), C("rock", 4, 0.82, 0.55, 3), C("fishSpot", 2, 0.74, 0.7, 0)],
         decor=dict(flowers=0.02, tufts=0.03, props=0.012), props=["log", "stump_mossy", "bush_leafy2", "hay_small"],
         fixed_props=[("bunting", 0.5, 0.27, 0), ("scarecrow", 0.4, 0.62)],
     ),
     "slimeNight": dict(
-        size=(38, 46), biome="slimecave", seed=307, edge="void", trees=["boulder", "boulder2", "boulder3"],
+        size=(42, 52), biome="slimecave", seed=307, edge="void", trees=["boulder", "boulder2", "boulder3"],
         land=[("ellipse", 0.5, 0.36, 0.4, 0.3), ("ellipse", 0.42, 0.7, 0.32, 0.24), ("ellipse", 0.72, 0.66, 0.2, 0.16)],
         water=[("ellipse", 0.56, 0.5, 0.08, 0.05), ("ellipse", 0.3, 0.78, 0.06, 0.05)],
         base=(0.5, 0.16), bare=[],
-        clusters=[C("slimeCrystal", 10, 0.48, 0.55, 8), C("slimeCrystal", 5, 0.72, 0.66, 4), C("glowShroom", 6, 0.3, 0.42, 4),
+        clusters=[C("slimeCrystal", 7, 0.48, 0.55, 8), C("slimeCrystal", 5, 0.72, 0.66, 4), C("glowShroom", 6, 0.3, 0.42, 4),
                   C("mushroom", 4, 0.65, 0.3, 3), C("rock", 5, 0.25, 0.65, 3), C("coalOre", 4, 0.8, 0.4, 3)],
         decor=dict(flowers=0.0, tufts=0.03, props=0.016), props=["rubble", "rock3", "mushroom_tiny_purple"],
         fixed_props=[("bunting", 0.5, 0.23, 0)],
     ),
     "winterTale": dict(
-        size=(38, 46), biome="snow", seed=311, edge="forest", trees=["tree_frost_big", "tree_frost", "tree_frost_big"],
+        size=(42, 52), biome="snow", seed=311, edge="forest", trees=["tree_frost_big", "tree_frost", "tree_frost_big"],
         land=[("ellipse", 0.5, 0.5, 0.42, 0.42), ("ellipse", 0.74, 0.7, 0.16, 0.14)],
         ice=[("ellipse", 0.3, 0.66, 0.1, 0.07)],
         base=(0.5, 0.2), bare=[("ellipse", 0.52, 0.5, 0.07, 0.05)],
-        clusters=[C("giftBox", 10, 0.5, 0.55, 8), C("giftBox", 6, 0.74, 0.7, 4), C("giftBox", 4, 0.24, 0.42, 3),
+        clusters=[C("giftBox", 6, 0.5, 0.55, 8), C("giftBox", 4, 0.74, 0.7, 4), C("giftBox", 3, 0.24, 0.42, 3),
                   C("pine", 7, 0.22, 0.6, 4), C("pine", 5, 0.8, 0.45, 3), C("rock", 4, 0.66, 0.3, 3),
                   C("bush", 4, 0.36, 0.3, 3)],
         decor=dict(flowers=0.03, tufts=0.02, props=0.008), props=["bush_cloud", "stone_small2"],
         fixed_props=[("bunting", 0.5, 0.27, 0), ("snowman", 0.38, 0.5), ("snowman", 0.64, 0.6)],
     ),
     "beachParty": dict(
-        size=(40, 46), biome="island", seed=313, edge="sea", trees=[],
+        size=(44, 52), biome="island", seed=313, edge="sea", trees=[],
         land=[("ellipse", 0.5, 0.5, 0.4, 0.38), ("ellipse", 0.3, 0.74, 0.16, 0.12)],
         grass=[("ellipse", 0.5, 0.58, 0.2, 0.16)],
         water=[("ellipse", 0.66, 0.42, 0.08, 0.06)],
         base=(0.5, 0.22), bare=[],
-        clusters=[C("sandCastle", 10, 0.48, 0.48, 8), C("sandCastle", 5, 0.3, 0.74, 4), C("shells", 7, 0.5, 0.36, 8),
+        clusters=[C("sandCastle", 7, 0.48, 0.48, 8), C("sandCastle", 5, 0.3, 0.74, 4), C("shells", 7, 0.5, 0.36, 8),
                   C("palm", 6, 0.5, 0.62, 5), C("pineapple", 4, 0.36, 0.56, 3), C("fishSpot", 3, 0.66, 0.42, 0)],
         decor=dict(flowers=0.02, tufts=0.03, props=0.008), props=["rock1", "stone_small1"],
         fixed_props=[("bunting", 0.5, 0.29, 0)],
@@ -1212,7 +1233,7 @@ def build_tiles(biome_name, edge):
     return tiles
 
 
-def export(lid, spec, gen):
+def export(lid, spec, gen, name=None):
     g = gen["grid"]
     rows = []
     for r in range(g.h):
@@ -1255,8 +1276,70 @@ def export(lid, spec, gen):
         rs = [r for c, r in gen["pen"]]
         # Прямоугольник загона в точках сцены: x, y (левый нижний угол), ширина, высота.
         data["pen"] = [min(cs) * PT, (g.h - 1 - max(rs)) * PT, (max(cs) - min(cs) + 1) * PT, (max(rs) - min(rs) + 1) * PT]
-    with open(os.path.join(LAYOUTS, f"layout_{lid}.json"), "w") as f:
+    with open(os.path.join(LAYOUTS, f"layout_{name or lid}.json"), "w") as f:
         json.dump(data, f, separators=(",", ":"))
+
+
+# ================================================================ этапы ивентов
+
+EVENT_IDS = ["harvestFest", "slimeNight", "winterTale", "beachParty"]
+STAGE_VARIANTS = 4   # кроме основной карты; этапы ивента идут по кругу через все варианты
+SPECIAL = {"harvestFest": "pumpkinPatch", "slimeNight": "slimeCrystal", "winterTale": "giftBox", "beachParty": "sandCastle"}
+
+
+def stage_variant(lid, v):
+    """Другая карта того же ивента: своя форма суши, вода и расстановка ресурсов."""
+    base = LOCATIONS[lid]
+    rng = random.Random(base["seed"] * 31 + v * 977)
+    spec = dict(base)
+    spec["seed"] = base["seed"] + 1000 * v
+    w, h = base["size"]
+    spec["size"] = (w + rng.choice([0, 2, 4]), h + rng.choice([0, 2, 4]))
+    # Большой центральный остров и 2-3 отрога, которые с ним сливаются
+    land = [("ellipse", 0.5, 0.48, rng.uniform(0.34, 0.4), rng.uniform(0.32, 0.38))]
+    for _ in range(rng.randint(2, 3)):
+        ang = rng.uniform(0, math.tau)
+        land.append(("ellipse", 0.5 + math.cos(ang) * 0.24, 0.52 + math.sin(ang) * 0.24,
+                     rng.uniform(0.14, 0.2), rng.uniform(0.12, 0.17)))
+    spec["land"] = land
+    spec["base"] = (0.5, 0.2)
+    pools = []
+    for _ in range(rng.randint(1, 2)):
+        pools.append(("ellipse", rng.uniform(0.25, 0.75), rng.uniform(0.45, 0.8), rng.uniform(0.05, 0.08), rng.uniform(0.04, 0.06)))
+    if "ice" in base:
+        spec["ice"] = pools
+        spec.pop("water", None)
+    else:
+        spec["water"] = pools
+    spec["bare"] = [("ellipse", rng.uniform(0.4, 0.6), rng.uniform(0.45, 0.6), 0.06, 0.05)]
+    special = SPECIAL[lid]
+
+    def spot():
+        ang = rng.uniform(0, math.tau)
+        d = rng.uniform(0.12, 0.3)
+        return 0.5 + math.cos(ang) * d, 0.52 + math.sin(ang) * d
+
+    clusters = []
+    for count, rad in ((6, 7), (4, 4), (3, 3)):
+        x, y = spot()
+        clusters.append(C(special, count, x, y, rad))
+    for node, count, _x, _y, rad in base["clusters"]:
+        if node == special:
+            continue
+        if node in WATER_NODES:
+            x, y = pools[0][1], pools[0][2]
+            clusters.append(C(node, count, x, y, 0))
+            continue
+        x, y = spot()
+        clusters.append(C(node, count, x, y, rad))
+    spec["clusters"] = clusters
+    fixed = [item for item in base.get("fixed_props", []) if item[0] == "bunting"]
+    for item in base.get("fixed_props", []):
+        if item[0] != "bunting":
+            x, y = spot()
+            fixed.append((item[0], x, y))
+    spec["fixed_props"] = fixed
+    return spec
 
 
 def main():
@@ -1272,6 +1355,15 @@ def main():
         img.save(os.path.join(SPRITES, f"sp_ground_{lid}.png"))
         export(lid, spec, gen)
         print(f"{lid}: {len(gen['spots'])} spots, {len(gen['props'])} props, {len(gen['border'])} border, {len(gen['flat'])} flat")
+        if lid in EVENT_IDS:
+            for v in range(1, STAGE_VARIANTS + 1):
+                vspec = stage_variant(lid, v)
+                vgen = generate(lid, vspec)
+                vimg = render_ground(lid, vspec, vgen, cache[key], SPRITES)
+                name = f"{lid}_{v}"
+                vimg.save(os.path.join(SPRITES, f"sp_ground_{name}.png"))
+                export(lid, vspec, vgen, name=name)
+                print(f"  {name}: {len(vgen['spots'])} spots, {len(vgen['props'])} props")
 
 
 if __name__ == "__main__":

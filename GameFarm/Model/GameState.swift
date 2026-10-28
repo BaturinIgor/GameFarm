@@ -53,6 +53,8 @@ final class GameState {
     @ObservationIgnored var arrivalGate: String?
     /// В какой точке дома появиться после перехода (лестница или дверь).
     @ObservationIgnored var arrivalStation: HomeStation?
+    /// Растёт, когда та же локация получает новую карту (следующий этап ивента): сцена перестраивается.
+    @ObservationIgnored var mapVersion = 0
     /// Вышли из дома: появляемся у двери на поляне.
     @ObservationIgnored var arriveAtDoor = false
     /// Посадки и сбор с кнопок интерфейса: сцена забирает и показывает эффекты.
@@ -74,6 +76,7 @@ final class GameState {
         refreshReachable()
         if save.current == .garden && !owns(.garden) { save.current = .meadow }
         if owns(.garden) && (save.weapons[.royalSword] ?? 0) == 0 { save.weapons[.royalSword] = WeaponID.royalSword.startTier }
+        syncEvent()
         recalc()
         ensureQuests()
         checkStarterOffer()
@@ -171,6 +174,7 @@ final class GameState {
         save.granted = old.granted
         save.consumed = old.consumed
         save.tickets = max(old.tickets, 1)
+        save.maps = old.maps
         save.lastFreeTicket = old.lastFreeTicket
         save.gardenChestAt = old.gardenChestAt
         save.starterOfferUntil = old.starterOfferUntil
@@ -207,6 +211,16 @@ final class GameState {
         if owns(.starter) {
             save.animals[.duckHat] = 1
             save.active = [.duckHat]
+        }
+        // Верные звери (наследие): лучшие звери остаются с одной звездой
+        let keep = legacyRank(.companions)
+        if keep > 0 {
+            let best = old.animals.filter { $0.key != .duckHat && $0.value > 0 }
+                .sorted { $0.value > $1.value }.prefix(keep).map(\.key)
+            for id in best {
+                save.animals[id] = 1
+                if save.active.count < GameRules.maxActiveAnimals { save.active.append(id) }
+            }
         }
         refreshReachable()
         encounter = nil
@@ -673,10 +687,13 @@ final class GameState {
     /// Быстрый переход по карте: появляемся у склада.
     func travel(to id: LocationID) {
         guard isUnlocked(id), save.current != id, save.expedition == nil else { return }
+        let wasEvent = save.current.spec.kind == .event
         arrivalGate = nil
         save.current = id
         encounter = nil
         gatePrompt = nil
+        // Усиления ивента действуют только на его картах
+        if wasEvent || id.spec.kind == .event { recalc() }
         markDirty()
     }
 
@@ -707,8 +724,10 @@ final class GameState {
     @discardableResult
     func startExpedition(_ id: LocationID) -> Bool {
         let price = Expedition.cost(id)
-        guard id.spec.kind == .expedition, save.expedition == nil, save.tickets >= price else { return false }
+        let maps = Expedition.maps(id)
+        guard id.spec.kind == .expedition, save.expedition == nil, save.tickets >= price, save.maps >= maps else { return false }
         save.tickets -= price
+        save.maps -= maps
         save.expedition = ExpeditionRun(location: id.rawValue, endsAt: Date().addingTimeInterval(Expedition.duration(id)),
                                         returnTo: save.current.rawValue)
         if backpackCount > 0 { depositBackpack() }
@@ -796,6 +815,10 @@ final class GameState {
         save.coinsEarned += coins
         for item in items { addToStorage(item.kind, item.amount) }
         save.treasures += 1
+        if Double.random(in: 0..<1) < TreasureMaps.treasureChance {
+            save.maps += 1
+            toast("px:tmap", tr("toast.map"))
+        }
         progressQuests(.treasure, amount: 1)
         gainXP(max(5, xpToNext / 25))
         let treasure = Treasure(coins: coins, items: items)
@@ -1199,6 +1222,10 @@ final class GameState {
         // Наследие: вечные бонусы за перерождения.
         func legacy(_ perk: LegacyPerk) -> Double { Double(legacyRank(perk)) * perk.perRank }
         s.yieldAll += legacy(.harvest)
+        s.weaponMult *= 1 + legacy(.fighter)
+        s.hpMult *= 1 + legacy(.vigor)
+        s.growMult /= 1 + legacy(.gardener)
+        s.mealMult *= 1 + legacy(.chef)
         // Уют дома и блюдо, которое сейчас действует.
         let cozy = Comfort.bonus(comfort)
         s.yieldAll += cozy
@@ -1228,10 +1255,13 @@ final class GameState {
         s.yieldCategory[.treasure, default: 0] += cSea
         s.swordMult = 1 + constellationBonus(.monsters)
         s.animalMult *= 1 + constellationBonus(.beasts)
+        s.growMult /= 1 + constellationBonus(.garden)
+        s.weaponMult *= 1 + constellationBonus(.dungeon)
+        s.producerMult *= 1 + constellationBonus(.birds)
         if isBuilt(.upper) { s.offlineHours += 2 }
 
         var speedBonus = 0.07 * r(.swift) + 0.05 * r(.tailwind) + legacy(.boots)
-        var critBonus = 0.05 * r(.crit)
+        var critBonus = 0.05 * r(.crit) + legacy(.luck)
         var respawnBonus = 0.08 * r(.regrowth) + (r(.abundance) > 0 ? 0.5 : 0) + legacy(.growth)
         var xpBonus = 0.1 * r(.scholar) + 0.06 * r(.sage) + legacy(.wisdom) + cozy + meal.xp + constellationBonus(.sky)
         var sellBonus = 0.08 * r(.trader) + legacy(.merchant) + meal.sell
@@ -1276,6 +1306,17 @@ final class GameState {
             s.critMult += 0.2
         }
         gear = g
+
+        // Усиления этапов ивента (только на его картах)
+        if save.current.spec.kind == .event {
+            func boon(_ b: EventBoon) -> Double { b.perRank * Double(save.eventBoons[b] ?? 0) }
+            s.damageMult *= 1 + boon(.damage)
+            s.hpMult *= 1 + boon(.vitality)
+            speedBonus += boon(.swift)
+            critBonus += boon(.lucky)
+            s.regen += boon(.regen)
+            respawnBonus += boon(.regrowth)
+        }
 
         let strider = r(.strider) > 0 ? 1.25 : 1
         capacity *= (1 + 0.1 * r(.packMaster)) * strider
@@ -1596,7 +1637,8 @@ extension GameState {
     func spawnWanderer(at location: LocationID) {
         var rng = DayRandom(seed: Int(Date().timeIntervalSince1970) / 60)
         let level = save.level
-        var offers: [WandererOffer] = [WandererOffer(id: 0, goods: .ticket, price: 800 + 80 * level)]
+        var offers: [WandererOffer] = [rng.next() % 2 == 0 ? WandererOffer(id: 0, goods: .ticket, price: 800 + 80 * level)
+                                                        : WandererOffer(id: 0, goods: .map, price: TreasureMaps.wandererPrice(level: level))]
         let crops = CropID.allCases.filter { $0.spec.level <= level + 4 }
         let crop = rng.pick(Array(crops.suffix(4)))
         offers.append(WandererOffer(id: 1, goods: .seeds(crop, 6), price: max(10, Int(Double(crop.spec.seedPrice * 6) * 0.6))))
@@ -1618,6 +1660,7 @@ extension GameState {
         save.coins -= offer.price
         switch offer.goods {
         case .ticket: save.tickets += 1
+        case .map: save.maps += 1
         case .seeds(let crop, let n): save.seeds[crop, default: 0] += n
         case .resource(let kind, let n): addToStorage(kind, n, counts: false)
         }
@@ -2106,6 +2149,9 @@ extension GameState {
             weapon = id.weapon
         }
         randomCard()
+        rollCard(for: .essence, chance: 0.25)
+        let maps = Dungeon.isBossFloor(run.floor) || Double.random(in: 0..<1) < TreasureMaps.dungeonChance ? 1 : 0
+        save.maps += maps
         if first {
             save.dungeonBest[id] = run.floor
             if Dungeon.isBossFloor(run.floor) {
@@ -2118,7 +2164,7 @@ extension GameState {
         run.essence += essence
         dungeonRun = run
         lastChest = DungeonReport(dungeon: id, floor: run.floor, won: true, firstClear: first, coins: run.coins,
-                                  essence: run.essence, weapon: weapon, potions: potions)
+                                  essence: run.essence, weapon: weapon, potions: potions, maps: maps)
         SoundFX.play(.treasure)
         saveNow()
     }
@@ -2163,7 +2209,9 @@ extension GameState {
         }
         gainXP(st.xp)
         rollCard(for: kind)
-        if inEvent { addEventPoints(Events.points(for: kind)) }
+        if inEvent {
+            if boss { eventBossDefeated() } else { addEventPoints(eventPoints(for: kind, boss: false)) }
+        }
         ensureHunts()
         for i in save.hunts.indices where save.hunts[i].monster == kind && !save.hunts[i].done {
             save.hunts[i].progress += 1
@@ -2335,6 +2383,7 @@ extension GameState {
     /// Начался новый проход ивента: незабранные награды выдаём сами, очки обнуляем.
     func syncEvent() {
         let run = Events.current
+        LocationLayout.eventVariant = Events.variant(stage: save.eventKey == run.key ? save.eventStage : 1, run: run.index)
         guard save.eventKey != run.key else { return }
         if !save.eventKey.isEmpty { claimLeftovers(key: save.eventKey) }
         let first = save.eventKey.isEmpty
@@ -2343,6 +2392,13 @@ extension GameState {
         save.eventFree = []
         save.eventVip = []
         save.eventBonus = 0
+        save.eventStage = 1
+        save.eventProgress = 0
+        save.eventBest = 0
+        save.eventBoons = [:]
+        save.eventChoice = []
+        LocationLayout.eventVariant = Events.variant(stage: 1, run: run.index)
+        mapVersion += 1
         if eventsOpen && !first { toast("px:star", tr("toast.eventStarted", run.event.name)) }
         markDirty()
     }
@@ -2459,10 +2515,20 @@ extension GameState {
         }
     }
 
-    /// Очки ивента за добычу и монстров на карте ивента.
-    func addEventPoints(_ n: Int) {
-        guard n > 0, inEvent else { return }
+    /// Очки ивента за добычу и монстров на карте ивента: идут и в пропуск, и в цель этапа.
+    /// Возвращает, сколько очков начислено с учётом усилений.
+    @discardableResult
+    func addEventPoints(_ base: Int) -> Int {
+        guard base > 0, inEvent else { return 0 }
         syncEvent()
+        let n = Int((Double(base) * (1 + boonValue(.points))).rounded())
+        addPassPoints(n)
+        addStageProgress(n)
+        markDirty()
+        return n
+    }
+
+    private func addPassPoints(_ n: Int) {
         let before = eventTier
         save.eventPoints += n
         let after = eventTier
@@ -2470,6 +2536,102 @@ extension GameState {
             toast("px:star", tr("toast.eventTier", after))
             SoundFX.play(.unlock)
         }
+    }
+
+    // MARK: Этапы ивента
+
+    func boonRank(_ boon: EventBoon) -> Int { save.eventBoons[boon] ?? 0 }
+
+    /// Сила усиления (только на картах ивента).
+    func boonValue(_ boon: EventBoon) -> Double { inEvent ? boon.perRank * Double(boonRank(boon)) : 0 }
+
+    /// Очки за особую точку и за монстра с учётом усилений "Урожай" и "Охотник".
+    func eventPoints(for type: NodeType) -> Int {
+        let base = Events.points(for: type)
+        return base > 0 ? base + Int(boonValue(.harvest)) : 0
+    }
+
+    func eventPoints(for monster: MonsterKind, boss: Bool) -> Int {
+        boss ? Events.bossPoints : Events.points(for: monster) + Int(boonValue(.hunter))
+    }
+
+    var eventTarget: Int { Events.target(stage: save.eventStage) }
+    var eventBossStage: Bool { Events.isBossStage(save.eventStage) }
+
+    /// Сколько нужно для прохождения: на этапе с боссом - ещё и победа над ним.
+    var eventGoal: Int { eventTarget + (eventBossStage ? Events.bossPoints : 0) }
+
+    var eventStageCleared: Bool { save.eventProgress >= eventGoal }
+
+    /// Цель собрана, пора звать босса.
+    var eventBossDue: Bool { eventBossStage && save.eventProgress >= eventTarget && !eventStageCleared }
+
+    private func addStageProgress(_ n: Int) {
+        guard !eventStageCleared else { return }
+        // Пока босс жив, прогресс этапа не растёт выше цели.
+        let cap = eventBossStage ? eventTarget : eventGoal
+        save.eventProgress = min(cap, save.eventProgress + n)
+        if eventStageCleared { stageCleared() }
+    }
+
+    /// Босс этапа побеждён.
+    func eventBossDefeated() {
+        guard inEvent, eventBossStage, !eventStageCleared else { return }
+        addPassPoints(Events.bossPoints)
+        save.eventProgress = eventGoal
+        stageCleared()
+        markDirty()
+    }
+
+    private func stageCleared() {
+        let stage = save.eventStage
+        save.eventBest = max(save.eventBest, stage)
+        addPassPoints(Events.clearPoints(stage: stage))
+        addCoins(Events.clearCoins(stage: stage, level: save.level))
+        if Events.isBossStage(stage) {
+            save.maps += 1
+            toast("px:tmap", tr("toast.map"))
+        }
+        toast("px:portal", tr("toast.stageCleared", stage))
+        SoundFX.play(.levelUp)
+        saveNow()
+    }
+
+    /// Герой вошёл в портал: предлагаем три усиления (или сразу дальше, если всё на максимуме).
+    func enterEventPortal() {
+        guard inEvent, eventStageCleared, save.eventChoice.isEmpty else { return }
+        let open = EventBoon.allCases.filter { boonRank($0) < EventBoon.maxRank }
+        if open.isEmpty {
+            nextStage()
+        } else {
+            save.eventChoice = Array(open.shuffled().prefix(3))
+            markDirty()
+        }
+    }
+
+    func chooseBoon(_ boon: EventBoon) {
+        guard save.eventChoice.contains(boon) else { return }
+        save.eventBoons[boon] = min(EventBoon.maxRank, boonRank(boon) + 1)
+        save.eventChoice = []
+        SoundFX.play(.unlock)
+        nextStage()
+    }
+
+    private func nextStage() {
+        save.eventStage += 1
+        save.eventProgress = 0
+        LocationLayout.eventVariant = Events.variant(stage: save.eventStage, run: Events.current.index)
+        mapVersion += 1
+        recalc()
+        toast("px:star", tr("toast.stageStart", save.eventStage))
+        saveNow()
+    }
+
+    /// Упал без сил на этапе: теряется четверть набранного прогресса.
+    func eventFaint() {
+        guard inEvent, !eventStageCleared else { return }
+        let cap = eventBossStage ? min(save.eventProgress, eventTarget) : save.eventProgress
+        save.eventProgress = cap * 3 / 4
         markDirty()
     }
 
@@ -2488,6 +2650,7 @@ extension GameState {
     func goToEvent() {
         syncEvent()
         travel(to: Events.current.event.location)
+        recalc()
     }
 
     /// С карты ивента домой, на поляну.
@@ -2497,6 +2660,7 @@ extension GameState {
         save.current = .meadow
         encounter = nil
         gatePrompt = nil
+        recalc()
         markDirty()
     }
 }

@@ -83,7 +83,7 @@ struct LegacyRow: View {
         let maxed = rank >= perk.maxRank
         Card(tint: rank > 0 ? ButtonTone.purple.base.opacity(0.7) : .clear) {
             HStack(spacing: 12) {
-                IconView(icon: perk.emoji, size: 30)
+                PixelIcon(name: perk.icon, size: 30)
                     .frame(width: 50, height: 50)
                     .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(rank > 0 ? Color(hex: 0xEDE2FA) : Palette.parchmentDeep.opacity(0.7)))
                     .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Palette.outline.opacity(0.6), lineWidth: 2))

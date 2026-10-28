@@ -115,7 +115,10 @@ struct DungeonReportOverlay: View {
                     HStack(spacing: 4) { CoinIcon(size: 22); Text("+\(Fmt.n(report.coins))").font(.game(16)) }
                     HStack(spacing: 4) { ResourceIcon(kind: .essence, size: 22); Text("+\(report.essence)").font(.game(16)) }
                     if report.potions > 0 {
-                        HStack(spacing: 4) { PixelIcon(name: "heart_plus", size: 22); Text("+\(report.potions)").font(.game(16)) }
+                        HStack(spacing: 4) { PixelIcon(name: "potion", size: 22); Text("+\(report.potions)").font(.game(16)) }
+                    }
+                    if report.maps > 0 {
+                        HStack(spacing: 4) { PixelIcon(name: "tmap", size: 22); Text("+\(report.maps)").font(.game(16)) }
                     }
                 }
                 if let weapon = report.weapon {

@@ -80,6 +80,12 @@ struct SaveData: Codable {
     var eventSeen = ""
     var eventDecor: [String] = []
     var eventSkins: [String] = []
+    /// Забег по этапам ивента: этап, прогресс цели, рекорд недели, усиления и предложенный выбор.
+    var eventStage = 1
+    var eventProgress = 0
+    var eventBest = 0
+    var eventBoons: [EventBoon: Int] = [:]
+    var eventChoice: [EventBoon] = []
     /// Самый высокий уровень за все перерождения: образы за уровень остаются открытыми.
     var bestLevel = 1
     // Огород и кухня
@@ -91,6 +97,8 @@ struct SaveData: Codable {
     var weapon: WeaponID = .forged
     var weapons: [WeaponID: Int] = [:]
     var potions = 0
+    /// Карты сокровищ: вторая валюта экспедиций.
+    var maps = 0
     var dungeonBest: [DungeonID: Int] = [:]
 
     init() {}
@@ -107,8 +115,9 @@ struct SaveData: Codable {
         case hunts, huntDay, kills
         case cards, awaken, shiny
         case eventKey, eventPoints, eventFree, eventVip, eventBonus, vipKeys, eventSeen, eventDecor, eventSkins
+        case eventStage, eventProgress, eventBest, eventBoons, eventChoice
         case bestLevel, canLevel, fertilizers, selectedFertilizer, kitchenLevel
-        case weapon, weapons, potions, dungeonBest
+        case weapon, weapons, potions, dungeonBest, maps
     }
 
     init(from decoder: Decoder) throws {
@@ -205,6 +214,11 @@ struct SaveData: Codable {
         eventSeen = try c.decodeIfPresent(String.self, forKey: .eventSeen) ?? ""
         eventDecor = try c.decodeIfPresent([String].self, forKey: .eventDecor) ?? []
         eventSkins = try c.decodeIfPresent([String].self, forKey: .eventSkins) ?? []
+        eventStage = max(1, try c.decodeIfPresent(Int.self, forKey: .eventStage) ?? 1)
+        eventProgress = try c.decodeIfPresent(Int.self, forKey: .eventProgress) ?? 0
+        eventBest = try c.decodeIfPresent(Int.self, forKey: .eventBest) ?? 0
+        eventBoons = try Self.map(c.decodeIfPresent([String: Int].self, forKey: .eventBoons)) ?? [:]
+        eventChoice = (try c.decodeIfPresent([String].self, forKey: .eventChoice) ?? []).compactMap { EventBoon(rawValue: $0) }
         bestLevel = max(level, try c.decodeIfPresent(Int.self, forKey: .bestLevel) ?? 1)
         canLevel = max(1, try c.decodeIfPresent(Int.self, forKey: .canLevel) ?? 1)
         fertilizers = try Self.map(c.decodeIfPresent([String: Int].self, forKey: .fertilizers)) ?? [:]
@@ -214,6 +228,7 @@ struct SaveData: Codable {
         weapon = (try? c.decodeIfPresent(String.self, forKey: .weapon)).flatMap { WeaponID(rawValue: $0) } ?? .forged
         weapons = try Self.map(c.decodeIfPresent([String: Int].self, forKey: .weapons)) ?? [:]
         potions = try c.decodeIfPresent(Int.self, forKey: .potions) ?? 0
+        maps = try c.decodeIfPresent(Int.self, forKey: .maps) ?? 0
         dungeonBest = try Self.map(c.decodeIfPresent([String: Int].self, forKey: .dungeonBest)) ?? [:]
         if weapon != .forged && (weapons[weapon] ?? 0) == 0 { weapon = .forged }
         // Забег по подземелью не сохраняется: после перезапуска - на поляну.
@@ -299,6 +314,11 @@ struct SaveData: Codable {
         try c.encode(eventSeen, forKey: .eventSeen)
         try c.encode(eventDecor, forKey: .eventDecor)
         try c.encode(eventSkins, forKey: .eventSkins)
+        try c.encode(eventStage, forKey: .eventStage)
+        try c.encode(eventProgress, forKey: .eventProgress)
+        try c.encode(eventBest, forKey: .eventBest)
+        try c.encode(Self.raw(eventBoons), forKey: .eventBoons)
+        try c.encode(eventChoice.map(\.rawValue), forKey: .eventChoice)
         try c.encode(bestLevel, forKey: .bestLevel)
         try c.encode(canLevel, forKey: .canLevel)
         try c.encode(Self.raw(fertilizers), forKey: .fertilizers)
@@ -307,6 +327,7 @@ struct SaveData: Codable {
         try c.encode(weapon.rawValue, forKey: .weapon)
         try c.encode(Self.raw(weapons), forKey: .weapons)
         try c.encode(potions, forKey: .potions)
+        try c.encode(maps, forKey: .maps)
         try c.encode(Self.raw(dungeonBest), forKey: .dungeonBest)
     }
 

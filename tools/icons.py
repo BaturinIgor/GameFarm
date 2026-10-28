@@ -650,6 +650,15 @@ def no_ads():
     return im
 
 
+def treasure_map():
+    c = Canvas(16, 16)
+    poly(c, [(1, 3), (5, 1), (10, 3), (15, 1), (15, 13), (10, 15), (5, 13), (1, 15)], "paper")
+    im = c.render()
+    im = px(im, [(5, y) for y in range(3, 13, 2)] + [(10, y) for y in range(4, 14, 2)], "#c8b89a")
+    im = px(im, [(3, 11), (4, 10), (6, 9), (7, 8), (8, 7)], "#743f39")
+    return px(im, [(10, 4), (12, 6), (11, 5), (12, 4), (10, 6)], "#c42430")
+
+
 def talent_icons():
     return {
         "fist": fist(), "target": target(), "shards": shards(), "flame": flame(), "quake": quake(),
@@ -658,6 +667,7 @@ def talent_icons():
         "moon": moon(), "portal": portal(), "wind": wind(), "compass": compass(), "moneybag": moneybag(),
         "wing": wing(), "ball": ball(), "net": net(), "fang": fang(), "potion": potion(), "key": key(),
         "heart_shield": heart_shield(), "anvil2": anvil_icon(), "quest": scroll_quest(), "no_ads": no_ads(),
+        "tmap": treasure_map(),
     }
 
 

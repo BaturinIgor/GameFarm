@@ -13,10 +13,7 @@ struct CollectionView: View {
                     summary("px:spark", tr("collection.done", ConstellationID.allCases.filter { game.isComplete($0) }.count,
                                     ConstellationID.allCases.count))
                 }
-                Text(tr("collection.hint"))
-                    .font(.game(12, .semibold))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                CollectionGuide()
                 ForEach(ConstellationID.allCases) { ConstellationCard(constellation: $0) }
             }
             .padding(16)
@@ -59,6 +56,18 @@ private struct ConstellationCard: View {
                     Text(constellation.bonusText(complete ? ConstellationID.bonus(minStars: game.minStars(constellation)) : bonus))
                         .font(.game(12))
                         .foregroundStyle(complete ? Palette.good : Palette.inkSoft)
+                    Group {
+                        if !complete {
+                            let missing = constellation.cards.filter { game.cardCount($0) == 0 }.count
+                            Text(tr("collection.missing", missing))
+                        } else if game.minStars(constellation) < Cards.thresholds.count {
+                            Text(tr("collection.nextStar", Fmt.pct(ConstellationID.bonus(minStars: game.minStars(constellation) + 1))))
+                        } else {
+                            Text(tr("collection.maxed"))
+                        }
+                    }
+                    .font(.game(11, .semibold))
+                    .foregroundStyle(.secondary)
                     Text(tr("collection.skin", constellation.skin.name))
                         .font(.game(11, .semibold))
                         .foregroundStyle(.secondary)
@@ -160,6 +169,60 @@ struct CardTile: View {
         case .resource(let kind): ResourceIcon(kind: kind, size: 32)
         case .animal(let id): AnimalIcon(id: id, size: 34)
         case .monster(let kind): MonsterIcon(kind: kind, size: 34)
+        }
+    }
+}
+
+
+/// Как работают карты и созвездия: раскрывается по нажатию.
+struct CollectionGuide: View {
+    @State private var open = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                withAnimation(.snappy) { open.toggle() }
+            } label: {
+                HStack(spacing: 8) {
+                    PixelIcon(name: "book", size: 22)
+                    Text(tr("collection.guide")).font(.game(14))
+                    Spacer()
+                    Image(systemName: open ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(Palette.inkSoft)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            if open {
+                row("cards", tr("collection.guide.drop"))
+                row("star", tr("collection.guide.stars"))
+                HStack(spacing: 6) {
+                    ForEach(Array(Cards.thresholds.enumerated()), id: \.offset) { i, n in
+                        VStack(spacing: 2) {
+                            StarsView(stars: i + 1, size: 6)
+                            Text(tr("collection.copies", n)).font(.game(10)).foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 4)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(Palette.parchmentDeep))
+                    }
+                }
+                row("spark", tr("collection.guide.complete"))
+                row("coins", tr("collection.guide.bonus"))
+            }
+        }
+        .padding(12)
+        .listBox(radius: 14)
+    }
+
+    private func row(_ icon: String, _ text: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            PixelIcon(name: icon, size: 20).frame(width: 24)
+            Text(text)
+                .font(.game(12, .semibold))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
         }
     }
 }

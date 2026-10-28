@@ -298,6 +298,8 @@ struct ExpeditionsCard: View {
                 HStack(spacing: 4) {
                     TicketIcon(size: 20)
                     Text("\(game.save.tickets)").font(.game(16)).monospacedDigit()
+                    PixelIcon(name: "tmap", size: 20).padding(.leading, 4)
+                    Text("\(game.save.maps)").font(.game(16)).monospacedDigit()
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
@@ -320,6 +322,7 @@ struct ExpeditionsCard: View {
             }
             ForEach(LocationID.expeditions) { id in
                 let price = Expedition.cost(id)
+                let maps = Expedition.maps(id)
                 HStack(spacing: 12) {
                     PixelIcon(name: Expedition.icon(id), size: 36)
                     VStack(alignment: .leading, spacing: 3) {
@@ -338,10 +341,14 @@ struct ExpeditionsCard: View {
                             Text(tr("exp.go"))
                             Text("\(price)")
                             TicketIcon(size: 14)
+                            if maps > 0 {
+                                Text("\(maps)")
+                                PixelIcon(name: "tmap", size: 14)
+                            }
                         }
                     }
-                    .buttonStyle(.game(price >= 3 ? .orange : .green, small: true))
-                    .disabled(game.save.tickets < price || game.save.expedition != nil)
+                    .buttonStyle(.game(maps > 0 ? .purple : (price >= 3 ? .orange : .green), small: true))
+                    .disabled(game.save.tickets < price || game.save.maps < maps || game.save.expedition != nil)
                 }
                 .padding(10)
                 .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.parchmentDeep.opacity(0.55)))

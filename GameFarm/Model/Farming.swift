@@ -210,6 +210,7 @@ struct TradeDeal: Identifiable, Equatable {
 struct WandererOffer: Identifiable, Equatable {
     enum Goods: Equatable {
         case ticket
+        case map
         case seeds(CropID, Int)
         case resource(ResourceKind, Int)
     }

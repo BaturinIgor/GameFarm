@@ -34,7 +34,7 @@ enum MiniMap {
     }
 
     static func image(_ id: LocationID, framed: Bool) -> UIImage {
-        let key = "\(id.rawValue)|\(framed)"
+        let key = "\(LocationLayout.resourceName(id))|\(framed)"
         if let cached = cache[key] { return cached }
         let image = render(id.layout, id.spec, framed: framed)
         cache[key] = image

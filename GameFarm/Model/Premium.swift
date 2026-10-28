@@ -77,6 +77,7 @@ enum Skin: String, CaseIterable, Identifiable {
     case wizard, ninja, vampire, astronaut, princess, prince, superhero, merperson, fairy, zombie
     case knight
     case harvester, ranger, miner, sailor, shepherd, hunter, stargazer
+    case cultivator, duelist, falconer
     case autumn, slimeKing, frost, surfer
 
     var id: String { rawValue }
@@ -111,6 +112,9 @@ enum Skin: String, CaseIterable, Identifiable {
         case .shepherd: "🐑"
         case .hunter: "🗡️"
         case .stargazer: "🔭"
+        case .cultivator: "🥕"
+        case .duelist: "🗡️"
+        case .falconer: "🦅"
         case .autumn: "🍂"
         case .slimeKing: "👑"
         case .frost: "❄️"
@@ -138,6 +142,9 @@ enum Skin: String, CaseIterable, Identifiable {
         case .shepherd: .constellation(.beasts)
         case .hunter: .constellation(.monsters)
         case .stargazer: .constellation(.sky)
+        case .cultivator: .constellation(.garden)
+        case .duelist: .constellation(.dungeon)
+        case .falconer: .constellation(.birds)
         case .autumn: .event(.harvestFest)
         case .slimeKing: .event(.slimeNight)
         case .frost: .event(.winterTale)

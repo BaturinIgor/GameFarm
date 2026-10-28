@@ -2,7 +2,7 @@ import UIKit
 
 /// Созвездия: каждое собирается из пяти карт. Полное созвездие даёт вечный бонус и образ героя.
 enum ConstellationID: String, CaseIterable, Identifiable, Codable {
-    case harvest, forest, depths, sea, beasts, monsters, sky
+    case harvest, forest, depths, sea, beasts, monsters, sky, garden, dungeon, birds
 
     var id: String { rawValue }
 
@@ -20,6 +20,9 @@ enum ConstellationID: String, CaseIterable, Identifiable, Codable {
         case .beasts: .shepherd
         case .monsters: .hunter
         case .sky: .stargazer
+        case .garden: .cultivator
+        case .dungeon: .duelist
+        case .birds: .falconer
         }
     }
 
@@ -41,6 +44,9 @@ enum ConstellationID: String, CaseIterable, Identifiable, Codable {
         case .beasts: [(0.2, 0.3), (0.45, 0.2), (0.6, 0.5), (0.4, 0.8), (0.85, 0.65)]
         case .monsters: [(0.5, 0.15), (0.2, 0.45), (0.35, 0.85), (0.65, 0.85), (0.8, 0.45)]
         case .sky: [(0.1, 0.8), (0.3, 0.5), (0.5, 0.15), (0.7, 0.5), (0.9, 0.8)]
+        case .garden: [(0.12, 0.3), (0.3, 0.7), (0.5, 0.35), (0.7, 0.7), (0.88, 0.3)]
+        case .dungeon: [(0.2, 0.2), (0.5, 0.15), (0.8, 0.2), (0.65, 0.8), (0.35, 0.8)]
+        case .birds: [(0.1, 0.6), (0.3, 0.3), (0.5, 0.5), (0.7, 0.3), (0.9, 0.6)]
         }
     }
 }
@@ -60,6 +66,9 @@ enum CardID: String, CaseIterable, Identifiable, Codable {
     case cow, sheep, pig, chicken, horse
     case slimeGreen, slimeBlue, slimeRed, slimeIce, skeleton
     case cloud, feather, crystal, ruby, stardust
+    case tomato, potato, strawberry, corn, chili
+    case orc, orcShaman, skelKnight, skelMage, essence
+    case duck, goose, swan, goldenGoose, egg
 
     var id: String { rawValue }
 
@@ -72,6 +81,9 @@ enum CardID: String, CaseIterable, Identifiable, Codable {
         case .cow, .sheep, .pig, .chicken, .horse: .beasts
         case .slimeGreen, .slimeBlue, .slimeRed, .slimeIce, .skeleton: .monsters
         case .cloud, .feather, .crystal, .ruby, .stardust: .sky
+        case .tomato, .potato, .strawberry, .corn, .chili: .garden
+        case .orc, .orcShaman, .skelKnight, .skelMage, .essence: .dungeon
+        case .duck, .goose, .swan, .goldenGoose, .egg: .birds
         }
     }
 
@@ -87,6 +99,14 @@ enum CardID: String, CaseIterable, Identifiable, Codable {
         case .slimeRed: .monster(.slimeRed)
         case .slimeIce: .monster(.slimeIce)
         case .skeleton: .monster(.skeleton)
+        case .orc: .monster(.orc)
+        case .orcShaman: .monster(.orcShaman)
+        case .skelKnight: .monster(.skelKnight)
+        case .skelMage: .monster(.skelMage)
+        case .duck: .animal(.duck)
+        case .goose: .animal(.goose)
+        case .swan: .animal(.swan)
+        case .goldenGoose: .animal(.goldenGoose)
         default: .resource(resource ?? .wood)
         }
     }
@@ -119,6 +139,13 @@ enum CardID: String, CaseIterable, Identifiable, Codable {
         case .crystal: .crystal
         case .ruby: .ruby
         case .stardust: .stardust
+        case .tomato: .tomato
+        case .potato: .potato
+        case .strawberry: .strawberry
+        case .corn: .corn
+        case .chili: .chili
+        case .essence: .essence
+        case .egg: .egg
         default: nil
         }
     }
@@ -142,6 +169,10 @@ enum CardID: String, CaseIterable, Identifiable, Codable {
         case .slimeRed: .slimeRed
         case .slimeIce: .slimeIce
         case .skeleton, .skeletonDark: .skeleton
+        case .orc, .orcRogue, .orcWarrior: .orc
+        case .orcShaman: .orcShaman
+        case .skelKnight, .skelSoldier: .skelKnight
+        case .skelMage, .skelRogue: .skelMage
         default: nil
         }
     }
@@ -153,6 +184,10 @@ enum CardID: String, CaseIterable, Identifiable, Codable {
         case .pig: .pig
         case .chicken, .rooster: .chicken
         case .horse: .horse
+        case .duck, .duckHat: .duck
+        case .goose: .goose
+        case .swan: .swan
+        case .goldenGoose: .goldenGoose
         default: nil
         }
     }

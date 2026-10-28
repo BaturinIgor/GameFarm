@@ -240,6 +240,12 @@ SKINS = {
                    legs="Plate_Legs/Plate_Legs_Red", feet="Black"),
     "stargazer": dict(hair=(6, "White"), chest="Royal_Shirt/Royal_Shirt_1_Purple", legs="Royal_Pants/Royal_Pants_1_Blue",
                       feet="Blue", hat="#2a2a7a", tone="pale"),
+    "cultivator": dict(hair=(4, "Ginger"), chest="Farmer_Shirt/Farmer_Shirt_1_Orange", legs="Farmer_Pants/Farmer_Pants_1_Green",
+                       feet="Green", hat="#3f7a2a", tone="tan"),
+    "duelist": dict(hair=(2, "Black"), chest="Plate_Chest/Plate_Chest_Iron", legs="Plate_Legs/Plate_Legs_Iron",
+                    feet="Black", tone="tan"),
+    "falconer": dict(hair=(1, "Brown"), chest="Farmer_Shirt/Farmer_Shirt_1_Blue", legs="OG_Pants/Pants_1_Brown",
+                     feet="Brown", hat="#d8d0b0", tone="dark"),
     # Образы за ивенты
     "autumn": dict(hair=(2, "Ginger"), chest="Lumberjack_Shirt/Lumberjack_Shirt_1_Orange", legs="OG_Pants/Pants_1_Brown",
                    feet="Brown", hat="#b8531a", tone="tan"),

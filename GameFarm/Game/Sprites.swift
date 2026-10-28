@@ -217,7 +217,7 @@ enum Sprites {
 
     static func ground(_ id: LocationID) -> SKTexture? {
         guard available else { return nil }
-        return texture("ground_\(id.rawValue)")
+        return texture("ground_\(LocationLayout.resourceName(id))") ?? texture("ground_\(id.rawValue)")
     }
 }
 

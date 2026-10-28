@@ -8,7 +8,7 @@ enum LocationKind {
 enum LocationID: String, CaseIterable, Identifiable {
     case meadow, hills, lake, swamp, desert, snow, caves, island, volcano, sky
     case garden
-    case goldMine, treasureIsland, luckyMeadow
+    case goldMine, treasureIsland, luckyMeadow, crystalCaves, skyIsles
     case harvestFest, slimeNight, winterTale, beachParty
     case homeGround, homeUpper, homeBasement, homeAttic, homeGreenhouse
     case dSlime, dCrypt, dOrc, dFrost, dFire
@@ -143,6 +143,15 @@ struct LocationSpec {
                          ground: c(51, 152, 75), path: c(228, 166, 114),
                          wild: [], weather: .pollen, critters: ["🦋", "🦋", "🐝"],
                          music: .expedition, ambience: .birds),
+            LocationSpec(id: .crystalCaves, emoji: "🔮", level: 1, kind: .expedition,
+                         ground: c(58, 48, 82), path: c(76, 66, 104), water: c(22, 48, 94),
+                         wild: [], dark: true, weather: .motes, cloudShadows: false,
+                         music: .expedition, ambience: nil, footstep: .footstepStone),
+            LocationSpec(id: .skyIsles, emoji: "☁️", level: 1, kind: .expedition,
+                         ground: c(216, 220, 255), path: c(244, 232, 248), water: c(95, 80, 200),
+                         wild: [], weather: .stars,
+                         tint: UIColor(red: 1, green: 0.7, blue: 0.9, alpha: 0.05), critters: ["🦋", "🕊️"],
+                         music: .expedition, ambience: .wind),
             // Карты ивентов
             LocationSpec(id: .harvestFest, emoji: "🎃", level: 1, kind: .event,
                          ground: c(133, 114, 40), path: c(154, 98, 56),

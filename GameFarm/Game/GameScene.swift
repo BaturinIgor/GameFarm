@@ -174,6 +174,7 @@ final class GameScene: SKScene {
 
     private func build(_ id: LocationID) {
         loaded = id
+        loadedVersion = game.mapVersion
         spec = id.spec
         layout = id.layout
         world.removeAllChildren()
@@ -699,7 +700,7 @@ final class GameScene: SKScene {
         let dt = lastTime == 0 ? 1.0 / 60 : min(currentTime - lastTime, 1.0 / 20)
         lastTime = currentTime
 
-        if !transitioning && loaded != game.save.current {
+        if !transitioning && (loaded != game.save.current || (spec.kind == .event && loadedVersion != game.mapVersion)) {
             transition(to: game.save.current)
         }
 
@@ -734,6 +735,7 @@ final class GameScene: SKScene {
             updateWanderer(dt)
             updateMonsters(dt, stats)
             updateDungeon(dt)
+            updateEventStage()
         }
         updateAmbient(dt)
         updateCamera(dt)
@@ -1338,10 +1340,9 @@ final class GameScene: SKScene {
             }
         }
         let coins = game.registerHarvest(xp: spot.spec.xp)
-        if spec.kind == .event {
-            let points = Events.points(for: spot.spec.type) * multiplier
-            game.addEventPoints(points)
-            Effects.text("+\(points) \(Events.current.event.emoji)",
+        if spec.kind == .event, game.eventPoints(for: spot.spec.type) > 0 {
+            let points = game.addEventPoints(game.eventPoints(for: spot.spec.type) * multiplier)
+            Effects.text("+\(points)",
                          at: CGPoint(x: spot.position.x - 30, y: spot.position.y + min(70, spot.spec.barHeight) + 26), in: world,
                          color: UIColor(red: 1, green: 0.95, blue: 0.6, alpha: 1), size: byHelper ? 13 : 16, delay: 0.1)
         }
@@ -1556,6 +1557,8 @@ final class GameScene: SKScene {
         dungeonWaveTimer = 1.6
         dungeonChest = nil
         dungeonPortal = nil
+        eventPortal = nil
+        eventBoss = nil
         heroSlowLeft = 0
         heroPoisonLeft = 0
         game.setBossInfo(nil)
@@ -1567,8 +1570,9 @@ final class GameScene: SKScene {
             level = Bestiary.level(in: id)
         case .event:
             guard let event = EventID.allCases.first(where: { $0.location == id }) else { return }
-            list = Events.monsters(event)
-            level = Events.monsterLevel(playerLevel: game.save.level)
+            let stage = game.save.eventStage
+            list = Events.monsters(event).map { ($0.0, Events.monsterCount($0.1, stage: stage)) }
+            level = Events.monsterLevel(playerLevel: game.save.level, stage: stage)
         default:
             return
         }
@@ -1670,7 +1674,8 @@ final class GameScene: SKScene {
         let reward = game.noteKill(foe.kind, level: foe.level, boss: foe.boss)
         Effects.coins(reward.coins, at: CGPoint(x: foe.position.x, y: foe.position.y + 58), in: world, size: 15)
         if spec.kind == .event {
-            Effects.text("+\(Events.points(for: foe.kind)) \(Events.current.event.emoji)",
+            let base = game.eventPoints(for: foe.kind, boss: foe.boss)
+            Effects.text("+\(foe.boss ? base : Int((Double(base) * (1 + game.boonValue(.points))).rounded()))",
                          at: CGPoint(x: foe.position.x, y: foe.position.y + 80), in: world,
                          color: UIColor(red: 1, green: 0.95, blue: 0.6, alpha: 1), size: 16, delay: 0.2)
         }
@@ -1702,7 +1707,9 @@ final class GameScene: SKScene {
             guard let m = slot.node else {
                 slot.respawn -= dt
                 if slot.respawn <= 0 && distance(slot.point, player.position) > 260 {
-                    let node = MonsterNode(kind: slot.kind, level: slot.level, at: slot.point, traits: MonsterTrait.roll(level: slot.level))
+                    let traits = spec.kind == .event ? MonsterTrait.pick(Events.traits(stage: game.save.eventStage))
+                        : MonsterTrait.roll(level: slot.level)
+                    let node = MonsterNode(kind: slot.kind, level: slot.level, at: slot.point, traits: traits)
                     node.zPosition = zFor(slot.point.y)
                     world.addChild(node)
                     slot.node = node
@@ -1830,6 +1837,7 @@ final class GameScene: SKScene {
                     self.game.leaveDungeon()
                     return
                 }
+                if self.spec.kind == .event { self.game.eventFaint() }
                 let lost = self.game.faint()
                 self.player.position = CGPoint(x: self.layout.base.x, y: self.layout.base.y - 56)
                 self.velocity = .zero
@@ -1845,8 +1853,67 @@ final class GameScene: SKScene {
         ]))
     }
 
+    // MARK: Этапы ивента
+
+    /// Босс этапа и портал на следующий этап.
+    private func updateEventStage() {
+        guard spec.kind == .event, !fainting, let event = EventID.allCases.first(where: { $0.location == loaded }) else { return }
+        if game.eventBossDue && (eventBoss == nil || eventBoss?.alive == false) {
+            spawnEventBoss(event)
+        }
+        if game.eventStageCleared {
+            if eventPortal == nil { eventPortal = makePortal(at: CGPoint(x: layout.base.x, y: layout.base.y + 60)) }
+            if let portal = eventPortal, game.save.eventChoice.isEmpty, distance(portal.position, player.position) < 34 {
+                game.enterEventPortal()
+                Sound.shared.play(.whoosh)
+            }
+        }
+    }
+
+    private func spawnEventBoss(_ event: EventID) {
+        let stage = game.save.eventStage
+        let level = Events.monsterLevel(playerLevel: game.save.level, stage: stage) + 2
+        let p = farPoint() ?? CGPoint(x: layout.size.width / 2, y: layout.size.height * 0.6)
+        let hex = event.colors.1
+        let tint = UIColor(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255,
+                           blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
+        let node = MonsterNode(kind: Events.boss(event), level: level, at: p, traits: MonsterTrait.pick(Events.bossTraits(stage: stage)),
+                               boss: true, tint: tint)
+        node.aggroRange = 900
+        node.leashRange = 5000
+        node.zPosition = zFor(p.y)
+        world.addChild(node)
+        Effects.puff(at: p, in: world, color: UIColor(white: 0.85, alpha: 1), size: 80, z: node.zPosition + 1)
+        let slot = MonsterSlot(kind: node.kind, level: level, point: p, respawn: .greatestFiniteMagnitude)
+        slot.node = node
+        monsterSlots.append(slot)
+        eventBoss = node
+        game.toast("px:crown", tr("toast.stageBoss", Events.boss(event).name))
+        Sound.shared.play(.wildAppear)
+        shake = max(shake, 6)
+    }
+
+    /// Портал: картинка с подземелий и фиолетовое свечение.
+    private func makePortal(at point: CGPoint) -> SKNode {
+        let portal = SKNode()
+        portal.position = point
+        portal.zPosition = 3
+        if let art = Sprites.node("dg_portal") {
+            art.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+            art.run(.repeatForever(.sequence([.scale(to: 1.12, duration: 0.6), .scale(to: 0.95, duration: 0.6)])))
+            portal.addChild(art)
+        }
+        portal.addChild(glowSprite(UIColor(red: 0.7, green: 0.45, blue: 1, alpha: 1), size: 120, y: 0, alpha: 0.5))
+        world.addChild(portal)
+        Effects.scatter(Art.spark, count: 14, at: point, in: world, size: 12, color: .white, spread: 70, rise: 40, additive: true)
+        return portal
+    }
+
     // MARK: Подземелье
 
+    private var loadedVersion = 0
+    private var eventPortal: SKNode?
+    private var eventBoss: MonsterNode?
     private var dungeonWaveTimer: Double = 0
     private var dungeonChest: SKSpriteNode?
     private var dungeonPortal: SKNode?
@@ -2288,6 +2355,7 @@ final class GameScene: SKScene {
                 producerTimers[producer.animal] = 0
                 let n = Double.random(in: 0..<1) < stats.doubleProductChance ? 2 : 1
                 game.addToStorage(producer.kind, n)
+                game.rollCard(for: producer.kind, chance: 0.02)
                 if let c = companions.first(where: { $0.animal == producer.animal }) {
                     Effects.gain(producer.kind, n, at: CGPoint(x: c.position.x, y: c.position.y + 40), in: world, small: true)
                     c.cheer()

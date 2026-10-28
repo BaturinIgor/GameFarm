@@ -29,6 +29,7 @@ struct EventsView: View {
             VStack(spacing: 14) {
                 EventBanner(run: run, onTravel: onTravel)
                 if game.eventsOpen {
+                    EventRunCard()
                     EventProgressCard()
                     if !game.hasVip { EventVipCard(event: run.event) }
                     EventTierList(event: run.event)
@@ -528,47 +529,176 @@ struct EventHUDPill: View {
     }
 }
 
-/// На карте ивента: ступень пропуска, очки и дорога домой.
+/// На карте ивента: этап, цель этапа, усиления и дорога домой.
 struct EventMapPill: View {
     @Environment(GameState.self) private var game
     let onOpen: () -> Void
 
     var body: some View {
         if game.inEvent {
-            let tier = game.eventTier
-            let points = game.save.eventPoints
-            let maxed = tier >= Events.tiers
-            let from = Events.threshold(tier: tier)
-            let need = maxed ? 1 : Events.cost(tier: tier + 1)
-            let have = maxed ? 1 : points - from
-            HStack(spacing: 8) {
-                Button(action: onOpen) {
-                    HStack(spacing: 6) {
-                        PixelIcon(name: Events.current.event.icon, size: 20)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(tr("event.tier", tier, Events.tiers))
-                                .font(.game(11))
-                                .foregroundStyle(.white)
-                                .outlined(Palette.outline, width: 1)
-                            GameBar(value: Double(have) / Double(max(1, need)), tone: .orange, height: 10)
-                                .frame(width: 90)
-                                .animation(.easeOut(duration: 0.3), value: points)
+            let progress = game.save.eventProgress
+            let goal = game.eventGoal
+            VStack(alignment: .trailing, spacing: 4) {
+                HStack(spacing: 8) {
+                    Button(action: onOpen) {
+                        HStack(spacing: 6) {
+                            PixelIcon(name: Events.current.event.icon, size: 20)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(tr("event.stage", game.save.eventStage) + (game.eventBossStage ? " · " + tr("event.bossStage") : ""))
+                                    .font(.game(11))
+                                    .foregroundStyle(.white)
+                                    .outlined(Palette.outline, width: 1)
+                                GameBar(value: Double(min(progress, goal)) / Double(max(1, goal)),
+                                        tone: game.eventStageCleared ? .green : (game.eventBossDue ? .red : .orange), height: 12,
+                                        label: game.eventStageCleared ? tr("event.portalOpen")
+                                            : (game.eventBossDue ? tr("event.bossDue") : "\(progress)/\(game.eventTarget)"))
+                                    .frame(width: 110)
+                                    .animation(.easeOut(duration: 0.3), value: progress)
+                            }
                         }
                     }
+                    .buttonStyle(.press)
+                    Button {
+                        game.leaveEvent()
+                    } label: {
+                        Text(tr("event.home"))
+                    }
+                    .buttonStyle(.game(.wood, small: true))
                 }
-                .buttonStyle(.press)
-                Button {
-                    game.leaveEvent()
-                } label: {
-                    Text(tr("event.home"))
-                }
-                .buttonStyle(.game(.wood, small: true))
+                .padding(.leading, 10)
+                .padding(.trailing, 6)
+                .padding(.vertical, 5)
+                .woodPill(radius: 16)
+                BoonStrip()
             }
-            .padding(.leading, 10)
-            .padding(.trailing, 6)
-            .padding(.vertical, 5)
-            .woodPill(radius: 16)
             .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+    }
+}
+
+/// Значки взятых усилений с рангом.
+struct BoonStrip: View {
+    @Environment(GameState.self) private var game
+
+    var body: some View {
+        let taken = EventBoon.allCases.filter { game.boonRank($0) > 0 }
+        if !taken.isEmpty {
+            HStack(spacing: 3) {
+                ForEach(taken) { boon in
+                    ZStack(alignment: .bottomTrailing) {
+                        PixelIcon(name: boon.icon, size: 18)
+                            .frame(width: 24, height: 24)
+                            .background(Circle().fill(Palette.parchmentLight))
+                            .overlay(Circle().strokeBorder(Palette.outline, lineWidth: 1.5))
+                        Text("\(game.boonRank(boon))")
+                            .font(.game(9))
+                            .foregroundStyle(.white)
+                            .outlined(Palette.outline, width: 1)
+                            .offset(x: 3, y: 3)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// После этапа: выбор одного из трёх усилений до конца ивента.
+struct EventBoonPicker: View {
+    @Environment(GameState.self) private var game
+
+    var body: some View {
+        ZStack {
+            Palette.dim.ignoresSafeArea()
+            VStack(spacing: 12) {
+                Text(tr("boon.subtitle"))
+                    .font(.game(13, .semibold))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 22)
+                ForEach(game.save.eventChoice) { boon in
+                    let rank = game.boonRank(boon)
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) { game.chooseBoon(boon) }
+                        UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    } label: {
+                        HStack(spacing: 12) {
+                            PixelIcon(name: boon.icon, size: 34)
+                                .frame(width: 50, height: 50)
+                                .background(Circle().fill(Color(hex: 0xFFF3D0)))
+                                .overlay(Circle().strokeBorder(Palette.outline, lineWidth: 2))
+                            VStack(alignment: .leading, spacing: 3) {
+                                HStack(spacing: 6) {
+                                    Text(boon.name).font(.game(15))
+                                    Text(tr("boon.rank", rank + 1, EventBoon.maxRank))
+                                        .font(.game(11))
+                                        .foregroundStyle(Palette.inkSoft)
+                                }
+                                Text(boon.text(rank: rank + 1))
+                                    .font(.game(12, .semibold))
+                                    .foregroundStyle(Palette.ink)
+                                    .multilineTextAlignment(.leading)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .padding(10)
+                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.parchmentLight))
+                        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Palette.goldDark, lineWidth: 2))
+                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.woodDark.opacity(0.3)).offset(y: 3))
+                    }
+                    .buttonStyle(.press)
+                }
+            }
+            .foregroundStyle(Palette.ink)
+            .padding(16)
+            .frame(maxWidth: 380)
+            .gamePanel()
+            .overlay(alignment: .top) {
+                RibbonTitle(text: tr("boon.title", game.save.eventStage), tone: .gold, size: 18)
+                    .padding(.horizontal, 24)
+                    .offset(y: -18)
+            }
+            .padding(20)
+            .popIn()
+        }
+    }
+}
+
+/// Забег по этапам в окне ивента: где ты сейчас, рекорд и взятые усиления.
+struct EventRunCard: View {
+    @Environment(GameState.self) private var game
+
+    var body: some View {
+        Card(tint: ButtonTone.orange.base) {
+            HStack(spacing: 12) {
+                PixelIcon(name: "portal", size: 34)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(tr("event.stage", game.save.eventStage)).font(.game(16))
+                    Text(tr("event.best", game.save.eventBest))
+                        .font(.game(12, .semibold))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+            Text(tr("event.runHint"))
+                .font(.game(12, .semibold))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            let taken = EventBoon.allCases.filter { game.boonRank($0) > 0 }
+            if !taken.isEmpty {
+                PaperDivider()
+                ForEach(taken) { boon in
+                    HStack(spacing: 8) {
+                        PixelIcon(name: boon.icon, size: 22).frame(width: 26)
+                        Text(boon.name + " " + tr("boon.rank", game.boonRank(boon), EventBoon.maxRank)).font(.game(13))
+                        Spacer(minLength: 4)
+                        Text(boon.text(rank: game.boonRank(boon)))
+                            .font(.game(11, .semibold))
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.trailing)
+                    }
+                }
+            }
         }
     }
 }
