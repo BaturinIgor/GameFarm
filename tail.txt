@@ -1,0 +1,250 @@
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Audio/CREDITS.txt /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app
+
+CopyStringsFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/zh-Hant.lproj/InfoPlist.strings /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/zh-Hant.lproj/InfoPlist.strings (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/zh-Hant.lproj -- /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/zh-Hant.lproj/InfoPlist.strings
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/zh-Hant.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'GameFarm' from project 'GameFarm')
+
+CopyStringsFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/zh-Hans.lproj/InfoPlist.strings /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/zh-Hans.lproj/InfoPlist.strings (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/zh-Hans.lproj -- /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/zh-Hans.lproj/InfoPlist.strings
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/zh-Hans.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'GameFarm' from project 'GameFarm')
+
+CopyStringsFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/vi.lproj/InfoPlist.strings /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/vi.lproj/InfoPlist.strings (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/vi.lproj -- /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/vi.lproj/InfoPlist.strings
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/vi.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'GameFarm' from project 'GameFarm')
+
+CopyStringsFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/tr.lproj/InfoPlist.strings /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/tr.lproj/InfoPlist.strings (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/tr.lproj -- /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/tr.lproj/InfoPlist.strings
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/tr.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'GameFarm' from project 'GameFarm')
+
+CopyStringsFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/th.lproj/InfoPlist.strings /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/th.lproj/InfoPlist.strings (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/th.lproj -- /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/th.lproj/InfoPlist.strings
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/th.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'GameFarm' from project 'GameFarm')
+
+CopyStringsFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/ru.lproj/InfoPlist.strings /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/ru.lproj/InfoPlist.strings (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/ru.lproj -- /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/ru.lproj/InfoPlist.strings
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/ru.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'GameFarm' from project 'GameFarm')
+
+CopyStringsFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/pt-BR.lproj/InfoPlist.strings /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/pt-BR.lproj/InfoPlist.strings (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/pt-BR.lproj -- /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/pt-BR.lproj/InfoPlist.strings
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/pt-BR.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'GameFarm' from project 'GameFarm')
+
+CopyStringsFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/pl.lproj/InfoPlist.strings /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/pl.lproj/InfoPlist.strings (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/pl.lproj -- /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/pl.lproj/InfoPlist.strings
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/pl.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'GameFarm' from project 'GameFarm')
+
+CopyStringsFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/ko.lproj/InfoPlist.strings /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/ko.lproj/InfoPlist.strings (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/ko.lproj -- /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/ko.lproj/InfoPlist.strings
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/ko.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'GameFarm' from project 'GameFarm')
+
+CopyStringsFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/ja.lproj/InfoPlist.strings /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/ja.lproj/InfoPlist.strings (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/ja.lproj -- /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/ja.lproj/InfoPlist.strings
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/ja.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'GameFarm' from project 'GameFarm')
+
+CopyStringsFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/it.lproj/InfoPlist.strings /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/it.lproj/InfoPlist.strings (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/it.lproj -- /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/it.lproj/InfoPlist.strings
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/it.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'GameFarm' from project 'GameFarm')
+
+CopyStringsFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/id.lproj/InfoPlist.strings /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/id.lproj/InfoPlist.strings (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/id.lproj -- /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/id.lproj/InfoPlist.strings
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/id.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'GameFarm' from project 'GameFarm')
+
+CopyStringsFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/hi.lproj/InfoPlist.strings /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/hi.lproj/InfoPlist.strings (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/hi.lproj -- /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/hi.lproj/InfoPlist.strings
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/hi.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'GameFarm' from project 'GameFarm')
+
+CopyStringsFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/fr.lproj/InfoPlist.strings /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/fr.lproj/InfoPlist.strings (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/fr.lproj -- /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/fr.lproj/InfoPlist.strings
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/fr.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'GameFarm' from project 'GameFarm')
+
+CopyStringsFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/es.lproj/InfoPlist.strings /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/es.lproj/InfoPlist.strings (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/es.lproj -- /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/es.lproj/InfoPlist.strings
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/es.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'GameFarm' from project 'GameFarm')
+
+CopyStringsFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/en.lproj/InfoPlist.strings /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/en.lproj/InfoPlist.strings (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/en.lproj -- /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/en.lproj/InfoPlist.strings
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/en.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'GameFarm' from project 'GameFarm')
+
+CopyStringsFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/de.lproj/InfoPlist.strings /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/de.lproj/InfoPlist.strings (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/de.lproj -- /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/de.lproj/InfoPlist.strings
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Localized/de.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'GameFarm' from project 'GameFarm')
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_window.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_window.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_window.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_window.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_windmill.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_windmill.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_windmill.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_windmill.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_wheat.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_wheat.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_wheat.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_wheat.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_well.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_well.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_well.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_well.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_wardrobe.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_wardrobe.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_wardrobe.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_wardrobe.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tuft4.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tuft4.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tuft4.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tuft4.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tuft3.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tuft3.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tuft3.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tuft3.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tuft2.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tuft2.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tuft2.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tuft2.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tuft1.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tuft1.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tuft1.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tuft1.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_trough.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_trough.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_trough.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_trough.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_willow_big.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_willow_big.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_willow_big.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_willow_big.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_willow.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_willow.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_willow.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_willow.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_spruce_small.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_spruce_small.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_spruce_small.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_spruce_small.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_spruce_big.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_spruce_big.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_spruce_big.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_spruce_big.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_spruce.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_spruce.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_spruce.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_spruce.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_sky_big.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_sky_big.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_sky_big.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_sky_big.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_sky.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_sky.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_sky.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_sky.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_pear.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_pear.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_pear.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_pear.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_peach.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_peach.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_peach.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_peach.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_oak_small.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_oak_small.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_oak_small.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_oak_small.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_oak_big.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_oak_big.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_oak_big.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_oak_big.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_oak.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_oak.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_oak.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_oak.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_golden_bare.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_golden_bare.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_golden_bare.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_golden_bare.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_golden.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_golden.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_golden.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_golden.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_glow_big.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_glow_big.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_glow_big.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_glow_big.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_glow.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_glow.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_glow.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_glow.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_fruit_big.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_fruit_big.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_fruit_big.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_fruit_big.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_fruit.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_fruit.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_fruit.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_fruit.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_frost_small.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_frost_small.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_frost_small.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_frost_small.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_frost_big.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_frost_big.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_frost_big.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_frost_big.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_frost.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_frost.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_frost.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_frost.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_cherry.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_cherry.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_cherry.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_cherry.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_birch_small.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_birch_small.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_birch_small.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_birch_small.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_birch_big.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_birch_big.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_birch_big.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_birch_big.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_birch.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_birch.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_birch.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_birch.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_autumn_big.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_autumn_big.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_autumn_big.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_autumn_big.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_autumn.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_autumn.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_autumn.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_autumn.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_ash_big.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_ash_big.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_ash_big.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_ash_big.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_ash.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_ash.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_tree_ash.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphoneos/GameFarm.app/sp_tree_ash.png
+
+** BUILD FAILED **
+
+
+The following build commands failed:
+	SwiftDriver GameFarm normal arm64 com.apple.xcode.tools.swift.compiler (in target 'GameFarm' from project 'GameFarm')
+	Building project GameFarm with scheme GameFarm and configuration Release
+(2 failures)

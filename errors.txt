@@ -1,0 +1,2 @@
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:49:34: error: keyword 'guard' cannot be used as an identifier here
+/Users/runner/work/GameFarm/GameFarm/GameFarm/Model/Talents.swift:49:34: error: Keyword 'guard' cannot be used as an identifier here
