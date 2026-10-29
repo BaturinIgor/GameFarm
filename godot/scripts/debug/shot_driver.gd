@@ -16,9 +16,15 @@ func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(dir)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_frame += 1
 	var world: World = main.world
+	if _frame % 30 == 0:
+		var t := _nearest(world)
+		print("f=%d dt=%.3f pos=%s pack=%d storage=%s hit=%.2f near=%s hp=%s alive=%s dist=%.1f" % [
+			_frame, delta, world.player.position, Game.backpack_count, Game.save["storage"], world._hit_timer,
+			t.type if t else "-", t.hp if t else -1, t.alive if t else false,
+			t.position.distance_to(world.player.position) if t else -1.0])
 	match _step:
 		0:
 			if _frame == 90:
