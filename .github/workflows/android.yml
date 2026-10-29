@@ -110,7 +110,7 @@ jobs:
         run: |
           sudo apt-get install -y -qq xvfb > /dev/null 2>&1 || true
           mkdir -p shots
-          timeout 120 xvfb-run -a -s "-screen 0 1170x2532x24" ~/godot-bin/godot --path godot \
+          timeout 180 xvfb-run -a -s "-screen 0 1170x2532x24" ~/godot-bin/godot --path godot \
             --rendering-driver opengl3 --resolution 390x844 -- --shots "$GITHUB_WORKSPACE/shots" > shots.log 2>&1 || true
           tail -30 shots.log
           ls -la shots

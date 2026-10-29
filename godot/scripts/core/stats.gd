@@ -5,6 +5,8 @@ extends RefCounted
 
 const BASE_SPEED := 165.0
 const BASE_REACH := 46.0
+## Скорость героя не выше тройной: иначе за кадр он перескакивает стены.
+const MAX_SPEED_MULT := 3.0
 
 var damage_mult := 1.0
 var wood_bonus := 0.0

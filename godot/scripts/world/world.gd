@@ -4,6 +4,10 @@ extends Node2D
 
 const PLAYER_RADIUS := 11.0
 
+## Части сцены из других систем (звери, монстры, огород, дом...). Порядок важен: так их вызывает World.
+const FEATURES: Array[String] = [
+]
+
 @export var joystick: Joystick
 
 var layout: MapLayout
@@ -34,6 +38,9 @@ var _dust_timer := 0.0
 var _loot: Array = []           ## {node, velocity, age}
 var _transitioning := false
 var _fader: ColorRect
+var features: Array[WorldFeature] = []
+var _titan_hits := 0
+var _cornucopia_count := 0
 
 
 func _ready() -> void:
@@ -48,6 +55,8 @@ func _ready() -> void:
 	add_child(fx)
 	add_child(camera)
 	camera.make_current()
+	for path in FEATURES:
+		features.append(load(path).new())
 	build(Game.current)
 
 
@@ -61,6 +70,8 @@ func build(id: String) -> void:
 	loaded = id
 	spec = Locations.spec(id)
 	layout = MapLayout.load_layout(id)
+	for f in features:
+		f.clear(self)
 	# Героя сначала снимаем с карты, иначе он уйдёт вместе со старыми узлами
 	if player.get_parent() != null:
 		player.get_parent().remove_child(player)
@@ -111,6 +122,8 @@ func build(id: String) -> void:
 		player.position = layout.base + Vector2(0, 56)
 	velocity = Vector2.ZERO
 	entities.add_child(player)
+	for f in features:
+		f.build(self)
 	camera.position = _clamped_camera(player.position)
 	camera.reset_smoothing()
 
@@ -219,6 +232,8 @@ func _process(delta: float) -> void:
 		_gather(dt, stats)
 		_check_base(dt, stats)
 		_check_gates()
+		for f in features:
+			f.process(self, dt)
 	for spot in spots:
 		if spot.tick(dt) and spot.position.distance_to(player.position) < 500.0:
 			Fx.scatter(fx, spot.position - Vector2(0, 20), 4, Color.WHITE, null, 4.0, 26, 16, 0.5)
@@ -333,6 +348,8 @@ func _resolve(point: Vector2, radius: float) -> Vector2:
 			continue
 		p = _push_from(p, c, float(o["radius"]) + radius)
 	p = _push_out(p, house_rect, radius)
+	for f in features:
+		p = f.resolve(self, p, radius)
 	p.x = clampf(p.x, radius, layout.size.x - radius)
 	p.y = clampf(p.y, radius, layout.size.y - radius)
 	return p
@@ -378,9 +395,14 @@ func _check_gates() -> void:
 func _gather(dt: float, stats: Stats) -> void:
 	_hit_timer -= dt
 	_hint_timer -= dt
-	var full := not stats.auto_deposit and Game.backpack_free <= 0
+	var full := not stats.auto_deposit and not Game.premium.in_expedition() and Game.backpack_free <= 0
 	if _hit_timer > 0.0:
 		return
+	# Монстр рядом: сначала бой, потом добыча
+	for f in features:
+		if f.try_strike(self, stats):
+			_hit_timer = stats.hit_interval
+			return
 	var best: ResourceSpot = null
 	var best_d := INF
 	var locked: ResourceSpot = null
@@ -418,68 +440,194 @@ func _gather(dt: float, stats: Stats) -> void:
 func _strike(spot: ResourceSpot, stats: Stats) -> void:
 	player.swing(spot.spec["tool"], spot.position, stats.hit_interval)
 	_hit_once(spot, stats)
+	# Топор и кирка высоких ступеней задевают соседний ресурс
+	var gear: Dictionary = Game.combat.gear
+	var tool: String = spot.spec["tool"]
+	var cleave := float(gear.get("chopCleave", 0.0)) if tool == "axe" else (float(gear.get("mineCleave", 0.0)) if tool == "pickaxe" else 0.0)
+	if cleave > 0.0 and randf() < cleave:
+		var other: ResourceSpot = null
+		var od := INF
+		for o in spots:
+			if o != spot and o.alive and o.spec["tool"] == tool and Game.can_harvest(o.spec):
+				var d := o.position.distance_to(spot.position)
+				if d < od:
+					od = d
+					other = o
+		if other != null and od < 90.0:
+			_apply(Game.damage_against(other.spec), other, false, false)
+	if spot.alive and randf() < stats.double_strike_chance:
+		get_tree().create_timer(0.12).timeout.connect(func() -> void:
+			if is_instance_valid(spot) and spot.alive:
+				Fx.text(fx, L.t("scene.doubleStrike"), spot.position + Vector2(-20, -56), Color(0.8, 0.9, 1), 13)
+				_hit_once(spot, Game.stats))
 
 
 func _hit_once(spot: ResourceSpot, stats: Stats) -> void:
 	var damage := Game.damage_against(spot.spec)
-	var crit := randf() < stats.crit_chance
-	if crit:
+	var crit := false
+	if stats.titan:
+		_titan_hits += 1
+	if (stats.titan and _titan_hits % 4 == 0) or randf() < stats.crit_chance:
 		damage *= stats.crit_mult
+		crit = true
+	if randf() < stats.shatter_chance:
+		damage = maxf(damage, spot.hp)
+		Fx.text(fx, L.t("scene.shatter"), spot.position - Vector2(0, 46), Color(0.6, 0.9, 1), 16)
+	if crit:
 		shake = maxf(shake, 5.0)
 		Fx.text(fx, L.t("scene.crit"), spot.position + Vector2(18, -52), Color(1, 0.6, 0.2), 17)
 		Input.vibrate_handheld(30)
-	_apply(damage, spot, crit)
+	_apply(damage, spot, false, crit)
+	if stats.quake:
+		var shook := false
+		for other in spots:
+			if other == spot or not other.alive or not Game.can_harvest(other.spec):
+				continue
+			# С полным рюкзаком сотрясение не ломает соседние точки впустую
+			if not (stats.auto_deposit or Game.premium.in_expedition() or Game.backpack_free > 0):
+				break
+			if other.position.distance_to(spot.position) < stats.quake_radius:
+				_apply(damage * stats.quake_power, other, false, false)
+				shook = true
+		if shook:
+			Fx.ring(fx, spot.position - Vector2(0, 6), Color(1, 1, 1, 0.6), stats.quake_radius * 0.7)
 
 
-func _apply(damage: float, spot: ResourceSpot, strong: bool) -> void:
+func _apply(damage: float, spot: ResourceSpot, by_helper: bool, strong: bool) -> void:
 	if not spot.alive:
 		return
 	spot.hp -= damage
+	var stats := Game.stats
+	if stats.execute_threshold > 0.0 and spot.hp > 0.0 and spot.hp < float(spot.spec["hp"]) * stats.execute_threshold:
+		spot.hp = 0.0
 	spot.play_hit(strong)
-	Fx.chips(fx, spot.position, spot.spec["chip"], 8 if strong else 5)
+	Fx.chips(fx, spot.position, spot.spec["chip"], 3 if by_helper else (8 if strong else 5))
 	if spot.hp <= 0.0001:
-		_harvest(spot)
+		_harvest(spot, by_helper)
 	else:
 		spot.show_hp()
 
 
-func _harvest(spot: ResourceSpot) -> void:
+## Удар помощника (зверя) по точке.
+func helper_hit(spot: ResourceSpot, damage: float) -> void:
+	_apply(damage, spot, true, false)
+
+
+func _harvest(spot: ResourceSpot, by_helper := false) -> void:
 	var stats := Game.stats
 	var roll := randf()
 	var multiplier := 3 if roll < stats.triple_chance else (2 if roll < stats.triple_chance + stats.double_chance else 1)
+	if stats.cornucopia and not by_helper:
+		_cornucopia_count += 1
+		if _cornucopia_count % 10 == 0:
+			multiplier = 3
+	var luck := 2 if Game.premium.luck_active() else 1
+	var direct := Game.premium.in_expedition()
+	var bonus := Game.premium.expedition_yield_bonus(loaded) if direct else 1.0
 	var gained: Array = []
 	for y in spot.spec["yields"]:
 		if randf() >= float(y[3]):
 			continue
-		var raw := float(randi_range(int(y[1]), int(y[2]))) * stats.yield_multiplier(y[0])
+		var raw := float(randi_range(int(y[1]), int(y[2]))) * stats.yield_multiplier(y[0]) * bonus
+		if by_helper:
+			raw *= stats.helper_yield
 		var n := int(raw)
 		if randf() < raw - n:
 			n += 1
-		n *= multiplier
+		n *= multiplier * luck
 		if n > 0:
 			gained.append([y[0], n])
+	if spot.spec["tool"] == "pickaxe" and randf() < stats.gem_chance:
+		gained.append(["diamond", 1])
+	if randf() < stats.finder_chance:
+		var here := _location_resources()
+		if not here.is_empty():
+			gained.append([here.pick_random(), randi_range(1, 3)])
+	# Бонусы ступеней инструмента
+	var bonus_coins := 0
+	if not by_helper:
+		var g: Dictionary = Game.combat.gear
+		var chance := func(key: String) -> bool:
+			var p := float(g.get(key, 0.0))
+			return p > 0.0 and randf() < p
+		match spot.spec["tool"]:
+			"axe":
+				if chance.call("honey"):
+					gained.append(["honey", 1])
+				if chance.call("goldenApple"):
+					gained.append(["goldenApple", 1])
+			"pickaxe":
+				if chance.call("ruby"):
+					gained.append(["ruby", 1])
+				if chance.call("stardust"):
+					gained.append(["stardust", 1])
+			"rod":
+				if chance.call("doubleCatch"):
+					for it in gained:
+						it[1] *= 2
+				if chance.call("pearl"):
+					gained.append(["pearl", 1])
+				if chance.call("coinChest"):
+					bonus_coins += 30 + Game.level * 8
+					Game.show_toast("px:chest", L.t("toast.coinChest"))
+				if chance.call("giantFish"):
+					gained.append(["fish", 50])
+					bonus_coins += 500 + Game.level * 40
+					Game.show_toast("px:fish", L.t("toast.giantFish"))
+					shake = maxf(shake, 8.0)
+	if bonus_coins > 0:
+		Game.add_coins(bonus_coins)
+		Fx.text(fx, "+%s 🪙" % Fmt.n(bonus_coins), spot.position + Vector2(-30, -90), Color(1, 0.9, 0.4), 17)
+
 	var shown: Array = []
 	for g in gained:
-		var added := Game.add_to_backpack(g[0], g[1])
+		var added := Game.add_to_storage(g[0], g[1]) if (by_helper or direct) else Game.add_to_backpack(g[0], g[1])
 		if added > 0:
 			shown.append([g[0], added])
+			if not by_helper:
+				Game.collection.roll_card(g[0])
 	var coins := Game.register_harvest(int(spot.spec["xp"]))
 	var top := spot.position - Vector2(0, minf(70.0, float(spot.spec["bar"])))
+	if spec["kind"] == "event":
+		var pts := Game.events.points_for_node(spot.type)
+		if pts > 0:
+			var added_pts := Game.events.add_points(pts * multiplier)
+			Fx.text(fx, "+%d" % added_pts, top + Vector2(-30, -26), Color(1, 0.95, 0.6), 13 if by_helper else 16, 0.1)
+	if spot.type == "treasureChest":
+		var chest_coins := 40 + Game.level * 12
+		Game.add_coins(chest_coins)
+		Game.premium.note_expedition_coins(chest_coins)
+		Fx.text(fx, "+%s 🪙" % Fmt.n(chest_coins), spot.position - Vector2(0, 70), Color(1, 0.9, 0.4), 17)
 	for i in shown.size():
-		Fx.gain(fx, shown[i][0], shown[i][1], top - Vector2(0, i * 24), i * 0.1)
-		_spawn_loot(shown[i][0], mini(shown[i][1], 4), top)
-	if shown.is_empty() and not gained.is_empty():
+		Fx.gain(fx, shown[i][0], shown[i][1], top - Vector2(0, i * 24), i * 0.1, by_helper)
+		if not by_helper:
+			_spawn_loot(shown[i][0], mini(shown[i][1], 4), top)
+	if not by_helper and shown.is_empty() and not gained.is_empty():
 		Fx.text(fx, L.t("scene.backpackFull"), top, Color(1, 0.45, 0.4), 15)
 	if multiplier > 1 and not shown.is_empty():
 		Fx.text(fx, "x%d!" % multiplier, top + Vector2(-36, -6), Color(0.5, 1, 0.5), 18)
 	if coins > 0:
+		Game.premium.note_expedition_coins(coins)
 		Fx.text(fx, "+%d 🪙" % coins, top + Vector2(38, 4), Color(1, 0.9, 0.4), 14, 0.15)
 	var respawn: float = float(spot.spec["respawn"]) * stats.respawn_mult
+	if direct:
+		respawn *= Game.premium.expedition_respawn_mult()
 	if randf() < stats.regrow_chance:
 		respawn = 1.2
 	spot.deplete(respawn, player.position)
 	_depletion_effects(spot)
-	Input.vibrate_handheld(15)
+	if not by_helper:
+		Input.vibrate_handheld(15)
+
+
+## Какие ресурсы можно добыть в этой локации (для "Находчивости").
+func _location_resources() -> Array:
+	var out: Array = []
+	for t in layout.node_types():
+		for y in Nodes.spec(t)["yields"]:
+			if not y[0] in out:
+				out.append(y[0])
+	return out
 
 
 func _depletion_effects(spot: ResourceSpot) -> void:
