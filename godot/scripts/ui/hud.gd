@@ -201,6 +201,9 @@ func _tutorial_card() -> Control:
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		h.add_child(l)
 		col.add_child(h)
+	# Подсказка не мешает касаниям: под ней джойстик
+	for c in p.find_children("*", "Control", true, false):
+		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return p
 
 
