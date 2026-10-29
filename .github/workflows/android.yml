@@ -116,6 +116,22 @@ jobs:
           ~/godot-bin/godot --headless --path godot --export-debug "Android" "$GITHUB_WORKSPACE/HarvestHollow.apk" 2>&1 | tee export.log | tail -60
           ls -lh HarvestHollow.apk
 
+      - name: Publish logs to ci-logs-android branch
+        if: always()
+        run: |
+          mkdir -p /tmp/logs
+          cp import.log run.log export.log /tmp/logs/ 2>/dev/null || true
+          grep -hE "ERROR|SCRIPT ERROR|error" /tmp/logs/*.log 2>/dev/null | head -30 | sed 's/^/::warning::/' || true
+          git config user.name "ci"
+          git config user.email "ci@users.noreply.github.com"
+          git checkout --orphan ci-logs-android
+          git rm -rf --cached . > /dev/null
+          cp /tmp/logs/*.log . 2>/dev/null || true
+          git add -f *.log 2>/dev/null || true
+          git commit -q -m "Godot logs run ${{ github.run_number }}" || true
+          git push -q -f origin ci-logs-android || true
+          git checkout -q main 2>/dev/null || true
+
       - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v4
