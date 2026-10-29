@@ -329,8 +329,8 @@ func _on_toast(icon: String, text: String) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	box.add_child(row)
-	if icon.begins_with("px:"):
-		row.add_child(UiKit.icon(icon.substr(3), 22))
+	if icon != "":
+		row.add_child(UiKit.icon_any(icon, 22))
 	var l := UiKit.label(text, 13, UiKit.INK)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.custom_minimum_size = Vector2(230, 0)

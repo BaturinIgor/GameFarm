@@ -18,6 +18,8 @@ func _ready() -> void:
 
 	hud = Hud.new()
 	add_child(hud)
+	# Звери-производители работали, пока игры не было
+	OfflineOverlay.check()
 
 	var fade_layer := CanvasLayer.new()
 	fade_layer.layer = 50
@@ -36,3 +38,8 @@ func _ready() -> void:
 		var driver: Node = load("res://scripts/debug/shot_driver.gd").new()
 		driver.main = self
 		add_child(driver)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_RESUMED:
+		OfflineOverlay.check()

@@ -162,13 +162,6 @@ func toggle_active(id: String) -> bool:
 	return true
 
 
-## После сброса талантов мест может стать меньше.
-func trim_active() -> void:
-	var list: Array = Game.save["active"]
-	if list.size() > max_active():
-		Game.save["active"] = list.slice(0, max_active())
-
-
 # MARK: Пробуждение и редкие окраски
 
 func awaken_level(id: String) -> int:

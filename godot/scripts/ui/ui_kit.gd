@@ -136,7 +136,7 @@ static func icon_any(code: String, size := 22.0) -> Control:
 		return icon(code.substr(4), size)
 	if code.begins_with("an:"):
 		var t := icon("paw", size)
-		var tex: Texture2D = Sprites.call("animal_icon", code.substr(3)) if Sprites.has_method("animal_icon") else null
+		var tex := AnimalSheet.icon(code.substr(3))
 		if tex != null:
 			t.texture = tex
 		return t

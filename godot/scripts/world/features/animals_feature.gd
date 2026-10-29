@@ -3,7 +3,6 @@ extends WorldFeature
 ## производители приносят продукты, дикие звери появляются в своих локациях и ждут приручения.
 ## Загон у дома: в нём гуляют найденные звери, которые сейчас не с героем.
 
-const POINTER_ARROW := "res://scripts/world/pointer_arrow.gd"
 const WILD_ARROW_COLOR := Color(0.95, 0.4, 0.6)
 ## Места спутников вокруг героя (в SpriteKit y смотрел вверх, здесь вниз).
 const SLOTS := [Vector2(-36, 24), Vector2(36, 24), Vector2(-60, -6), Vector2(60, -6), Vector2(0, 48)]
@@ -16,7 +15,7 @@ var _signature: Array = []
 var _look_timer := 0
 var _wild_timer := 20.0
 var _producer_timers: Dictionary = {}
-var _arrow: Node2D
+var _arrow: PointerArrow
 var _encounter: Control
 var _garden_rect := Rect2()
 # Загон
@@ -26,6 +25,7 @@ var _pen_signature: Array = []
 var _pen_timer := 0.0
 var _pen_card: Control
 var _pen_count := -1
+var _pen_lang := ""
 
 
 func build(world: World) -> void:
@@ -40,9 +40,8 @@ func build(world: World) -> void:
 	for p in world.layout.farm:
 		var r := Rect2(p - Vector2(cell, cell) / 2.0, Vector2(cell, cell))
 		_garden_rect = r if _garden_rect.size == Vector2.ZERO else _garden_rect.merge(r)
-	if ResourceLoader.exists(POINTER_ARROW):
-		_arrow = load(POINTER_ARROW).new(WILD_ARROW_COLOR, "paw")
-		world.fx.add_child(_arrow)
+	_arrow = PointerArrow.new(WILD_ARROW_COLOR, "paw")
+	world.fx.add_child(_arrow)
 	var kind: String = world.spec["kind"]
 	if kind != "home" and kind != "dungeon" and world.layout.pen.size != Vector2.ZERO:
 		_build_pen(world, world.layout.pen)
@@ -73,7 +72,7 @@ func process(world: World, dt: float) -> void:
 		var target = null
 		if wild != null:
 			target = wild.position
-		_arrow.call("track", world, target)
+		_arrow.track(world, target)
 
 
 ## Герой не заходит в загон.
@@ -360,7 +359,7 @@ func _tame_nearby() -> void:
 	if not Game.animals.tame(w.animal, w.shiny):
 		return
 	var fx := _world.fx
-	Fx.scatter(fx, w.position - Vector2(0, 24), 7, Color(1, 0.55, 0.75), Sprites.icon("heart"), 16.0, 44.0, 36.0, 0.9)
+	Fx.scatter(fx, w.position - Vector2(0, 24), 7, Color.WHITE, Sprites.icon("heart"), 16.0, 44.0, 36.0, 0.9)
 	Fx.ring(fx, w.position, Color(1, 0.5, 0.7), 34.0)
 	w.queue_free()
 	wild = null
@@ -464,7 +463,7 @@ func _set_pen_prompt(on: bool) -> void:
 	if Hud.current == null:
 		return
 	var count := Game.animals.owned().size()
-	if on and _pen_card != null and is_instance_valid(_pen_card) and count == _pen_count:
+	if on and _pen_card != null and is_instance_valid(_pen_card) and count == _pen_count and L.code == _pen_lang:
 		return
 	if not on:
 		if _pen_card != null:
@@ -472,6 +471,7 @@ func _set_pen_prompt(on: bool) -> void:
 			Hud.current.set_prompt("pen", null)
 		return
 	_pen_count = count
+	_pen_lang = L.code
 	_pen_card = _make_pen_card(count)
 	Hud.current.set_prompt("pen", _pen_card)
 

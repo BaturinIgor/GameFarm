@@ -47,7 +47,8 @@ static func animal_icon(id: String, size := 32.0) -> TextureRect:
 
 
 ## Подпись в "таблетке" (роль зверя, ступень пробуждения, редкий).
-static func pill(text: String, fill: Color, color := UiKit.INK, size := 10, border := Color(UiKit.WOOD_DARK, 0.35)) -> PanelContainer:
+static func pill(text: String, fill: Color, color := UiKit.INK, size := 10,
+		border := Color(UiKit.WOOD_DARK, 0.35)) -> PanelContainer:
 	var p := PanelContainer.new()
 	var s := UiKit.box(fill, border, 9, 1, false)
 	s.content_margin_left = 6

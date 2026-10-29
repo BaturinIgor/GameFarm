@@ -98,8 +98,7 @@ static func shiny_material() -> ShaderMaterial:
 			+ "uniform vec4 tint : source_color = vec4(0.75, 0.45, 1.0, 1.0);\n" \
 			+ "uniform float amount = 0.45;\n" \
 			+ "void fragment() {\n" \
-			+ "\tvec4 c = texture(TEXTURE, UV);\n" \
-			+ "\tCOLOR = vec4(mix(c.rgb, tint.rgb, amount), c.a) * COLOR;\n" \
+			+ "\tCOLOR.rgb = mix(COLOR.rgb, tint.rgb, amount);\n" \
 			+ "}\n"
 		_shiny = ShaderMaterial.new()
 		_shiny.shader = sh
