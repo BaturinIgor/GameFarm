@@ -94,7 +94,7 @@ final class GameState {
     }
 
     func saveNow() {
-        save.lastSeen = Date()
+        save.lastSeen = max(save.lastSeen, Date())
         SaveFile.write(save)
         dirty = false
         lastWrite = Date()
@@ -107,7 +107,7 @@ final class GameState {
     // MARK: Резервная копия
 
     func exportBackup() -> URL? {
-        save.lastSeen = Date()
+        save.lastSeen = max(save.lastSeen, Date())
         return SaveFile.exportFile(save)
     }
 
@@ -460,7 +460,7 @@ final class GameState {
         case .sword, .armor, .helmet, .boots: base = 1
         }
         if spec.tier >= 5 { base *= 1 + s.highTierBonus }
-        return base * s.damageMult
+        return base * s.damageMult * s.nodeMult
     }
 
     func nextToolCost(_ tool: ToolKind) -> Cost? {
@@ -1145,8 +1145,9 @@ final class GameState {
         if canClaimLogin && save.tutorialDone { loginPopup = true }
         syncEvent()
         repairTimers()
-        let elapsed = min(Date().timeIntervalSince(save.lastSeen), stats.offlineHours * 3600)
-        save.lastSeen = Date()
+        // Часы перевели назад: время "вне игры" не начисляется заново, считаем от самой поздней отметки.
+        let elapsed = max(0, min(Date().timeIntervalSince(save.lastSeen), stats.offlineHours * 3600))
+        save.lastSeen = max(save.lastSeen, Date())
         guard elapsed > 90 else { return }
         var totals: [ResourceKind: Int] = [:]
         for producer in stats.producers {
@@ -1188,7 +1189,7 @@ final class GameState {
         s.toolBonus = r(.toolMaster) > 0 ? 1 : 0
         // Суперталант "Титан" и ряд за ним
         s.titan = r(.titan) > 0
-        s.damageMult *= (r(.titan) > 0 ? 1.25 : 1) * (1 + 0.1 * r(.mountainBreaker))
+        s.nodeMult = (r(.titan) > 0 ? 1.25 : 1) * (1 + 0.1 * r(.mountainBreaker))
         s.critMult += 0.25 * r(.keenEdge)
 
         s.yieldAll = 0.1 * r(.bounty) + 0.06 * r(.fertile) + (r(.abundance) > 0 ? 0.1 : 0)
@@ -1221,7 +1222,7 @@ final class GameState {
 
         s.reach = GameRules.baseReach * (1 + 0.12 * r(.reach))
         s.depositRadius = 92 * (1 + 0.3 * r(.depotReach))
-        s.tameMult = (1 - 0.15 * r(.tamer)) * (1 - 0.1 * r(.catcher))
+        s.tameMult = (1 - 0.15 * r(.tamer)) * (1 - 0.1 * r(.catcher)) * (1 - 0.08 * r(.charmer))
         s.shopMult = 1 - 0.08 * r(.bargain)
         s.spawnMult = (1 + 0.25 * r(.tamer)) * (1 + 0.2 * r(.tracker)) * (1 + 0.12 * r(.pathfinder))
         s.keepPack = r(.windwalker) > 0
@@ -1229,8 +1230,8 @@ final class GameState {
         s.discount = 1 - 0.07 * r(.thrift)
         s.autoDeposit = r(.portal) > 0 || hasPro
 
-        s.animalMult = (1 + 0.12 * r(.beastBond) + 0.05 * r(.animalFriend)) * (r(.soul) > 0 ? 1.3 : 1)
-        s.animalMult *= 1 + 0.05 * r(.kinship)
+        // Сила зверей складывается, а не перемножается: иначе бонусы зверей улетают в бесконечность.
+        s.animalMult = 1 + 0.12 * r(.beastBond) + 0.05 * r(.animalFriend) + (r(.soul) > 0 ? 0.3 : 0) + 0.05 * r(.kinship)
         s.helperMult = (1 + 0.25 * r(.packLeader)) * (1 + 0.1 * r(.alpha)) * (1 + 0.1 * r(.packHunt))
         s.helperSpeed = 1 + 0.08 * r(.training)
         s.helperRange = 260 * (1 + 0.2 * r(.keenEye))
@@ -1252,7 +1253,8 @@ final class GameState {
         s.mealMult = 1 + 0.15 * r(.chef)
         s.cookMult = 1 - 0.1 * r(.quickCook)
         s.sellCategory[.crop, default: 0] += 0.1 * r(.marketDay)
-        s.seedMult = 1 - 0.1 * r(.seedTrader)
+        s.seedMult = 1 - 0.06 * r(.seedTrader)
+        s.sellCategory[.crop, default: 0] += 0.06 * r(.seedTrader)
         s.goldenHarvest = r(.goldenHarvest) > 0
         s.harvestXPMult = r(.harvestMoon) > 0 ? 2 : 1
         // Суперталант "Хозяин земли" и ряд за ним
@@ -1261,7 +1263,6 @@ final class GameState {
             s.extraCropChance += 0.2
         }
         s.yieldCategory[.crop, default: 0] += 0.12 * r(.richSoil)
-        s.mealMult *= 1 + 0.1 * r(.gourmet)
         s.sellCategory[.crop, default: 0] += 0.1 * r(.fairTrade)
 
         // Бой
@@ -1298,14 +1299,16 @@ final class GameState {
         let cozy = Comfort.bonus(comfort)
         s.yieldAll += cozy
         var meal = MealBuff()
+        // Гурман (талант за суперталантом огорода): блюда сильнее.
+        let gourmet = 1 + 0.1 * r(.gourmet)
         for dish in activeMeals.map(\.dish) {
             let b = dish.buff
-            meal.yield += b.yield
-            meal.xp += b.xp
-            meal.speed += b.speed
-            meal.sell += b.sell
-            meal.crit += b.crit
-            meal.animals += b.animals
+            meal.yield += b.yield * gourmet
+            meal.xp += b.xp * gourmet
+            meal.speed += b.speed * gourmet
+            meal.sell += b.sell * gourmet
+            meal.crit += b.crit * gourmet
+            meal.animals += b.animals * gourmet
         }
         s.yieldAll += meal.yield
         // Созвездия
@@ -1322,7 +1325,7 @@ final class GameState {
         s.yieldKind[.fish, default: 0] += cSea
         s.yieldCategory[.treasure, default: 0] += cSea
         s.swordMult = 1 + constellationBonus(.monsters)
-        s.animalMult *= 1 + constellationBonus(.beasts)
+        s.animalMult += constellationBonus(.beasts)
         s.growMult /= 1 + constellationBonus(.garden)
         s.weaponMult *= 1 + constellationBonus(.dungeon)
         s.producerMult *= 1 + constellationBonus(.birds)
@@ -1334,9 +1337,10 @@ final class GameState {
         var xpBonus = 0.1 * r(.scholar) + 0.06 * r(.sage) + legacy(.wisdom) + cozy + meal.xp + constellationBonus(.sky)
             + 0.08 * r(.enlightened)
         var sellBonus = 0.08 * r(.trader) + legacy(.merchant) + meal.sell + 0.06 * r(.haggler)
+            + (r(.windwalker) > 0 ? 0.1 : 0)
         speedBonus += meal.speed
         critBonus += meal.crit
-        s.animalMult *= 1 + meal.animals
+        s.animalMult += meal.animals
         var capacity = Double(GameRules.capacity(at: save.level)) + 15 * r(.bigPack)
             + (owns(.starter) ? Double(Premium.starterBackpack) : 0) + legacy(.pack)
 
@@ -1389,13 +1393,13 @@ final class GameState {
 
         let strider = r(.strider) > 0 ? 1.25 : 1
         let windwalker = r(.windwalker) > 0
-        capacity *= (1 + 0.1 * r(.packMaster)) * strider * (1 + 0.08 * r(.hauler)) * (windwalker ? 1.2 : 1)
+        capacity *= (1 + 0.1 * r(.packMaster)) * strider
         if windwalker { speedBonus += 0.15 }
-        s.speed = GameRules.baseSpeed * (1 + speedBonus) * strider
+        s.speed = GameRules.baseSpeed * min(GameRules.maxSpeedMult, (1 + speedBonus) * strider)
         s.critChance = min(0.75, critBonus)
         s.respawnMult = 1 / (1 + respawnBonus)
         s.xpMult = 1 + xpBonus
-        s.sellMult = (1 + 0.01 * (lvl - 1)) * (1 + sellBonus)
+        s.sellMult = 1 + 0.01 * (lvl - 1) + sellBonus
         s.capacity = Int(capacity)
         stats = s
     }
@@ -1517,7 +1521,7 @@ extension GameState {
         var b = bed(index)
         let now = Date()
         guard !b.isEmpty, !b.watered, !b.isRipe(at: now), let ready = b.readyAt else { return false }
-        b.boost += max(0, ready.timeIntervalSince(now)) * min(0.9, WateringCan.boost(save.canLevel) * stats.waterMult)
+        b.boost += max(0, ready.timeIntervalSince(now)) * min(WateringCan.maxCut, WateringCan.boost(save.canLevel) * stats.waterMult)
         b.watered = true
         setBed(index, b)
         return true
@@ -1614,7 +1618,7 @@ extension GameState {
         guard let crop = b.crop, b.isRipe(at: Date()) else { return nil }
         let spec = crop.spec
         var amount = max(1, Int((Double(spec.yield) * stats.yieldMultiplier(for: spec.produce)).rounded())) + (b.extra ?? 0)
-        if Double.random(in: 0..<1) < stats.extraCropChance { amount += 1 }
+        if Double.random(in: 0..<1) < stats.extraCropChance { amount += max(1, amount / 5) }
         addToStorage(spec.produce, amount)
         if Double.random(in: 0..<1) < stats.seedBackChance { save.seeds[crop, default: 0] += 1 }
         if stats.goldenHarvest && Double.random(in: 0..<1) < 0.1 { addToStorage(.goldenApple, 1) }
@@ -1716,7 +1720,7 @@ extension GameState {
         let rare: [ResourceKind] = [.crystal, .ruby, .diamond, .pearl, .coral, .honey, .goldenApple, .obsidian]
         let kind = rng.pick(rare)
         let count = rng.int(2...4)
-        offers.append(WandererOffer(id: 2, goods: .resource(kind, count), price: Int(Double(kind.price * count) * 1.6)))
+        offers.append(WandererOffer(id: 2, goods: .resource(kind, count), price: Int(Double(sellPrice(kind) * count) * 1.5)))
         wanderer = WandererVisit(location: location, until: Date().addingTimeInterval(180), offers: offers)
     }
 
@@ -2105,13 +2109,20 @@ extension GameState {
     /// Урон текущим оружием за удар.
     func weaponDamage(boss: Bool = false) -> Double {
         let w = save.weapon
-        let base = Hero.swordDamage(level: save.level, sword: max(1, weaponTier(w))) * w.mult
+        let base = Hero.swordDamage(level: save.level, sword: effectiveWeaponTier(w)) * w.mult
         let rage = hpFraction < 0.5 ? 1 + stats.berserk : 1
         return base * stats.damageMult * stats.swordMult * stats.weaponMult * rage
             * (boss ? 1 + gear.bossDamage + stats.bossBonus : 1)
     }
 
     func swordDamage() -> Double { weaponDamage() }
+
+    /// Ступень оружия не выше той, что доступна кузнецу на текущем уровне:
+    /// трофейный меч после перерождения не превращает новичка в чемпиона.
+    func effectiveWeaponTier(_ w: WeaponID) -> Int {
+        let cap = (1...ToolTier.maxTier).last { ToolTier.requiredLevel(.sword, tier: $0) <= save.level } ?? 1
+        return min(cap, max(1, weaponTier(w)))
+    }
 
     func weaponUpgradeCost(_ id: WeaponID) -> Cost? {
         guard id != .forged, ownsWeapon(id), weaponTier(id) < ToolTier.maxTier else { return nil }

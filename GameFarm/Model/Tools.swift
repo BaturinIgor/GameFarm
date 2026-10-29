@@ -42,7 +42,8 @@ enum ToolTier {
 
     /// Сила удара инструмента по ступеням.
     static func power(_ tier: Int) -> Double {
-        let table: [Double] = [1, 1.8, 3, 4.6, 6.8, 10, 14.5, 21, 30, 42]
+        // 11-я ступень достижима только с талантом "Мастер инструмента" на 10-й
+        let table: [Double] = [1, 1.8, 3, 4.6, 6.8, 10, 14.5, 21, 30, 42, 56]
         return table[max(0, min(table.count - 1, tier - 1))]
     }
 

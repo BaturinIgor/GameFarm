@@ -101,7 +101,7 @@ enum FertilizerID: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .compost: 0.4
         case .superGrow: 0.7
-        case .magic: 1
+        case .magic: 0.85
         }
     }
 
@@ -139,7 +139,10 @@ enum FertilizerID: String, CaseIterable, Identifiable, Codable {
 enum WateringCan {
     static let maxLevel = 5
 
-    static func boost(_ level: Int) -> Double { 0.3 + 0.1 * Double(max(1, min(maxLevel, level)) - 1) }
+    static func boost(_ level: Int) -> Double { 0.2 + 0.075 * Double(max(1, min(maxLevel, level)) - 1) }
+
+    /// Больше этой доли оставшегося времени полив не срезает.
+    static let maxCut = 0.75
 
     static func waterAll(_ level: Int) -> Bool { level >= 3 }
 

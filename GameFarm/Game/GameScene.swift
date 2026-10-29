@@ -1644,7 +1644,8 @@ final class GameScene: SKScene {
         Sound.shared.play(.chop, volume: 0.8)
         var damage = game.weaponDamage(boss: foe.boss)
         var crit = false
-        if Double.random(in: 0..<1) < stats.critChance {
+        if stats.titan { titanHits += 1 }
+        if (stats.titan && titanHits % 4 == 0) || Double.random(in: 0..<1) < stats.critChance {
             damage *= stats.critMult
             crit = true
             shake = max(shake, 4)
@@ -1663,11 +1664,12 @@ final class GameScene: SKScene {
         default: break
         }
         if Double.random(in: 0..<1) < gear.stun { foe.stun(1) }
-        let lifesteal = gear.lifesteal + stats.lifesteal + (weapon == .royalSword ? 0.05 : 0)
-        if lifesteal > 0 { game.healAmount(damage * lifesteal) }
-        // Шипы монстра ранят героя
+        // Вампиризм не больше 12%, и один удар лечит не больше 3% здоровья
+        let lifesteal = min(0.12, gear.lifesteal + stats.lifesteal + (weapon == .royalSword ? 0.05 : 0))
+        if lifesteal > 0 { game.healAmount(min(damage * lifesteal, game.maxHP * 0.03)) }
+        // Шипы монстра ранят героя, но не больше 5% здоровья за удар
         if foe.traits.contains(.thorns) && !fainting {
-            hurtHero(damage * 0.15, from: foe.position, quiet: true)
+            hurtHero(min(damage * 0.15, game.maxHP * 0.05), from: foe.position, quiet: true)
         }
         // Удар по области: орочий тесак или меч 7 ступени
         let cleave = max(gear.swordCleave, weapon == .orcCleaver ? 0.6 : 0)

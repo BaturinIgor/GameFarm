@@ -79,6 +79,12 @@ private struct WeaponCard: View {
                         if owned { Text(tr("common.lvl", tier)).font(.game(11)).foregroundStyle(Palette.inkSoft) }
                     }
                     Text(id.effectText).font(.game(11, .semibold)).foregroundStyle(Palette.good)
+                    if owned && game.effectiveWeaponTier(id) < tier {
+                        // Ступень выше доступной по уровню: пока работает слабее
+                        Text(tr("weapon.capped", game.effectiveWeaponTier(id)))
+                            .font(.game(11, .semibold))
+                            .foregroundStyle(ButtonTone.orange.lip)
+                    }
                     if !owned {
                         Text(id.source).font(.game(11, .semibold)).foregroundStyle(.secondary)
                     }

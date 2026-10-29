@@ -3,6 +3,8 @@ import Foundation
 enum GameRules {
     static let maxLevel = 60
     static let maxActiveAnimals = 5
+    /// Скорость героя не выше тройной: иначе за кадр он перескакивает стены.
+    static let maxSpeedMult = 3.0
     static let baseSpeed = 165.0
     static let baseReach: Double = 46
 
@@ -193,6 +195,8 @@ struct Stats {
     var regen = 0.0
     // Суперталанты
     var titan = false
+    /// Урон по ресурсам от суперталанта "Титан" и ряда за ним (на оружие не влияет).
+    var nodeMult = 1.0
     var cornucopia = false
     var keepPack = false
     var killHeal = 0.0

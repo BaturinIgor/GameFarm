@@ -51,7 +51,7 @@ enum TalentID: String, CaseIterable, Identifiable {
     // Суперталанты и ряды за ними
     case titan, keenEdge, mountainBreaker, motherlode
     case cornucopia, fortune, forager, enlightened
-    case windwalker, haggler, pathfinder, hauler
+    case windwalker, haggler, pathfinder, charmer
     case beastLord, herd, packHunt, kinship
     case landlord, richSoil, gourmet, fairTrade
     case champion, fortress, executioner, bloodlust
@@ -305,7 +305,7 @@ struct TalentSpec {
                        parents: [.windwalker], perRank: 0.06, unit: .percent),
             TalentSpec(id: .pathfinder, branch: .travel, icon: "compass", maxRank: 3, tier: 10, column: 1,
                        parents: [.windwalker], perRank: 0.12, unit: .percent),
-            TalentSpec(id: .hauler, branch: .travel, icon: "bag", maxRank: 3, tier: 10, column: 2,
+            TalentSpec(id: .charmer, branch: .travel, icon: "lasso", maxRank: 3, tier: 10, column: 2,
                        parents: [.windwalker], perRank: 0.08, unit: .percent),
 
             TalentSpec(id: .beastLord, branch: .beasts, icon: "super_beastLord", maxRank: 1, tier: 9, column: 1,
