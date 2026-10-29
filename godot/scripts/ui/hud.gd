@@ -58,6 +58,8 @@ func _ready() -> void:
 	_toasts.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_toasts.add_theme_constant_override("separation", 6)
 	root.add_child(_toasts)
+	if not bool(Game.save.get("tutorialDone", false)):
+		set_prompt("tutorial", _tutorial_card())
 	Game.toast.connect(_on_toast)
 	Game.level_up.connect(_on_level_up)
 	L.language_changed.connect(_refresh_texts)
@@ -179,6 +181,27 @@ func _build_bottom() -> void:
 	_prompts.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_prompts.add_theme_constant_override("separation", 8)
 	root.add_child(_prompts)
+
+
+## Подсказка новичку (TutorialCard): как ходить, добывать и сдавать на склад.
+func _tutorial_card() -> Control:
+	var p := PanelContainer.new()
+	p.add_theme_stylebox_override("panel", UiKit.panel_style(16))
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 6)
+	p.add_child(col)
+	col.add_child(UiKit.label(L.t("tutorial.title"), 16))
+	for row in [["paw", "tutorial.move"], ["tool_pickaxe", "tutorial.gather"], ["chest", "tutorial.deposit"]]:
+		var h := HBoxContainer.new()
+		h.add_theme_constant_override("separation", 8)
+		h.add_child(UiKit.icon(row[0], 20))
+		var l := UiKit.label(L.t(row[1]), 13)
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		h.add_child(l)
+		col.add_child(h)
+	return p
 
 
 ## Кнопка нижней панели (HUDButton): иконка, подпись и счётчик.
@@ -323,6 +346,8 @@ func _refresh_values() -> void:
 	var tone := "red" if fraction >= 1.0 else ("orange" if fraction > 0.8 else "green")
 	(_pack_bar.get_theme_stylebox("fill") as StyleBoxFlat).bg_color = UiKit.TONES[tone][1]
 	_update_badges()
+	if _prompt_cards.has("tutorial") and bool(Game.save.get("tutorialDone", false)):
+		set_prompt("tutorial", null)
 
 
 func _refresh_texts() -> void:

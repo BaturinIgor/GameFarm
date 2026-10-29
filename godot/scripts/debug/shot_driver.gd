@@ -4,7 +4,7 @@ extends Node
 ## несёт добычу на склад, открывается окно склада. На каждом шаге - снимок.
 
 const ORIGIN := Vector2(195, 620)
-const WINDOWS := ["workshop", "talents", "animals", "quests", "level"]
+const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", "kitchen", "garden", "trader"]
 
 var dir := "/tmp/shots"
 var main: Node
@@ -75,11 +75,9 @@ func _process(delta: float) -> void:
 				var w: String = WINDOWS[t / 2]
 				if t % 2 == 0 and _opened != w:
 					_opened = w
-					if w == "level":
-						if ResourceLoader.exists(Hud.LEVEL_PANEL):
-							main.hud.open_window(load(Hud.LEVEL_PANEL).new())
-					else:
-						main.hud.open_named(w)
+					var path := "res://scripts/ui/%s_panel.gd" % w
+					if ResourceLoader.exists(path):
+						main.hud.open_window(load(path).new())
 				elif t % 2 == 1 and _shot_done != w:
 					_shot_done = w
 					_shot("6_" + w)
@@ -90,8 +88,29 @@ func _process(delta: float) -> void:
 		5:
 			if _time > 302.0:
 				_shot("7_world_level18")
+				LevelUpOverlay.present(17, 18)
+				_step = 6
+				_time = 400.0
+		6:
+			if _time > 401.5:
+				_shot("8_level_up")
+				if LevelUpOverlay.current != null and is_instance_valid(LevelUpOverlay.current):
+					LevelUpOverlay.current.queue_free()
+				if Game.house.has_method("enter_house"):
+					Game.house.call("enter_house")
+				_step = 7
+				_time = 500.0
+		7:
+			if _time > 503.0:
+				_shot("9_home")
+				if Game.house.has_method("leave_house"):
+					Game.house.call("leave_house")
+				_step = 8
+				_time = 600.0
+		8:
+			if _time > 603.0:
+				_shot("10_meadow_door")
 				get_tree().quit()
-
 
 func _touch(p: Vector2, pressed: bool) -> void:
 	var e := InputEventMouseButton.new()

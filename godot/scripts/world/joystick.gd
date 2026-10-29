@@ -43,6 +43,10 @@ func _begin(p: Vector2) -> void:
 	var tw := create_tween()
 	tw.tween_property(self, "_alpha", 1.0, 0.08)
 	queue_redraw()
+	# Первое касание - обучение пройдено
+	if not bool(Game.save.get("tutorialDone", false)):
+		Game.save["tutorialDone"] = true
+		Game.mark_dirty()
 
 
 func _move(p: Vector2) -> void:

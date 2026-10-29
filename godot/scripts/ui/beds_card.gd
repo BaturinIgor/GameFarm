@@ -97,7 +97,7 @@ func _tile(i: int, now: float) -> Button:
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.focus_mode = Control.FOCUS_NONE
 	var fill := Color(UiKit.PARCHMENT_DEEP, 0.5) if locked else (RIPE_FILL if ripe else SOIL_FILL)
-	var border := UiKit.TONES["green"][1] if ripe else Color(UiKit.OUTLINE, 0.25 if locked else 0.6)
+	var border: Color = UiKit.TONES["green"][1] if ripe else Color(UiKit.OUTLINE, 0.25 if locked else 0.6)
 	var style := UiKit.box(fill, border, 6, 2 if ripe else 1, false)
 	style.set_content_margin_all(0)
 	for state in ["normal", "hover", "pressed", "disabled"]:
