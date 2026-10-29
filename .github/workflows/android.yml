@@ -93,6 +93,17 @@ jobs:
             exit 1
           fi
 
+      - name: Compile all scripts
+        run: |
+          set +e
+          timeout 120 ~/godot-bin/godot --headless --path godot --script res://scripts/debug/check_scripts.gd > check.log 2>&1
+          code=$?
+          tail -40 check.log
+          if [ $code -ne 0 ] || grep -E "SCRIPT ERROR|Parse Error" check.log; then
+            echo "::error::Scripts failed to compile"
+            exit 1
+          fi
+
       - name: Smoke run (scripts load, first frames)
         run: |
           set +e
@@ -106,6 +117,7 @@ jobs:
           exit 0
 
       - name: Screenshots (software rendering)
+        id: shots
         continue-on-error: true
         run: |
           sudo apt-get install -y -qq xvfb > /dev/null 2>&1 || true
@@ -113,6 +125,10 @@ jobs:
           timeout 180 xvfb-run -a -s "-screen 0 1170x2532x24" ~/godot-bin/godot --path godot \
             --rendering-driver opengl3 --resolution 390x844 -- --shots "$GITHUB_WORKSPACE/shots" > shots.log 2>&1 || true
           tail -30 shots.log
+          if grep -E "SCRIPT ERROR" shots.log; then
+            echo "::error::Script errors during the screenshot scenario"
+            exit 1
+          fi
           ls -la shots
 
       - name: Export APK
@@ -130,7 +146,7 @@ jobs:
         if: always()
         run: |
           mkdir -p /tmp/logs
-          cp import.log run.log export.log shots.log /tmp/logs/ 2>/dev/null || true
+          cp import.log check.log run.log export.log shots.log /tmp/logs/ 2>/dev/null || true
           cp -r shots /tmp/logs/ 2>/dev/null || true
           grep -hE "ERROR|SCRIPT ERROR|error" /tmp/logs/*.log 2>/dev/null | head -30 | sed 's/^/::warning::/' || true
           git config user.name "ci"
@@ -155,7 +171,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Publish release
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && steps.shots.outcome == 'success'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

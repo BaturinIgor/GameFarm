@@ -155,7 +155,7 @@ func _constellation_card(c: String) -> void:
 	v.add_theme_constant_override("separation", 10)
 	p.add_child(v)
 
-	v.add_child(Sky.new(c))
+	v.add_child(NightSky.new(c))
 	var tiles := HBoxContainer.new()
 	tiles.add_theme_constant_override("separation", 6)
 	v.add_child(tiles)
@@ -305,7 +305,7 @@ class Tile extends PanelContainer:
 
 
 ## Ночное небо со звёздами созвездия: собранные карты горят золотом.
-class Sky extends Control:
+class NightSky extends Control:
 	var constellation := ""
 
 	func _init(c: String) -> void:
