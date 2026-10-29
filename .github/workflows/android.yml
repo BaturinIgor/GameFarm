@@ -68,7 +68,7 @@ jobs:
           mkdir -p ~/.config/godot
           SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
           echo "SDK: $SDK, Java: $JAVA_HOME"
-          ls "$SDK/build-tools" || true
+          ls "$SDK/build-tools" "$SDK/platforms" "$SDK/cmdline-tools" 2>&1 || true
           for f in editor_settings-4.tres editor_settings-4.5.tres; do
             cat > ~/.config/godot/$f <<EOF
           [gd_resource type="EditorSettings" format=3]
@@ -113,7 +113,7 @@ jobs:
         run: |
           set -o pipefail
           sed -i "s/^version\/code=.*/version\/code=${{ github.run_number }}/; s/^version\/name=.*/version\/name=\"0.${{ github.run_number }}\"/" godot/export_presets.cfg
-          ~/godot-bin/godot --headless --path godot --export-debug "Android" "$GITHUB_WORKSPACE/HarvestHollow.apk" 2>&1 | tee export.log | tail -60
+          ~/godot-bin/godot --headless --verbose --path godot --export-debug "Android" "$GITHUB_WORKSPACE/HarvestHollow.apk" 2>&1 | tee export.log | tail -60
           ls -lh HarvestHollow.apk
 
       - name: Publish logs to ci-logs-android branch
