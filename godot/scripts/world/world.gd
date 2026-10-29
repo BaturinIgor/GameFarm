@@ -6,6 +6,7 @@ const PLAYER_RADIUS := 11.0
 
 ## Части сцены из других систем (звери, монстры, огород, дом...). Порядок важен: так их вызывает World.
 const FEATURES: Array[String] = [
+	"res://scripts/world/features/treasure_feature.gd",
 ]
 
 @export var joystick: Joystick
