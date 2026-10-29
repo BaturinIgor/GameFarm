@@ -15,6 +15,7 @@ const FEATURES: Array[String] = [
 	"res://scripts/world/features/dungeon_feature.gd",
 	"res://scripts/world/features/event_feature.gd",
 	"res://scripts/world/features/gates_feature.gd",
+	"res://scripts/world/features/royal_garden_feature.gd",
 ]
 
 @export var joystick: Joystick

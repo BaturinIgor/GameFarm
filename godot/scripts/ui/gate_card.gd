@@ -55,6 +55,12 @@ func _build() -> void:
 	col.add_child(_wrap(L.t("gate.to", [Locations.name_of(target)]), 16, UiKit.INK))
 	if gate["royal"]:
 		col.add_child(_wrap(L.t("gate.royal"), 12, UiKit.INK_SOFT))
+		var shop := UiKit.button(L.t("garden.more"), "orange", 13, true)
+		shop.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		shop.pressed.connect(func() -> void:
+			if Hud.current != null:
+				Hud.current.open_window(ShopPanel.new()))
+		col.add_child(shop)
 		return
 	if str(gate["group"]) != "":
 		col.add_child(_wrap(L.t("gate.bundle.short"), 12, UiKit.TONES["orange"][2]))

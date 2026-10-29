@@ -75,10 +75,10 @@ func _ready() -> void:
 	col.add_child(_text(L.t("offline.inStorage"), 12))
 	if not bool(report.get("doubled", false)):
 		var pro := Game.premium.has_pro()
-		var double := Ads.reward_button(L.t("offline.double.pro") if pro else L.t("offline.double"), "green", 15)
-		double.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		double.pressed.connect(_double)
-		col.add_child(double)
+		var twice := Ads.reward_button(L.t("offline.double.pro") if pro else L.t("offline.double"), "green", 15)
+		twice.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		twice.pressed.connect(_double)
+		col.add_child(twice)
 	var b := UiKit.button(L.t("offline.collect"), "wood", 15, true)
 	b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	b.pressed.connect(close)

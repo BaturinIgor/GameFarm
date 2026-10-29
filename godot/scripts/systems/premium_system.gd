@@ -153,6 +153,7 @@ func grant(product: String, transaction := "") -> void:
 				Game.save.erase("gardenChestAt")
 				Game.combat.grant_weapon("royalSword")
 		Game.show_toast("px:chest_gold", L.t("toast.purchased", [Products.title(key)]))
+		Sound.play("purchase")
 	offer_popup = false
 	Game.recalc()
 	Game.quests.ensure_quests()
@@ -231,6 +232,7 @@ func activate_luck(from_ad: bool) -> void:
 	if from_ad:
 		Game.save["adsWatched"] = int(Game.save.get("adsWatched", 0)) + 1
 	Game.show_toast("px:clover", L.t("toast.luck"))
+	Sound.play("luck")
 	Game.mark_dirty()
 
 
@@ -259,6 +261,7 @@ func open_garden_chest() -> void:
 	Game.save["tickets"] = mini(Expeditions.MAX_TICKETS, tickets() + 1)
 	Game.save["gardenChestAt"] = _now() + GARDEN_CHEST_EVERY
 	garden_chest_found = {"coins": coins, "items": items}
+	Sound.play("treasure")
 	Game.mark_dirty()
 	Game.save_now()
 
@@ -297,6 +300,7 @@ func claim_free_ticket() -> void:
 	Game.save["tickets"] = mini(Expeditions.MAX_TICKETS, tickets() + n)
 	Game.save["lastFreeTicket"] = _now()
 	Game.show_toast("px:ticket", L.t("toast.ticket", [n]))
+	Sound.play("coin")
 	Game.mark_dirty()
 	Game.save_now()
 
@@ -396,6 +400,7 @@ func finish_expedition() -> void:
 	var home := str(run["returnTo"])
 	Game.save["current"] = home if Locations.SPECS.has(home) and Game.world_map.is_unlocked(home) else "meadow"
 	Game.recalc()
+	Sound.play("success")
 	Game.mark_dirty()
 	Game.save_now()
 

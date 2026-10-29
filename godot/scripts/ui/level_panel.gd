@@ -498,6 +498,11 @@ func _settings_card() -> void:
 			L.set_language(code))
 	row.add_child(pick)
 	c.add_child(_divider())
+	c.add_child(_switch_row(L.t("settings.music"), "", Sound.music_on, func(on: bool) -> void: Sound.music_on = on))
+	c.add_child(_switch_row(L.t("settings.sounds"), "", Sound.sfx_on, func(on: bool) -> void: Sound.sfx_on = on))
+	c.add_child(_switch_row(L.t("settings.battery"), L.t("settings.battery.hint"), Sound.battery_saver,
+		func(on: bool) -> void: Sound.battery_saver = on))
+	c.add_child(_divider())
 	c.add_child(WardrobePanel.profile_row())
 	c.add_child(_divider())
 	_purchases_rows(c)
@@ -520,7 +525,7 @@ func _purchases_rows(c: VBoxContainer) -> void:
 	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(gap)
 	var restore := UiKit.button(L.t("shop.restore"), "wood", 13, true)
-	restore.pressed.connect(Store.restore)
+	restore.pressed.connect(func() -> void: Store.restore())
 	row.add_child(restore)
 	var reset := UiKit.button(L.t("settings.resetTest"), "gray", 13, true)
 	reset.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
@@ -588,6 +593,40 @@ func _divider() -> ColorRect:
 	r.custom_minimum_size = Vector2(0, 2)
 	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return r
+
+
+## Переключатель в стиле игры (GameToggleStyle): подпись слева, капсула с кружком справа.
+func _switch_row(text: String, hint: String, on: bool, apply: Callable) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 1)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(UiKit.label(text, 14))
+	if hint != "":
+		col.add_child(_wrap(hint, 11, UiKit.INK_SOFT))
+	row.add_child(col)
+	var b := Button.new()
+	b.focus_mode = Control.FOCUS_NONE
+	b.custom_minimum_size = Vector2(54, 30)
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var track := UiKit.box(UiKit.TONES["green"][1] if on else Color(UiKit.WOOD_DARK, 0.55), UiKit.OUTLINE, 15, 2, false)
+	track.set_content_margin_all(0)
+	for state in ["normal", "hover", "pressed", "focus"]:
+		b.add_theme_stylebox_override(state, track)
+	var knob := Panel.new()
+	knob.add_theme_stylebox_override("panel", UiKit.box(UiKit.PARCHMENT_LIGHT, UiKit.OUTLINE, 13, 2, false))
+	knob.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	knob.size = Vector2(26, 26)
+	knob.position = Vector2(26.0 if on else 2.0, 2.0)
+	b.add_child(knob)
+	b.pressed.connect(func() -> void:
+		apply.call(not on)
+		_dirty = true)
+	row.add_child(b)
+	return row
 
 
 func _wrap(text: String, size: int, color := UiKit.INK) -> Label:

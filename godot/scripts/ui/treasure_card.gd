@@ -7,12 +7,15 @@ extends Control
 const SHOW_TIME := 2.6
 
 var _treasure: Dictionary
+var _title_key := "treasure.title"
 var _stack := VBoxContainer.new()
 
 
 ## treasure - результат QuestSystem.open_treasure(): {coins, items: [[вид, n], ...]}.
-func _init(treasure: Dictionary) -> void:
+## title_key - заголовок ленты (королевский сундук сада - "garden.chestTitle").
+func _init(treasure: Dictionary, title_key := "treasure.title") -> void:
 	_treasure = treasure
+	_title_key = title_key
 
 
 func _ready() -> void:
@@ -37,7 +40,7 @@ func _ready() -> void:
 	ribbon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	ribbon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ribbon.z_index = 1
-	var title := QuestsPanel.with_icons(L.t("treasure.title"), 17, Color.WHITE, 6)
+	var title := QuestsPanel.with_icons(L.t(_title_key), 17, Color.WHITE, 6)
 	title.alignment = BoxContainer.ALIGNMENT_CENTER
 	ribbon.add_child(title)
 	_stack.add_child(ribbon)

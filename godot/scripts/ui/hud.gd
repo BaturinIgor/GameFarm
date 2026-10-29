@@ -15,6 +15,7 @@ const WINDOWS := [
 const LEVEL_PANEL := "res://scripts/ui/level_panel.gd"
 ## Плашки справа под монетами (блюдо, этаж дома, ивент...): Control, сам прячется, когда не нужен.
 const PILLS := [
+	"res://scripts/ui/shop_pill.gd",
 	"res://scripts/ui/event_pill.gd",
 	"res://scripts/ui/meal_pill.gd",
 	"res://scripts/ui/expedition_pill.gd",
@@ -33,6 +34,8 @@ var _level_box: PanelContainer
 var _pack_box: PanelContainer
 var _potion: PotionButton
 var _minimap: MiniMap
+var _pro_crown: TextureRect
+var _badge_box: PanelContainer
 var _prompt_cards: Dictionary = {}
 var _overlay_layer := CanvasLayer.new()
 var _badges: Dictionary = {}
@@ -99,6 +102,9 @@ func _build_top() -> void:
 	badge.add_theme_stylebox_override("panel", badge_style)
 	badge.custom_minimum_size = Vector2(36, 36)
 	row.add_child(badge)
+	_badge_box = badge
+	_pro_crown = UiKit.icon("crown", 16)
+	root.add_child(_pro_crown)
 	_level_label = UiKit.title("1", 18)
 	_level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_level_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -366,6 +372,9 @@ func _process(delta: float) -> void:
 
 
 func _refresh_values() -> void:
+	if _pro_crown != null:
+		_pro_crown.visible = Game.premium.has_pro()
+		_pro_crown.global_position = _badge_box.global_position + Vector2(_badge_box.size.x - 10, -8)
 	if _level_box != null and _pack_box != null:
 		_pack_box.position.y = _level_box.get_rect().end.y + 8.0
 		if _minimap != null:

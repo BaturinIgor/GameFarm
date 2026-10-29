@@ -25,6 +25,7 @@ func _ready() -> void:
 	# Звери-производители работали, пока игры не было
 	OfflineOverlay.check()
 	CalendarPanel.check()
+	OfferPopup.check()
 
 	var fade_layer := CanvasLayer.new()
 	fade_layer.layer = 50
@@ -49,3 +50,5 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_RESUMED:
 		OfflineOverlay.check()
 		CalendarPanel.check()
+		Game.premium.repair_timers()
+		OfferPopup.check()

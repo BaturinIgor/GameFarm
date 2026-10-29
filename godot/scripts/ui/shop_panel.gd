@@ -66,7 +66,7 @@ func build() -> void:
 	content.add_child(LuckButton.new("wide"))
 	var restore := UiKit.button(L.t("shop.restore"), "wood", 14, true)
 	restore.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	restore.pressed.connect(Store.restore)
+	restore.pressed.connect(func() -> void: Store.restore())
 	content.add_child(restore)
 	var footer := _wrap(L.t("shop.footer"), 11, UiKit.INK_SOFT)
 	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -328,13 +328,15 @@ func _badge(product: String) -> Control:
 	if product == "starter" and (until is float or until is int):
 		row.add_child(UiKit.icon("stopwatch", 12))
 		var at := float(until)
-		row.add_child(CombatCards.LiveLabel.new(func() -> String:
-			return L.t("shop.endsIn", [House.countdown(at - Time.get_unix_time_from_system())]), 11, UiKit.INK))
+		var left := func() -> String:
+			return L.t("shop.endsIn", [House.countdown(at - Time.get_unix_time_from_system())])
+		row.add_child(CombatCards.LiveLabel.new(left, 11, UiKit.INK))
 	elif product == "eventPass":
 		row.add_child(UiKit.icon("stopwatch", 12))
-		var end := float(Events.current()["end"])
-		row.add_child(CombatCards.LiveLabel.new(func() -> String:
-			return L.t("shop.endsIn", [EventsPanel.long_countdown(end - Time.get_unix_time_from_system())]), 11, UiKit.INK))
+		var ends := float(Events.current()["end"])
+		var left_long := func() -> String:
+			return L.t("shop.endsIn", [EventsPanel.long_countdown(ends - Time.get_unix_time_from_system())])
+		row.add_child(CombatCards.LiveLabel.new(left_long, 11, UiKit.INK))
 	else:
 		row.add_child(UiKit.icon("star", 12))
 		row.add_child(UiKit.label(L.t("shop.bestValue"), 11))
@@ -567,8 +569,8 @@ func _build_detail() -> void:
 		tw.tween_property(panel, "scale", Vector2.ONE, 0.25).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
 
 
-static func _wrap(text: String, size: int, color := UiKit.INK) -> Label:
-	var l := UiKit.label(text, size, color)
+static func _wrap(text: String, font_size: int, color := UiKit.INK) -> Label:
+	var l := UiKit.label(text, font_size, color)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	return l

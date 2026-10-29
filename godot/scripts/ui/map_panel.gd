@@ -47,6 +47,7 @@ func build() -> void:
 
 func _select(id: String) -> void:
 	selected = id
+	Sound.play("tap")
 	_dirty = true
 
 
