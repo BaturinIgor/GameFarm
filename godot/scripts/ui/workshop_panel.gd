@@ -19,8 +19,13 @@ func _init() -> void:
 func build() -> void:
 	_tabs()
 	content.add_child(_wrap(L.t("gear.hint." + tab), 12, UiKit.INK_SOFT))
+	if tab == "defense":
+		content.add_child(CombatCards.hero_defense_card())
 	for tool in TABS[tab]:
 		_tool_card(tool)
+	if tab == "weapons":
+		for c in CombatCards.weapon_cards():
+			content.add_child(c)
 
 
 func _tabs() -> void:

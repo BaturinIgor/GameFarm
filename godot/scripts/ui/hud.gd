@@ -25,6 +25,9 @@ static var current: Hud
 var root := Control.new()
 var _prompts := VBoxContainer.new()
 var _pills := VBoxContainer.new()
+var _level_box: PanelContainer
+var _pack_box: PanelContainer
+var _potion: PotionButton
 var _prompt_cards: Dictionary = {}
 var _overlay_layer := CanvasLayer.new()
 var _badges: Dictionary = {}
@@ -104,6 +107,9 @@ func _build_top() -> void:
 	col.add_child(_level_name)
 	_xp_bar = UiKit.bar(0.0, "gold", 118, 14, " ")
 	col.add_child(_xp_bar)
+	# Здоровье: видно в бою или если ранен
+	col.add_child(CombatCards.HpStrip.new())
+	_level_box = level_box
 
 	# Рюкзак под уровнем
 	var pack_box := PanelContainer.new()
@@ -111,6 +117,7 @@ func _build_top() -> void:
 	pack_box.position = Vector2(10, top + 54)
 	pack_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(pack_box)
+	_pack_box = pack_box
 	var prow := HBoxContainer.new()
 	prow.add_theme_constant_override("separation", 6)
 	pack_box.add_child(prow)
@@ -148,6 +155,13 @@ func _build_top() -> void:
 	_pills.add_theme_constant_override("separation", 6)
 	_pills.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(_pills)
+
+	# Полоска босса под шапкой
+	var boss := BossBar.new()
+	boss.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	boss.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	boss.offset_top = top + 92
+	root.add_child(boss)
 	for path in PILLS:
 		if ResourceLoader.exists(path):
 			var pill: Control = load(path).new()
@@ -181,6 +195,10 @@ func _build_bottom() -> void:
 	_prompts.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_prompts.add_theme_constant_override("separation", 8)
 	root.add_child(_prompts)
+	# Зелье справа над нижней панелью, под карточками
+	_potion = PotionButton.new()
+	_potion.size_flags_horizontal = Control.SIZE_SHRINK_END
+	_prompts.add_child(_potion)
 
 
 ## Подсказка новичку (TutorialCard): как ходить, добывать и сдавать на склад.
@@ -273,6 +291,8 @@ func set_prompt(key: String, card: Control) -> void:
 		_prompt_cards[key] = card
 		if card.get_parent() == null:
 			_prompts.add_child(card)
+			if _potion != null:
+				_prompts.move_child(_potion, -1)
 
 
 func _update_badges() -> void:
@@ -336,6 +356,8 @@ func _process(delta: float) -> void:
 
 
 func _refresh_values() -> void:
+	if _level_box != null and _pack_box != null:
+		_pack_box.position.y = _level_box.get_rect().end.y + 8.0
 	_level_label.text = str(Game.level)
 	_level_name.text = Locations.name_of(Game.current)
 	_xp_bar.value = Game.level_progress

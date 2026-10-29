@@ -207,7 +207,7 @@ func claim_all_achievements() -> void:
 
 ## Награды, которые можно забрать: задания и достижения (охоты - вместе с боем).
 func claimable_count() -> int:
-	return claimable_quests() + claimable_achievements()
+	return claimable_quests() + claimable_achievements() + Game.combat.claimable_hunts()
 
 
 # MARK: Клады

@@ -21,6 +21,8 @@ var _home_timer := 0.0
 var _meal_timer := 0.0
 var _prompt_key := ""
 var _door_shown := false
+var _trophy_nodes: Array = []
+var _trophy_signature := ""
 
 
 func build(world: World) -> void:
@@ -30,8 +32,12 @@ func build(world: World) -> void:
 	_decor_signature = ""
 	_passage_armed = false
 	_home_timer = 0.0
+	_trophy_nodes.clear()
+	_trophy_signature = ""
 	if _floor != "":
 		_sync_decor(world)
+		if _floor == "ground":
+			_sync_trophies(world)
 
 
 func clear(_w: World) -> void:
@@ -40,6 +46,8 @@ func clear(_w: World) -> void:
 	_slot_nodes.clear()
 	_obstacles.clear()
 	_decor_signature = ""
+	_trophy_nodes.clear()
+	_trophy_signature = ""
 	_floor = ""
 
 
@@ -124,6 +132,8 @@ func _update_home(world: World, dt: float) -> void:
 		return
 	_home_timer = 0.12
 	_sync_decor(world)
+	if _floor == "ground":
+		_sync_trophies(world)
 	var p := world.player.position
 	var best := {}
 	var best_d := INF
@@ -180,3 +190,38 @@ func _set_door(on: bool) -> void:
 		return
 	_door_shown = on
 	Hud.current.set_prompt("house", HomeCard.new({"type": "door"}) if on else null)
+
+
+## Трофеи висят на доске в гостиной: два ряда по три (порт syncTrophies).
+func _sync_trophies(world: World) -> void:
+	var board: Variant = null
+	for p in world.layout.props:
+		if p["name"] == "hm_trophy_board":
+			board = p["pos"]
+			break
+	if board == null:
+		return
+	var earned: Array[String] = []
+	for id in Trophies.IDS:
+		if Trophies.is_earned(id):
+			earned.append(id)
+	var signature := ",".join(earned)
+	if signature == _trophy_signature:
+		return
+	_trophy_signature = signature
+	for n in _trophy_nodes:
+		if is_instance_valid(n):
+			n.queue_free()
+	_trophy_nodes.clear()
+	var bp: Vector2 = board
+	for i in Trophies.IDS.size():
+		var id: String = Trophies.IDS[i]
+		if not id in earned:
+			continue
+		# Сортируется сразу за доской, вверх поднят смещением кадра
+		var node := Sprites.make(Trophies.sprite(id), Vector2(bp.x + float(i % 3 - 1) * 36.0, bp.y + 0.5))
+		if node == null:
+			continue
+		node.offset.y -= (42.0 if i < 3 else 10.0) / Sprites.SCALE
+		world.entities.add_child(node)
+		_trophy_nodes.append(node)

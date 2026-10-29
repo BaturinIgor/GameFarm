@@ -20,6 +20,8 @@ func build() -> void:
 	_tabs()
 	if tab == "achievements":
 		_achievements_list()
+	elif tab == "hunts":
+		content.add_child(CombatCards.hunts_list())
 	else:
 		_quests_list()
 
@@ -30,6 +32,7 @@ func _tabs() -> void:
 	content.add_child(row)
 	var items := [
 		["quests", "hud.quests", Game.quests.claimable_quests()],
+		["hunts", "hunt.tab", Game.combat.claimable_hunts()],
 		["achievements", "quests.achievements", Game.quests.claimable_achievements()],
 	]
 	for it in items:
