@@ -323,7 +323,7 @@ final class GameScene: SKScene {
             let made = indoor ? Sprites.node(item.name, x: item.position.x, y: item.position.y)
                 : Sprites.animated(item.name, fps: 8, x: item.position.x, y: item.position.y)
             guard let node = made else { continue }
-            let flat = item.name.hasPrefix("lily") || item.name.contains("rug") || item.name == "hm_doormat"
+            let flat = item.name.hasPrefix("lily") || item.name.contains("rug") || item.name == "hm_doormat" || item.name == "hm_stairs_down"
             node.zPosition = flat ? 2 : zFor(item.position.y)
             world.addChild(node)
             if item.fixed {

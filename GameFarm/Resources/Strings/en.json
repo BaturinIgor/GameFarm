@@ -1242,6 +1242,7 @@
  "toast.mealsFull": "Up to {0} meals can be active at once",
  "toast.newTool": "New tool: {0}",
  "toast.noSeeds": "No seeds: visit the market stall near home",
+ "toast.offlineDoubled": "Haul doubled!",
  "toast.portal": "Portal sent {0} resources to storage",
  "toast.purchased": "Purchased: {0}",
  "toast.questDone": "Quest complete: claim your reward",

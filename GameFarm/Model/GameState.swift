@@ -1096,7 +1096,9 @@ final class GameState {
         guard let report = offlineReport, !report.doubled else { return }
         for item in report.items { addToStorage(item.kind, item.amount) }
         if fromAd { save.adsWatched += 1 }
-        offlineReport = OfflineReport(duration: report.duration, items: report.items, doubled: true)
+        offlineReport = nil
+        toast("px:bed", tr("toast.offlineDoubled"))
+        SoundFX.play(.success)
         saveNow()
     }
 

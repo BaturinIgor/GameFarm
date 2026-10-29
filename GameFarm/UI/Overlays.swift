@@ -107,9 +107,10 @@ struct OfflineOverlay: View {
                     .font(.game(12, .semibold))
                     .foregroundStyle(.secondary)
                 if !report.doubled {
+                    // Одно нажатие: удваиваем и сразу закрываем окно
                     Button {
                         Ads.shared.show {
-                            withAnimation(.spring(duration: 0.4)) { GameState.shared.doubleOffline(fromAd: !GameState.shared.hasPro) }
+                            withAnimation(.spring(duration: 0.3)) { GameState.shared.doubleOffline(fromAd: !GameState.shared.hasPro) }
                             UINotificationFeedbackGenerator().notificationOccurred(.success)
                         }
                     } label: {
@@ -118,13 +119,8 @@ struct OfflineOverlay: View {
                     }
                     .buttonStyle(.game(.green, wide: true))
                 }
-                if report.doubled {
-                    Button(tr("offline.collect"), action: onClose)
-                        .buttonStyle(.game(.green, wide: true))
-                } else {
-                    Button(tr("offline.collect"), action: onClose)
-                        .buttonStyle(.game(.wood, small: true))
-                }
+                Button(tr("offline.collect"), action: onClose)
+                    .buttonStyle(.game(.wood, small: true))
             }
             .foregroundStyle(Palette.ink)
             .padding(22)
