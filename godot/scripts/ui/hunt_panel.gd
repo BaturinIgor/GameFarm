@@ -2,9 +2,6 @@ class_name HuntPanel
 extends Sheet
 ## Стражник у доски: заказы на охоту и подземелья (порт HuntView).
 
-## Список подземелий (DungeonList) делает часть "Подземелья": Control, строит себя сам и закрывает окно при входе.
-## Лавка зелий над ним - CombatCards.potion_shop_card().
-const DUNGEON_LIST := "res://scripts/ui/dungeon_list.gd"
 
 var tab := "hunts"
 
@@ -22,8 +19,7 @@ func build() -> void:
 		content.add_child(CombatCards.hunts_list())
 		return
 	content.add_child(CombatCards.potion_shop_card())
-	if ResourceLoader.exists(DUNGEON_LIST):
-		content.add_child(load(DUNGEON_LIST).new())
+	DungeonPanel.build_list(content, close)
 
 
 ## Вкладки (GameTabs): охота со счётчиком готовых заказов и подземелья.

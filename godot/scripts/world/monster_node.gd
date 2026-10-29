@@ -161,8 +161,8 @@ func _ready() -> void:
 static func _frames(spec: Dictionary, cols: int, total: int) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	var start := int(spec["row"]) * cols
-	var range_: Array = spec["frames"]
-	for f in range(int(range_[0]), int(range_[1])):
+	var span: Array = spec["frames"]
+	for f in range(int(span[0]), int(span[1])):
 		if start + f < total:
 			out.append(start + f)
 	return out
@@ -213,7 +213,7 @@ func _colorize(steps: Array) -> void:
 		_color_tween.kill()
 	_color_tween = create_tween()
 	for s in steps:
-		if s[0] == null:
+		if not (s[0] is Color):
 			_color_tween.tween_interval(float(s[2]))
 			continue
 		_color_tween.tween_property(_material, "shader_parameter/tint", s[0], float(s[2]))

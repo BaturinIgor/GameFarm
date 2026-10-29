@@ -17,6 +17,7 @@ const LEVEL_PANEL := "res://scripts/ui/level_panel.gd"
 const PILLS := [
 	"res://scripts/ui/meal_pill.gd",
 	"res://scripts/ui/home_floor_pill.gd",
+	"res://scripts/ui/dungeon_pill.gd",
 ]
 
 ## Текущая шапка: фичи сцены показывают через неё карточки и окна.

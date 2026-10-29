@@ -229,8 +229,8 @@ func damage_monster(foe: MonsterNode, damage: float, from: Vector2, strong: bool
 		Fx.chips(w.fx, foe.position, Color(0.5, 0.85, 0.4) if Monsters.is_slime(foe.kind) else Color.WHITE, 7 if strong else 4)
 	if result != MonsterNode.Hit.KILLED:
 		return result
+	# Событие kill для заданий и коллекции шлёт note_kill
 	var reward: Dictionary = Game.combat.note_kill(foe.kind, foe.level, foe.boss)
-	Game.emit_event("kill", {"monster": foe.kind, "level": foe.level, "boss": foe.boss})
 	coins_fx(w.fx, int(reward.get("coins", 0)), foe.position - Vector2(0, 58), 15.0)
 	var loot := int(reward.get("loot", 0))
 	if loot > 0:
@@ -495,21 +495,13 @@ static func open_hunt() -> void:
 
 # MARK: Помощники
 
-## Бонус снаряжения (GearPerks): ключи в snake_case, на всякий случай и в camelCase.
+## Бонус снаряжения (поля GearPerks в snake_case).
 static func _perk(gear: Dictionary, key: String) -> float:
-	return float(gear.get(key, gear.get(_camel(key), 0.0)))
+	return float(gear.get(key, 0.0))
 
 
 static func _flag(gear: Dictionary, key: String) -> bool:
-	return bool(gear.get(key, gear.get(_camel(key), false)))
-
-
-static func _camel(key: String) -> String:
-	var parts := key.split("_")
-	var out := parts[0]
-	for i in range(1, parts.size()):
-		out += parts[i].capitalize()
-	return out
+	return bool(gear.get(key, false))
 
 
 ## "+12" и монета (Effects.coins).

@@ -4,7 +4,8 @@ extends Node
 ## несёт добычу на склад, открывается окно склада. На каждом шаге - снимок.
 
 const ORIGIN := Vector2(195, 620)
-const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", "kitchen", "garden", "trader"]
+const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", "kitchen", "garden", "trader", "hunt",
+	"dungeon", "trophies"]
 
 var dir := "/tmp/shots"
 var main: Node
@@ -110,6 +111,15 @@ func _process(delta: float) -> void:
 		8:
 			if _time > 603.0:
 				_shot("10_meadow_door")
+				Game.dungeons.start_dungeon("slimeCaves", 1)
+				_step = 9
+				_time = 700.0
+		9:
+			if _time > 704.0 and _shot_done != "dungeon_run":
+				_shot_done = "dungeon_run"
+				_shot("11_dungeon")
+			if _time > 712.0:
+				_shot("12_dungeon_later")
 				get_tree().quit()
 
 func _touch(p: Vector2, pressed: bool) -> void:

@@ -38,12 +38,6 @@ const COLORS := {
 	"frostHollow": [Color("a8dcff"), Color("2a4a8a")],
 	"fireDepths": [Color("ff9a4a"), Color("7a1a0e")],
 }
-## Цвет иконки оружия (WeaponID.color) для наград подземелий.
-const WEAPON_COLOR := {
-	"forged": Color.WHITE, "slimeBlade": Color(0.45, 0.95, 0.4), "boneSaber": Color(0.95, 0.92, 0.85),
-	"orcCleaver": Color(0.6, 0.75, 0.3), "frostBrand": Color(0.55, 0.85, 1), "flameSword": Color(1, 0.5, 0.15),
-	"royalSword": Color(1, 0.82, 0.2),
-}
 
 ## Зелье лечения: восстанавливает 40% здоровья. Продаёт стражник, падает в подземельях.
 const POTION_HEAL := 0.4
@@ -97,18 +91,6 @@ static func boss_tint(id: String) -> Variant:
 
 static func weapon(id: String) -> String:
 	return WEAPON.get(id, "forged")
-
-
-static func weapon_name(weapon_id: String) -> String:
-	return L.t("weapon." + weapon_id)
-
-
-static func weapon_effect(weapon_id: String) -> String:
-	return L.t("weapon." + weapon_id + ".effect")
-
-
-static func weapon_color(weapon_id: String) -> Color:
-	return WEAPON_COLOR.get(weapon_id, Color.WHITE)
 
 
 static func colors(id: String) -> Array:

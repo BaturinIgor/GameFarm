@@ -11,6 +11,8 @@ const FEATURES: Array[String] = [
 	"res://scripts/world/features/home_feature.gd",
 	"res://scripts/world/features/trader_feature.gd",
 	"res://scripts/world/features/garden_feature.gd",
+	"res://scripts/world/features/monsters_feature.gd",
+	"res://scripts/world/features/dungeon_feature.gd",
 ]
 
 @export var joystick: Joystick
@@ -289,7 +291,7 @@ func _transition(id: String) -> void:
 
 func _move_player(dt: float, stats: Stats) -> void:
 	var v: Vector2 = joystick.vector if joystick else Vector2.ZERO
-	var max_speed := stats.speed
+	var max_speed := stats.speed * MonstersFeature.hero_speed_mult()
 	var target := v * max_speed
 	var accel := 1.0 - exp(-dt * (12.0 if v.length() > 0.05 else 16.0))
 	velocity += (target - velocity) * accel
