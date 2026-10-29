@@ -54,6 +54,7 @@
 | `Game.house` | `house_system.gd` | Дом, уют, украшения, кухня и блюда, календарь входа |
 | `Game.garden` | `garden_system.gd` | Огород, семена, лейка, удобрения, лавка и бродячий торговец |
 | `Game.combat` | `combat_system.gd` | Здоровье героя, снаряжение и оружие, монстры, охота, подземелья |
+| `Game.dungeons` | `dungeon_system.gd` | Подземелья: забеги, волны, сундук, рекорды |
 | `Game.events` | `event_system.gd` | Ивенты, пропуск, этапы и усиления |
 | `Game.collection` | `collection_system.gd` | Карты и созвездия |
 | `Game.legacy` | `legacy_system.gd` | Перерождение, искры, наследие |

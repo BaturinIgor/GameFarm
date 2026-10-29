@@ -22,6 +22,7 @@ var quests := QuestSystem.new()
 var house := HouseSystem.new()
 var garden := GardenSystem.new()
 var combat := CombatSystem.new()
+var dungeons := DungeonSystem.new()
 var events := EventSystem.new()
 var collection := CollectionSystem.new()
 var legacy := LegacySystem.new()
@@ -30,7 +31,7 @@ var world_map := WorldMapSystem.new()
 
 ## Все системы по порядку: для значений по умолчанию и событий.
 var systems: Array:
-	get: return [talents, workshop, animals, quests, house, garden, combat, events, collection, legacy, premium, world_map]
+	get: return [talents, workshop, animals, quests, house, garden, combat, dungeons, events, collection, legacy, premium, world_map]
 ## Где появиться после перехода через проход (id прохода).
 var arrival_gate := ""
 ## В доме: у какой станции появиться (exit, up, down); на лугу - у двери дома.
