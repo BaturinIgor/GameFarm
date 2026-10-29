@@ -87,10 +87,7 @@ func is_unlocked(id: String) -> bool:
 			var run = Game.save.get("expedition")
 			return run is Dictionary and str(run.get("location", "")) == id
 		"event":
-			# Ивенты - отдельная система: пока у неё нет этих функций, на карту ивента не попасть
-			if not (Game.events.has_method("events_open") and Game.events.has_method("current_location")):
-				return false
-			return bool(Game.events.call("events_open")) and str(Game.events.call("current_location")) == id
+			return Game.events.is_unlocked(id)
 		"home":
 			var f := House.floor_of(id)
 			return f != "" and Game.house.is_built(f)

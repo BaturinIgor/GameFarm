@@ -17,6 +17,7 @@ const LEVEL_PANEL := "res://scripts/ui/level_panel.gd"
 const PILLS := [
 	"res://scripts/ui/event_pill.gd",
 	"res://scripts/ui/meal_pill.gd",
+	"res://scripts/ui/expedition_pill.gd",
 	"res://scripts/ui/event_map_pill.gd",
 	"res://scripts/ui/home_floor_pill.gd",
 	"res://scripts/ui/dungeon_pill.gd",
@@ -31,6 +32,7 @@ var _pills := VBoxContainer.new()
 var _level_box: PanelContainer
 var _pack_box: PanelContainer
 var _potion: PotionButton
+var _minimap: MiniMap
 var _prompt_cards: Dictionary = {}
 var _overlay_layer := CanvasLayer.new()
 var _badges: Dictionary = {}
@@ -131,6 +133,9 @@ func _build_top() -> void:
 	_pack_bar = UiKit.bar(0.0, "green", 76, 14, " ")
 	_pack_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	pcol.add_child(_pack_bar)
+	_minimap = MiniMap.new()
+	_minimap.position = Vector2(10, top + 96)
+	root.add_child(_minimap)
 
 	# Монеты справа
 	var coin_box := PanelContainer.new()
@@ -302,6 +307,8 @@ func _update_badges() -> void:
 	for id in _badges:
 		var n := 0
 		match id:
+			"map":
+				n = Game.world_map.openable_gates() + (1 if Game.premium.free_ticket_ready() else 0)
 			"workshop":
 				if Game.workshop.has_method("upgradable_count"):
 					n = Game.workshop.upgradable_count()
@@ -361,6 +368,8 @@ func _process(delta: float) -> void:
 func _refresh_values() -> void:
 	if _level_box != null and _pack_box != null:
 		_pack_box.position.y = _level_box.get_rect().end.y + 8.0
+		if _minimap != null:
+			_minimap.position = Vector2(10, _pack_box.get_rect().end.y + 8.0)
 	_level_label.text = str(Game.level)
 	_level_name.text = Locations.name_of(Game.current)
 	_xp_bar.value = Game.level_progress

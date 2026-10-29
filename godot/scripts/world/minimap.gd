@@ -202,9 +202,9 @@ static func render(layout: MapLayout, spec: Dictionary) -> Image:
 	# Проходы: золотые ромбы
 	for g in layout.gates:
 		var p: Vector2 = g["barrier"] * k
-		var size := ppc * 1.4
-		_diamond(img, p, size + 1.0, OUTLINE)
-		_diamond(img, p, size - 0.75, Color(1, 0.83, 0.25))
+		var ds := ppc * 1.4
+		_diamond(img, p, ds + 1.0, OUTLINE)
+		_diamond(img, p, ds - 0.75, Color(1, 0.83, 0.25))
 
 	# Склад: домик
 	var home := layout.base * k

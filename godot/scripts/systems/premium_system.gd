@@ -4,8 +4,8 @@ extends RefCounted
 ## Покупки (owns, has_pro) и удача за рекламу - этап 6. В Game.save: tickets, maps, lastFreeTicket,
 ## expedition = {location, endsAt, returnTo, loot: {вид: n}, coins} (как ExpeditionRun); нет экспедиции - нет ключа.
 
-const PRO_OFFLINE_HOURS := 12.0
-const STARTER_BACKPACK := 20
+const PRO_OFFLINE_HOURS := 24.0
+const STARTER_BACKPACK := 30
 const CAPYBARA_YIELD := 0.1
 
 ## Итог последней экспедиции для окна после возвращения: {location, items: [[вид, n], ...], coins} или null.

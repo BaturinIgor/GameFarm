@@ -14,6 +14,7 @@ const FEATURES: Array[String] = [
 	"res://scripts/world/features/monsters_feature.gd",
 	"res://scripts/world/features/dungeon_feature.gd",
 	"res://scripts/world/features/event_feature.gd",
+	"res://scripts/world/features/gates_feature.gd",
 ]
 
 @export var joystick: Joystick
@@ -236,6 +237,8 @@ func _build_base() -> void:
 func _build_gates() -> void:
 	var stone: bool = spec["dark"] or layout.edge == "void" or spec["lava"] or loaded == "snow"
 	for g in layout.gates:
+		if WorldGraph.gate(g["id"]).is_empty():
+			continue
 		var node := GateNode.new()
 		node.setup(g, _gate_open(g["id"]), layout.cell, stone)
 		entities.add_child(node)
@@ -243,7 +246,7 @@ func _build_gates() -> void:
 
 
 func _gate_open(id: String) -> bool:
-	return id in Game.save.get("openGates", [])
+	return Game.world_map.is_gate_open(id)
 
 
 # MARK: Цикл
@@ -423,7 +426,7 @@ func _check_gates() -> void:
 		if open != g.is_open:
 			g.set_open(open)
 		if g.is_open and g.passed(player.position):
-			Game.travel(g.to, g.gate_id)
+			Game.world_map.walk_through(g.gate_id)
 			return
 
 

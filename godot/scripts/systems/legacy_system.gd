@@ -104,6 +104,7 @@ func rebirth() -> void:
 	Game.save = s
 	Game.dungeons.reset()
 	Game.animals.offline_report = {}
+	Game.premium.expedition_report = null
 	Game.arrival_gate = ""
 	Game.arrival_station = ""
 	Game.arrive_at_door = false

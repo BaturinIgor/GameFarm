@@ -1,19 +1,17 @@
 class_name MapPanel
 extends Sheet
 ## Карта мира (порт MapView): выбор планеты, схема локаций и проходов, карточка локации с переходом
-## и открытием проходов, экспедиции по билетам и бесплатный билет, королевский сад.
+## и открытием проходов, ивент (EventsPanel.map_card), экспедиции по билетам и бесплатный билет, королевский сад.
 ## Кнопки магазина покупок (сад, билеты) пока нет: покупки - этап 6.
 
-## Карточка ивента на карте (EventMapCard) - часть ивентов: появится, когда будет этот файл (Control).
-const EVENT_CARD := "res://scripts/ui/event_map_card.gd"
 const SMALL_BUTTON_HEIGHT := 34.0
+
+static var _planet_tex: Dictionary = {}
 
 ## Выбранная на схеме локация ("" - текущая).
 var selected := ""
 var planet := "home"
 var _ticket_ready := false
-
-static var _planet_tex: Dictionary = {}
 
 
 func _init() -> void:
@@ -23,9 +21,9 @@ func _init() -> void:
 
 func _process(delta: float) -> void:
 	# Бесплатный билет созрел, пока окно открыто: показать кнопку
-	var ready := Game.premium.free_ticket_ready()
-	if ready != _ticket_ready:
-		_ticket_ready = ready
+	var ticket := Game.premium.free_ticket_ready()
+	if ticket != _ticket_ready:
+		_ticket_ready = ticket
 		_dirty = true
 	super(delta)
 
@@ -42,8 +40,7 @@ func build() -> void:
 		content.add_child(_planet_card(planet))
 		for id in WorldGraph.planet_locations(planet):
 			content.add_child(_location_card(id))
-	if ResourceLoader.exists(EVENT_CARD):
-		content.add_child(load(EVENT_CARD).new())
+	content.add_child(EventsPanel.map_card(close))
 	content.add_child(_expeditions_card())
 	content.add_child(_garden_card())
 
@@ -67,8 +64,8 @@ func _planet_picker() -> HBoxContainer:
 	for p in WorldGraph.PLANETS:
 		var open := Game.world_map.planet_open(p)
 		var on: bool = p == planet
-		var colors: Array = WorldGraph.planet_colors(p)
-		var fill: Color = Color(colors[0], 0.35) if on else UiKit.PARCHMENT_LIGHT
+		var light: Color = WorldGraph.planet_colors(p)[0]
+		var fill: Color = Color(light, 0.35) if on else UiKit.PARCHMENT_LIGHT
 		var border: Color = UiKit.OUTLINE if on else Color(UiKit.WOOD_DARK, 0.35)
 		var b := _plain_button(UiKit.box(fill, border, 14, 3 if on else 2, false))
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -96,9 +93,9 @@ func _planet_picker() -> HBoxContainer:
 
 ## Описание дальней планеты.
 func _planet_card(p: String) -> PanelContainer:
-	var colors: Array = WorldGraph.planet_colors(p)
+	var dark: Color = WorldGraph.planet_colors(p)[1]
 	var card := PanelContainer.new()
-	var s := UiKit.box(Color(colors[1], 0.15), colors[1], 18, 3, false)
+	var s := UiKit.box(Color(dark, 0.15), dark, 18, 3, false)
 	s.set_content_margin_all(14)
 	card.add_theme_stylebox_override("panel", s)
 	var row := HBoxContainer.new()
@@ -347,9 +344,9 @@ func _expeditions_card() -> Control:
 		var clock := UiKit.icon("stopwatch", 14)
 		clock.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(clock)
-		row.add_child(CombatCards.LiveLabel.new(func() -> String:
-			return L.t("exp.nextTicket", [TraderPanel.countdown(next - Time.get_unix_time_from_system())]),
-			12, UiKit.INK_SOFT))
+		var left := func() -> String:
+			return L.t("exp.nextTicket", [TraderPanel.countdown(next - Time.get_unix_time_from_system())])
+		row.add_child(CombatCards.LiveLabel.new(left, 12, UiKit.INK_SOFT))
 		v.add_child(row)
 
 	var busy := p.expedition() != null or Game.dungeons.run != null
@@ -407,9 +404,9 @@ func _garden_card() -> Control:
 			v.add_child(UiKit.label(L.t("garden.chestReady"), 12, UiKit.TONES["orange"][2]))
 		else:
 			var until := float(at)
-			v.add_child(CombatCards.LiveLabel.new(func() -> String:
-				return L.t("garden.chestIn", [TraderPanel.countdown(until - Time.get_unix_time_from_system())]),
-				12, UiKit.INK_SOFT))
+			var left := func() -> String:
+				return L.t("garden.chestIn", [TraderPanel.countdown(until - Time.get_unix_time_from_system())])
+			v.add_child(CombatCards.LiveLabel.new(left, 12, UiKit.INK_SOFT))
 		if Game.current == "garden":
 			v.add_child(UiKit.label(L.t("map.here"), 14, UiKit.GOOD))
 		else:
@@ -652,9 +649,7 @@ class WorldGraphView extends Control:
 		shadow.bg_color = Color(UiKit.OUTLINE, 0.45)
 		shadow.set_corner_radius_all(12)
 		square.draw.connect(func() -> void: square.draw_style_box(shadow, Rect2(0, 3, SQUARE, SQUARE)))
-		var pic := GateCard.location_thumb(id, SQUARE, 26.0, 1.0 if unlocked else 0.0, false)
-		if not unlocked:
-			pic.get_child(0).modulate.a = 0.6
+		var pic := GateCard.location_thumb(id, SQUARE, 26.0, 1.0 if unlocked else 0.0, false, 1.0 if unlocked else 0.6)
 		square.add_child(pic)
 		var over := Control.new()
 		over.size = Vector2(SQUARE, SQUARE)
@@ -672,7 +667,7 @@ class WorldGraphView extends Control:
 		outer.set_border_width_all(2)
 		outer.set_corner_radius_all(14)
 		outer.anti_aliasing = true
-		var face := LevelPanel.portrait(str(Game.save.get("skin", "farmer"))) if here else null
+		var face: Texture2D = LevelPanel.portrait(str(Game.save.get("skin", "farmer"))) if here else null
 		var key := Sprites.icon("key")
 		over.draw.connect(func() -> void:
 			var r := Rect2(0, 0, SQUARE, SQUARE)

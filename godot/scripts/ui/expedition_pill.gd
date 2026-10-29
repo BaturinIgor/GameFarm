@@ -47,7 +47,7 @@ func _build() -> void:
 	_row.add_child(_time)
 	var leave := UiKit.button(L.t("exp.leave"), "red", 13, true)
 	leave.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	leave.pressed.connect(ExpeditionPill.confirm_leave)
+	leave.pressed.connect(func() -> void: ExpeditionPill.confirm_leave())
 	_row.add_child(leave)
 
 

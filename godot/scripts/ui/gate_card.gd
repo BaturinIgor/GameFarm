@@ -79,8 +79,10 @@ func _wrap(text: String, font_size: int, color: Color) -> Label:
 	return l
 
 
-## Квадратная картинка локации с её иконкой посередине (как на схеме мира). outline - тёмная обводка.
-static func location_thumb(id: String, side: float, icon_side := 26.0, saturation := 1.0, outline := true) -> Control:
+## Квадратная картинка локации с её иконкой посередине (как на схеме мира). outline - тёмная обводка,
+## saturation и pic_alpha - насыщенность и прозрачность (закрытая локация - серая и бледная).
+static func location_thumb(id: String, side: float, icon_side := 26.0, saturation := 1.0, outline := true,
+		pic_alpha := 1.0) -> Control:
 	var box := Control.new()
 	box.custom_minimum_size = Vector2(side, side)
 	box.size = Vector2(side, side)
@@ -91,6 +93,7 @@ static func location_thumb(id: String, side: float, icon_side := 26.0, saturatio
 	pic.stretch_mode = TextureRect.STRETCH_SCALE
 	pic.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	pic.size = Vector2(side, side)
+	pic.modulate.a = pic_alpha
 	pic.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(pic)
 	var ic := UiKit.icon(Locations.icon(id), icon_side)

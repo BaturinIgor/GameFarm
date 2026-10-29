@@ -67,7 +67,9 @@ func refresh_text() -> void:
 	elif royal:
 		_tag.text = "👑"
 	else:
-		_tag.text = "🔒 " + L.t("common.lvl", [Locations.spec(to)["level"]])
+		var g := WorldGraph.gate(gate_id)
+		var lvl: int = WorldGraph.level(g) if not g.is_empty() else int(Locations.spec(to)["level"])
+		_tag.text = "🔒 " + L.t("common.lvl", [lvl])
 
 
 func set_open(open: bool) -> void:
