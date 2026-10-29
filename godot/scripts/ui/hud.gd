@@ -20,6 +20,7 @@ static var current: Hud
 var root := Control.new()
 var _prompts := VBoxContainer.new()
 var _prompt_cards: Dictionary = {}
+var _overlay_layer := CanvasLayer.new()
 var _badges: Dictionary = {}
 var _level_label: Label
 var _level_name: Label
@@ -219,6 +220,15 @@ func open_named(id: String) -> void:
 		if w[0] == id and ResourceLoader.exists(w[3]):
 			open_window(load(w[3]).new())
 			return
+
+
+## Полноэкранная заставка поверх окон (новый уровень, доход за время без игры, клад).
+## Заставка сама убирает себя через queue_free().
+func show_overlay(c: Control) -> void:
+	if _overlay_layer.get_parent() == null:
+		_overlay_layer.layer = 20
+		add_child(_overlay_layer)
+	_overlay_layer.add_child(c)
 
 
 ## Показать карточку-подсказку над кнопками (null - убрать). Одна карточка на ключ.
