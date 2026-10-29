@@ -20,6 +20,7 @@ func _ready() -> void:
 	add_child(hud)
 	# Звери-производители работали, пока игры не было
 	OfflineOverlay.check()
+	CalendarPanel.check()
 
 	var fade_layer := CanvasLayer.new()
 	fade_layer.layer = 50
@@ -43,3 +44,4 @@ func _ready() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_RESUMED:
 		OfflineOverlay.check()
+		CalendarPanel.check()

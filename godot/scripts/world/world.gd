@@ -8,6 +8,7 @@ const PLAYER_RADIUS := 11.0
 const FEATURES: Array[String] = [
 	"res://scripts/world/features/animals_feature.gd",
 	"res://scripts/world/features/treasure_feature.gd",
+	"res://scripts/world/features/home_feature.gd",
 ]
 
 @export var joystick: Joystick
