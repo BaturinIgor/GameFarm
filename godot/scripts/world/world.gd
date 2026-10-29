@@ -250,6 +250,7 @@ func _process(delta: float) -> void:
 	if not _transitioning and loaded != Game.current:
 		_transition(Game.current)
 	var stats := Game.stats
+	_sync_skin()
 	if not _transitioning:
 		_move_player(dt, stats)
 		_gather(dt, stats)
@@ -266,6 +267,16 @@ func _process(delta: float) -> void:
 	if _save_timer > 5.0:
 		_save_timer = 0.0
 		Game.save_if_needed()
+
+
+## Образ героя сменили (гардероб, перерождение): искры и новый лист.
+func _sync_skin() -> void:
+	var skin := Skins.current()
+	if player.skin == skin:
+		return
+	if player.skin != "":
+		Fx.scatter(fx, player.position - Vector2(0, 24), 8, Color.WHITE, Sprites.icon("spark"), 12.0, 36.0, 20.0)
+	player.set_skin(skin)
 
 
 func _transition(id: String) -> void:

@@ -35,6 +35,7 @@ func build() -> void:
 	_bonuses_card()
 	_upcoming_card()
 	_stats_card()
+	content.add_child(LegacyPanel.profile_card())
 	_settings_card()
 
 
@@ -140,7 +141,7 @@ func _progress_card() -> void:
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	avatar.add_child(frame)
 	var face := TextureRect.new()
-	face.texture = portrait(str(Game.save.get("skin", "farmer")))
+	face.texture = portrait(Skins.current())
 	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	face.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -496,6 +497,8 @@ func _settings_card() -> void:
 		if code != L.code:
 			L.set_language(code))
 	row.add_child(pick)
+	c.add_child(_divider())
+	c.add_child(WardrobePanel.profile_row())
 
 
 # MARK: Элементы

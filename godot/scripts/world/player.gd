@@ -32,7 +32,7 @@ func _ready() -> void:
 	root.add_child(body)
 	body.centered = false
 	body.scale = Vector2.ONE * Sprites.SCALE
-	set_skin(str(Game.save.get("skin", "farmer")))
+	set_skin(Skins.current())
 
 
 func set_skin(name: String) -> void:
