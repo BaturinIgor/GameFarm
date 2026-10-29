@@ -1237,10 +1237,15 @@ final class GameScene: SKScene {
         }
     }
 
+    /// Счётчики для суперталантов: каждый 4-й удар и каждая 10-я добыча.
+    private var titanHits = 0
+    private var cornucopiaCount = 0
+
     private func hitOnce(_ spot: ResourceSpot, _ stats: Stats) {
         var damage = game.damage(against: spot.spec)
         var crit = false
-        if Double.random(in: 0..<1) < stats.critChance {
+        if stats.titan { titanHits += 1 }
+        if (stats.titan && titanHits % 4 == 0) || Double.random(in: 0..<1) < stats.critChance {
             damage *= stats.critMult
             crit = true
         }
@@ -1293,7 +1298,11 @@ final class GameScene: SKScene {
     private func harvest(_ spot: ResourceSpot, byHelper: Bool) {
         let stats = game.stats
         let roll = Double.random(in: 0..<1)
-        let multiplier = roll < stats.tripleChance ? 3 : (roll < stats.tripleChance + stats.doubleChance ? 2 : 1)
+        var multiplier = roll < stats.tripleChance ? 3 : (roll < stats.tripleChance + stats.doubleChance ? 2 : 1)
+        if stats.cornucopia && !byHelper {
+            cornucopiaCount += 1
+            if cornucopiaCount % 10 == 0 { multiplier = 3 }
+        }
         let luck = game.luckActive ? 2 : 1
         let direct = game.inExpedition
         let bonus = direct ? Expedition.yieldBonus(spec.id) : 1

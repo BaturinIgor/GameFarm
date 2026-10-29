@@ -230,7 +230,7 @@ final class GameState {
                 .sorted { $0.value > $1.value }.prefix(keep).map(\.key)
             for id in best {
                 save.animals[id] = 1
-                if save.active.count < GameRules.maxActiveAnimals { save.active.append(id) }
+                if save.active.count < maxActive { save.active.append(id) }
             }
         }
         refreshReachable()
@@ -276,7 +276,7 @@ final class GameState {
             return sum + (best >= 5 ? 1 : 0) + (best >= 10 ? 1 : 0)
         }
     }
-    var talentPointsSpent: Int { save.talents.values.reduce(0, +) }
+    var talentPointsSpent: Int { save.talents.reduce(0) { $0 + $1.value * $1.key.spec.cost } }
     var talentPointsFree: Int { max(0, talentPointsTotal - talentPointsSpent) }
 
     func gainXP(_ base: Int) {
@@ -497,12 +497,18 @@ final class GameState {
 
     func talentAvailable(_ id: TalentID) -> Bool {
         let spec = id.spec
-        return save.level >= spec.requiredLevel && spec.parents.allSatisfy { rank($0) > 0 }
+        guard save.level >= spec.requiredLevel else { return false }
+        // Суперталант открывается, только когда все родители прокачаны до конца.
+        if spec.isSuper { return spec.parents.allSatisfy { rank($0) >= $0.spec.maxRank } }
+        return spec.parents.allSatisfy { rank($0) > 0 }
     }
 
     func canLearn(_ id: TalentID) -> Bool {
-        talentPointsFree > 0 && rank(id) < id.spec.maxRank && talentAvailable(id)
+        talentPointsFree >= id.spec.cost && rank(id) < id.spec.maxRank && talentAvailable(id)
     }
+
+    /// Сколько зверей можно взять с собой: суперталант "Повелитель зверей" даёт ещё одно место.
+    var maxActive: Int { GameRules.maxActiveAnimals + (rank(.beastLord) > 0 ? 1 : 0) }
 
     @discardableResult
     func learn(_ id: TalentID) -> Bool {
@@ -514,7 +520,7 @@ final class GameState {
     }
 
     func pointsSpent(in branch: TalentBranch) -> Int {
-        branch.talents.reduce(0) { $0 + rank($1) }
+        branch.talents.reduce(0) { $0 + rank($1) * $1.spec.cost }
     }
 
     var respecCost: Int { GameRules.respecCost(save.level) }
@@ -524,6 +530,7 @@ final class GameState {
         guard talentPointsSpent > 0, save.coins >= respecCost else { return false }
         save.coins -= respecCost
         save.talents = [:]
+        if save.active.count > maxActive { save.active = Array(save.active.prefix(maxActive)) }
         recalc()
         markDirty()
         return true
@@ -573,7 +580,7 @@ final class GameState {
         save.animals[id] = min(AnimalSpec.maxStars, stars(id) + count)
         progressQuests(.tame, amount: 1)
         if isNew {
-            if save.active.count < GameRules.maxActiveAnimals {
+            if save.active.count < maxActive {
                 save.active.append(id)
                 toast("an:" + id.rawValue, tr("toast.animalJoined", id.spec.name))
             } else {
@@ -593,7 +600,7 @@ final class GameState {
         if let index = save.active.firstIndex(of: id) {
             save.active.remove(at: index)
         } else {
-            guard stars(id) > 0, save.active.count < GameRules.maxActiveAnimals else { return false }
+            guard stars(id) > 0, save.active.count < maxActive else { return false }
             save.active.append(id)
         }
         recalc()
@@ -1179,6 +1186,10 @@ final class GameState {
         s.quakePower = 0.4 * (1 + 0.25 * r(.shockwave))
         s.quakeRadius = 110 * (1 + 0.25 * r(.shockwave))
         s.toolBonus = r(.toolMaster) > 0 ? 1 : 0
+        // Суперталант "Титан" и ряд за ним
+        s.titan = r(.titan) > 0
+        s.damageMult *= (r(.titan) > 0 ? 1.25 : 1) * (1 + 0.1 * r(.mountainBreaker))
+        s.critMult += 0.25 * r(.keenEdge)
 
         s.yieldAll = 0.1 * r(.bounty) + 0.06 * r(.fertile) + (r(.abundance) > 0 ? 0.1 : 0)
             + (owns(.garden) ? RoyalGarden.capybaraYield : 0)
@@ -1192,6 +1203,16 @@ final class GameState {
         s.finderChance = 0.04 * r(.finder)
         s.gemChance = 0.015 * r(.gemFinder)
         s.goldenTouch = r(.goldenTouch) > 0
+        // Суперталант "Рог изобилия" и ряд за ним
+        s.cornucopia = r(.cornucopia) > 0
+        s.yieldAll += r(.cornucopia) > 0 ? 0.15 : 0
+        s.tripleChance += 0.02 * r(.fortune)
+        s.yieldCategory[.food, default: 0] += 0.12 * r(.forager)
+        s.yieldCategory[.wood, default: 0] += 0.12 * r(.forager)
+        let motherlode = 0.12 * r(.motherlode)
+        s.yieldCategory[.stone, default: 0] += motherlode
+        s.yieldCategory[.ore, default: 0] += motherlode
+        s.yieldCategory[.gem, default: 0] += motherlode
         s.goldMult = 1 + 0.5 * r(.goldRush)
         let jeweler = 0.15 * r(.jeweler)
         s.sellCategory[.ore] = jeweler
@@ -1202,18 +1223,20 @@ final class GameState {
         s.depositRadius = 92 * (1 + 0.3 * r(.depotReach))
         s.tameMult = (1 - 0.15 * r(.tamer)) * (1 - 0.1 * r(.catcher))
         s.shopMult = 1 - 0.08 * r(.bargain)
-        s.spawnMult = (1 + 0.25 * r(.tamer)) * (1 + 0.2 * r(.tracker))
+        s.spawnMult = (1 + 0.25 * r(.tamer)) * (1 + 0.2 * r(.tracker)) * (1 + 0.12 * r(.pathfinder))
+        s.keepPack = r(.windwalker) > 0
         s.storekeeperXP = Int(r(.storekeeper))
         s.discount = 1 - 0.07 * r(.thrift)
         s.autoDeposit = r(.portal) > 0 || hasPro
 
         s.animalMult = (1 + 0.12 * r(.beastBond) + 0.05 * r(.animalFriend)) * (r(.soul) > 0 ? 1.3 : 1)
-        s.helperMult = (1 + 0.25 * r(.packLeader)) * (1 + 0.1 * r(.alpha))
+        s.animalMult *= 1 + 0.05 * r(.kinship)
+        s.helperMult = (1 + 0.25 * r(.packLeader)) * (1 + 0.1 * r(.alpha)) * (1 + 0.1 * r(.packHunt))
         s.helperSpeed = 1 + 0.08 * r(.training)
         s.helperRange = 260 * (1 + 0.2 * r(.keenEye))
         s.helperTierBonus = Int(r(.packTier))
         s.helperYield = 1 + 0.15 * r(.beastLoot)
-        s.producerMult = (1 + 0.2 * r(.nightShift)) * (1 + 0.1 * r(.herdsman))
+        s.producerMult = (1 + 0.2 * r(.nightShift)) * (1 + 0.1 * r(.herdsman)) * (1 + 0.1 * r(.herd))
         s.doubleProductChance = 0.08 * r(.rancher)
         s.offlineHours = (hasPro ? Premium.proOfflineHours : 6) + 2 * r(.pasture)
         s.starStep = 0.25 + 0.05 * r(.starFood)
@@ -1232,6 +1255,14 @@ final class GameState {
         s.seedMult = 1 - 0.1 * r(.seedTrader)
         s.goldenHarvest = r(.goldenHarvest) > 0
         s.harvestXPMult = r(.harvestMoon) > 0 ? 2 : 1
+        // Суперталант "Хозяин земли" и ряд за ним
+        if r(.landlord) > 0 {
+            s.growMult /= 1.25
+            s.extraCropChance += 0.2
+        }
+        s.yieldCategory[.crop, default: 0] += 0.12 * r(.richSoil)
+        s.mealMult *= 1 + 0.1 * r(.gourmet)
+        s.sellCategory[.crop, default: 0] += 0.1 * r(.fairTrade)
 
         // Бой
         let warlord = r(.warlord) > 0 ? 0.15 : 0
@@ -1246,6 +1277,15 @@ final class GameState {
         s.lastStand = r(.lastStand) > 0
         s.dungeonBonus = 0.1 * r(.delver)
         s.regen = 0.005 * r(.regen)
+        // Суперталант "Чемпион" и ряд за ним
+        if r(.champion) > 0 {
+            s.weaponMult *= 1.2
+            s.hpMult *= 1.2
+            s.killHeal = 0.04
+        }
+        s.defenseBonus += 0.03 * r(.fortress)
+        s.bossBonus += 0.1 * r(.executioner)
+        s.lifesteal += 0.01 * r(.bloodlust)
 
         // Наследие: вечные бонусы за перерождения.
         func legacy(_ perk: LegacyPerk) -> Double { Double(legacyRank(perk)) * perk.perRank }
@@ -1292,7 +1332,8 @@ final class GameState {
         var critBonus = 0.05 * r(.crit) + legacy(.luck)
         var respawnBonus = 0.08 * r(.regrowth) + (r(.abundance) > 0 ? 0.5 : 0) + legacy(.growth)
         var xpBonus = 0.1 * r(.scholar) + 0.06 * r(.sage) + legacy(.wisdom) + cozy + meal.xp + constellationBonus(.sky)
-        var sellBonus = 0.08 * r(.trader) + legacy(.merchant) + meal.sell
+            + 0.08 * r(.enlightened)
+        var sellBonus = 0.08 * r(.trader) + legacy(.merchant) + meal.sell + 0.06 * r(.haggler)
         speedBonus += meal.speed
         critBonus += meal.crit
         s.animalMult *= 1 + meal.animals
@@ -1347,7 +1388,9 @@ final class GameState {
         }
 
         let strider = r(.strider) > 0 ? 1.25 : 1
-        capacity *= (1 + 0.1 * r(.packMaster)) * strider
+        let windwalker = r(.windwalker) > 0
+        capacity *= (1 + 0.1 * r(.packMaster)) * strider * (1 + 0.08 * r(.hauler)) * (windwalker ? 1.2 : 1)
+        if windwalker { speedBonus += 0.15 }
         s.speed = GameRules.baseSpeed * (1 + speedBonus) * strider
         s.critChance = min(0.75, critBonus)
         s.respawnMult = 1 / (1 + respawnBonus)
@@ -2032,7 +2075,8 @@ extension GameState {
     /// Герой упал без сил: просыпается у склада и теряет часть рюкзака (немного).
     func faint() -> Int {
         var lost = 0
-        for (kind, n) in save.backpack {
+        // Суперталант "Странник ветров": рюкзак при обмороке не теряется.
+        for (kind, n) in save.backpack where !stats.keepPack {
             let drop = n * 15 / 100
             if drop > 0 {
                 save.backpack[kind] = n - drop
@@ -2261,6 +2305,7 @@ extension GameState {
             noteDungeonKill(coins: st.coins, essence: essence)
         }
         gainXP(st.xp)
+        if stats.killHeal > 0 { heal(stats.killHeal) }
         rollCard(for: kind)
         if inEvent {
             if boss { eventBossDefeated() } else { addEventPoints(eventPoints(for: kind, boss: false)) }

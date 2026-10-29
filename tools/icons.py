@@ -671,6 +671,87 @@ def talent_icons():
     }
 
 
+# ---------------------------------------------------------------- суперталанты
+
+
+def super_titan():
+    """Золотой кулак с искрами."""
+    c = Canvas(16, 16)
+    c.rect(4, 5, 12, 11, "gold")
+    c.rect(5, 11, 11, 14, "gold")
+    c.rect(3, 7, 4, 10, "gold")
+    im = c.render()
+    p = im.load()
+    for x in (7, 10):
+        for y in range(6, 9):
+            p[x, y] = hexc("#c98a1b")
+    for x in range(5, 12):
+        p[x, 9] = hexc("#c98a1b")
+    return px(im, [(1, 2), (2, 3), (14, 2), (13, 3), (1, 13), (14, 12), (8, 1), (8, 2)], "#ffffff")
+
+
+def super_cornucopia():
+    """Рог изобилия с фруктами."""
+    c = Canvas(16, 16)
+    c.curve([(1, 14), (3, 9), (8, 7)], "gold", 2, 4)
+    c.disc(10, 6, 3.2, "gold")
+    c.disc(10, 5, 1.8, "red")
+    c.disc(13, 7, 1.8, "green2")
+    c.disc(12, 3, 1.6, "purple2")
+    c.disc(8, 3.5, 1.4, "banana")
+    return c.render()
+
+
+def super_windwalker():
+    """Золотой сапог с крылом."""
+    c = Canvas(16, 16)
+    poly(c, [(0, 2), (4, 0), (8, 1), (8, 9), (5, 10), (1, 7), (3, 5)], "feather")
+    c.rect(6, 2, 10, 11, "gold")
+    c.rect(6, 9, 15, 13, "gold")
+    im = c.render()
+    p = im.load()
+    for x in range(6, 16):
+        p[x, 14] = hexc("#9c4a00")
+    return px(im, [(2, 2), (3, 2), (4, 2), (3, 4), (4, 4), (4, 6), (5, 6)], "#8b9bb4")
+
+
+def super_beastLord():
+    """Лапа с короной."""
+    c = Canvas(16, 16)
+    poly(c, [(4, 5), (4, 0), (6, 2), (8, 0), (10, 2), (12, 0), (12, 5)], "gold")
+    c.ellipse(8, 12.6, 3.6, 2.6, "wood2")
+    for cx, cy in ((2.4, 10), (5.4, 7.9), (10.6, 7.9), (13.6, 10)):
+        c.disc(cx, cy, 1.3, "wood2")
+    im = c.render()
+    return px(im, [(8, 3), (6, 3), (10, 3)], "#c42430")
+
+
+def super_landlord():
+    """Дерево с золотыми яблоками."""
+    c = Canvas(16, 16)
+    c.rect(7, 10, 9, 14, "wood2")
+    c.rect(2, 14, 13, 15, "soil")
+    c.disc(8, 6, 5.6, "green2")
+    im = c.render()
+    return px(im, [(5, 4), (10, 3), (11, 7), (6, 8), (8, 6)], "#ffc825")
+
+
+def super_champion():
+    """Золотой щит со звездой."""
+    c = Canvas(16, 16)
+    poly(c, [(1, 1), (15, 1), (15, 8), (8, 15), (1, 8)], "gold")
+    poly(c, [(8, 3), (9, 6), (12, 6), (10, 8), (11, 11), (8, 9), (5, 11), (6, 8), (4, 6), (7, 6)], "red")
+    return c.render()
+
+
+def super_icons():
+    return {
+        "super_titan": super_titan(), "super_cornucopia": super_cornucopia(),
+        "super_windwalker": super_windwalker(), "super_beastLord": super_beastLord(),
+        "super_landlord": super_landlord(), "super_champion": super_champion(),
+    }
+
+
 def icons():
     return {
         "door": door(), "stairs": stairs(), "trophy": trophy(), "plan": plan(), "bed": bed(),
@@ -684,4 +765,5 @@ def icons():
         "hourglass": hourglass(), "heart_plus": heart_plus(), "crown": crown(), "coins": coin_stack(),
         "scroll2": scroll(), "star": star(), "gem": gem(), "stopwatch": stopwatch(), "sun": sun(),
         **talent_icons(),
+        **super_icons(),
     }

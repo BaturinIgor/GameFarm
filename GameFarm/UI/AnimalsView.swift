@@ -58,10 +58,10 @@ struct AnimalsView: View {
 
     private var slots: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(tr("animals.withYou", game.save.active.count, GameRules.maxActiveAnimals))
+            Text(tr("animals.withYou", game.save.active.count, game.maxActive))
                 .font(.game(14, .semibold).bold())
             HStack(spacing: 8) {
-                ForEach(0..<GameRules.maxActiveAnimals, id: \.self) { i in
+                ForEach(0..<game.maxActive, id: \.self) { i in
                     let id = i < game.save.active.count ? game.save.active[i] : nil
                     Button {
                         if let id {
@@ -183,7 +183,7 @@ struct AnimalRow: View {
                 }
             }
             let active = game.isActive(id)
-            let full = game.save.active.count >= GameRules.maxActiveAnimals
+            let full = game.save.active.count >= game.maxActive
             Button {
                 withAnimation(.spring(duration: 0.3)) { _ = game.toggleActive(id) }
             } label: {

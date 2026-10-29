@@ -191,6 +191,11 @@ struct Stats {
     var lastStand = false
     var dungeonBonus = 0.0
     var regen = 0.0
+    // Суперталанты
+    var titan = false
+    var cornucopia = false
+    var keepPack = false
+    var killHeal = 0.0
 
     func yieldMultiplier(for kind: ResourceKind) -> Double {
         1 + yieldAll + (yieldCategory[kind.category] ?? 0) + (yieldKind[kind] ?? 0)

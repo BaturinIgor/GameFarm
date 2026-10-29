@@ -123,15 +123,14 @@ struct TalentTreeCanvas: View {
     }
 
     /// Линия между талантами идёт от края круга до края круга, а не через центр.
-    private func edgePoints(from a: CGPoint, to b: CGPoint) -> (CGPoint, CGPoint) {
+    private func edgePoints(from a: CGPoint, to b: CGPoint, ra: CGFloat, rb: CGFloat) -> (CGPoint, CGPoint) {
         let dx = b.x - a.x
         let dy = b.y - a.y
         let d = max(hypot(dx, dy), 1)
-        let r = TalentNode.radius + 3
-        guard d > r * 2 else { return (a, a) }
+        guard d > ra + rb + 6 else { return (a, a) }
         let ux = dx / d
         let uy = dy / d
-        return (CGPoint(x: a.x + ux * r, y: a.y + uy * r), CGPoint(x: b.x - ux * r, y: b.y - uy * r))
+        return (CGPoint(x: a.x + ux * (ra + 3), y: a.y + uy * (ra + 3)), CGPoint(x: b.x - ux * (rb + 3), y: b.y - uy * (rb + 3)))
     }
 
     var body: some View {
@@ -155,13 +154,15 @@ struct TalentTreeCanvas: View {
 
             ForEach(talents) { id in
                 ForEach(id.spec.parents, id: \.self) { parent in
-                    let active = game.rank(parent) > 0
-                    let ends = edgePoints(from: position(parent.spec), to: position(id.spec))
+                    // К суперталанту линия загорается, только когда родитель прокачан до конца.
+                    let active = id.spec.isSuper ? game.rank(parent) >= parent.spec.maxRank : game.rank(parent) > 0
+                    let ends = edgePoints(from: position(parent.spec), to: position(id.spec),
+                                          ra: TalentNode.nodeRadius(parent.spec), rb: TalentNode.nodeRadius(id.spec))
                     Path { path in
                         path.move(to: ends.0)
                         path.addLine(to: ends.1)
                     }
-                    .stroke(active ? branch.color : Palette.inkSoft.opacity(0.3),
+                    .stroke(active ? (id.spec.isSuper ? Palette.gold : branch.color) : Palette.inkSoft.opacity(0.3),
                             style: StrokeStyle(lineWidth: active ? 4 : 3, lineCap: .round, dash: active ? [] : [6, 6]))
                 }
             }
@@ -186,34 +187,48 @@ struct TalentNode: View {
 
     static let radius: CGFloat = 30
 
+    /// Суперталанты крупнее обычных.
+    static func nodeRadius(_ spec: TalentSpec) -> CGFloat { spec.isSuper ? 38 : radius }
+
     var body: some View {
         let spec = id.spec
         let rank = game.rank(id)
         let available = game.talentAvailable(id)
         let learnable = game.canLearn(id)
         let maxed = rank >= spec.maxRank
+        let radius = Self.nodeRadius(spec)
+        // У суперталанта золотое кольцо, у обычного - цвета ветки
+        let ring = spec.isSuper ? Palette.gold : color
         Button(action: action) {
             // Центр круга совпадает с точкой узла, подпись ранга висит под кругом и не сдвигает его.
             ZStack {
+                    if spec.isSuper {
+                        Circle()
+                            .fill(RadialGradient(colors: [Palette.gold.opacity(available ? 0.55 : 0.25), .clear],
+                                                 center: .center, startRadius: radius * 0.6, endRadius: radius * 1.35))
+                            .frame(width: radius * 2.7, height: radius * 2.7)
+                    }
                     // Медальон: тень, каменное кольцо цвета ветки, тёмная или светлая середина
                     Circle()
                         .fill(Palette.woodDark.opacity(0.4))
                         .offset(y: 3)
                     Circle()
-                        .fill(LinearGradient(colors: rank > 0 ? [color.mix(with: .white, by: 0.25), color.mix(with: .black, by: 0.25)]
-                                                              : [Color(hex: 0x8A7A66), Color(hex: 0x5E5040)],
+                        .fill(LinearGradient(colors: rank > 0 || spec.isSuper
+                                                ? [ring.mix(with: .white, by: 0.25), ring.mix(with: .black, by: 0.25)]
+                                                : [Color(hex: 0x8A7A66), Color(hex: 0x5E5040)],
                                              startPoint: .top, endPoint: .bottom))
                     Circle()
                         .fill(RadialGradient(colors: rank > 0 ? [Color(hex: 0xFFF6DC), color.mix(with: .white, by: 0.6)]
                                                               : [Color(hex: 0x4A4034), Color(hex: 0x2E2820)],
-                                             center: .center, startRadius: 2, endRadius: Self.radius))
-                        .padding(6)
+                                             center: .center, startRadius: 2, endRadius: radius))
+                        .padding(spec.isSuper ? 8 : 6)
                     Circle()
                         .strokeBorder(Palette.outline, lineWidth: 2)
-                        .padding(6)
+                        .padding(spec.isSuper ? 8 : 6)
                     Circle()
-                        .strokeBorder(isSelected ? Palette.gold : Palette.outline, lineWidth: isSelected ? 3 : 2)
-                    PixelIcon(name: spec.icon, size: 30)
+                        .strokeBorder(isSelected ? (spec.isSuper ? Color.white : Palette.gold) : Palette.outline,
+                                      lineWidth: isSelected ? 3 : 2)
+                    PixelIcon(name: spec.icon, size: spec.isSuper ? 38 : 30)
                         .grayscale(available ? 0 : 1)
                         .opacity(available || rank > 0 ? 1 : 0.7)
                     if !available {
@@ -223,7 +238,7 @@ struct TalentNode: View {
                             .padding(4)
                             .background(Circle().fill(Palette.woodDark))
                             .overlay(Circle().strokeBorder(Palette.outline, lineWidth: 1.5))
-                            .offset(x: 20, y: -20)
+                            .offset(x: radius * 0.67, y: -radius * 0.67)
                     } else if learnable {
                         Image(systemName: "plus")
                             .font(.game(11, .heavy))
@@ -231,16 +246,29 @@ struct TalentNode: View {
                             .padding(4)
                             .background(Circle().fill(ButtonTone.green.base))
                             .overlay(Circle().strokeBorder(Palette.outline, lineWidth: 1.5))
-                            .offset(x: 20, y: -20)
+                            .offset(x: radius * 0.67, y: -radius * 0.67)
+                    }
+                    if spec.isSuper {
+                        // Цена в очках слева сверху
+                        HStack(spacing: 1) {
+                            Image(systemName: "star.fill").font(.system(size: 8, weight: .black))
+                            Text("\(spec.cost)").font(.game(11, .heavy))
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(ButtonTone.orange.base))
+                        .overlay(Capsule().strokeBorder(Palette.outline, lineWidth: 1.5))
+                        .offset(x: -radius * 0.72, y: -radius * 0.72)
                     }
                 }
-                .frame(width: Self.radius * 2, height: Self.radius * 2)
+                .frame(width: radius * 2, height: radius * 2)
                 .overlay(alignment: .bottom) {
-                    Text("\(rank)/\(spec.maxRank)")
+                    Text(spec.isSuper ? tr("talents.super") : "\(rank)/\(spec.maxRank)")
                         .font(.game(11, .heavy))
                         .padding(.horizontal, 7)
                         .padding(.vertical, 2)
-                        .background(Capsule().fill(maxed ? color : Palette.parchmentLight))
+                        .background(Capsule().fill(maxed ? ring : Palette.parchmentLight))
                         .overlay(Capsule().strokeBorder(Palette.outline, lineWidth: 1.5))
                         .foregroundStyle(maxed ? Color.white : Palette.ink)
                         .fixedSize()
@@ -268,11 +296,17 @@ struct TalentDetail: View {
                     .overlay(Circle().strokeBorder(Palette.outline, lineWidth: 2))
                 VStack(alignment: .leading, spacing: 1) {
                     Text(spec.name).font(.game(16))
-                    Text(tr("talents.rank", rank, spec.maxRank))
+                    Text(spec.isSuper ? tr("talents.superCost", spec.cost) : tr("talents.rank", rank, spec.maxRank))
                         .font(.game(12, .semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(spec.isSuper ? ButtonTone.orange.lip : .secondary)
                 }
                 Spacer()
+            }
+            if spec.isSuper && rank == 0 {
+                Text(tr("talents.superHint"))
+                    .font(.game(11, .semibold))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             if rank > 0 {
                 Text(tr("talents.now", spec.effect(at: rank)))
@@ -292,7 +326,11 @@ struct TalentDetail: View {
                         }
                     }
                 } label: {
-                    Text(game.talentPointsFree > 0 ? tr("talents.learn") : tr("talents.noPoints"))
+                    if spec.cost > 1 {
+                        Text(game.talentPointsFree >= spec.cost ? tr("talents.learnFor", spec.cost) : tr("talents.needPoints", spec.cost))
+                    } else {
+                        Text(game.talentPointsFree > 0 ? tr("talents.learn") : tr("talents.noPoints"))
+                    }
                 }
                 .buttonStyle(.game(.green, wide: true))
                 .disabled(!game.canLearn(id))
@@ -305,14 +343,20 @@ struct TalentDetail: View {
     @ViewBuilder
     private func requirements(_ spec: TalentSpec) -> some View {
         let levelOK = game.save.level >= spec.requiredLevel
-        let missing = spec.parents.filter { game.rank($0) == 0 }
+        let missing = spec.isSuper ? spec.parents.filter { game.rank($0) < $0.spec.maxRank }
+                                   : spec.parents.filter { game.rank($0) == 0 }
         if !levelOK || !missing.isEmpty {
             VStack(alignment: .leading, spacing: 3) {
                 if !levelOK {
                     Label(tr("common.needLevel", spec.requiredLevel), systemImage: "lock.fill")
                 }
                 ForEach(missing, id: \.self) { parent in
-                    Label(tr("talents.needParent", parent.spec.name), systemImage: "arrow.up.circle")
+                    if spec.isSuper {
+                        Label(tr("talents.needMax", parent.spec.name, game.rank(parent), parent.spec.maxRank),
+                              systemImage: "arrow.up.circle")
+                    } else {
+                        Label(tr("talents.needParent", parent.spec.name), systemImage: "arrow.up.circle")
+                    }
                 }
             }
             .font(.game(12))

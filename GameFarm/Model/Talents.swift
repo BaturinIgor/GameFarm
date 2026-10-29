@@ -48,6 +48,13 @@ enum TalentID: String, CaseIterable, Identifiable {
     // Бой
     case toughness, bladeMaster, stance, vampirism, evasion, alchemist, berserk, bossSlayer, lastStand
     case delver, regen, warlord
+    // Суперталанты и ряды за ними
+    case titan, keenEdge, mountainBreaker, motherlode
+    case cornucopia, fortune, forager, enlightened
+    case windwalker, haggler, pathfinder, hauler
+    case beastLord, herd, packHunt, kinship
+    case landlord, richSoil, gourmet, fairTrade
+    case champion, fortress, executioner, bloodlust
 
     var id: String { rawValue }
     var spec: TalentSpec { TalentSpec.table[self]! }
@@ -65,11 +72,19 @@ struct TalentSpec {
     let parents: [TalentID]
     let perRank: Double
     let unit: Unit
+    /// Сколько очков стоит один ранг. У суперталантов больше одного.
+    var cost: Int = 1
 
     var name: String { tr("talent.\(id.rawValue)") }
 
+    /// Суперталант: дорогой, открывается, только когда родители прокачаны до максимума,
+    /// и ведёт к следующему ряду ветки.
+    var isSuper: Bool { cost > 1 }
+
     /// Уровень персонажа, с которого открывается ряд дерева.
-    static let tierLevels = [1, 3, 6, 10, 15, 22, 30, 40, 50]
+    static let tierLevels = [1, 3, 6, 10, 15, 21, 28, 35, 42, 48, 55]
+
+    static let superCost = 3
 
     var requiredLevel: Int { Self.tierLevels[tier] }
 
@@ -263,7 +278,62 @@ struct TalentSpec {
             TalentSpec(id: .regen, branch: .combat, icon: "heart_plus", maxRank: 3, tier: 6, column: 2,
                        parents: [.bossSlayer], perRank: 0.005, unit: .percent),
             TalentSpec(id: .warlord, branch: .combat, icon: "crown", maxRank: 1, tier: 7, column: 1,
-                       parents: [.lastStand], perRank: 1, unit: .flag)
+                       parents: [.lastStand], perRank: 1, unit: .flag),
+
+            // Суперталанты: родители должны быть прокачаны до максимума
+            TalentSpec(id: .titan, branch: .mining, icon: "super_titan", maxRank: 1, tier: 9, column: 1,
+                       parents: [.execute, .toolMaster, .tireless], perRank: 1, unit: .flag, cost: superCost),
+            TalentSpec(id: .keenEdge, branch: .mining, icon: "flame", maxRank: 3, tier: 10, column: 0,
+                       parents: [.titan], perRank: 0.25, unit: .percent),
+            TalentSpec(id: .mountainBreaker, branch: .mining, icon: "tool_hammer", maxRank: 3, tier: 10, column: 1,
+                       parents: [.titan], perRank: 0.1, unit: .percent),
+            TalentSpec(id: .motherlode, branch: .mining, icon: "gold", maxRank: 3, tier: 10, column: 2,
+                       parents: [.titan], perRank: 0.12, unit: .percent),
+
+            TalentSpec(id: .cornucopia, branch: .gathering, icon: "super_cornucopia", maxRank: 1, tier: 9, column: 1,
+                       parents: [.fertile, .abundance, .sage], perRank: 1, unit: .flag, cost: superCost),
+            TalentSpec(id: .fortune, branch: .gathering, icon: "clover", maxRank: 3, tier: 10, column: 0,
+                       parents: [.cornucopia], perRank: 0.02, unit: .percent),
+            TalentSpec(id: .forager, branch: .gathering, icon: "berries", maxRank: 3, tier: 10, column: 1,
+                       parents: [.cornucopia], perRank: 0.12, unit: .percent),
+            TalentSpec(id: .enlightened, branch: .gathering, icon: "book", maxRank: 3, tier: 10, column: 2,
+                       parents: [.cornucopia], perRank: 0.08, unit: .percent),
+
+            TalentSpec(id: .windwalker, branch: .travel, icon: "super_windwalker", maxRank: 1, tier: 9, column: 1,
+                       parents: [.bargain, .strider, .storekeeper], perRank: 1, unit: .flag, cost: superCost),
+            TalentSpec(id: .haggler, branch: .travel, icon: "coins", maxRank: 3, tier: 10, column: 0,
+                       parents: [.windwalker], perRank: 0.06, unit: .percent),
+            TalentSpec(id: .pathfinder, branch: .travel, icon: "compass", maxRank: 3, tier: 10, column: 1,
+                       parents: [.windwalker], perRank: 0.12, unit: .percent),
+            TalentSpec(id: .hauler, branch: .travel, icon: "bag", maxRank: 3, tier: 10, column: 2,
+                       parents: [.windwalker], perRank: 0.08, unit: .percent),
+
+            TalentSpec(id: .beastLord, branch: .beasts, icon: "super_beastLord", maxRank: 1, tier: 9, column: 1,
+                       parents: [.herdsman, .soul, .starHunter], perRank: 1, unit: .flag, cost: superCost),
+            TalentSpec(id: .herd, branch: .beasts, icon: "milk", maxRank: 3, tier: 10, column: 0,
+                       parents: [.beastLord], perRank: 0.1, unit: .percent),
+            TalentSpec(id: .packHunt, branch: .beasts, icon: "fang", maxRank: 3, tier: 10, column: 1,
+                       parents: [.beastLord], perRank: 0.1, unit: .percent),
+            TalentSpec(id: .kinship, branch: .beasts, icon: "heart", maxRank: 3, tier: 10, column: 2,
+                       parents: [.beastLord], perRank: 0.05, unit: .percent),
+
+            TalentSpec(id: .landlord, branch: .farming, icon: "super_landlord", maxRank: 1, tier: 8, column: 1,
+                       parents: [.deepRoots, .harvestMoon, .seedTrader], perRank: 1, unit: .flag, cost: superCost),
+            TalentSpec(id: .richSoil, branch: .farming, icon: "compost", maxRank: 3, tier: 9, column: 0,
+                       parents: [.landlord], perRank: 0.12, unit: .percent),
+            TalentSpec(id: .gourmet, branch: .farming, icon: "dish_stew", maxRank: 3, tier: 9, column: 1,
+                       parents: [.landlord], perRank: 0.1, unit: .percent),
+            TalentSpec(id: .fairTrade, branch: .farming, icon: "moneybag", maxRank: 3, tier: 9, column: 2,
+                       parents: [.landlord], perRank: 0.1, unit: .percent),
+
+            TalentSpec(id: .champion, branch: .combat, icon: "super_champion", maxRank: 1, tier: 8, column: 1,
+                       parents: [.delver, .warlord, .regen], perRank: 1, unit: .flag, cost: superCost),
+            TalentSpec(id: .fortress, branch: .combat, icon: "shield", maxRank: 3, tier: 9, column: 0,
+                       parents: [.champion], perRank: 0.03, unit: .percent),
+            TalentSpec(id: .executioner, branch: .combat, icon: "skull", maxRank: 3, tier: 9, column: 1,
+                       parents: [.champion], perRank: 0.1, unit: .percent),
+            TalentSpec(id: .bloodlust, branch: .combat, icon: "potion", maxRank: 3, tier: 9, column: 2,
+                       parents: [.champion], perRank: 0.01, unit: .percent)
         ]
         var dict: [TalentID: TalentSpec] = [:]
         for spec in list { dict[spec.id] = spec }

@@ -244,6 +244,8 @@ struct SaveData: Codable {
         if let floor = current.floor, !houseFloors.contains(floor) { current = .meadow }
         for tool in ToolKind.upgradable where tools[tool] == nil { tools[tool] = 1 }
         active = active.filter { animals[$0] != nil }
+        let maxActive = GameRules.maxActiveAnimals + ((talents[.beastLord] ?? 0) > 0 ? 1 : 0)
+        if active.count > maxActive { active = Array(active.prefix(maxActive)) }
     }
 
     func encode(to encoder: Encoder) throws {
