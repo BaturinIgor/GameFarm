@@ -1,0 +1,32 @@
+extends Node
+## Корень игры: мир, слой джойстика, интерфейс и затемнение при переходах.
+
+var world: World
+var hud: Hud
+
+
+func _ready() -> void:
+	var joy_layer := CanvasLayer.new()
+	joy_layer.layer = 5
+	var joystick := Joystick.new()
+	joy_layer.add_child(joystick)
+
+	world = World.new()
+	world.joystick = joystick
+	add_child(world)
+	add_child(joy_layer)
+
+	hud = Hud.new()
+	add_child(hud)
+
+	var fade_layer := CanvasLayer.new()
+	fade_layer.layer = 50
+	var fader := ColorRect.new()
+	fader.color = Color.BLACK
+	fader.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fader.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fader.modulate.a = 0.0
+	fader.visible = false
+	fade_layer.add_child(fader)
+	add_child(fade_layer)
+	world.set_fader(fader)

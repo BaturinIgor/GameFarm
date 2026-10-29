@@ -1,0 +1,11 @@
+# Графика пака хранится только в зашифрованном виде (Art/sprites.enc)
+assets/sprites/
+# Копии раскладок и строк из iOS-проекта
+data/layouts/
+data/strings/
+.godot/
+*.import
+!fonts/*.import
+export/
+*.apk
+*.aab

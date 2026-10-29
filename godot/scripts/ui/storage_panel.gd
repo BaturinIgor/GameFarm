@@ -1,0 +1,129 @@
+class_name StoragePanel
+extends Sheet
+## Склад: что в рюкзаке, вкладки ресурсов, продажа.
+
+const TABS := {
+	"materials": ["wood", "stone", "ore"],
+	"food": ["crop", "food", "farm"],
+	"loot": ["loot"],
+	"rare": ["gem", "treasure"],
+}
+
+var tab := "materials"
+
+
+func _init() -> void:
+	title_key = "hud.storage"
+
+
+func build() -> void:
+	if Game.backpack_count > 0:
+		_backpack_card()
+	_tabs()
+	var list := _kinds(tab)
+	if list.is_empty():
+		var c := card()
+		var total := 0
+		for v in Game.save["storage"].values():
+			total += int(v)
+		c.add_child(UiKit.label(L.t("storage.empty") if total == 0 else L.t("storage.tabEmpty"), 16))
+		var hint := UiKit.label(L.t("storage.empty.hint"), 13, UiKit.INK_SOFT)
+		hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		c.add_child(hint)
+	else:
+		var cats: Array = TABS[tab]
+		for cat in cats:
+			var rows := list.filter(func(k: String) -> bool: return Res.category(k) == cat)
+			if rows.is_empty():
+				continue
+			if cats.size() > 1:
+				section_title(L.t("cat." + cat))
+			var c := card()
+			for kind in rows:
+				_row(c, kind)
+		_sell_tab_button(list)
+	var price_hint := UiKit.label(L.t("storage.priceHint"), 12, UiKit.INK_SOFT)
+	price_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content.add_child(price_hint)
+
+
+func _kinds(t: String) -> Array:
+	var out: Array = []
+	for cat in TABS[t]:
+		for k in Res.in_category(cat):
+			if Game.storage_of(k) > 0:
+				out.append(k)
+	return out
+
+
+func _tabs() -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	content.add_child(row)
+	for t in TABS:
+		var b := UiKit.button(L.t("storage.tab." + t), "orange" if t == tab else "wood", 13, true)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.clip_text = true
+		b.pressed.connect(func() -> void:
+			tab = t
+			_dirty = true)
+		row.add_child(b)
+
+
+func _backpack_card() -> void:
+	var c := card(Color("fbe3c2"))
+	var head := HBoxContainer.new()
+	c.add_child(head)
+	var t := UiKit.label(L.t("storage.inBackpack"), 16)
+	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(t)
+	head.add_child(UiKit.label("%d/%d" % [Game.backpack_count, Game.stats.capacity], 14))
+	var flow := HFlowContainer.new()
+	flow.add_theme_constant_override("h_separation", 6)
+	flow.add_theme_constant_override("v_separation", 6)
+	c.add_child(flow)
+	for kind in Res.KINDS:
+		var n := int(Game.save["backpack"].get(kind, 0))
+		if n <= 0:
+			continue
+		var chip := HBoxContainer.new()
+		chip.add_theme_constant_override("separation", 3)
+		chip.add_child(UiKit.icon(kind, 18))
+		chip.add_child(UiKit.label(Fmt.n(n), 13))
+		flow.add_child(chip)
+	var hint := UiKit.label(L.t("storage.backpackHint"), 12, UiKit.INK_SOFT)
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	c.add_child(hint)
+
+
+func _row(parent: Control, kind: String) -> void:
+	var have := Game.storage_of(kind)
+	var price := Game.sell_price(kind)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	parent.add_child(row)
+	row.add_child(UiKit.icon(kind, 34))
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_theme_constant_override("separation", 0)
+	row.add_child(col)
+	col.add_child(UiKit.label(Res.name_of(kind), 15))
+	col.add_child(UiKit.label(L.t("storage.row", [Fmt.n(have), price]), 12, UiKit.INK_SOFT))
+	if have >= 10:
+		var ten := UiKit.button("10", "wood", 13, true)
+		ten.pressed.connect(func() -> void: Game.sell(kind, 10))
+		row.add_child(ten)
+	var all := UiKit.button(L.t("storage.sellAll") if have >= 10 else L.t("storage.sell"), "green", 13, true)
+	all.pressed.connect(func() -> void: Game.sell(kind, have))
+	row.add_child(all)
+
+
+func _sell_tab_button(list: Array) -> void:
+	var total := 0
+	for k in list:
+		total += Game.storage_of(k) * Game.sell_price(k)
+	var b := UiKit.button(L.t("storage.sellTab") + "  🪙 " + Fmt.n(total), "wood", 14, true)
+	b.pressed.connect(func() -> void:
+		for k in list:
+			Game.sell(k, Game.storage_of(k)))
+	content.add_child(b)

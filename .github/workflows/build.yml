@@ -5,6 +5,10 @@ on:
     branches: [main]
     paths-ignore:
       - "README.md"
+      - "godot/**"
+      - "docs/**"
+      - "tools/godot_sync.sh"
+      - ".github/workflows/android.yml"
   workflow_dispatch:
 
 permissions:
