@@ -13,18 +13,18 @@ var _dirty := true
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	var dim := ColorRect.new()
 	dim.color = UiKit.DIM
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	dim.gui_input.connect(func(e: InputEvent) -> void:
 		if e is InputEventMouseButton and e.pressed:
 			close())
 	add_child(dim)
 
 	var insets := UiKit.safe_insets(get_viewport())
-	_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_panel.offset_left = 8
 	_panel.offset_right = -8
 	_panel.offset_top = insets["top"] + 54

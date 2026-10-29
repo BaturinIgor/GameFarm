@@ -15,7 +15,7 @@ var _alpha := 0.0
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	# Ловит касания там, где нет кнопок интерфейса (интерфейс лежит слоем выше)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 

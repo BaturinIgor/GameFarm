@@ -25,13 +25,17 @@ func _process(_delta: float) -> void:
 				_shot("1_start")
 				_step = 1
 		1:
-			# Идём к ближайшей добываемой точке
+			# Идём к ближайшей добываемой точке настоящими касаниями (проверка джойстика)
 			var target := _nearest(world)
-			if target != null:
+			var origin := Vector2(195, 620)
+			if _frame == 91:
+				_touch(origin, true)
+			elif target != null:
 				var d := target.position - world.player.position
-				world.joystick.vector = d.normalized() if d.length() > 40.0 else Vector2.ZERO
+				var knob := origin + (d.normalized() * 50.0 if d.length() > 40.0 else Vector2.ZERO)
+				_drag(knob)
 			if _frame == 330:
-				world.joystick.vector = Vector2.ZERO
+				_touch(origin, false)
 				_shot("2_gather")
 				_step = 2
 		2:
@@ -50,6 +54,23 @@ func _process(_delta: float) -> void:
 			if _frame == 700:
 				_shot("4_storage_window")
 				get_tree().quit()
+
+
+func _touch(p: Vector2, pressed: bool) -> void:
+	var e := InputEventMouseButton.new()
+	e.button_index = MOUSE_BUTTON_LEFT
+	e.pressed = pressed
+	e.position = p
+	e.global_position = p
+	Input.parse_input_event(e)
+
+
+func _drag(p: Vector2) -> void:
+	var e := InputEventMouseMotion.new()
+	e.position = p
+	e.global_position = p
+	e.button_mask = MOUSE_BUTTON_MASK_LEFT
+	Input.parse_input_event(e)
 
 
 func _nearest(world: World) -> ResourceSpot:

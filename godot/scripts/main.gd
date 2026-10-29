@@ -23,7 +23,7 @@ func _ready() -> void:
 	fade_layer.layer = 50
 	var fader := ColorRect.new()
 	fader.color = Color.BLACK
-	fader.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fader.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	fader.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fader.modulate.a = 0.0
 	fader.visible = false
