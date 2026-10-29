@@ -32,7 +32,9 @@ jobs:
       - name: Prepare assets
         env:
           ASSETS_KEY: ${{ secrets.ASSETS_KEY }}
-        run: sh tools/godot_sync.sh
+        run: |
+          command -v ffmpeg > /dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null)
+          sh tools/godot_sync.sh
 
       - name: Cache Godot
         id: cache-godot

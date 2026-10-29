@@ -1,5 +1,7 @@
 # Графика пака хранится только в зашифрованном виде (Art/sprites.enc)
 assets/sprites/
+# Звуки конвертируются из GameFarm/Resources/Audio (tools/godot_sync.sh)
+assets/audio/
 # Копии раскладок и строк из iOS-проекта
 data/layouts/
 data/strings/
