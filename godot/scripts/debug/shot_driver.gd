@@ -4,12 +4,15 @@ extends Node
 ## несёт добычу на склад, открывается окно склада. На каждом шаге - снимок.
 
 const ORIGIN := Vector2(195, 620)
+const WINDOWS := ["workshop", "talents", "animals", "quests", "level"]
 
 var dir := "/tmp/shots"
 var main: Node
 var _time := 0.0
 var _step := 0
 var _trace := 0.0
+var _opened := ""
+var _shot_done := ""
 
 
 func _ready() -> void:
@@ -57,6 +60,36 @@ func _process(delta: float) -> void:
 		3:
 			if _time > 101.0:
 				_shot("5_storage_window")
+				# Прокачанный герой: окна с содержимым
+				Game.save["level"] = 18
+				Game.save["coins"] = 25000
+				for k in ["wood", "stone", "clay", "coal", "iron", "berries", "fish", "apples"]:
+					Game.save["storage"][k] = 300
+				Game.recalc()
+				Game.mark_dirty()
+				_step = 4
+				_time = 200.0
+		4:
+			var t := int(_time - 200.0)
+			if t < WINDOWS.size() * 2:
+				var w: String = WINDOWS[t / 2]
+				if t % 2 == 0 and _opened != w:
+					_opened = w
+					if w == "level":
+						if ResourceLoader.exists(Hud.LEVEL_PANEL):
+							main.hud.open_window(load(Hud.LEVEL_PANEL).new())
+					else:
+						main.hud.open_named(w)
+				elif t % 2 == 1 and _shot_done != w:
+					_shot_done = w
+					_shot("6_" + w)
+			else:
+				main.hud.close_window()
+				_step = 5
+				_time = 300.0
+		5:
+			if _time > 302.0:
+				_shot("7_world_level18")
 				get_tree().quit()
 
 
