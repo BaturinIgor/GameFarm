@@ -134,6 +134,8 @@ static func icon_any(code: String, size := 22.0) -> Control:
 		return icon(code.substr(3), size)
 	if code.begins_with("res:"):
 		return icon(code.substr(4), size)
+	if code.begins_with("skin:"):
+		return EventsPanel.skin_icon(code.substr(5), size)
 	if code.begins_with("an:"):
 		var t := icon("paw", size)
 		var tex := AnimalSheet.icon(code.substr(3))

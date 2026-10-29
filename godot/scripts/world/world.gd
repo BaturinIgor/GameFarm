@@ -13,6 +13,7 @@ const FEATURES: Array[String] = [
 	"res://scripts/world/features/garden_feature.gd",
 	"res://scripts/world/features/monsters_feature.gd",
 	"res://scripts/world/features/dungeon_feature.gd",
+	"res://scripts/world/features/event_feature.gd",
 ]
 
 @export var joystick: Joystick
@@ -78,7 +79,7 @@ func set_fader(rect: ColorRect) -> void:
 func build(id: String) -> void:
 	loaded = id
 	spec = Locations.spec(id)
-	layout = MapLayout.load_layout(id)
+	layout = MapLayout.load_layout(id, Game.events.resource_name(id))
 	for f in features:
 		f.clear(self)
 	# Героя сначала снимаем с карты, иначе он уйдёт вместе со старыми узлами
@@ -103,7 +104,9 @@ func build(id: String) -> void:
 		bg = Color(0.09, 0.06, 0.04)
 	RenderingServer.set_default_clear_color(bg)
 
-	var tex := Sprites.ground(id)
+	var tex := Sprites.ground(Game.events.resource_name(id))
+	if tex == null:
+		tex = Sprites.ground(id)
 	ground.texture = tex
 	if tex != null:
 		ground.scale = layout.size / Vector2(tex.get_width(), tex.get_height())
