@@ -105,6 +105,16 @@ jobs:
           fi
           exit 0
 
+      - name: Screenshots (software rendering)
+        continue-on-error: true
+        run: |
+          sudo apt-get install -y -qq xvfb > /dev/null 2>&1 || true
+          mkdir -p shots
+          timeout 120 xvfb-run -a -s "-screen 0 1170x2532x24" ~/godot-bin/godot --path godot \
+            --rendering-driver opengl3 --resolution 390x844 -- --shots "$GITHUB_WORKSPACE/shots" > shots.log 2>&1 || true
+          tail -30 shots.log
+          ls -la shots
+
       - name: Export APK
         env:
           GODOT_ANDROID_KEYSTORE_DEBUG_PATH: ${{ github.workspace }}/godot/android/debug.keystore
@@ -120,14 +130,15 @@ jobs:
         if: always()
         run: |
           mkdir -p /tmp/logs
-          cp import.log run.log export.log /tmp/logs/ 2>/dev/null || true
+          cp import.log run.log export.log shots.log /tmp/logs/ 2>/dev/null || true
+          cp -r shots /tmp/logs/ 2>/dev/null || true
           grep -hE "ERROR|SCRIPT ERROR|error" /tmp/logs/*.log 2>/dev/null | head -30 | sed 's/^/::warning::/' || true
           git config user.name "ci"
           git config user.email "ci@users.noreply.github.com"
           git checkout --orphan ci-logs-android
           git rm -rf --cached . > /dev/null
-          cp /tmp/logs/*.log . 2>/dev/null || true
-          git add -f *.log 2>/dev/null || true
+          cp -r /tmp/logs/* . 2>/dev/null || true
+          git add -f *.log shots 2>/dev/null || true
           git commit -q -m "Godot logs run ${{ github.run_number }}" || true
           git push -q -f origin ci-logs-android || true
           git checkout -q main 2>/dev/null || true

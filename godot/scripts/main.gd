@@ -30,3 +30,9 @@ func _ready() -> void:
 	fade_layer.add_child(fader)
 	add_child(fade_layer)
 	world.set_fader(fader)
+
+	# Проверка в CI: снимки экрана по сценарию
+	if "--shots" in OS.get_cmdline_user_args():
+		var driver: Node = load("res://scripts/debug/shot_driver.gd").new()
+		driver.main = self
+		add_child(driver)
