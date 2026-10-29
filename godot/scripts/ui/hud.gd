@@ -13,12 +13,18 @@ const WINDOWS := [
 	["map", "map", "hud.map", "res://scripts/ui/map_panel.gd"],
 ]
 const LEVEL_PANEL := "res://scripts/ui/level_panel.gd"
+## Плашки справа под монетами (блюдо, этаж дома, ивент...): Control, сам прячется, когда не нужен.
+const PILLS := [
+	"res://scripts/ui/meal_pill.gd",
+	"res://scripts/ui/home_floor_pill.gd",
+]
 
 ## Текущая шапка: фичи сцены показывают через неё карточки и окна.
 static var current: Hud
 
 var root := Control.new()
 var _prompts := VBoxContainer.new()
+var _pills := VBoxContainer.new()
 var _prompt_cards: Dictionary = {}
 var _overlay_layer := CanvasLayer.new()
 var _badges: Dictionary = {}
@@ -130,6 +136,21 @@ func _build_top() -> void:
 	crow.add_child(UiKit.icon("coins", 22))
 	_coins_label = UiKit.title("0", 16)
 	crow.add_child(_coins_label)
+
+	_pills.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	_pills.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_pills.offset_left = -10
+	_pills.offset_right = -10
+	_pills.offset_top = top + 42
+	_pills.alignment = BoxContainer.ALIGNMENT_BEGIN
+	_pills.add_theme_constant_override("separation", 6)
+	_pills.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(_pills)
+	for path in PILLS:
+		if ResourceLoader.exists(path):
+			var pill: Control = load(path).new()
+			pill.size_flags_horizontal = Control.SIZE_SHRINK_END
+			_pills.add_child(pill)
 
 
 func _build_bottom() -> void:

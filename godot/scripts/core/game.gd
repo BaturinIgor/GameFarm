@@ -33,6 +33,9 @@ var systems: Array:
 	get: return [talents, workshop, animals, quests, house, garden, combat, events, collection, legacy, premium, world_map]
 ## Где появиться после перехода через проход (id прохода).
 var arrival_gate := ""
+## В доме: у какой станции появиться (exit, up, down); на лугу - у двери дома.
+var arrival_station := ""
+var arrive_at_door := false
 
 var _dirty := false
 var _last_write := 0.0

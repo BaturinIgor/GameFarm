@@ -27,6 +27,8 @@ var spots: Array[ResourceSpot] = []
 var obstacles: Array = []       ## {center, radius}
 var gates: Array[GateNode] = []
 var house_rect := Rect2()
+## Дверь дома на лугу (null, если дома нет): у неё карточка "войти".
+var door_point = null
 var chest: Node2D
 var chest_box: Sprite2D
 
@@ -85,6 +87,7 @@ func build(id: String) -> void:
 	gates.clear()
 	_loot.clear()
 	house_rect = Rect2()
+	door_point = null
 	chest = null
 
 	var bg: Color = spec["ground"]
@@ -115,13 +118,24 @@ func build(id: String) -> void:
 			entities.add_child(spot)
 		spots.append(spot)
 
-	if Game.arrival_gate != "":
+	player.position = layout.base + Vector2(0, 56)
+	if spec["kind"] == "home":
+		# С улицы - у двери, чуть внутри комнаты; при смене этажа - у лестницы или в середине
+		player.position = layout.base
+		for st in layout.stations:
+			if st["kind"] == Game.arrival_station:
+				player.position = st["pos"] + Vector2(0, -52 if st["kind"] == "exit" else 0)
+	elif spec["kind"] == "dungeon":
+		player.position = layout.base
+	elif Game.arrive_at_door and door_point != null:
+		player.position = door_point + Vector2(0, 30)
+	elif Game.arrival_gate != "":
 		for g in layout.gates:
 			if g["id"] == Game.arrival_gate:
 				player.position = g["inner"]
-		Game.arrival_gate = ""
-	else:
-		player.position = layout.base + Vector2(0, 56)
+	Game.arrival_gate = ""
+	Game.arrival_station = ""
+	Game.arrive_at_door = false
 	velocity = Vector2.ZERO
 	entities.add_child(player)
 	for f in features:
@@ -184,6 +198,8 @@ func _build_base() -> void:
 		var w := house.texture.get_width() * Sprites.SCALE * 0.84
 		var hh := minf(46.0, house.texture.get_height() * Sprites.SCALE * 0.3)
 		house_rect = Rect2(foot.x - w / 2.0, foot.y - hh, w, hh)
+		if house_name == "house" and loaded == "meadow":
+			door_point = foot + Vector2(0, 12)
 		if house_name == "house":
 			var smoke := Sprites.animated("smoke_anim", 6.0, foot + Vector2(house.texture.get_width() * Sprites.SCALE * 0.17,
 				-house.texture.get_height() * Sprites.SCALE * 0.86))
