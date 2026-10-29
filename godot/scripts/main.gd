@@ -6,6 +6,10 @@ var hud: Hud
 
 
 func _ready() -> void:
+	# Проверка в CI: все скрипты загружаются
+	if "--check-scripts" in OS.get_cmdline_user_args():
+		get_tree().quit(1 if not CheckScripts.run().is_empty() else 0)
+		return
 	var joy_layer := CanvasLayer.new()
 	joy_layer.layer = 5
 	var joystick := Joystick.new()

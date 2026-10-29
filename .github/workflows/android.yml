@@ -96,7 +96,7 @@ jobs:
       - name: Compile all scripts
         run: |
           set +e
-          timeout 120 ~/godot-bin/godot --headless --path godot --script res://scripts/debug/check_scripts.gd > check.log 2>&1
+          timeout 120 ~/godot-bin/godot --headless --path godot -- --check-scripts > check.log 2>&1
           code=$?
           tail -40 check.log
           if [ $code -ne 0 ] || grep -E "SCRIPT ERROR|Parse Error" check.log; then
@@ -154,7 +154,8 @@ jobs:
           git checkout --orphan ci-logs-android
           git rm -rf --cached . > /dev/null
           cp -r /tmp/logs/* . 2>/dev/null || true
-          git add -f *.log shots 2>/dev/null || true
+          git add -f *.log 2>/dev/null || true
+          [ -d shots ] && git add -f shots || true
           git commit -q -m "Godot logs run ${{ github.run_number }}" || true
           git push -q -f origin ci-logs-android || true
           git checkout -q main 2>/dev/null || true
