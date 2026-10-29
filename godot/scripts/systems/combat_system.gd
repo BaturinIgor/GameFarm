@@ -16,5 +16,5 @@ func collect_gear(_s: Stats) -> Dictionary:
 
 
 ## Прибавка скорости от сапог.
-func hero_speed(_boots_tier: int) -> float:
-	return 0.0
+func hero_speed(boots_tier: int) -> float:
+	return ToolSystem.boots_speed(boots_tier)

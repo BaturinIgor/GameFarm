@@ -344,8 +344,8 @@ func _on_toast(icon: String, text: String) -> void:
 	tw.tween_callback(box.queue_free)
 
 
-func _on_level_up(_from: int, to: int) -> void:
-	_on_toast("px:star", L.t("level.n", [to]) + "! " + L.t("reward.coins", [Fmt.n(Game.level_coin_reward(to))]))
+func _on_level_up(from: int, to: int) -> void:
+	LevelUpOverlay.present(from, to)
 
 
 # MARK: Окна

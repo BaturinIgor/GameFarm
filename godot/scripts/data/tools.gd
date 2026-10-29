@@ -143,3 +143,34 @@ const COSTS := {
 		10: {"coins": 300000, "items": [["essence", 150], ["stardust", 25]]},
 	},
 }
+
+
+## Бонусы ступеней (ToolPerk.list): на 3, 5, 7, 9 и 10 ступени инструмент получает особое свойство.
+## [ступень, вид, значение] и категория четвёртым элементом для "yield".
+const PERKS := {
+	"axe": [[3, "yield", 0.1, "wood"], [5, "honey", 0.03], [7, "cleave", 0.1], [9, "goldenApple", 0.01], [10, "yield", 0.2, "wood"]],
+	"pickaxe": [[3, "yield", 0.1, "stone"], [5, "gem", 0.02], [7, "cleave", 0.1], [9, "ruby", 0.01], [10, "stardust", 0.005]],
+	"rod": [[3, "fish", 0.1], [5, "coinChest", 0.02], [7, "doubleCatch", 0.05], [9, "pearl", 0.01], [10, "giantFish", 0.001]],
+	"sword": [[3, "crit", 0.05], [5, "lifesteal", 0.03], [7, "swordCleave", 0.4], [9, "bossDamage", 0.15], [10, "stun", 0.05]],
+	"armor": [[3, "hp", 0.05], [5, "combatRegen", 0.01], [7, "thorns", 0.1], [9, "hp", 0.1], [10, "secondWind", 0.0]],
+	"helmet": [[3, "defense", 0.02], [5, "poisonImmune", 0.0], [7, "slowImmune", 0.0], [9, "defense", 0.05], [10, "critImmune", 0.0]],
+	"boots": [[3, "speed", 0.05], [5, "dodge", 0.03], [7, "speed", 0.05], [9, "dodge", 0.03], [10, "speed", 0.1]],
+}
+
+
+## Бонусы ступеней инструмента: [{"tool", "tier", "kind", "v", "cat"}].
+static func perks(tool: String) -> Array:
+	var out: Array = []
+	for p in PERKS.get(tool, []):
+		out.append({"tool": tool, "tier": int(p[0]), "kind": str(p[1]), "v": float(p[2]), "cat": str(p[3]) if p.size() > 3 else ""})
+	return out
+
+
+static func perk_text(perk: Dictionary) -> String:
+	var kind: String = perk["kind"]
+	match kind:
+		"yield":
+			return L.t("perk.yield", [L.t("cat." + perk["cat"]), Fmt.pct(perk["v"])])
+		"secondWind", "poisonImmune", "slowImmune", "critImmune":
+			return L.t("perk." + kind)
+	return L.t("perk." + kind, [Fmt.pct(perk["v"])])
