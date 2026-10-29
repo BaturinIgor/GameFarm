@@ -9,7 +9,8 @@
   в `godot/data/layouts/`, строки `GameFarm/Resources/Strings/*.json` в `godot/data/strings/` и распаковывает
   спрайты в `godot/assets/sprites/` (нужен `ASSETS_KEY`). Эти папки в git не попадают.
 - Локально Godot не запускается. Синтаксис проверяем `gdparse <файлы>` (пакет gdtoolkit 4.5).
-- Полная проверка - CI `.github/workflows/android.yml`: импорт, прогон без экрана, снимки экрана
+- Полная проверка - CI `.github/workflows/android.yml`: импорт, загрузка всех скриптов (`-- --check-scripts`,
+  `scripts/debug/check_scripts.gd`), прогон без экрана, снимки экрана
   (`scripts/debug/shot_driver.gd`), сборка APK. Логи и снимки CI кладёт в ветку `ci-logs-android`.
 
 ## Координаты и масштаб
@@ -31,6 +32,11 @@
 - `Game` (`scripts/core/game.gd`): состояние игры, порт `GameState`. Прогресс - словарь `Game.save` с теми же
   ключами и форматом, что iOS-сохранение (JSON), чтобы файл копии подходил обеим версиям. Даты - unix-секунды.
   Сигналы: `changed`, `toast(icon, text)`, `level_up(from, to)`, `event(name, data)`.
+- `Sound` (`scripts/core/sound.gd`): музыка и фон по локации (сам следит за `Game.current`), `Sound.play("coin")`,
+  шаги, настройки `music_on`, `sfx_on`, `battery_saver` (`user://settings.cfg`). Звуки - ogg, их готовит
+  `tools/godot_sync.sh` из m4a iOS (нужен ffmpeg).
+- Покупки и реклама в сборке для ручной установки тестовые, как в iOS для SideStore: `Store.buy(product)` сразу
+  выдаёт покупку, `Ads.show_rewarded(callback)` сразу даёт награду.
 
 ## Идентификаторы и данные
 
