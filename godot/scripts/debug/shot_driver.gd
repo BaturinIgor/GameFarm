@@ -1,11 +1,15 @@
 extends Node
 ## Снимки экрана для проверки в CI: запуск с "-- --shots <папка>".
-## Герой идёт к ближайшей точке добычи, работает, потом открывается склад; на каждом шаге - снимок.
+## Сценарий по времени: старт, герой идёт касаниями к ближайшей точке и добывает,
+## несёт добычу на склад, открывается окно склада. На каждом шаге - снимок.
+
+const ORIGIN := Vector2(195, 620)
 
 var dir := "/tmp/shots"
 var main: Node
-var _frame := 0
+var _time := 0.0
 var _step := 0
+var _trace := 0.0
 
 
 func _ready() -> void:
@@ -17,48 +21,42 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	_frame += 1
+	var dt := minf(delta, 0.05)
+	_time += dt
 	var world: World = main.world
-	if _frame % 30 == 0:
-		var t := _nearest(world)
-		print("f=%d dt=%.3f pos=%s pack=%d storage=%s hit=%.2f near=%s hp=%s alive=%s dist=%.1f" % [
-			_frame, delta, world.player.position, Game.backpack_count, Game.save["storage"], world._hit_timer,
-			t.type if t else "-", t.hp if t else -1, t.alive if t else false,
-			t.position.distance_to(world.player.position) if t else -1.0])
+	_trace -= dt
+	if _trace <= 0.0:
+		_trace = 1.0
+		print("t=%.1f pos=%s pack=%d coins=%d storage=%s" % [_time, world.player.position, Game.backpack_count,
+			int(Game.save["coins"]), Game.save["storage"]])
 	match _step:
 		0:
-			if _frame == 90:
+			if _time > 1.5:
 				_shot("1_start")
+				_touch(ORIGIN, true)
 				_step = 1
 		1:
-			# Идём к ближайшей добываемой точке настоящими касаниями (проверка джойстика)
 			var target := _nearest(world)
-			var origin := Vector2(195, 620)
-			if _frame == 91:
-				_touch(origin, true)
-			elif target != null:
+			if target != null:
 				var d := target.position - world.player.position
-				var knob := origin + (d.normalized() * 50.0 if d.length() > 40.0 else Vector2.ZERO)
-				_drag(knob)
-			if _frame == 330:
-				_touch(origin, false)
-				_shot("2_gather")
+				_drag(ORIGIN + (d.normalized() * 50.0 if d.length() > 40.0 else Vector2.ZERO))
+			if _time > 4.0 and _time - dt <= 4.0:
+				_shot("2_walk")
+			if Game.backpack_count >= 6 or _time > 14.0:
+				_shot("3_gathered")
 				_step = 2
 		2:
-			if _frame == 420:
-				# Несём добычу на склад
-				_step = 3
-		3:
 			var d := world.layout.base - world.player.position
-			world.joystick.vector = d.normalized() if d.length() > 30.0 else Vector2.ZERO
-			if _frame == 640:
-				world.joystick.vector = Vector2.ZERO
-				_shot("3_storage_zone")
+			_drag(ORIGIN + (d.normalized() * 50.0 if d.length() > 30.0 else Vector2.ZERO))
+			if Game.backpack_count == 0 or _time > 24.0:
+				_touch(ORIGIN, false)
+				_shot("4_deposited")
 				main.hud.open_window(StoragePanel.new())
-				_step = 4
-		4:
-			if _frame == 700:
-				_shot("4_storage_window")
+				_step = 3
+				_time = 100.0
+		3:
+			if _time > 101.0:
+				_shot("5_storage_window")
 				get_tree().quit()
 
 
@@ -83,7 +81,7 @@ func _nearest(world: World) -> ResourceSpot:
 	var best: ResourceSpot = null
 	var bd := INF
 	for s in world.spots:
-		if s.alive and Game.can_harvest(s.spec):
+		if s.alive and Game.can_harvest(s.spec) and s.spec["tool"] != "rod":
 			var d := s.position.distance_to(world.player.position)
 			if d < bd:
 				bd = d
