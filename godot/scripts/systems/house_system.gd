@@ -101,6 +101,7 @@ func build(id: String) -> bool:
 	Game.pay(House.floor_cost(id))
 	Game.save["houseFloors"].append(id)
 	Game.recalc()
+	Sound.play("unlock")
 	Game.emit_event("build", {"floor": id})
 	Game.mark_dirty()
 	Game.save_now()
@@ -144,6 +145,7 @@ func switch_floor(id: String) -> void:
 		return
 	Game.arrival_station = ""
 	Game.save["current"] = House.floor_location(id)
+	Sound.play("tap")
 	Game.mark_dirty()
 
 
@@ -152,6 +154,7 @@ func rest() -> void:
 	if Game.combat.has_method("heal_full"):
 		Game.combat.call("heal_full")
 	Game.show_toast("px:bed", L.t("toast.rest"))
+	Sound.play("success")
 
 
 ## Чердак с подзорной трубой: бесплатный билет вдвое чаще.
@@ -183,6 +186,7 @@ func upgrade_kitchen() -> void:
 		return
 	Game.pay(next_kitchen_cost())
 	Game.save["kitchenLevel"] = kitchen_level() + 1
+	Sound.play("levelUp")
 	Game.show_toast("px:dish_omelette", L.t("toast.kitchen", [kitchen_level()]))
 	Game.mark_dirty()
 	Game.save_now()
@@ -224,6 +228,7 @@ func place(id: String, slot: String) -> bool:
 	Game.pay(House.decor_cost(id))
 	Game.save["decor"][slot] = id
 	Game.recalc()
+	Sound.play("purchase")
 	Game.emit_event("decor", {"item": id})
 	Game.mark_dirty()
 	return true
@@ -282,6 +287,7 @@ func cook(dish: String) -> bool:
 		return false
 	Game.pay(House.dish_cost(dish))
 	Game.save["cooking"].append({"id": _uuid(), "dish": dish, "readyAt": _now() + cook_time(dish)})
+	Sound.play("pick")
 	Game.emit_event("cook", {"dish": dish})
 	Game.mark_dirty()
 	return true
@@ -367,6 +373,7 @@ func eat(dish: String) -> bool:
 	var duration := meal_duration(dish)
 	Game.save["meals"][dish] = minf(start + duration, now + duration * 3.0)
 	Game.recalc()
+	Sound.play("success")
 	Game.show_toast("px:" + House.dish_icon(dish), L.t("toast.meal", [House.dish_name(dish)]))
 	Game.mark_dirty()
 	Game.save_now()
@@ -438,5 +445,6 @@ func claim_login() -> void:
 				Game.collection.call("random_card")
 	Game.save["loginDay"] = _day_index()
 	Game.save["loginClaims"] = login_claims() + 1
+	Sound.play("treasure")
 	Game.mark_dirty()
 	Game.save_now()

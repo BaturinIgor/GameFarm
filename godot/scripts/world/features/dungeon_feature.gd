@@ -89,6 +89,7 @@ func _spawn_wave(world: World, monsters: MonstersFeature, n: int, run: Dictionar
 		for p in points.slice(0, 2):
 			_add(world, monsters, mobs.pick_random(), level, p, false, [], null)
 		Game.show_toast("px:crown", L.t("toast.bossWave", [Dungeons.boss_name(id)]))
+		Sound.play("wildAppear")
 		world.shake = maxf(world.shake, 6.0)
 	else:
 		for p in points.slice(0, Dungeons.monsters_per_wave(floor_n)):

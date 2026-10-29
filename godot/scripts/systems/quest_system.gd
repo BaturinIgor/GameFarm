@@ -112,6 +112,7 @@ func claim_quest(id: String) -> void:
 	qs.remove_at(index)
 	Game.add_coins(int(quest["coins"]))
 	Game.save["questsDone"] = int(Game.save["questsDone"]) + 1
+	Sound.play("success")
 	var fresh := Quests.make(Game.level, gatherable_kinds(), _producer_kinds(), qs)
 	qs.insert(mini(index, qs.size()), fresh)
 	Game.gain_xp(int(quest["xp"]))
@@ -191,6 +192,7 @@ func claim(a: Dictionary) -> void:
 	if not can_claim(a):
 		return
 	Game.save["claimed"].append(a["id"])
+	Sound.play("success")
 	Game.add_coins(int(a["coins"]))
 	var points := int(a["points"])
 	Game.save["bonusTalentPoints"] = int(Game.save.get("bonusTalentPoints", 0)) + points

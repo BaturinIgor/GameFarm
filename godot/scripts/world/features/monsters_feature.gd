@@ -174,6 +174,7 @@ func nearest_monster(reach: float, origin: Vector2) -> MonsterNode:
 
 func _strike_monster(world: World, foe: MonsterNode, stats: Stats) -> void:
 	world.player.swing("sword", foe.position, stats.hit_interval)
+	Sound.play("chop", 0.8)
 	var damage: float = Game.combat.weapon_damage(foe.boss)
 	var crit := false
 	if stats.titan:
@@ -239,6 +240,8 @@ func damage_monster(foe: MonsterNode, damage: float, from: Vector2, strong: bool
 		w.shake = maxf(w.shake, 10.0)
 		Fx.scatter(w.fx, foe.position - Vector2(0, 30), 16, Color(1, 0.85, 0.3), null, 6.0, 80.0, 50.0)
 		Game.combat.set_boss_info(null)
+	Sound.play("rockBreak", 0.7)
+	Sound.play("coin", 0.6)
 	for s in slots:
 		if s["node"] == foe:
 			s["node"] = null
@@ -356,6 +359,7 @@ func _hurt_hero(world: World, amount: float, quiet := false, crit := false) -> f
 	if quiet:
 		return dealt
 	world.shake = maxf(world.shake, 6.0 if crit else 3.0)
+	Sound.play("crit", 0.5)
 	var p := world.player
 	var tw := p.create_tween()
 	tw.tween_property(p, "modulate:a", 0.45, 0.05)

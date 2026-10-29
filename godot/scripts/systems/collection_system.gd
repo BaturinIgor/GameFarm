@@ -90,6 +90,7 @@ func gain_card(card: String) -> void:
 		Game.show_toast("px:star", L.t("toast.cardStar", [Cards.name_of(card), after]).replace("★", ""))
 	if not was_complete and is_complete(c):
 		Game.show_toast("px:spark", L.t("toast.constellation", [Cards.constellation_name(c)]))
+		Sound.play("unlock")
 	Game.recalc()
 	Game.mark_dirty()
 

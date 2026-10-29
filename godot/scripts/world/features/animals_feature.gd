@@ -212,6 +212,8 @@ func _update_producers(world: World, dt: float, stats: Stats) -> void:
 			if c.animal == id:
 				Fx.gain(world.fx, p["kind"], n, c.position - Vector2(0, 40), 0.0, true)
 				c.cheer()
+				if id == "duck" or id == "duckHat":
+					Sound.play("quack", 0.6)
 				break
 
 
@@ -275,10 +277,13 @@ func _spawn_wild(world: World, stats: Stats, here: Array) -> void:
 		var cr := layout.col_row(p)
 		return layout.is_water(cr.x, cr.y) if water else layout.walkable_cell(cr.x, cr.y)
 	var fx := world.fx
-	node.on_splash = func(p: Vector2) -> void: Fx.ring(fx, p, Color(0.75, 0.92, 1), 22.0)
+	node.on_splash = func(p: Vector2) -> void:
+		Fx.ring(fx, p, Color(0.75, 0.92, 1), 22.0)
+		Sound.play("splash", 0.7)
 	world.entities.add_child(node)
 	wild = node
 	Game.show_toast("an:" + chosen, L.t("toast.wild", [Animals.name_of(chosen)]))
+	Sound.play("wildAppear")
 
 
 ## Свободная клетка суши подальше от героя, ресурсов, проходов, грядок и лавки (null - не нашлось).
@@ -365,6 +370,7 @@ func _tame_nearby() -> void:
 	wild = null
 	_hide_encounter()
 	_world.player.celebrate()
+	Sound.play("tame")
 	Input.vibrate_handheld(30)
 
 

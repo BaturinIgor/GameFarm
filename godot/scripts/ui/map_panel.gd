@@ -1,8 +1,8 @@
 class_name MapPanel
 extends Sheet
 ## Карта мира (порт MapView): выбор планеты, схема локаций и проходов, карточка локации с переходом
-## и открытием проходов, ивент (EventsPanel.map_card), экспедиции по билетам и бесплатный билет, королевский сад.
-## Кнопки магазина покупок (сад, билеты) пока нет: покупки - этап 6.
+## и открытием проходов, ивент (EventsPanel.map_card), экспедиции по билетам и бесплатный билет, королевский сад
+## (без покупки - кнопка в магазин).
 
 const SMALL_BUTTON_HEIGHT := 34.0
 
@@ -392,7 +392,7 @@ func _expedition_row(id: String, busy: bool) -> PanelContainer:
 
 # MARK: Королевский сад
 
-## Сад: переход и королевский сундук. Без покупки - только описание (магазин - этап 6).
+## Сад: переход и королевский сундук. Без покупки - кнопка в магазин.
 func _garden_card() -> Control:
 	var parts := _ribbon_card(Locations.name_of("garden"), "gold")
 	var v: VBoxContainer = parts[1]
@@ -415,6 +415,13 @@ func _garden_card() -> Control:
 			go.disabled = Game.premium.expedition() != null
 			go.pressed.connect(func() -> void: _travel("garden"))
 			v.add_child(go)
+	else:
+		var shop := UiKit.button(L.t("garden.more"), "orange", 15)
+		shop.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		shop.pressed.connect(func() -> void:
+			if Hud.current != null:
+				Hud.current.open_window(ShopPanel.new()))
+		v.add_child(shop)
 	return parts[0]
 
 

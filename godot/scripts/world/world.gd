@@ -289,6 +289,7 @@ func _transition(id: String) -> void:
 	_transitioning = true
 	if joystick:
 		joystick.end()
+	Sound.play("whoosh")
 	if _fader == null:
 		build(id)
 		_transitioning = false
@@ -329,6 +330,7 @@ func _move_player(dt: float, stats: Stats) -> void:
 		_dust_timer = 0.17
 		var dust: Color = Color(0.7, 0.7, 0.7) if spec["dark"] else spec["path"]
 		Fx.puff(flat, player.position - Vector2(velocity.x * 0.04, 2), dust, 16.0, 5)
+	Sound.footsteps(dt, ratio, spec["footstep"], layout, player.position)
 
 
 func _push_from(p: Vector2, c: Vector2, min_d: float) -> Vector2:
@@ -468,6 +470,7 @@ func _gather(dt: float, stats: Stats) -> void:
 			if _hint_timer <= 0.0:
 				_hint_timer = 2.5
 				Fx.text(fx, L.t("scene.backpackFullHint"), player.position - Vector2(0, 70), Color(1, 0.45, 0.4), 15)
+				Sound.play("error")
 			return
 		_strike(best, stats)
 		_hit_timer = stats.hit_interval
@@ -479,6 +482,7 @@ func _gather(dt: float, stats: Stats) -> void:
 
 func _strike(spot: ResourceSpot, stats: Stats) -> void:
 	player.swing(spot.spec["tool"], spot.position, stats.hit_interval)
+	Sound.play_tool(spot.spec["tool"])
 	_hit_once(spot, stats)
 	# Топор и кирка высоких ступеней задевают соседний ресурс
 	var gear: Dictionary = Game.combat.gear
@@ -517,6 +521,7 @@ func _hit_once(spot: ResourceSpot, stats: Stats) -> void:
 		shake = maxf(shake, 5.0)
 		Fx.text(fx, L.t("scene.crit"), spot.position + Vector2(18, -52), Color(1, 0.6, 0.2), 17)
 		Input.vibrate_handheld(30)
+		Sound.play("crit", 0.8)
 	_apply(damage, spot, false, crit)
 	if stats.quake:
 		var shook := false
@@ -638,6 +643,7 @@ func _harvest(spot: ResourceSpot, by_helper := false) -> void:
 		Game.add_coins(chest_coins)
 		Game.premium.note_expedition_coins(chest_coins)
 		Fx.text(fx, "+%s 🪙" % Fmt.n(chest_coins), spot.position - Vector2(0, 70), Color(1, 0.9, 0.4), 17)
+		Sound.play("coinBig")
 	for i in shown.size():
 		Fx.gain(fx, shown[i][0], shown[i][1], top - Vector2(0, i * 24), i * 0.1, by_helper)
 		if not by_helper:
@@ -649,6 +655,7 @@ func _harvest(spot: ResourceSpot, by_helper := false) -> void:
 	if coins > 0:
 		Game.premium.note_expedition_coins(coins)
 		Fx.text(fx, "+%d 🪙" % coins, top + Vector2(38, 4), Color(1, 0.9, 0.4), 14, 0.15)
+		Sound.play("coin", 0.5)
 	var respawn: float = float(spot.spec["respawn"]) * stats.respawn_mult
 	if direct:
 		respawn *= Game.premium.expedition_respawn_mult()
@@ -674,6 +681,7 @@ func _depletion_effects(spot: ResourceSpot) -> void:
 	var p := spot.position
 	match spot.style:
 		"fall":
+			Sound.play("treeFall", 0.8)
 			var side := 30.0 if spot.position.x >= player.position.x else -30.0
 			var leaf := "fx_needle" if spot.type in ["snowPine", "pine"] else ("fx_leaf_birch" if spot.type == "skyTree" else "fx_leaf")
 			var t := get_tree().create_timer(0.42)
@@ -682,9 +690,11 @@ func _depletion_effects(spot: ResourceSpot) -> void:
 				Fx.puff(flat, p + Vector2(side, 0), spec["path"], 36.0, 5)
 				shake = maxf(shake, 2.5))
 		"crumble":
+			Sound.play("rockBreak", 0.8)
 			Fx.scatter(fx, p - Vector2(0, 16), 8, spot.spec["chip"], null, 6.0, 44, 20)
 			Fx.puff(flat, p, Color(0.8, 0.8, 0.8), 40.0, 5)
 		"splash":
+			Sound.play("splash")
 			Fx.scatter(fx, p, 9, spot.spec["chip"], null, 5.0, 30, 26, 0.5)
 			Fx.ring(flat, p, Color(1, 1, 1, 0.7), 20.0)
 		_:
@@ -735,6 +745,7 @@ func _update_loot(dt: float) -> void:
 		node.position += v * dt
 	if finished:
 		_loot = _loot.filter(func(it: Dictionary) -> bool: return it["age"] >= 0.0)
+		Sound.play("pickup", 0.45)
 
 
 # MARK: Склад
@@ -762,5 +773,6 @@ func _check_base(dt: float, stats: Stats) -> void:
 	squash.tween_property(chest, "scale", Vector2(0.94, 1.1), 0.08)
 	squash.tween_property(chest, "scale", Vector2.ONE, 0.1)
 	Fx.scatter(fx, chest.position - Vector2(0, 26), 6, Color(1, 0.9, 0.4), null, 5.0, 34, 24)
+	Sound.play("deposit")
 	Input.vibrate_handheld(25)
 	Game.save_now()

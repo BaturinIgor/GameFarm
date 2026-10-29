@@ -164,6 +164,7 @@ func _update_stage(world: World, monsters: MonstersFeature) -> void:
 		_portal = _make_portal(world, world.layout.base - Vector2(0, 60))
 	if Game.save.get("eventChoice", []).is_empty() and _portal.position.distance_to(world.player.position) < 34.0:
 		ev.enter_event_portal()
+		Sound.play("whoosh")
 
 
 func _spawn_boss(world: World, monsters: MonstersFeature, event: String) -> void:
@@ -175,6 +176,7 @@ func _spawn_boss(world: World, monsters: MonstersFeature, event: String) -> void
 	_boss = monsters.spawn(kind, level, point, Monsters.pick_traits(Events.boss_traits(stage)), true, Events.COLORS[event][1])
 	Fx.puff(world.fx, point, Color(0.85, 0.85, 0.85), 80.0)
 	Game.show_toast("px:crown", L.t("toast.stageBoss", [Monsters.name_of(kind)]))
+	Sound.play("wildAppear")
 	world.shake = maxf(world.shake, 6.0)
 
 

@@ -107,6 +107,7 @@ func buy(id: String) -> bool:
 		return false
 	Game.save["coins"] = int(Game.save["coins"]) - price
 	add_star(id, 1)
+	Sound.play("purchase")
 	return true
 
 
@@ -198,6 +199,7 @@ func awaken(id: String) -> void:
 		Game.save["awaken"] = {}
 	Game.save["awaken"][id] = awaken_level(id) + 1
 	Game.recalc()
+	Sound.play("levelUp")
 	Game.show_toast("px:star", L.t("toast.awaken", [Animals.name_of(id), Animals.awaken_title(awaken_level(id))]))
 	Game.save_now()
 
@@ -252,4 +254,5 @@ func double_offline(from_ad: bool) -> void:
 		Game.save["adsWatched"] = int(Game.save.get("adsWatched", 0)) + 1
 	offline_report = {}
 	Game.show_toast("px:bed", L.t("toast.offlineDoubled"))
+	Sound.play("success")
 	Game.save_now()

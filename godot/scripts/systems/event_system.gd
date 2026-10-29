@@ -186,6 +186,7 @@ func claim_event(tier_n: int, vip: bool) -> void:
 	else:
 		Game.save["eventFree"].append(tier_n)
 		_grant_event_reward(Events.free_reward(tier_n), event)
+	Sound.play("treasure")
 	Game.mark_dirty()
 	Game.save_now()
 
@@ -208,6 +209,7 @@ func claim_all_event() -> void:
 		any = true
 	if not any:
 		return
+	Sound.play("treasure")
 	Game.mark_dirty()
 	Game.save_now()
 
@@ -306,6 +308,7 @@ func _add_pass_points(n: int) -> void:
 	var after := event_tier()
 	if after > before:
 		Game.show_toast("px:star", L.t("toast.eventTier", [after]))
+		Sound.play("unlock")
 
 
 ## Монстр побеждён на карте ивента: очки или победа над боссом этапа (из noteKill).
@@ -404,6 +407,7 @@ func _stage_cleared() -> void:
 		Game.save["maps"] = int(Game.save.get("maps", 0)) + 1
 		Game.show_toast("px:tmap", L.t("toast.map"))
 	Game.show_toast("px:portal", L.t("toast.stageCleared", [stage]))
+	Sound.play("levelUp")
 	Game.mark_dirty()
 	Game.save_now()
 
@@ -426,6 +430,7 @@ func choose_boon(id: String) -> void:
 		return
 	Game.save["eventBoons"][id] = mini(Events.BOON_MAX_RANK, boon_rank(id) + 1)
 	Game.save["eventChoice"] = []
+	Sound.play("unlock")
 	_next_stage()
 
 

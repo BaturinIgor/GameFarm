@@ -4,7 +4,7 @@ extends Sheet
 ## бесплатная и VIP-линия наград, бонусный сундук и анонсы следующих ивентов.
 ## Здесь же общие части: карточка ивента для карты мира (EventMapCard), расписание для календаря
 ## (EventSchedule), выбор усиления после этапа (EventBoonPicker) и портрет образа (SkinIcon).
-## Предложение купить VIP-пропуск (EventVipCard) - покупки, этап 6.
+## Пока пропуска нет - предложение купить его (EventVipCard).
 
 
 func _init() -> void:
@@ -24,6 +24,8 @@ func build() -> void:
 	if Game.events.events_open():
 		content.add_child(_run_card())
 		content.add_child(_progress_card(event))
+		if not Game.events.has_vip():
+			content.add_child(_vip_card(event))
 		_tier_list(event)
 	else:
 		var c := _card(Color(UiKit.WOOD_DARK, 0.45), 2)
@@ -39,6 +41,29 @@ func build() -> void:
 	var tip := HousePanel.wrapped(L.t("event.tip"), 11, UiKit.INK_SOFT)
 	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	content.add_child(tip)
+
+
+## Купить VIP-пропуск (EventVipCard): образ ивента, описание и кнопка покупки.
+func _vip_card(event: String) -> Control:
+	var parts := ShopPanel.shop_card(Products.title("eventPass"), "gold")
+	var v: VBoxContainer = parts[1]
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	v.add_child(row)
+	var frame := PanelContainer.new()
+	var fs := UiKit.box(Color(UiKit.PARCHMENT_DEEP, 0.7), Color(UiKit.OUTLINE, 0.6), 12, 2, false)
+	fs.set_content_margin_all(4)
+	frame.add_theme_stylebox_override("panel", fs)
+	frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	frame.add_child(EventsPanel.skin_icon(Events.skin_of(event), 52))
+	row.add_child(frame)
+	var skin := Events.skin_of(event)
+	var text := HousePanel.wrapped(L.t("event.vip.desc", [Skins.name_of(skin)]), 12)
+	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(text)
+	v.add_child(ShopPanel.buy_button("eventPass", "orange"))
+	return parts[0]
 
 
 # MARK: Время

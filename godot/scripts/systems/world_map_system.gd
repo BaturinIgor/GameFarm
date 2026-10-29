@@ -186,6 +186,7 @@ func open_gate(id: String) -> bool:
 		Game.gain_xp(int(Locations.spec(loc)["level"]) * 15)
 	if fresh.is_empty():
 		Game.show_toast("px:door", L.t("toast.gateOpened"))
+	Sound.play("gateOpen")
 	Game.mark_dirty()
 	Game.save_now()
 	return true

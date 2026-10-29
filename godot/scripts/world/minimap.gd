@@ -93,6 +93,7 @@ func _draw() -> void:
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		accept_event()
+		Sound.play("tap")
 		if Hud.current != null and _layout != null:
 			Hud.current.show_overlay(BigMap.new(_layout, _player))
 

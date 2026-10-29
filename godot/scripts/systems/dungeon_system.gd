@@ -75,6 +75,7 @@ func dungeon_cleared() -> void:
 	if run == null or run["cleared"]:
 		return
 	run["cleared"] = true
+	Sound.play("levelUp")
 	Game.show_toast("px:trophy", L.t("toast.floorCleared", [run["floor"]]))
 	Game.emit_event("dungeon", {"dungeon": run["dungeon"], "floor": run["floor"]})
 	Game.changed.emit()
@@ -118,6 +119,7 @@ func open_dungeon_chest() -> void:
 	run["essence"] = int(run["essence"]) + essence
 	last_chest = {"dungeon": id, "floor": floor_n, "won": true, "first_clear": first, "coins": run["coins"],
 		"essence": run["essence"], "weapon": weapon, "potions": potions, "maps": maps}
+	Sound.play("treasure")
 	Game.mark_dirty()
 	Game.save_now()
 
@@ -142,6 +144,7 @@ func go_deeper() -> void:
 	Game.combat.heal(0.35)
 	map_version += 1
 	Game.show_toast("px:stairs", L.t("toast.deeper", [run["floor"]]))
+	Sound.play("unlock")
 	Game.mark_dirty()
 
 

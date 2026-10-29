@@ -114,6 +114,7 @@ func _step_on_beds(world: World, now: float) -> void:
 			world.player.swing("hand", p, 0.4)
 			Fx.gain(world.fx, got["kind"], int(got["amount"]), p - Vector2(0, 30))
 			Fx.scatter(world.fx, p - Vector2(0, 12), 6, Color.WHITE, Sprites.icon("spark"), 10.0, 24.0, 18.0, 0.5)
+			Sound.play("pickup")
 		elif Farming.is_empty(bed) or bool(bed.get("watered", false)):
 			continue
 		else:
@@ -121,6 +122,7 @@ func _step_on_beds(world: World, now: float) -> void:
 				continue
 			Fx.ring(world.flat, p, WATER_RING, 18.0)
 			Fx.scatter(world.fx, p - Vector2(0, 10), 5, WATER_SPARK, Sprites.icon("spark"), 9.0, 18.0, 10.0, 0.4)
+			Sound.play("splash")
 		node.invalidate()
 		node.refresh(g.bed(i), true, GardenSystem.now())
 		_cooldown = 0.3

@@ -1,7 +1,7 @@
 class_name OfflineOverlay
 extends Control
 ## Заставка "С возвращением": что звери-производители собрали, пока игры не было (порт OfflineOverlay).
-## Всё уже лежит на складе, кнопка только закрывает.
+## Всё уже лежит на складе. Удвоить за рекламу (с Pro - сразу): одно нажатие удваивает и закрывает окно.
 
 var report: Dictionary = {}
 var _closing := false
@@ -73,6 +73,12 @@ func _ready() -> void:
 		flow.add_child(_chip(str(it[0]), int(it[1])))
 
 	col.add_child(_text(L.t("offline.inStorage"), 12))
+	if not bool(report.get("doubled", false)):
+		var pro := Game.premium.has_pro()
+		var double := Ads.reward_button(L.t("offline.double.pro") if pro else L.t("offline.double"), "green", 15)
+		double.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		double.pressed.connect(_double)
+		col.add_child(double)
 	var b := UiKit.button(L.t("offline.collect"), "wood", 15, true)
 	b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	b.pressed.connect(close)
@@ -111,6 +117,16 @@ func _chip(kind: String, n: int) -> PanelContainer:
 	row.add_child(UiKit.icon(kind, 24))
 	row.add_child(UiKit.label("+" + Fmt.n(n), 14))
 	return p
+
+
+## Удвоить добычу: окно закрывается сразу, награда приходит после ролика.
+func _double() -> void:
+	if _closing:
+		return
+	close()
+	Ads.show_rewarded(func() -> void:
+		Game.animals.double_offline(not Game.premium.has_pro())
+		Input.vibrate_handheld(20))
 
 
 func close() -> void:

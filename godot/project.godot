@@ -17,6 +17,7 @@ run/low_processor_mode=false
 L="*res://scripts/core/l10n.gd"
 Sprites="*res://scripts/core/sprites.gd"
 Game="*res://scripts/core/game.gd"
+Sound="*res://scripts/core/sound.gd"
 
 [display]
 

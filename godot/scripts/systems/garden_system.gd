@@ -130,6 +130,7 @@ func buy_seeds(crop: String, count: int) -> bool:
 	var selected := str(Game.save.get("selectedSeed", ""))
 	if selected == "" or seeds(selected) == 0:
 		Game.save["selectedSeed"] = crop
+	Sound.play("purchase")
 	Game.mark_dirty()
 	return true
 
@@ -151,6 +152,7 @@ func plant(index: int, crop := "") -> bool:
 	var speed := (Farming.GREENHOUSE_SPEED if Game.house.is_built("greenhouse") else 1.0) * Game.stats.grow_mult
 	_set_bed(index, {"crop": c, "plantedAt": now(), "boost": 0.0, "watered": false, "speed": speed})
 	garden_events.append({"bed": index, "kind": "planted"})
+	Sound.play("pick")
 	Game.emit_event("plant", {"crop": c})
 	return true
 
@@ -173,6 +175,7 @@ func harvest_one(index: int) -> bool:
 	if got.is_empty():
 		return false
 	garden_events.append({"bed": index, "kind": "harvested", "got": got})
+	Sound.play("pickup")
 	return true
 
 
@@ -186,6 +189,8 @@ func harvest_all() -> int:
 		if not got.is_empty():
 			garden_events.append({"bed": i, "kind": "harvested", "got": got})
 			n += 1
+	if n > 0:
+		Sound.play("pickup")
 	return n
 
 
@@ -294,6 +299,7 @@ func craft(id: String, count := 1) -> bool:
 	Game.save["fertilizers"][id] = fertilizers(id) + count
 	if chosen_fertilizer() == "":
 		Game.save["selectedFertilizer"] = id
+	Sound.play("pick")
 	Game.mark_dirty()
 	return true
 
@@ -316,6 +322,7 @@ func fertilize(index: int, with_id := "") -> bool:
 		Game.save["fertilizers"][id] = fertilizers(id) - 1
 	_set_bed(index, b)
 	garden_events.append({"bed": index, "kind": "boosted"})
+	Sound.play("success")
 	return true
 
 
@@ -364,6 +371,7 @@ func upgrade_can() -> void:
 		return
 	Game.pay(next_can_cost())
 	Game.save["canLevel"] = can_level() + 1
+	Sound.play("levelUp")
 	Game.show_toast("px:watering_can", L.t("toast.can", [can_level()]))
 	Game.mark_dirty()
 	Game.save_now()
@@ -442,6 +450,7 @@ func trade(deal: Dictionary) -> bool:
 		Game.save["dealsDay"] = day
 		Game.save["dealsBought"] = []
 	Game.save["dealsBought"].append(int(deal["id"]))
+	Sound.play("purchase")
 	Game.emit_event("trade", {})
 	Game.mark_dirty()
 	return true
@@ -495,6 +504,7 @@ func buy_wanderer(offer: Dictionary) -> bool:
 		"seeds": add_seeds(str(goods["crop"]), int(goods["n"]))
 		"resource": Game.add_to_storage(str(goods["kind"]), int(goods["n"]), false)
 	wanderer["bought"].append(int(offer["id"]))
+	Sound.play("purchase")
 	Game.emit_event("trade", {})
 	Game.mark_dirty()
 	return true

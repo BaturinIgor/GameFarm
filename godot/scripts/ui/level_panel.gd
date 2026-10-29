@@ -1,6 +1,6 @@
 class_name LevelPanel
 extends Sheet
-## Профиль: уровень и опыт, характеристики, что откроется дальше, статистика, язык (порт LevelView).
+## Профиль: уровень и опыт, характеристики, что откроется дальше, статистика, язык, покупки (порт LevelView).
 ## Здесь же награды и открытия уровней (GameRules.rewards, GameRules.unlocks) - их берёт и заставка уровня.
 
 # Копии таблиц из Swift, пока их нет в scripts/data: уровни планет, зверей лавки, этажей дома,
@@ -499,6 +499,33 @@ func _settings_card() -> void:
 	row.add_child(pick)
 	c.add_child(_divider())
 	c.add_child(WardrobePanel.profile_row())
+	c.add_child(_divider())
+	_purchases_rows(c)
+
+
+## Pro (если куплен), восстановление покупок и сброс тестовых покупок (сборка без магазина, как SIDELOAD).
+func _purchases_rows(c: VBoxContainer) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	c.add_child(row)
+	if Game.premium.has_pro():
+		var crown := UiKit.icon("crown", 18)
+		crown.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(crown)
+		var pro := UiKit.label(Products.title("pro"), 14, UiKit.TONES["purple"][2])
+		pro.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(pro)
+	var gap := Control.new()
+	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(gap)
+	var restore := UiKit.button(L.t("shop.restore"), "wood", 13, true)
+	restore.pressed.connect(Store.restore)
+	row.add_child(restore)
+	var reset := UiKit.button(L.t("settings.resetTest"), "gray", 13, true)
+	reset.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	reset.pressed.connect(func() -> void: Game.premium.reset_test_purchases())
+	c.add_child(reset)
 
 
 # MARK: Элементы

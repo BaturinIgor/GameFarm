@@ -177,6 +177,7 @@ func gain_xp(base: int) -> void:
 	if level > from:
 		recalc()
 		level_up.emit(from, level)
+		Sound.play("levelUp")
 	mark_dirty()
 
 
@@ -279,6 +280,7 @@ func sell(kind: String, n: int) -> int:
 	var earned := count * sell_price(kind)
 	add_coins(earned)
 	emit_event("sell", {"amount": earned})
+	Sound.play("coin")
 	return earned
 
 

@@ -74,6 +74,7 @@ func _check_treasure(world: World) -> void:
 	t.burst()
 	world.shake = maxf(world.shake, 4.0)
 	world.player.celebrate()
+	Sound.play("treasure")
 	Input.vibrate_handheld(30)
 	if Hud.current != null:
 		Hud.current.show_overlay(TreasureCard.new(reward))

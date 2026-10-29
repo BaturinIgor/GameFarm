@@ -74,6 +74,7 @@ func buy_legacy(perk: String) -> bool:
 		for tool in Tools.UPGRADABLE:
 			Game.save["tools"][tool] = maxi(Game.tier(tool), mini(Tools.MAX_TIER, 1 + r + 1))
 	Game.recalc()
+	Sound.play("unlock")
 	Game.mark_dirty()
 	return true
 
@@ -142,4 +143,5 @@ func rebirth() -> void:
 	Game.mark_dirty()
 	Game.save_now()
 	if reward > 0:
+		Sound.play("levelUp")
 		Game.show_toast("px:spark", L.t("rebirth.toast", [reward]))

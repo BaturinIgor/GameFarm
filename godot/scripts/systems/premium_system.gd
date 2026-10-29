@@ -1,18 +1,44 @@
 class_name PremiumSystem
 extends RefCounted
 ## Покупки, Pro, сад, удача, билеты, экспедиции (порт Premium.swift, Expeditions.swift и части GameState).
-## Покупки (owns, has_pro) и удача за рекламу - этап 6. В Game.save: tickets, maps, lastFreeTicket,
+## В Game.save: purchases, granted, consumed (идентификаторы магазина), starterOfferUntil, starterOffers,
+## luckUntil, luckReadyAt, adsWatched, gardenChestAt, tickets, maps, lastFreeTicket,
 ## expedition = {location, endsAt, returnTo, loot: {вид: n}, coins} (как ExpeditionRun); нет экспедиции - нет ключа.
 
 const PRO_OFFLINE_HOURS := 24.0
 const STARTER_BACKPACK := 30
 const CAPYBARA_YIELD := 0.1
+const STARTER_COINS := 2500
+const STARTER_LEVEL := 5
+const STARTER_SECOND_LEVEL := 15
+const STARTER_WINDOW := 48.0 * 3600.0
+const LUCK_DURATION := 10.0 * 60.0
+const LUCK_COOLDOWN := 10.0 * 60.0
+## Королевский сундук открывается раз в сутки.
+const GARDEN_CHEST_EVERY := 22.0 * 3600.0
 
 ## Итог последней экспедиции для окна после возвращения: {location, items: [[вид, n], ...], coins} или null.
 var expedition_report = null
+## Показать окно стартового набора (offerPopup в iOS).
+var offer_popup := false
+## Что выпало из королевского сундука: {coins, items: [[вид, n], ...]} или null.
+var garden_chest_found = null
 
 
 func defaults(save: Dictionary) -> void:
+	for key in ["purchases", "granted", "consumed"]:
+		var list: Array = []
+		var raw = save.get(key, [])
+		if raw is Array:
+			for v in raw:
+				list.append(str(v))
+		save[key] = list
+	for key in ["starterOffers", "adsWatched"]:
+		save[key] = int(save.get(key, 0)) if _is_number(save.get(key)) else 0
+	for key in ["starterOfferUntil", "luckUntil", "luckReadyAt", "gardenChestAt"]:
+		if not _is_number(save.get(key)):
+			save.erase(key)
+	_repair_timers(save)
 	save["tickets"] = int(save.get("tickets", 1))
 	save["maps"] = int(save.get("maps", 0))
 	if not _is_number(save.get("lastFreeTicket")):
@@ -25,6 +51,26 @@ func defaults(save: Dictionary) -> void:
 	# Карта экспедиции без самой экспедиции: на луг
 	if Locations.kind(str(save.get("current", "meadow"))) == "expedition" and run == null:
 		save["current"] = "meadow"
+
+
+## Если часы на телефоне перевели назад, таймеры могли улететь далеко в будущее. Сбрасываем такие.
+static func _repair_timers(save: Dictionary) -> bool:
+	var now := _now()
+	var fixed := false
+	if _is_number(save.get("luckReadyAt")) and float(save["luckReadyAt"]) - now > LUCK_DURATION + LUCK_COOLDOWN + 60.0:
+		save.erase("luckUntil")
+		save.erase("luckReadyAt")
+		fixed = true
+	if _is_number(save.get("starterOfferUntil")) and float(save["starterOfferUntil"]) - now > STARTER_WINDOW + 60.0:
+		save["starterOfferUntil"] = now + STARTER_WINDOW
+		fixed = true
+	return fixed
+
+
+## Проверка таймеров при возвращении в игру (repairTimers).
+func repair_timers() -> void:
+	if _repair_timers(Game.save):
+		Game.mark_dirty()
 
 
 ## Экспедиция из сохранения в чистом виде (числа - целые) или null, если запись битая.
@@ -52,18 +98,169 @@ static func _now() -> float:
 	return Time.get_unix_time_from_system()
 
 
+# MARK: Покупки
+
+## Куплено ли (ключ покупки или идентификатор магазина).
 func owns(product: String) -> bool:
-	return product in Game.save.get("purchases", []) or product in Game.save.get("granted", [])
+	return Products.id(product) in Game.save.get("purchases", [])
 
 
 func has_pro() -> bool:
 	return owns("pro")
 
 
-## Удача за рекламу: x2 ресурсов, пока не вышло время (сама реклама - этап 6).
+## Выдаёт покупку. Разовые награды (монеты, зверь) выдаются один раз даже при повторном восстановлении.
+func grant(product: String, transaction := "") -> void:
+	var key := Products.key(product)
+	if key == "":
+		return
+	var id := Products.id(key)
+	if Products.consumable(key):
+		# Билеты можно покупать много раз: каждую покупку выдаём ровно один раз.
+		if transaction != "":
+			var used: Array = Game.save.get("consumed", [])
+			if transaction in used:
+				return
+			used.append(transaction)
+			Game.save["consumed"] = used
+		if key == "eventPass":
+			Game.events.activate_vip()
+		else:
+			Game.save["tickets"] = tickets() + Expeditions.TICKET_PACK
+		Game.show_toast("px:chest_gold", L.t("toast.purchased", [Products.title(key)]))
+		Game.mark_dirty()
+		Game.save_now()
+		return
+	var purchases: Array = Game.save.get("purchases", [])
+	if not id in purchases:
+		purchases.append(id)
+	Game.save["purchases"] = purchases
+	var granted: Array = Game.save.get("granted", [])
+	if not id in granted:
+		granted.append(id)
+		Game.save["granted"] = granted
+		match key:
+			"starter":
+				Game.save["coins"] = int(Game.save["coins"]) + STARTER_COINS
+				if Game.animals.stars("duckHat") == 0:
+					Game.animals.add_star("duckHat", 1)
+				Game.save["skin"] = "robot"
+				Game.save.erase("starterOfferUntil")
+			"pro":
+				Game.save["skin"] = "genie"
+			"garden":
+				Game.save["skin"] = "knight"
+				Game.save.erase("gardenChestAt")
+				Game.combat.grant_weapon("royalSword")
+		Game.show_toast("px:chest_gold", L.t("toast.purchased", [Products.title(key)]))
+	offer_popup = false
+	Game.recalc()
+	Game.quests.ensure_quests()
+	Game.mark_dirty()
+	Game.save_now()
+
+
+## Покупку вернули: убираем её, образ сбрасываем, если он был из неё.
+func revoke(product: String) -> void:
+	var key := Products.key(product)
+	if key == "" or Products.consumable(key) or not owns(key):
+		return
+	var purchases: Array = Game.save.get("purchases", [])
+	purchases.erase(Products.id(key))
+	Game.save["purchases"] = purchases
+	_after_revoke()
+
+
+## Тестовая сборка: забыть все покупки (выданные награды остаются).
+func reset_test_purchases() -> void:
+	Game.save["purchases"] = []
+	_after_revoke()
+
+
+func _after_revoke() -> void:
+	if not Skins.is_unlocked(Skins.current()):
+		Game.save["skin"] = "farmer"
+	Game.recalc()
+	var qs: Array = Game.save.get("quests", [])
+	if qs.size() > Game.quests.quest_slots:
+		Game.save["quests"] = qs.slice(0, Game.quests.quest_slots)
+	Game.mark_dirty()
+	Game.save_now()
+
+
+# MARK: Стартовый набор
+
+func starter_available() -> bool:
+	var until = Game.save.get("starterOfferUntil")
+	return not owns("starter") and _is_number(until) and float(until) > _now()
+
+
+## Открывает окно стартового набора на 48 часов: на 5 уровне и ещё раз на 15.
+func check_starter_offer() -> void:
+	if owns("starter") or starter_available():
+		return
+	var offers := int(Game.save.get("starterOffers", 0))
+	var due := (offers == 0 and Game.level >= STARTER_LEVEL) or (offers == 1 and Game.level >= STARTER_SECOND_LEVEL)
+	if not due:
+		return
+	Game.save["starterOffers"] = offers + 1
+	Game.save["starterOfferUntil"] = _now() + STARTER_WINDOW
+	offer_popup = true
+	Game.mark_dirty()
+
+
+# MARK: Удача за рекламу
+
+## Удача: x2 ресурсов, пока не вышло время.
 func luck_active() -> bool:
 	var until = Game.save.get("luckUntil")
 	return _is_number(until) and float(until) > _now()
+
+
+func luck_ready() -> bool:
+	var ready_at = Game.save.get("luckReadyAt")
+	return not luck_active() and (not _is_number(ready_at) or float(ready_at) <= _now())
+
+
+func activate_luck(from_ad: bool) -> void:
+	if not luck_ready():
+		return
+	var until := _now() + LUCK_DURATION
+	Game.save["luckUntil"] = until
+	Game.save["luckReadyAt"] = until + LUCK_COOLDOWN
+	if from_ad:
+		Game.save["adsWatched"] = int(Game.save.get("adsWatched", 0)) + 1
+	Game.show_toast("px:clover", L.t("toast.luck"))
+	Game.mark_dirty()
+
+
+# MARK: Королевский сад
+
+func garden_chest_ready() -> bool:
+	var at = Game.save.get("gardenChestAt")
+	return owns("garden") and (not _is_number(at) or float(at) <= _now())
+
+
+## Королевский сундук раз в сутки: много монет, ресурсы и билет. Итог - в garden_chest_found.
+func open_garden_chest() -> void:
+	if not garden_chest_ready():
+		return
+	var level := Game.level
+	var coins := int(float(300 + level * 120) * randf_range(0.9, 1.2))
+	var items: Array = []
+	var pool: Array = Game.quests.gatherable_kinds()
+	pool.shuffle()
+	for kind in pool.slice(0, 3):
+		var n := maxi(2, int(float(60 + level * 8) / pow(float(Res.price(kind)), 0.6)))
+		items.append([kind, n])
+	Game.add_coins(coins)
+	for it in items:
+		Game.add_to_storage(it[0], it[1])
+	Game.save["tickets"] = mini(Expeditions.MAX_TICKETS, tickets() + 1)
+	Game.save["gardenChestAt"] = _now() + GARDEN_CHEST_EVERY
+	garden_chest_found = {"coins": coins, "items": items}
+	Game.mark_dirty()
+	Game.save_now()
 
 
 # MARK: Билеты

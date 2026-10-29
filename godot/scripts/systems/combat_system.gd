@@ -156,6 +156,7 @@ func equip(id: String) -> void:
 		return
 	Game.save["weapon"] = id
 	Game.recalc()
+	Sound.play("tap")
 	Game.mark_dirty()
 
 
@@ -199,6 +200,7 @@ func upgrade_weapon(id: String) -> void:
 	Game.pay(weapon_upgrade_cost(id))
 	Game.save["weapons"][id] = weapon_tier(id) + 1
 	Game.recalc()
+	Sound.play("unlock")
 	Game.show_toast("px:sword", L.t("toast.weaponUp", [Weapons.name_of(id), weapon_tier(id)]))
 	Game.mark_dirty()
 	Game.save_now()
@@ -229,6 +231,7 @@ func buy_potions(count: int) -> void:
 		return
 	Game.save["coins"] = int(Game.save["coins"]) - price
 	Game.save["potions"] = potions() + count
+	Sound.play("purchase")
 	Game.mark_dirty()
 
 
@@ -242,6 +245,7 @@ func drink_potion() -> void:
 	Game.save["potions"] = potions() - 1
 	_last_potion = _now()
 	heal(Dungeons.POTION_HEAL + Game.stats.potion_bonus)
+	Sound.play("success")
 	Game.mark_dirty()
 
 
@@ -353,6 +357,7 @@ func claim_hunt(id: String) -> void:
 		if bool(h.get("ticket", false)):
 			Game.save["tickets"] = int(Game.save.get("tickets", 0)) + 1
 		Game.gain_xp(int(h["xp"]))
+		Sound.play("success")
 		Game.mark_dirty()
 		Game.save_now()
 		return

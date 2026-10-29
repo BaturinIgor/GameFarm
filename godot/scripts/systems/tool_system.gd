@@ -44,6 +44,7 @@ func upgrade(tool: String) -> bool:
 	Game.pay(next_cost(tool))
 	Game.save["tools"][tool] = next
 	Game.recalc()
+	Sound.play("unlock")
 	Game.show_toast("px:" + Tools.icon_name(tool), L.t("toast.newTool", [Tools.tier_name(tool, next)]))
 	Game.emit_event("upgrade", {"tool": tool, "tier": next})
 	Game.mark_dirty()

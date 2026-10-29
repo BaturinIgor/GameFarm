@@ -426,9 +426,11 @@ func open_window(w: Control) -> void:
 	close_window()
 	_window = w
 	root.add_child(w)
+	Sound.set_window_open(true)
 
 
 func close_window() -> void:
 	if _window != null and is_instance_valid(_window):
 		_window.queue_free()
 	_window = null
+	Sound.set_window_open(false)

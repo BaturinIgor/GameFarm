@@ -141,13 +141,12 @@ func _quest_card(q: Dictionary) -> void:
 	reroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	reroll.pressed.connect(func() -> void: Game.quests.reroll_quest(id))
 	row.add_child(reroll)
-	# Бесплатная замена в iOS - за рекламу; с Pro реклама не нужна
-	if Game.premium.has_pro():
-		var free_btn := UiKit.button(L.t("quests.rerollFree"), "blue", 13, true)
-		_set_icon(free_btn, "crown")
-		free_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		free_btn.pressed.connect(func() -> void: Game.quests.reroll_quest(id, true))
-		row.add_child(free_btn)
+	# Бесплатная замена за рекламу; с Pro реклама не нужна
+	var free_btn := Ads.reward_button(L.t("quests.rerollFree"), "blue", 13, true)
+	free_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	free_btn.pressed.connect(func() -> void:
+		Ads.show_rewarded(func() -> void: Game.quests.reroll_quest(id, true)))
+	row.add_child(free_btn)
 
 
 # MARK: Достижения
