@@ -48,6 +48,7 @@
 | Система | Файл | Что внутри (порт из Swift) |
 |---|---|---|
 | `Game.talents` | `talent_system.gd` | Таланты: ранги, очки, изучение, сброс |
+| `Game.workshop` | `tool_system.gd` | Мастерская: улучшение инструментов |
 | `Game.animals` | `animal_system.gd` | Звери: звёзды, активные, приручение, пробуждение, редкие |
 | `Game.quests` | `quest_system.gd` | Задания и достижения |
 | `Game.house` | `house_system.gd` | Дом, уют, украшения, кухня и блюда, календарь входа |
@@ -81,7 +82,12 @@
 - Стиль - `UiKit` (`scripts/ui/ui_kit.gd`): пергамент, дерево, тёмный контур, кнопки `UiKit.button(text, tone)`.
 - Окна - наследники `Sheet` (`scripts/ui/sheet.gd`): заголовок, монеты, крестик, прокрутка; содержимое
   строится в `build()` и перестраивается после `Game.changed`. Открываются через `Hud.open_window(...)`.
-- Шапка и кнопки - `Hud` (`scripts/ui/hud.gd`).
+- Шапка и кнопки - `Hud` (`scripts/ui/hud.gd`). `Hud.current` - текущая шапка. Кнопки нижней панели берутся
+  из `Hud.WINDOWS` (кнопка появляется, когда файл окна существует), `Hud.current.open_named("talents")`.
+- Карточки над кнопками (приручить зверя, проход, дом): `Hud.current.set_prompt("ключ", control)`,
+  `set_prompt("ключ", null)` убирает.
+- Общие элементы в `UiKit`: `button`, `icon`, `icon_any("px:..|res:..|an:..")`, `bar` (GameBar), `cost_view`
+  (CostView), `stars`, `count_badge`. В шрифте нет символов вроде ★ и ✕: звёзды - иконка `star`, крестик - `×`.
 - Все тексты из `L.t()`. Никаких строк прямо в коде, кроме чисел и значков.
 
 ## Стиль кода

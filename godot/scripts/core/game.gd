@@ -16,6 +16,7 @@ var save: Dictionary = {}
 var stats := Stats.new()
 
 var talents := TalentSystem.new()
+var workshop := ToolSystem.new()
 var animals := AnimalSystem.new()
 var quests := QuestSystem.new()
 var house := HouseSystem.new()
@@ -29,7 +30,7 @@ var world_map := WorldMapSystem.new()
 
 ## Все системы по порядку: для значений по умолчанию и событий.
 var systems: Array:
-	get: return [talents, animals, quests, house, garden, combat, events, collection, legacy, premium, world_map]
+	get: return [talents, workshop, animals, quests, house, garden, combat, events, collection, legacy, premium, world_map]
 ## Где появиться после перехода через проход (id прохода).
 var arrival_gate := ""
 

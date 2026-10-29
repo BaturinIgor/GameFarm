@@ -128,6 +128,114 @@ static func icon(name: String, size := 24.0) -> TextureRect:
 	return t
 
 
+## Иконка по строке как IconView в iOS: "px:имя", "res:вид", "an:зверь", иначе текст (эмодзи).
+static func icon_any(code: String, size := 22.0) -> Control:
+	if code.begins_with("px:"):
+		return icon(code.substr(3), size)
+	if code.begins_with("res:"):
+		return icon(code.substr(4), size)
+	if code.begins_with("an:"):
+		var t := icon("paw", size)
+		var tex: Texture2D = Sprites.call("animal_icon", code.substr(3)) if Sprites.has_method("animal_icon") else null
+		if tex != null:
+			t.texture = tex
+		return t
+	var l := label(code, int(size * 0.8), INK)
+	l.custom_minimum_size = Vector2(size, size)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	return l
+
+
+## Полоска прогресса (GameBar): тон из TONES, подпись поверх по центру.
+static func bar(value: float, tone := "green", width := 120.0, height := 12.0, text := "") -> ProgressBar:
+	var b := ProgressBar.new()
+	b.custom_minimum_size = Vector2(width, height)
+	b.show_percentage = false
+	b.max_value = 1.0
+	b.step = 0.0
+	b.value = clampf(value, 0.0, 1.0)
+	var r := int(height / 2.0)
+	var bg := box(Color(WOOD_DARK, 0.85), OUTLINE, r, 2, false)
+	bg.set_content_margin_all(0)
+	var c: Array = TONES.get(tone, TONES["green"])
+	var fill := box(c[1], Color(0, 0, 0, 0), r, 0, false)
+	fill.set_content_margin_all(0)
+	b.add_theme_stylebox_override("background", bg)
+	b.add_theme_stylebox_override("fill", fill)
+	b.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if text != "":
+		var l := label(text, maxi(9, int(height * 0.8)), Color.WHITE, 4)
+		l.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		b.add_child(l)
+	return b
+
+
+## Цена (CostView): монеты и ресурсы "есть/нужно", красным то, чего не хватает.
+static func cost_view(cost: Dictionary, size := 13) -> HFlowContainer:
+	var flow := HFlowContainer.new()
+	flow.add_theme_constant_override("h_separation", 6)
+	flow.add_theme_constant_override("v_separation", 4)
+	flow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var coins := int(cost.get("coins", 0))
+	if coins > 0:
+		flow.add_child(_chip("coins", Fmt.n(coins), int(Game.save["coins"]) >= coins, size))
+	for it in cost.get("items", []):
+		var have := Game.amount(it[0])
+		flow.add_child(_chip(it[0], "%s/%s" % [Fmt.n(have), Fmt.n(int(it[1]))], have >= int(it[1]), size))
+	return flow
+
+
+static func _chip(icon_name: String, text: String, ok: bool, size: int) -> PanelContainer:
+	var p := PanelContainer.new()
+	var s := box(Color(1, 1, 1, 0.55) if ok else Color(BAD, 0.15), Color(OUTLINE, 0.35), 9, 1, false)
+	s.content_margin_left = 5
+	s.content_margin_right = 7
+	s.content_margin_top = 2
+	s.content_margin_bottom = 2
+	p.add_theme_stylebox_override("panel", s)
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 3)
+	p.add_child(row)
+	row.add_child(icon(icon_name, size + 4))
+	row.add_child(label(text, size, INK if ok else BAD))
+	return p
+
+
+## Звёзды зверя: закрашено stars из total.
+static func stars(n: int, total := 5, size := 12.0) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 0)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for i in total:
+		var t := icon("star", size)
+		if i >= n:
+			t.modulate = Color(0.3, 0.25, 0.2, 0.35)
+		row.add_child(t)
+	return row
+
+
+## Красный кружок со счётчиком (CountBadge).
+static func count_badge(n: int) -> PanelContainer:
+	var p := PanelContainer.new()
+	var s := box(TONES["red"][1], OUTLINE, 10, 2, false)
+	s.content_margin_left = 5
+	s.content_margin_right = 5
+	s.content_margin_top = 0
+	s.content_margin_bottom = 0
+	p.add_theme_stylebox_override("panel", s)
+	p.custom_minimum_size = Vector2(20, 20)
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var l := label(str(n), 11, Color.WHITE, 3)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	p.add_child(l)
+	return p
+
+
 ## Деревянная "плашка" (счётчики в шапке).
 static func pill_style() -> StyleBoxFlat:
 	var s := box(Color(WOOD, 0.95), OUTLINE, 14, 2, false)
