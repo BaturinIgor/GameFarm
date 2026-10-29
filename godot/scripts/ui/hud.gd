@@ -26,7 +26,6 @@ var _level_label: Label
 var _level_name: Label
 var _xp_bar: ProgressBar
 var _coins_label: Label
-var _pack_label: Label
 var _pack_bar: ProgressBar
 var _toasts := VBoxContainer.new()
 var _banner := VBoxContainer.new()
@@ -92,8 +91,10 @@ func _build_top() -> void:
 	col.add_theme_constant_override("separation", 2)
 	row.add_child(col)
 	_level_name = UiKit.title("", 13)
+	_level_name.custom_minimum_size = Vector2(118, 0)
+	_level_name.clip_text = true
 	col.add_child(_level_name)
-	_xp_bar = _bar(Color("f7c948"))
+	_xp_bar = UiKit.bar(0.0, "gold", 118, 14, " ")
 	col.add_child(_xp_bar)
 
 	# Рюкзак под уровнем
@@ -109,9 +110,8 @@ func _build_top() -> void:
 	var pcol := VBoxContainer.new()
 	pcol.add_theme_constant_override("separation", 1)
 	prow.add_child(pcol)
-	_pack_label = UiKit.title("0/0", 12)
-	pcol.add_child(_pack_label)
-	_pack_bar = _bar(Color("8bd45a"), 70)
+	_pack_bar = UiKit.bar(0.0, "green", 76, 14, " ")
+	_pack_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	pcol.add_child(_pack_bar)
 
 	# Монеты справа
@@ -130,22 +130,6 @@ func _build_top() -> void:
 	crow.add_child(UiKit.icon("coins", 22))
 	_coins_label = UiKit.title("0", 16)
 	crow.add_child(_coins_label)
-
-
-func _bar(color: Color, width := 96.0) -> ProgressBar:
-	var b := ProgressBar.new()
-	b.custom_minimum_size = Vector2(width, 9)
-	b.show_percentage = false
-	b.max_value = 1.0
-	b.step = 0.0
-	var bg := UiKit.box(Color(0, 0, 0, 0.35), UiKit.OUTLINE, 5, 1, false)
-	bg.set_content_margin_all(0)
-	var fill := UiKit.box(color, Color(0, 0, 0, 0), 5, 0, false)
-	fill.set_content_margin_all(0)
-	b.add_theme_stylebox_override("background", bg)
-	b.add_theme_stylebox_override("fill", fill)
-	b.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return b
 
 
 func _build_bottom() -> void:
@@ -306,12 +290,17 @@ func _process(delta: float) -> void:
 
 func _refresh_values() -> void:
 	_level_label.text = str(Game.level)
-	_level_name.text = L.t("level.n", [Game.level])
+	_level_name.text = Locations.name_of(Game.current)
 	_xp_bar.value = Game.level_progress
+	(_xp_bar.get_child(0) as Label).text = L.t("level.max") if Game.level >= Game.MAX_LEVEL \
+		else "%s/%s" % [Fmt.n(int(Game.save["xp"])), Fmt.n(Game.xp_needed)]
 	_coins_label.text = Fmt.n(int(Game.save["coins"]))
 	var cap := Game.stats.capacity
-	_pack_label.text = "%d/%d" % [Game.backpack_count, cap]
-	_pack_bar.value = float(Game.backpack_count) / float(maxi(1, cap))
+	var fraction := minf(1.0, float(Game.backpack_count) / float(maxi(1, cap)))
+	_pack_bar.value = fraction
+	(_pack_bar.get_child(0) as Label).text = "%d/%d" % [Game.backpack_count, cap]
+	var tone := "red" if fraction >= 1.0 else ("orange" if fraction > 0.8 else "green")
+	(_pack_bar.get_theme_stylebox("fill") as StyleBoxFlat).bg_color = UiKit.TONES[tone][1]
 	_update_badges()
 
 
