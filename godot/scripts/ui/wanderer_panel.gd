@@ -53,8 +53,8 @@ func _row(offer: Dictionary) -> void:
 	row.add_theme_constant_override("separation", 12)
 	c.add_child(row)
 	var goods: Dictionary = offer["goods"]
-	row.add_child(TraderPanel.icon_frame(_icon(goods), 30, ICON_FILL, Color(UiKit.OUTLINE, 0.6)))
-	var title := UiKit.label(_title(goods), 15)
+	row.add_child(TraderPanel.icon_frame(_offer_icon(goods), 30, ICON_FILL, Color(UiKit.OUTLINE, 0.6)))
+	var title := UiKit.label(_offer_title(goods), 15)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	row.add_child(title)
@@ -69,7 +69,7 @@ func _row(offer: Dictionary) -> void:
 	row.add_child(b)
 
 
-func _icon(goods: Dictionary) -> String:
+func _offer_icon(goods: Dictionary) -> String:
 	match str(goods["type"]):
 		"ticket": return "ticket"
 		"map": return "tmap"
@@ -77,7 +77,7 @@ func _icon(goods: Dictionary) -> String:
 	return str(goods.get("kind", "bag"))
 
 
-func _title(goods: Dictionary) -> String:
+func _offer_title(goods: Dictionary) -> String:
 	match str(goods["type"]):
 		"ticket": return L.t("wanderer.ticket")
 		"map": return L.t("wanderer.map")

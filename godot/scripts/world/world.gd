@@ -9,6 +9,8 @@ const FEATURES: Array[String] = [
 	"res://scripts/world/features/animals_feature.gd",
 	"res://scripts/world/features/treasure_feature.gd",
 	"res://scripts/world/features/home_feature.gd",
+	"res://scripts/world/features/trader_feature.gd",
+	"res://scripts/world/features/garden_feature.gd",
 ]
 
 @export var joystick: Joystick

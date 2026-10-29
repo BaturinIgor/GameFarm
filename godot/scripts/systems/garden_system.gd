@@ -104,7 +104,8 @@ func total_seeds() -> int:
 	return n
 
 
-func _add_seeds(crop: String, n: int) -> void:
+## Добавить семена (награды календаря, ивентов). Game.mark_dirty() - на вызывающем.
+func add_seeds(crop: String, n: int) -> void:
 	Game.save["seeds"][crop] = seeds(crop) + n
 
 
@@ -125,7 +126,7 @@ func buy_seeds(crop: String, count: int) -> bool:
 	if Game.level < int(Farming.spec(crop)["level"]) or int(Game.save["coins"]) < cost:
 		return false
 	Game.save["coins"] = int(Game.save["coins"]) - cost
-	_add_seeds(crop, count)
+	add_seeds(crop, count)
 	var selected := str(Game.save.get("selectedSeed", ""))
 	if selected == "" or seeds(selected) == 0:
 		Game.save["selectedSeed"] = crop
@@ -225,7 +226,7 @@ func harvest_bed(index: int) -> Dictionary:
 		amount += maxi(1, amount / 5)
 	Game.add_to_storage(produce, amount)
 	if randf() < s.seed_back_chance:
-		_add_seeds(crop, 1)
+		add_seeds(crop, 1)
 	if s.golden_harvest and randf() < 0.1:
 		Game.add_to_storage("goldenApple", 1)
 	Game.collection.roll_card(produce, 0.05)
@@ -435,7 +436,7 @@ func trade(deal: Dictionary) -> bool:
 	match str(reward["type"]):
 		"coins": Game.add_coins(int(reward["n"]))
 		"ticket": Game.save["tickets"] = int(Game.save.get("tickets", 0)) + 1
-		"seeds": _add_seeds(str(reward["crop"]), int(reward["n"]))
+		"seeds": add_seeds(str(reward["crop"]), int(reward["n"]))
 	var day := today()
 	if int(Game.save.get("dealsDay", 0)) != day:
 		Game.save["dealsDay"] = day
@@ -491,7 +492,7 @@ func buy_wanderer(offer: Dictionary) -> bool:
 	match str(goods["type"]):
 		"ticket": Game.save["tickets"] = int(Game.save.get("tickets", 0)) + 1
 		"map": Game.save["maps"] = int(Game.save.get("maps", 0)) + 1
-		"seeds": _add_seeds(str(goods["crop"]), int(goods["n"]))
+		"seeds": add_seeds(str(goods["crop"]), int(goods["n"]))
 		"resource": Game.add_to_storage(str(goods["kind"]), int(goods["n"]), false)
 	wanderer["bought"].append(int(offer["id"]))
 	Game.emit_event("trade", {})

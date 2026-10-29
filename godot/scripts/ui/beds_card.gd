@@ -10,6 +10,9 @@ const FERT_SELECTED := Color("c8eba0")
 var _col := VBoxContainer.new()
 var _tiles: HBoxContainer
 var _harvest: Button
+## Что показано в каждой клетке (закрыта, культура, спелая, удобрена) и полоски роста.
+var _tile_keys: Array = []
+var _tile_bars: Array = []
 var _dirty := true
 var _tick := 0.0
 
@@ -37,6 +40,7 @@ func _process(delta: float) -> void:
 		_dirty = false
 		_tick = 1.0
 		for c in _col.get_children():
+			_col.remove_child(c)
 			c.queue_free()
 		_build()
 		return
@@ -68,12 +72,21 @@ func _build() -> void:
 	_buttons()
 
 
+## Клетка перестраивается, только если поменялось её состояние; у растущих двигается полоска.
 func _refresh_tiles() -> void:
 	if _tiles == null or not is_instance_valid(_tiles):
 		return
-	for c in _tiles.get_children():
-		c.queue_free()
-	_fill_tiles()
+	var now := GardenSystem.now()
+	for i in mini(Farming.MAX_BEDS, _tiles.get_child_count()):
+		if _tile_key(i, now) != _tile_keys[i]:
+			var old := _tiles.get_child(i)
+			_tiles.remove_child(old)
+			old.queue_free()
+			var fresh := _tile(i, now)
+			_tiles.add_child(fresh)
+			_tiles.move_child(fresh, i)
+		elif is_instance_valid(_tile_bars[i]) and _tile_bars[i] is ColorRect:
+			(_tile_bars[i] as ColorRect).anchor_right = Farming.progress(Game.garden.bed(i), now)
 	if _harvest != null and is_instance_valid(_harvest):
 		var ripe := Game.garden.ripe_beds()
 		_harvest.text = L.t("beds.harvestAll", [ripe])
@@ -82,8 +95,17 @@ func _refresh_tiles() -> void:
 
 func _fill_tiles() -> void:
 	var now := GardenSystem.now()
+	_tile_keys.resize(Farming.MAX_BEDS)
+	_tile_bars.resize(Farming.MAX_BEDS)
 	for i in Farming.MAX_BEDS:
 		_tiles.add_child(_tile(i, now))
+
+
+func _tile_key(i: int, now: float) -> String:
+	var g := Game.garden
+	var bed := g.bed(i)
+	return "%s|%s|%s|%s" % [i >= g.bed_count(), str(bed.get("crop", "")), Farming.is_ripe(bed, now),
+		bed.get("fertilized", false) == true]
 
 
 ## Маленькая клетка грядки (BedTile): пусто, растёт, созрело или закрыто.
@@ -92,6 +114,8 @@ func _tile(i: int, now: float) -> Button:
 	var bed := g.bed(i)
 	var locked := i >= g.bed_count()
 	var ripe := Farming.is_ripe(bed, now)
+	_tile_keys[i] = _tile_key(i, now)
+	_tile_bars[i] = null
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(0, 30)
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -139,6 +163,7 @@ func _tile(i: int, now: float) -> Button:
 	bar.offset_top = -3
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.add_child(bar)
+	_tile_bars[i] = bar
 	return b
 
 
