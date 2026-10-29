@@ -67,12 +67,13 @@ func track(world: World, target) -> void:
 	if not (target is Vector2) or world == null or world.camera == null:
 		visible = false
 		return
+	var goal: Vector2 = target
 	var cam := world.camera
 	var zoom := cam.zoom
 	var half := world.get_viewport_rect().size / 2.0
 	var center := cam.get_screen_center_position()
 	# Смещение до цели в точках экрана (y вниз)
-	var rel: Vector2 = ((target as Vector2) - center) * zoom
+	var rel := (goal - center) * zoom
 	if absf(rel.x) < half.x - VISIBLE_X and rel.y > -(half.y - INSET_TOP) and rel.y < half.y - INSET_BOTTOM:
 		visible = false
 		return
