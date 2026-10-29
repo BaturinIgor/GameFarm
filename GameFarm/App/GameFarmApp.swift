@@ -16,6 +16,8 @@ struct GameFarmApp: App {
                     Sound.shared.start()
                     Store.shared.start()
                     Ads.shared.start()
+                    CloudSync.shared.start()
+                    GameCenter.shared.authenticate()
                 }
                 .statusBarHidden()
                 .persistentSystemOverlays(.hidden)
@@ -27,6 +29,7 @@ struct GameFarmApp: App {
                 Sound.shared.resumeAll()
             case .background:
                 game.saveNow()
+                CloudSync.shared.push(game.save, force: true)
                 Sound.shared.pauseAll()
             case .inactive where old == .active:
                 game.saveNow()

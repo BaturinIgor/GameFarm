@@ -18,11 +18,36 @@ struct LevelView: View {
                 statsCard
                 rebirthCard
                 settingsCard
+                if Distribution.gameCenter { leaderboardsCard }
                 BackupCard()
+                FeedbackCard()
             }
             .padding(16)
         }
         .sheetChrome(tr("profile.title"), coins: game.save.coins)
+    }
+
+    /// Рейтинги Game Center (только в сборке из App Store).
+    private var leaderboardsCard: some View {
+        Card {
+            HStack(spacing: 12) {
+                PixelIcon(name: "trophy", size: 32)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(tr("leaderboards.title")).font(.game(15))
+                    Text(tr("leaderboards.hint"))
+                        .font(.game(11, .semibold))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+            Button {
+                GameCenter.shared.show()
+            } label: {
+                Label(tr("leaderboards.open"), systemImage: "list.number")
+            }
+            .buttonStyle(.game(.gold, wide: true))
+        }
     }
 
     private var rebirthCard: some View {
@@ -436,10 +461,28 @@ struct UpcomingCard: View {
 
 
 /// Резервная копия прогресса: сохранить в файл и восстановить из файла.
+/// Файл копии прогресса для окна "Сохранить в Файлы".
+struct BackupDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.json] }
+    var data: Data
+
+    init(data: Data) { self.data = data }
+
+    init(configuration: ReadConfiguration) throws {
+        data = configuration.file.regularFileContents ?? Data()
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: data)
+    }
+}
+
 struct BackupCard: View {
     @Environment(GameState.self) private var game
     @State private var exportURL: URL?
     @State private var importing = false
+    @State private var exporting = false
+    @State private var document: BackupDocument?
 
     var body: some View {
         Card {
@@ -454,21 +497,37 @@ struct BackupCard: View {
                 }
             }
             HStack(spacing: 8) {
-                if let url = exportURL {
-                    ShareLink(item: url) {
-                        Label(tr("backup.save"), systemImage: "square.and.arrow.up")
+                // Сохранить в Файлы: можно сразу выбрать папку в iCloud Drive
+                Button {
+                    if let url = game.exportBackup(), let data = try? Data(contentsOf: url) {
+                        exportURL = url
+                        document = BackupDocument(data: data)
+                        exporting = true
                     }
-                    .buttonStyle(.game(.green, small: true, wide: true))
+                } label: {
+                    Label(tr("backup.saveFiles"), systemImage: "icloud.and.arrow.up")
                 }
+                .buttonStyle(.game(.green, small: true, wide: true))
                 Button {
                     importing = true
                 } label: {
-                    Label(tr("backup.load"), systemImage: "square.and.arrow.down")
+                    Label(tr("backup.load"), systemImage: "icloud.and.arrow.down")
                 }
                 .buttonStyle(.game(.wood, small: true, wide: true))
+                if let url = exportURL {
+                    // Отправить файл, например себе в мессенджер
+                    ShareLink(item: url) {
+                        Image(systemName: "square.and.arrow.up").font(.game(14, .black))
+                    }
+                    .buttonStyle(.game(.wood, small: true))
+                }
             }
         }
         .onAppear { exportURL = game.exportBackup() }
+        .fileExporter(isPresented: $exporting, document: document, contentType: .json,
+                      defaultFilename: exportURL?.deletingPathExtension().lastPathComponent ?? "HarvestHollow") { result in
+            if case .success = result { game.toast("px:scroll2", tr("backup.saved")) }
+        }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.json, .data]) { result in
             guard case .success(let url) = result else { return }
             let access = url.startAccessingSecurityScopedResource()
@@ -481,6 +540,62 @@ struct BackupCard: View {
                                    icon: "px:scroll2", confirm: tr("backup.load"), tone: .orange) {
                 game.restoreBackup(restored)
             }
+        }
+    }
+}
+
+/// Обратная связь: тема, по желанию файл прогресса, письмо с версией игры и моделью телефона.
+struct FeedbackCard: View {
+    @Environment(GameState.self) private var game
+    @State private var topic: FeedbackTopic = .bug
+    @State private var attachSave = true
+
+    var body: some View {
+        Card {
+            HStack(spacing: 10) {
+                PixelIcon(name: "quest", size: 30)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(tr("feedback.title")).font(.game(15))
+                    Text(tr("feedback.hint"))
+                        .font(.game(11, .semibold))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            HStack(spacing: 6) {
+                ForEach(FeedbackTopic.allCases) { item in
+                    let active = item == topic
+                    Button {
+                        withAnimation(.spring(duration: 0.25)) { topic = item }
+                    } label: {
+                        Label(item.title, systemImage: item.icon)
+                            .font(.game(12, .bold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 7)
+                            .foregroundStyle(active ? Color.white : Palette.ink)
+                            .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(active ? ButtonTone.green.base : Palette.parchmentDeep.opacity(0.7)))
+                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .strokeBorder(active ? Palette.outline : Palette.woodDark.opacity(0.35), lineWidth: active ? 2 : 1.5))
+                    }
+                    .buttonStyle(.press)
+                }
+            }
+            Toggle(isOn: $attachSave) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(tr("feedback.attach")).font(.game(13))
+                    Text(tr("feedback.attach.hint")).font(.game(11, .semibold)).foregroundStyle(.secondary)
+                }
+            }
+            .toggleStyle(GameToggleStyle())
+            Button {
+                Feedback.shared.compose(topic, attachSave: attachSave, game: game)
+            } label: {
+                Label(tr("feedback.write"), systemImage: "envelope.fill")
+            }
+            .buttonStyle(.game(.green, wide: true))
         }
     }
 }

@@ -96,6 +96,7 @@ final class GameState {
     func saveNow() {
         save.lastSeen = max(save.lastSeen, Date())
         SaveFile.write(save)
+        CloudSync.shared.push(save)
         dirty = false
         lastWrite = Date()
         if Date().timeIntervalSince(lastBackup) > 300 {
@@ -214,6 +215,7 @@ final class GameState {
         save.weapons = Dictionary(uniqueKeysWithValues: old.weapons.keys.map { ($0, $0.startTier) })
         save.weapon = old.weapon
         save.rebirths = old.rebirths + (reward > 0 ? 1 : 0)
+        GameCenter.shared.submit(.rebirths, save.rebirths)
         save.sparks = old.sparks + reward
         save.sparksEarned = old.sparksEarned + reward
         save.coins += legacyRank(.capital) * Int(LegacyPerk.capital.perRank)
@@ -294,6 +296,8 @@ final class GameState {
         if save.level > from {
             recalc()
             levelUp = LevelUpInfo(from: levelUp?.from ?? from, to: save.level)
+            GameCenter.shared.submit(.level, save.bestLevel)
+            if save.level / 10 > from / 10 { Task { @MainActor in Review.askIfAppropriate() } }
             SoundFX.play(.levelUp)
             checkStarterOffer()
         }
@@ -2237,6 +2241,8 @@ extension GameState {
         save.maps += maps
         if first {
             save.dungeonBest[id] = run.floor
+            GameCenter.shared.submit(.dungeonFloor, DungeonID.allCases.map { dungeonBest($0) }.reduce(0, +))
+            if Dungeon.isBossFloor(run.floor) { Task { @MainActor in Review.askIfAppropriate() } }
             if Dungeon.isBossFloor(run.floor) {
                 recalc()
                 toast("px:star", tr("toast.dungeonTalent"))
@@ -2705,6 +2711,7 @@ extension GameState {
     private func stageCleared() {
         let stage = save.eventStage
         save.eventBest = max(save.eventBest, stage)
+        GameCenter.shared.submit(.eventStage, save.eventBest)
         addPassPoints(Events.clearPoints(stage: stage))
         addCoins(Events.clearCoins(stage: stage, level: save.level))
         if Events.isBossStage(stage) {
