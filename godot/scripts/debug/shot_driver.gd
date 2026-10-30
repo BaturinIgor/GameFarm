@@ -139,8 +139,18 @@ func _process(delta: float) -> void:
 			elif _sub == 4 and _time > 306.0:
 				_sub = 5
 				_shot("7_world_level18")
-				# Набег: волна выходит с краёв карты, башни стреляют
+				# Набег: волна выходит с краёв карты, башни стреляют. Герой у левой башни
 				Game.save["raid"]["next"] = Time.get_unix_time_from_system() - 1.0
+				var towers: Array = []
+				var walls := 0
+				for n in main.world.entities.get_children():
+					if n is TowerNode:
+						towers.append(n.position)
+					elif n is Sprite2D and n.texture != null and n.texture.resource_path.ends_with("palisade.png"):
+						walls += 1
+				print("towers: ", towers, " palisade: ", walls, " base: ", main.world.layout.base)
+				if not towers.is_empty():
+					main.world.player.position = towers[0] + Vector2(90, 40)
 			elif _sub == 5 and _time > 311.0:
 				_sub = 6
 				_shot("7_raid")
