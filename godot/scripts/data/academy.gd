@@ -73,7 +73,9 @@ static func bonus_text(id: String, n: int) -> String:
 		"chance":
 			return "%d%%" % int(round(float(s["step"]) * float(n) * 100.0))
 	var p := int(round(float(s["step"]) * float(n) * 100.0))
-	return ("+%d%%" if p >= 0 else "%d%%") % p
+	if p == 0:
+		return "0%"
+	return ("+%d%%" if p > 0 else "%d%%") % p
 
 
 ## Цена уровня n: как стройка академии на несколько уровней выше, дальние ряды дороже.

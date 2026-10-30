@@ -59,9 +59,11 @@ func _draw_lines(canvas: Control) -> void:
 	var w := canvas.size.x
 	var font := UiKit.font()
 	for c in Academy.COLUMNS.size():
+		# Подпись колонки ужимается по ширине колонки
 		var t := L.t("academy.col." + str(Academy.COLUMNS[c]))
-		var tw := font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
-		canvas.draw_string(font, Vector2(w / 4.0 * (float(c) + 0.5) - tw / 2.0, 14), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 11,
+		var fs := TalentsPanel.fit_size(t, w / 4.0 - 6.0, 11, 7)
+		var tw := font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		canvas.draw_string(font, Vector2(w / 4.0 * (float(c) + 0.5) - tw / 2.0, 14), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs,
 			COLORS[c].darkened(0.25))
 	for id in Academy.IDS:
 		var p := Academy.parent(id)
@@ -99,7 +101,7 @@ func _node(id: String) -> Control:
 	if not open:
 		ic.modulate = Color(1, 1, 1, 0.4)
 	n.add_child(ic)
-	var t := UiKit.label("%d/%d" % [lvl, Academy.max_level(id)], 11, UiKit.INK if open else UiKit.INK_SOFT, 3)
+	var t := UiKit.label("%d/%d" % [lvl, Academy.max_level(id)], 12, UiKit.INK if open else UiKit.INK_SOFT)
 	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	t.size = Vector2(n.size.x, 16)
 	t.position = Vector2(0, R * 2.0 + 6.0)
