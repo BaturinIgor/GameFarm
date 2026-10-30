@@ -157,6 +157,10 @@ func toggle_active(id: String) -> bool:
 	else:
 		if stars(id) <= 0 or list.size() >= max_active():
 			return false
+		# Зверь в походе по диким землям не может идти с героем
+		if Game.wild.on_squad(id):
+			Game.show_toast("px:compass", L.t("wild.onSquad"))
+			return false
 		list.append(id)
 	Game.recalc()
 	Game.mark_dirty()

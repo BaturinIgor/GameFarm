@@ -175,6 +175,8 @@ func _effect_text(id: String) -> String:
 			var t := e.working_level(id)
 			return L.t("estate.tower.effect", [Raids.tower_count(lvl), Fmt.n(int(Raids.tower_damage(t))),
 				Raids.tower_count(lvl + 1)])
+		"camp":
+			return L.t("estate.camp.effect", [Wild.squads(lvl), Wild.squads(lvl + 1)]) if lvl > 0 else Estate.info(id)
 		"wall":
 			if lvl == 0:
 				return Estate.info(id)

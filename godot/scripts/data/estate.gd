@@ -4,7 +4,7 @@ class_name Estate
 ## Здание работает не выше уровня (уровень героя / 3 + 1) - так после перерождения доход растёт заново.
 
 ## Порядок - как в окне усадьбы.
-const IDS := ["main", "storage", "barn", "board", "sawmill", "mill", "kiln", "smelter", "tower", "wall"]
+const IDS := ["main", "storage", "barn", "board", "sawmill", "mill", "kiln", "smelter", "tower", "wall", "camp"]
 
 ## hero - с какого уровня героя открывается, time/cost - множители времени и цены, max - потолок уровня,
 ## sprite - картинка из пака, recipes - что производит (первый рецепт - по умолчанию).
@@ -20,6 +20,8 @@ const BUILDINGS := {
 	# Защита от набегов: свои рисунки (tools/make_defense_art.py)
 	"tower": {"hero": 10, "time": 1.0, "cost": 1.1, "max": 20, "sprite": "tower"},
 	"wall": {"hero": 10, "time": 0.9, "cost": 0.9, "max": 20, "sprite": "palisade"},
+	# Походный лагерь: отряды зверей для диких земель
+	"camp": {"hero": 15, "time": 1.0, "cost": 1.0, "max": 20, "sprite": "tent"},
 }
 
 ## Товары: из чего делаются. Цена товара - сырьё по цене продажи с наценкой за работу.
@@ -35,6 +37,8 @@ const RECIPES := {
 }
 const GOODS := ["planks", "slats", "brick", "lime", "iron_bar", "gold_bar", "flour", "oil"]
 const MARKUP := 1.25
+## С какого уровня стройки нужны редкие материалы диких земель.
+const RARE_FROM := [["copper", 12], ["amber", 15], ["amethyst", 17], ["emerald", 19]]
 
 ## Стройка: время (0.5 n^3 + n) минут * k, цена 300 * 1.48^(n-1) * k (половина монетами, половина товарами).
 const BUILD_BASE := 300.0
@@ -124,6 +128,10 @@ static func build_cost(id: String, n: int) -> Dictionary:
 		var kind: String = m[0]
 		var n_items := maxi(1, int(ceil(share * float(m[1]) / float(price(kind)))))
 		items.append([kind, n_items])
+	# С 12 уровня - редкие материалы диких земель (немного, сверх основной цены)
+	for r in RARE_FROM:
+		if n >= int(r[1]):
+			items.append([r[0], maxi(1, (n - int(r[1])) / 2 + 2)])
 	return {"coins": coins, "items": items}
 
 

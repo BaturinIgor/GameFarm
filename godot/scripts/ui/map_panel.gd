@@ -41,6 +41,7 @@ func build() -> void:
 		for id in WorldGraph.planet_locations(planet):
 			content.add_child(_location_card(id))
 	content.add_child(EventsPanel.map_card(close))
+	content.add_child(_wild_card())
 	content.add_child(_expeditions_card())
 	content.add_child(_garden_card())
 
@@ -299,6 +300,41 @@ static func location_resources(id: String) -> Array:
 			if not y[0] in out:
 				out.append(y[0])
 	return out
+
+
+# MARK: Дикие земли
+
+## Карточка диких земель: отряды в пути и кнопка "Открыть" (с 15 уровня).
+func _wild_card() -> Control:
+	var parts := _ribbon_card(L.t("wild.title"), "green")
+	var v: VBoxContainer = parts[1]
+	var w := Game.wild
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	v.add_child(row)
+	row.add_child(UiKit.icon("compass", 34))
+	var text := ""
+	if not w.open():
+		text = L.t("wild.locked", [int(Wild.RINGS[0]["level"])])
+	elif w.squads_total() == 0:
+		text = L.t("wild.noCamp")
+	else:
+		text = L.t("wild.squads", [w.squads().size(), w.squads_total()])
+		if w.ready_count() > 0:
+			text += " · " + L.t("wild.back")
+	var t := UiKit.label(text, 13, UiKit.INK_SOFT)
+	t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	t.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(t)
+	if w.open():
+		var b := UiKit.button(L.t("where.open"), "green", 13, true)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		b.pressed.connect(func() -> void:
+			close()
+			WildPanel.open())
+		row.add_child(b)
+	return parts[0]
 
 
 # MARK: Экспедиции

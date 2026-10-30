@@ -12,6 +12,8 @@ const KINDS := [
 	"slime", "bone", "tusk", "essence",
 	# Товары усадьбы (Estate.RECIPES): делаются в зданиях из сырья
 	"planks", "slats", "brick", "lime", "iron_bar", "gold_bar", "flour", "oil",
+	# Редкие материалы диких земель (Wild.RINGS)
+	"copper", "amber", "amethyst", "emerald",
 ]
 
 const CATEGORY := {
@@ -19,6 +21,7 @@ const CATEGORY := {
 	"stone": "stone", "clay": "stone", "ice": "stone",
 	"coal": "ore", "iron": "ore", "gold": "ore", "sulfur": "ore", "obsidian": "ore",
 	"diamond": "gem", "crystal": "gem", "ruby": "gem",
+	"copper": "gem", "amber": "gem", "amethyst": "gem", "emerald": "gem",
 	"berries": "food", "apples": "food", "mushrooms": "food", "carrots": "food", "herbs": "food", "fish": "food",
 	"cactus": "food", "coconut": "food", "banana": "food", "pineapple": "food", "goldenApple": "food",
 	"egg": "farm", "milk": "farm", "wool": "farm", "honey": "farm", "feather": "farm",
@@ -34,6 +37,7 @@ const CATEGORY := {
 const PRICE := {
 	"wood": 1, "bamboo": 3, "stone": 1, "clay": 3, "coal": 3, "iron": 6, "gold": 15, "sulfur": 20, "obsidian": 30,
 	"ice": 8, "diamond": 60, "crystal": 120, "ruby": 150,
+	"copper": 40, "amber": 90, "amethyst": 180, "emerald": 320,
 	"berries": 1, "apples": 2, "mushrooms": 2, "carrots": 2, "herbs": 3, "fish": 4, "cactus": 5, "coconut": 6,
 	"banana": 8, "pineapple": 10, "goldenApple": 60,
 	"egg": 4, "milk": 6, "wool": 8, "honey": 12, "feather": 5,
@@ -48,6 +52,8 @@ const ORE_COLOR := {
 	"coal": Color(0.13, 0.13, 0.16), "iron": Color(0.86, 0.52, 0.32), "gold": Color(1.0, 0.82, 0.18),
 	"sulfur": Color(0.95, 0.92, 0.25), "obsidian": Color(0.3, 0.18, 0.45), "crystal": Color(0.72, 0.45, 1.0),
 	"diamond": Color(0.45, 0.9, 1.0), "ruby": Color(0.95, 0.15, 0.3), "pearl": Color(0.96, 0.94, 0.98),
+	"copper": Color(0.88, 0.54, 0.29), "amber": Color(1.0, 0.71, 0.16), "amethyst": Color(0.72, 0.47, 0.94),
+	"emerald": Color(0.25, 0.82, 0.48),
 	"goldenApple": Color(1.0, 0.8, 0.2),
 }
 
