@@ -154,7 +154,8 @@ func _pantry_row(dish: String) -> void:
 	col.add_theme_constant_override("separation", 2)
 	row.add_child(col)
 	col.add_child(UiKit.label("%s x%d" % [House.dish_name(dish), Game.house.dishes(dish)], 14))
-	col.add_child(HousePanel.wrapped(House.effect_text(dish), 11, UiKit.INK_SOFT))
+	col.add_child(HousePanel.wrapped(House.effect_text(dish) + " · " + L.t("energy.plus", [House.dish_energy(dish)]), 11,
+		UiKit.INK_SOFT))
 	var b := UiKit.button(L.t("kitchen.eat"), "green", 14, true)
 	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	b.disabled = not Game.house.can_eat(dish)
@@ -179,7 +180,8 @@ func _recipe_row(dish: String) -> void:
 	col.add_theme_constant_override("separation", 3)
 	row.add_child(col)
 	col.add_child(UiKit.label(House.dish_name(dish), 15))
-	col.add_child(HousePanel.wrapped(House.effect_text(dish) + " · " + Fmt.seconds(House.dish_duration(dish)), 11, UiKit.GOOD))
+	col.add_child(HousePanel.wrapped(House.effect_text(dish) + " · " + Fmt.seconds(House.dish_duration(dish)) + " · "
+		+ L.t("energy.plus", [House.dish_energy(dish)]), 11, UiKit.GOOD))
 	c.add_child(UiKit.cost_view(House.dish_cost(dish)))
 	var b := UiKit.button(L.t("kitchen.cook", [Fmt.seconds(Game.house.cook_time(dish))]), "orange", 14, true)
 	b.icon = Sprites.icon("flame")

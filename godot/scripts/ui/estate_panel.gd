@@ -5,6 +5,7 @@ extends Sheet
 
 var tab := "buildings"
 var _tick := 0.0
+var _academy_pick := ""
 
 
 func _init(start_tab := "") -> void:
@@ -497,61 +498,8 @@ static func _wrap(text: String, font_size: int, color := UiKit.INK) -> Label:
 
 # MARK: Академия
 
-## Исследования: уровень, бонус сейчас и дальше, цена и время, кнопка "Изучить" или ход изучения.
+## Дерево исследований; выбранный узел запоминается, пока окно открыто.
 func _build_academy() -> void:
-	var a := Game.academy
-	var hint := UiKit.label(L.t("academy.hint", [a.cap()]), 13, UiKit.INK_SOFT)
-	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	content.add_child(hint)
-	for id in Academy.IDS:
-		var c := card()
-		var top := HBoxContainer.new()
-		top.add_theme_constant_override("separation", 10)
-		c.add_child(top)
-		var ic := UiKit.icon(Academy.icon(id), 32)
-		ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		top.add_child(ic)
-		var col := VBoxContainer.new()
-		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		col.add_theme_constant_override("separation", 2)
-		top.add_child(col)
-		var n := a.level(id)
-		col.add_child(UiKit.label(Academy.name_of(id), 15))
-		var info := UiKit.label(L.t("academy.%s.info" % id), 12, UiKit.INK_SOFT)
-		info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		col.add_child(info)
-		top.add_child(HousePanel.level_tag(n, true))
-		c.add_child(UiKit.label(L.t("academy.effect", [Academy.percent(id, n), Academy.percent(id, mini(Academy.MAX, n + 1))]),
-			13))
-		if a.active() == id:
-			var row := HBoxContainer.new()
-			row.add_theme_constant_override("separation", 8)
-			c.add_child(row)
-			var left := func() -> String: return L.t("academy.studying", [House.countdown(Game.academy.left())])
-			var live := CombatCards.LiveLabel.new(left, 13, UiKit.INK)
-			live.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			live.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			row.add_child(live)
-			var fast := MapPanel.icon_button([["i", "gem"], ["t", str(a.speedup_cost())]], "purple", 13)
-			fast.pressed.connect(func() -> void:
-				if not Game.academy.speed_up():
-					Game.show_toast("px:gem", L.t("crystals.notEnough", [Fmt.n(Game.academy.speedup_cost() - Game.shop.crystals())])))
-			row.add_child(fast)
-			continue
-		if n >= Academy.MAX:
-			continue
-		var cost_row := HBoxContainer.new()
-		cost_row.add_theme_constant_override("separation", 8)
-		c.add_child(cost_row)
-		var cv := UiKit.cost_view(Academy.cost(n + 1), 12)
-		cv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		cost_row.add_child(cv)
-		cost_row.add_child(UiKit.label(EventsPanel.long_countdown(Academy.seconds(n + 1)), 12, UiKit.INK_SOFT))
-		var why := a.block(id)
-		if why == "academy.block.cap" or why == "academy.block.busy":
-			c.add_child(UiKit.label(L.t(why), 12, UiKit.INK_SOFT))
-		var b := UiKit.button(L.t("academy.study"), "green", 14)
-		b.disabled = why != ""
-		var rid: String = id
-		b.pressed.connect(func() -> void: Game.academy.start(rid))
-		c.add_child(b)
+	content.add_child(AcademyTree.new(_academy_pick, func(id: String) -> void:
+		_academy_pick = id
+		_dirty = true))

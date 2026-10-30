@@ -280,6 +280,11 @@ const DISH_BUFF := {
 const BUFF_KEYS := ["yield", "xp", "speed", "sell", "crit", "animals"]
 
 
+## Сколько энергии даёт блюдо: чем позже открывается, тем больше (хлеб 120, сок 390).
+static func dish_energy(dish: String) -> int:
+	return 120 + 30 * maxi(0, DISHES.find(dish))
+
+
 static func dish_name(dish: String) -> String:
 	return L.t("dish." + dish)
 

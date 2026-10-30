@@ -43,11 +43,12 @@ var residents := ResidentSystem.new()
 var raids := RaidSystem.new()
 var wild := WildSystem.new()
 var academy := AcademySystem.new()
+var energy := EnergySystem.new()
 
 ## Все системы по порядку: для значений по умолчанию и событий.
 var systems: Array:
 	get: return [talents, workshop, animals, quests, house, garden, combat, dungeons, events, collection, legacy, premium, shop,
-		world_map, estate, daily, residents, raids, wild, academy]
+		world_map, estate, daily, residents, raids, wild, academy, energy]
 ## Где появиться после перехода через проход (id прохода).
 var arrival_gate := ""
 ## В доме: у какой станции появиться (exit, up, down); на лугу - у двери дома.
@@ -67,6 +68,8 @@ func _ready() -> void:
 			if sys.has_method("on_event"):
 				sys.on_event(name, data))
 	recalc()
+	# Новый уровень - полная энергия
+	level_up.connect(func(_from: int, _to: int) -> void: energy.refill())
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
 

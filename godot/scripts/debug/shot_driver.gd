@@ -74,7 +74,7 @@ func _process(delta: float) -> void:
 				var now := Time.get_unix_time_from_system()
 				var est: Dictionary = Game.save["estate"]
 				for b in [["main", 5], ["storage", 3], ["barn", 4], ["board", 2], ["sawmill", 3], ["mill", 1], ["kiln", 1],
-						["tower", 5], ["wall", 3], ["camp", 6], ["academy", 3], ["loom", 2]]:
+						["tower", 5], ["wall", 3], ["camp", 6], ["academy", 5], ["loom", 2]]:
 					est[b[0]]["level"] = b[1]
 				est["sawmill"]["since"] = now - 3.0 * 3600.0
 				est["mill"]["until"] = now + 25.0 * 60.0
@@ -86,7 +86,9 @@ func _process(delta: float) -> void:
 				res["smith"]["taken"] = true
 				res["miller"]["arrived"] = true
 				# Академия: склад изучен, идёт стройка
-				Game.save["academy"]["levels"]["storage"] = 1
+				Game.save["academy"]["levels"]["storage"] = 2
+				Game.save["academy"]["levels"]["stamina"] = 2
+				Game.save["academy"]["levels"]["recovery"] = 1
 				Game.save["academy"]["active"] = "build"
 				Game.save["academy"]["until"] = Time.get_unix_time_from_system() + 600.0
 				# Дикие земли: три зверя, один отряд уже в походе
@@ -146,6 +148,13 @@ func _process(delta: float) -> void:
 				_shot("6_dialog")
 				_free_overlays()
 				world_at_home()
+				# Энергия на исходе: окно "Где взять энергию"
+				Game.save["energy"]["value"] = 37.0
+				EnergyPopup.open()
+			elif _sub == 4 and _time > 305.0 and _shot_done != "energy":
+				_shot_done = "energy"
+				_shot("6_energy")
+				_free_overlays()
 			elif _sub == 4 and _time > 306.0:
 				_sub = 5
 				_shot("7_world_level18")
@@ -301,5 +310,5 @@ func world_at_home() -> void:
 
 func _free_overlays() -> void:
 	for n in main.hud.find_children("*", "", true, false):
-		if n is WherePopup or n is DialogPopup:
+		if n is WherePopup or n is DialogPopup or n is EnergyPopup:
 			n.queue_free()

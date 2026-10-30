@@ -161,7 +161,7 @@ func tick() -> void:
 			just_built.append(id)
 			Game.show_toast("px:hammer", L.t("estate.built", [Estate.name_of(id), int(b["level"])]))
 			Sound.play("levelUp")
-			Game.gain_xp(maxi(5, Game.xp_needed * 3 / 100))
+			Game.gain_xp(int(float(maxi(5, Game.xp_needed * 3 / 100)) * Game.academy.mult("insight")))
 			Game.emit_event("build", {"id": id, "level": int(b["level"])})
 			Game.recalc()
 			Game.mark_dirty()
@@ -262,11 +262,11 @@ func set_recipe(id: String, good: String) -> void:
 func rate(id: String) -> float:
 	if not Estate.produces(id) or building(id):
 		return 0.0
-	return Estate.per_hour(recipe(id), working_level(id))
+	return Estate.per_hour(recipe(id), working_level(id)) * Game.academy.mult("workshops")
 
 
 func cap_hours() -> float:
-	return Estate.CAP_HOURS_PRO if Game.premium.has_pro() else Estate.CAP_HOURS
+	return (Estate.CAP_HOURS_PRO if Game.premium.has_pro() else Estate.CAP_HOURS) + Game.academy.mult("stockpile")
 
 
 ## Сколько товара накопилось (без учёта сырья).
@@ -449,7 +449,7 @@ func complete_order(order_id: String) -> bool:
 		for it in o["items"]:
 			Game.save["storage"][it[0]] = Game.storage_of(it[0]) - int(it[1])
 		Game.add_coins(int(o["coins"]))
-		Game.gain_xp(int(o["xp"]))
+		Game.gain_xp(int(float(o["xp"]) * Game.academy.mult("insight")))
 		if int(o["crystals"]) > 0:
 			Game.shop.add_crystals(int(o["crystals"]), true)
 		Game.emit_event("order", {"cart": o["cart"]})

@@ -13,7 +13,7 @@ const KEEP := [
 	"potions", "dungeonBest", "weapon",
 	# Новое: кристаллы и магазин, усадьба, бестиарий - остаются после перерождения
 	"crystals", "crystalFirst", "maxUntil", "maxDailyDay", "maxSkinMonth", "ownedSkins", "bundleUntil", "offersSeen",
-	"offerPopupDay", "dealDay", "adCrystalsDay", "adCrystals", "estate", "residents", "raid", "wild", "academy", "builder3", "speedAds", "killsBy", "bestiary",
+	"offerPopupDay", "dealDay", "adCrystalsDay", "adCrystals", "estate", "residents", "raid", "wild", "academy", "energy", "builder3", "speedAds", "killsBy", "bestiary",
 	"bossKills", "economy", "daily", "settings",
 ]
 

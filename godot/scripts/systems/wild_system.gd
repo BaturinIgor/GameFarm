@@ -93,6 +93,8 @@ func send(sector_id: String, animals: Array) -> bool:
 		if Game.animals.is_active(a):
 			Game.animals.toggle_active(a)
 	var loot := Wild.deposit_loot(int(sec["ring"]), float(sec["hours"]), stars)
+	var rare: String = Wild.RINGS[int(sec["ring"])]["rare"]
+	loot[rare] = int(round(float(loot[rare]) * Game.academy.mult("trackers")))
 	squads().append({"sector": sector_id, "animals": animals.duplicate(), "until": _now() + float(sec["hours"]) * 3600.0 * Game.academy.mult("squads"),
 		"loot": loot})
 	_w()["done"][sector_id] = true

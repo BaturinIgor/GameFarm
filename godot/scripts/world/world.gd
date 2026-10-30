@@ -495,6 +495,11 @@ func _gather(dt: float, stats: Stats) -> void:
 				Fx.text(fx, L.t("scene.backpackFullHint"), player.position - Vector2(0, 70), Color(1, 0.45, 0.4), 15)
 				Sound.play("error")
 			return
+		# Удар по ресурсу стоит энергию (в экспедиции по билетам - нет)
+		if not Game.premium.in_expedition() and not Game.energy.try_spend():
+			Game.energy.out_of_energy(self)
+			_hit_timer = 0.4
+			return
 		_strike(best, stats)
 		_hit_timer = stats.hit_interval
 	elif locked != null and _hint_timer <= 0.0:

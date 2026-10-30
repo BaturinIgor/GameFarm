@@ -248,7 +248,8 @@ static func vip_reward(tier_n: int) -> Dictionary:
 		17: return {"type": "tickets", "n": 3}
 		18: return {"type": "maps", "n": 2}
 		19: return {"type": "sparks", "n": 3}
-		_: return {"type": "skin", "n": 1}
+		# Последняя платная ступень: образ и час бесконечной энергии
+		_: return {"type": "skin", "n": 1, "energy": 60}
 
 
 ## Монеты в наградах растут с уровнем.

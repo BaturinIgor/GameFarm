@@ -275,6 +275,8 @@ func _grant_event_reward(reward: Dictionary, event: String) -> void:
 				skins.append(skin)
 				s["eventSkins"] = skins
 				Game.show_toast("skin:" + skin, L.t("toast.eventSkin", [L.t("skin." + skin)]))
+	if int(reward.get("energy", 0)) > 0:
+		Game.energy.add_infinite(float(reward["energy"]) * 60.0)
 
 
 ## Случайная карта коллекции (если коллекция уже есть).

@@ -367,6 +367,7 @@ func eat(dish: String) -> bool:
 	if Game.combat.has_method("heal"):
 		Game.combat.call("heal", 0.4)
 	Game.save["dishes"][dish] = dishes(dish) - 1
+	Game.energy.add(House.dish_energy(dish), true)
 	# То же блюдо ещё раз продлевает его действие.
 	var now := _now()
 	var start := maxf(now, float(Game.save["meals"].get(dish, 0.0)))

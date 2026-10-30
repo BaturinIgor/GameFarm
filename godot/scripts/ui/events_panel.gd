@@ -536,6 +536,9 @@ static func reward_icon(reward: Dictionary, event: String) -> Control:
 			return row
 		"skin":
 			row.add_child(EventsPanel.skin_icon(Events.skin_of(event), 44))
+			if int(reward.get("energy", 0)) > 0:
+				row.add_child(UiKit.icon("bolt", 22))
+				row.add_child(UiKit.label("∞", 14, UiKit.INK))
 			return row
 	var l := UiKit.label(amount, 13, UiKit.INK)
 	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER

@@ -80,4 +80,4 @@ static func wall_slow(n: int) -> float:
 
 ## Какая доля склада защищена.
 static func protected_share(storage_level: int) -> float:
-	return minf(1.0, PROTECT_BASE + PROTECT_PER_LEVEL * float(storage_level))
+	return minf(1.0, PROTECT_BASE + PROTECT_PER_LEVEL * float(storage_level) + (Game.academy.mult("fortify") - 1.0))
