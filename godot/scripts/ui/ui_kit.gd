@@ -163,6 +163,8 @@ static func tabs(items: Array, selected: String, on_select: Callable) -> PanelCo
 			l.label_settings.font = font()
 		l.clip_text = true
 		l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		# Обрезаемая подпись без растяжения получает нулевую ширину
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		inner.add_child(l)
 		var n := int(it[2]) if it.size() > 2 else 0
 		if n > 0:
