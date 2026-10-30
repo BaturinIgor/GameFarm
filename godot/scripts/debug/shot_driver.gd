@@ -15,6 +15,7 @@ var _step := 0
 var _trace := 0.0
 var _opened := ""
 var _shot_done := ""
+var _sub := 0
 
 
 func _ready() -> void:
@@ -114,35 +115,27 @@ func _process(delta: float) -> void:
 				_step = 5
 				_time = 300.0
 		5:
-			# "Где взять" для глины: локации, звери, монстры
-			if _time > 300.5 and _shot_done != "where" and _shot_done != "where_done":
-				_shot_done = "where"
+			# По порядку: "Где взять" для глины, разговор с мельником, жители у дома
+			if _sub == 0 and _time > 300.5:
+				_sub = 1
 				WherePopup.open("clay")
-			if _time > 301.5 and _shot_done == "where":
-				_shot_done = "where_done"
+			elif _sub == 1 and _time > 301.5:
+				_sub = 2
 				_shot("6_where_clay")
-				for n in main.hud.find_children("*", "", true, false):
-					if n is WherePopup:
-						n.queue_free()
-			# Разговор с мельником: последняя реплика с заданием и кнопками
-			if _time > 302.0 and _shot_done == "where_done":
-				_shot_done = "dialog"
+				_free_overlays()
 				DialogPopup.talk("miller")
-			if _time > 303.0 and _shot_done == "dialog":
-				_shot_done = "dialog_next"
+			elif _sub == 2 and _time > 302.5:
+				_sub = 3
 				for n in main.hud.find_children("*", "", true, false):
 					if n is DialogPopup:
 						n.call("_advance")
 						n.call("_advance")
-			if _time > 304.5 and _shot_done == "dialog_next":
-				_shot_done = "dialog_done"
+			elif _sub == 3 and _time > 304.0:
+				_sub = 4
 				_shot("6_dialog")
-				for n in main.hud.find_children("*", "", true, false):
-					if n is DialogPopup:
-						n.queue_free()
-				# Герой у дома: жители с "!" и "?"
+				_free_overlays()
 				world_at_home()
-			if _time > 306.5:
+			elif _sub == 4 and _time > 306.0:
 				_shot("7_world_level18")
 				LevelUpOverlay.present(17, 18)
 				_step = 6
@@ -270,3 +263,9 @@ func world_at_home() -> void:
 	if world == null or world.loaded != "meadow":
 		return
 	world.player.position = world.layout.base + Vector2(0, 170)
+
+
+func _free_overlays() -> void:
+	for n in main.hud.find_children("*", "", true, false):
+		if n is WherePopup or n is DialogPopup:
+			n.queue_free()
