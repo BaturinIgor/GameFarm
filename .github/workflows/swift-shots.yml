@@ -9,8 +9,6 @@ name: Swift screenshots
 
 on:
   workflow_dispatch:
-  push:
-    branches: [swift-shots]
 
 permissions:
   contents: write
