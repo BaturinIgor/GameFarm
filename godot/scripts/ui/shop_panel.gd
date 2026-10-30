@@ -230,7 +230,7 @@ func _steps_card() -> Control:
 	for k in Products.STEP_KEYS:
 		var cell := PanelContainer.new()
 		var own := Game.premium.owns(k)
-		var cur := k == next
+		var cur: bool = k == next
 		var cs := UiKit.box(Color("ddefc8") if own else (Color("fff3c4") if cur else UiKit.PARCHMENT_LIGHT),
 			UiKit.TONES["gold"][1] if cur else Color(UiKit.WOOD_DARK, 0.35), 10, 3 if cur else 1, false)
 		cs.set_content_margin_all(6)
