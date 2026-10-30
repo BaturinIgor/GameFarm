@@ -14,6 +14,14 @@ static func n(value: int) -> String:
 	return grouped(value)
 
 
+## Короткая запись для шапки: с 10 000 - "12.3K", "1.2M".
+static func compact(value: int) -> String:
+	var a := absi(value)
+	if a >= 10_000 and a < 100_000:
+		return _short(floor(value / 100.0) / 10.0) + "K"
+	return n(value)
+
+
 static func _short(v: float) -> String:
 	var s := "%.1f" % v
 	if s.ends_with(".0"):

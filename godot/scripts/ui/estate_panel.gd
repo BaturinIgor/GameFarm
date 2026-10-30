@@ -232,6 +232,20 @@ func _production(id: String) -> VBoxContainer:
 	v.add_child(row)
 	for g in Estate.recipes(id):
 		row.add_child(_recipe_chip(id, g))
+	# Ход работы: полоска до следующей штуки, сколько накоплено из окна и когда здание заполнится
+	if e.rate(id) > 0.0:
+		var p := e.pending(id)
+		var cap := e.capacity_of(id)
+		var frac := 1.0 if e.full(id) else p - floor(p)
+		var bar := UiKit.bar(frac, "orange" if not e.full(id) else "gold", 0.0, 14.0,
+			L.t("estate.accum", [mini(int(floor(p)), cap), cap]))
+		bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		v.add_child(bar)
+		var bid := id
+		var left := func() -> String:
+			var t := Game.estate.until_full(bid)
+			return L.t("estate.capped") if t <= 0.0 else L.t("estate.fullIn", [House.countdown(t)])
+		v.add_child(CombatCards.LiveLabel.new(left, 12, UiKit.INK_SOFT))
 	# Накоплено и кнопка "Забрать"
 	var good := e.recipe(id)
 	var line := HBoxContainer.new()
@@ -242,7 +256,8 @@ func _production(id: String) -> VBoxContainer:
 	line.add_child(ic)
 	var text := ""
 	var color := UiKit.INK
-	if e.affordable(id) <= 0:
+	var made := int(floor(e.pending(id)))
+	if e.affordable(id) <= 0 and made > 0:
 		text = L.t("estate.noInput")
 		color = UiKit.BAD
 	elif e.storage_room(good) <= 0:
@@ -250,8 +265,8 @@ func _production(id: String) -> VBoxContainer:
 		color = UiKit.BAD
 	else:
 		text = L.t("estate.ready", [e.ready(id), Res.name_of(good)])
-		if e.full(id):
-			text += " " + L.t("estate.capped")
+		if e.ready(id) < made:
+			text += " " + L.t("estate.waits", [made - e.ready(id)])
 	var l := _wrap(text, 13, color)
 	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	line.add_child(l)

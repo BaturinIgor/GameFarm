@@ -67,7 +67,7 @@ func _process(delta: float) -> void:
 				Game.save["level"] = 18
 				# Окно стартового набора закрывало бы снимки окон
 				Game.save["starterOffers"] = 2
-				Game.save["crystals"] = 520
+				Game.save["crystals"] = 98765
 				Game.save["consumables"] = {"strength": 2, "guard": 1, "swift": 3}
 				Game.save["killsBy"] = {"slimeGreen": 31, "orc": 12, "slimeBlue": 4}
 				# Усадьба: несколько зданий, одно строится, лесопилка накопила доски

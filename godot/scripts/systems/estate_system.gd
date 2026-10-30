@@ -291,6 +291,18 @@ func ready(id: String) -> int:
 	return mini(int(floor(pending(id))), mini(affordable(id), storage_room(recipe(id))))
 
 
+## Сколько всего накопится за окно (8 или 12 часов).
+func capacity_of(id: String) -> int:
+	return int(floor(rate(id) * cap_hours()))
+
+
+## Секунд до заполнения (0 - уже полно или не работает).
+func until_full(id: String) -> float:
+	if rate(id) <= 0.0:
+		return 0.0
+	return maxf(0.0, cap_hours() * 3600.0 - (_now() - float(_b(id)["since"])))
+
+
 func full(id: String) -> bool:
 	return rate(id) > 0.0 and (_now() - float(_b(id)["since"])) / 3600.0 >= cap_hours()
 
@@ -307,9 +319,9 @@ func collect(id: String) -> int:
 			Game.save["storage"][it[0]] = int(Game.save["storage"].get(it[0], 0)) - int(it[1]) * n
 		Game.save["storage"][recipe(id)] = int(Game.save["storage"].get(recipe(id), 0)) + n
 		Game.emit_event("produce", {"kind": recipe(id), "amount": n})
-	# Дробная часть копится дальше, только если производство не упиралось в сырьё или место
+	# Несобранное (не хватило сырья или места, дробная часть) не сгорает, а ждёт: в пределах тех же 8 часов
 	var r := rate(id)
-	if r > 0.0 and n == int(floor(p)) and not full(id):
+	if r > 0.0:
 		b["since"] = _now() - (p - float(n)) / r * 3600.0
 	else:
 		b["since"] = _now()

@@ -33,6 +33,7 @@ var root := Control.new()
 var _prompts := VBoxContainer.new()
 var _pills := VBoxContainer.new()
 var _level_box: PanelContainer
+var _coin_box: PanelContainer
 var _pack_box: PanelContainer
 var _potion: PotionButton
 ## Ряд справа над нижней панелью: расходники и зелье.
@@ -188,6 +189,7 @@ func _build_top() -> void:
 	coin_box.offset_top = top
 	coin_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(coin_box)
+	_coin_box = coin_box
 	var crow := HBoxContainer.new()
 	crow.add_theme_constant_override("separation", 6)
 	coin_box.add_child(crow)
@@ -473,9 +475,10 @@ func _refresh_values() -> void:
 	_level_name.text = Locations.name_of(Game.current)
 	_xp_bar.value = Game.level_progress
 	(_xp_bar.get_child(0) as Label).text = L.t("level.max") if Game.level >= Game.MAX_LEVEL \
-		else "%s/%s" % [Fmt.n(int(Game.save["xp"])), Fmt.n(Game.xp_needed)]
-	_coins_label.text = Fmt.n(int(Game.save["coins"]))
-	_crystals_label.text = Fmt.n(Game.shop.crystals())
+		else "%s/%s" % [Fmt.compact(int(Game.save["xp"])), Fmt.compact(Game.xp_needed)]
+	_coins_label.text = Fmt.compact(int(Game.save["coins"]))
+	_crystals_label.text = Fmt.compact(Game.shop.crystals())
+	_fit_top()
 	var cap := Game.stats.capacity
 	var fraction := minf(1.0, float(Game.backpack_count) / float(maxi(1, cap)))
 	_pack_bar.value = fraction
@@ -485,6 +488,21 @@ func _refresh_values() -> void:
 	_update_badges()
 	if _prompt_cards.has("tutorial") and bool(Game.save.get("tutorialDone", false)):
 		set_prompt("tutorial", null)
+
+
+## Блок уровня слева не заходит под монеты справа: название локации и полоска опыта сужаются.
+func _fit_top() -> void:
+	if _level_box == null or _coin_box == null or _level_name == null:
+		return
+	var vw := get_viewport().get_visible_rect().size.x
+	var room := vw - 10.0 - _coin_box.size.x - 8.0 - _level_box.position.x
+	var fixed := _level_box.get_combined_minimum_size().x - _level_name.custom_minimum_size.x
+	var w := clampf(room - fixed, 60.0, 140.0)
+	if absf(_level_name.custom_minimum_size.x - w) < 0.5:
+		return
+	_level_name.custom_minimum_size.x = w
+	_xp_bar.custom_minimum_size.x = w
+	_level_box.reset_size()
 
 
 func _refresh_texts() -> void:
