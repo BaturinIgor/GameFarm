@@ -4,7 +4,7 @@ class_name Estate
 ## Здание работает не выше уровня (уровень героя / 3 + 1) - так после перерождения доход растёт заново.
 
 ## Порядок - как в окне усадьбы.
-const IDS := ["main", "storage", "barn", "board", "sawmill", "mill", "kiln", "smelter", "tower", "wall", "camp"]
+const IDS := ["main", "storage", "barn", "board", "sawmill", "mill", "kiln", "smelter", "loom", "academy", "jeweler", "tower", "wall", "camp"]
 
 ## hero - с какого уровня героя открывается, time/cost - множители времени и цены, max - потолок уровня,
 ## sprite - картинка из пака, recipes - что производит (первый рецепт - по умолчанию).
@@ -17,6 +17,10 @@ const BUILDINGS := {
 	"mill": {"hero": 5, "time": 1.0, "cost": 1.0, "max": 20, "sprite": "windmill", "recipes": ["flour", "oil"]},
 	"kiln": {"hero": 6, "time": 1.0, "cost": 1.0, "max": 20, "sprite": "clay_pit", "recipes": ["brick", "lime"]},
 	"smelter": {"hero": 9, "time": 1.1, "cost": 1.1, "max": 20, "sprite": "anvil", "recipes": ["iron_bar", "gold_bar"]},
+	"loom": {"hero": 12, "time": 1.0, "cost": 1.1, "max": 20, "sprite": "stall", "recipes": ["cloth", "silk"]},
+	# Академия: исследования - бонусы усадьбы по таймеру (Academy)
+	"academy": {"hero": 15, "time": 1.2, "cost": 1.3, "max": 20, "sprite": "greenhouse"},
+	"jeweler": {"hero": 25, "time": 1.2, "cost": 1.3, "max": 20, "sprite": "stall_purple", "recipes": ["cut_gem", "jewel"]},
 	# Защита от набегов: свои рисунки (tools/make_defense_art.py)
 	"tower": {"hero": 10, "time": 1.0, "cost": 1.1, "max": 20, "sprite": "tower"},
 	"wall": {"hero": 10, "time": 0.9, "cost": 0.9, "max": 20, "sprite": "palisade"},
@@ -34,8 +38,12 @@ const RECIPES := {
 	"gold_bar": [["gold", 3], ["coal", 1]],
 	"flour": [["wheat", 4]],
 	"oil": [["sunflower", 2]],
+	"cloth": [["wool", 3]],
+	"silk": [["cloud", 2], ["wool", 2]],
+	"cut_gem": [["diamond", 2]],
+	"jewel": [["gold_bar", 1], ["amber", 1]],
 }
-const GOODS := ["planks", "slats", "brick", "lime", "iron_bar", "gold_bar", "flour", "oil"]
+const GOODS := ["planks", "slats", "brick", "lime", "iron_bar", "gold_bar", "flour", "oil", "cloth", "silk", "cut_gem", "jewel"]
 const MARKUP := 1.25
 ## С какого уровня стройки нужны редкие материалы диких земель.
 const RARE_FROM := [["copper", 12], ["amber", 15], ["amethyst", 17], ["emerald", 19]]
@@ -99,7 +107,7 @@ static func produces(id: String) -> bool:
 ## Время стройки уровня n в секундах.
 static func build_seconds(id: String, n: int) -> float:
 	var k := float(spec(id).get("time", 1.0))
-	return (0.5 * pow(float(n), 3.0) + float(n)) * 60.0 * k
+	return (0.5 * pow(float(n), 3.0) + float(n)) * 60.0 * k * Game.academy.mult("build")
 
 
 ## Ценность стройки уровня n (монеты + товары).

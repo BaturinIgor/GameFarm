@@ -167,6 +167,7 @@ func tick() -> void:
 			Game.mark_dirty()
 			Game.save_now()
 	_refill_orders()
+	Game.academy.tick()
 
 
 func speedup_cost(id: String) -> int:
@@ -219,7 +220,7 @@ func buy_builder() -> bool:
 
 ## Вместимость хранилища ("storage" или "barn").
 func capacity(store: String) -> int:
-	return Estate.capacity(store, level(store))
+	return int(round(float(Estate.capacity(store, level(store))) * Game.academy.mult("storage")))
 
 
 ## Сколько лежит в хранилище всего.
@@ -414,7 +415,7 @@ func _new_order(cart: bool) -> Dictionary:
 	var people: Array = Game.residents.arrived_list()
 	if not cart and not people.is_empty() and randf() < 0.5:
 		from = people[randi() % people.size()]
-	return {"id": "%d" % randi(), "items": items, "coins": int(round(total * pay)),
+	return {"id": "%d" % randi(), "items": items, "coins": int(round(total * pay * Game.academy.mult("orders"))),
 		"xp": maxi(3, int(total / 4.0)), "crystals": CART_CRYSTALS if cart else (1 if randf() < 0.08 else 0),
 		"cart": cart, "wait": 0.0, "from": from}
 

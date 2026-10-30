@@ -73,6 +73,8 @@ func progress(id: String) -> Array:
 			return [clampi(n, 0, int(task["n"])), int(task["n"])]
 		"build":
 			return [mini(Game.estate.level(task["id"]), int(task["n"])), int(task["n"])]
+		"visit":
+			return [1 if Game.world_map.is_unlocked(task["loc"]) else 0, 1]
 		"give":
 			var have := 0
 			var need := 0

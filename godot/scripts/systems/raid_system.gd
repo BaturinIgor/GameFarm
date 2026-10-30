@@ -88,7 +88,7 @@ func absent_win() -> bool:
 	var e := Game.estate
 	var main := e.level("main")
 	var t := e.working_level("tower") if e.level("tower") > 0 else 0
-	var dps := float(Raids.tower_count(t)) * Raids.tower_damage(t) / Raids.TOWER_RATE
+	var dps := float(Raids.tower_count(t)) * Raids.tower_damage(t) * Game.academy.mult("towers") / Raids.TOWER_RATE
 	var defense := dps * 40.0 / Raids.wall_slow(e.level("wall"))
 	var hp := 0.0
 	for kind in Raids.wave(main):

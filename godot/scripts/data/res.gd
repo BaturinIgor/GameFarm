@@ -11,7 +11,7 @@ const KINDS := [
 	"wheat", "tomato", "potato", "strawberry", "corn", "cabbage", "eggplant", "pumpkin", "sunflower", "chili", "grapes",
 	"slime", "bone", "tusk", "essence",
 	# Товары усадьбы (Estate.RECIPES): делаются в зданиях из сырья
-	"planks", "slats", "brick", "lime", "iron_bar", "gold_bar", "flour", "oil",
+	"planks", "slats", "brick", "lime", "iron_bar", "gold_bar", "flour", "oil", "cloth", "silk", "cut_gem", "jewel",
 	# Редкие материалы диких земель (Wild.RINGS)
 	"copper", "amber", "amethyst", "emerald",
 ]
@@ -30,7 +30,7 @@ const CATEGORY := {
 	"eggplant": "crop", "pumpkin": "crop", "sunflower": "crop", "chili": "crop", "grapes": "crop",
 	"slime": "loot", "bone": "loot", "tusk": "loot", "essence": "loot",
 	"planks": "goods", "slats": "goods", "brick": "goods", "lime": "goods", "iron_bar": "goods", "gold_bar": "goods",
-	"flour": "goods", "oil": "goods",
+	"flour": "goods", "oil": "goods", "cloth": "goods", "silk": "goods", "cut_gem": "goods", "jewel": "goods",
 }
 
 ## Базовая цена продажи в монетах.

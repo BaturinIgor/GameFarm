@@ -175,7 +175,7 @@ func process(world: World, dt: float) -> void:
 				rs.note_stolen()
 	# Башни стреляют
 	var t_lvl := e.working_level("tower") if e.level("tower") > 0 else 0
-	var dmg := Raids.tower_damage(t_lvl)
+	var dmg := Raids.tower_damage(t_lvl) * Game.academy.mult("towers")
 	var rng := Raids.tower_range(t_lvl)
 	for t in _towers:
 		if is_instance_valid(t):

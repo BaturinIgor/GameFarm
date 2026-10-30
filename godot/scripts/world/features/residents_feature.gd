@@ -5,7 +5,8 @@ extends WorldFeature
 
 const NEAR_DISTANCE := 80.0
 ## Желаемые места относительно дома, по порядку переезда.
-const OFFSETS := [Vector2(-150, 140), Vector2(150, 150), Vector2(-260, 230), Vector2(260, 240), Vector2(0, 250)]
+const OFFSETS := [Vector2(-150, 140), Vector2(150, 150), Vector2(-260, 230), Vector2(260, 240), Vector2(0, 250),
+	Vector2(330, 120)]
 
 var _nodes: Dictionary = {}
 var _count := -1

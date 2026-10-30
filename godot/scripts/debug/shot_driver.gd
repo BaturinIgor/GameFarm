@@ -6,7 +6,7 @@ extends Node
 const ORIGIN := Vector2(195, 620)
 const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", "kitchen", "garden", "trader", "hunt", "level:settings",
 	"dungeon", "trophies", "collection", "legacy", "wardrobe", "map", "events", "shop",
-	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story", "wild"]
+	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story", "wild", "estate:academy"]
 
 var dir := "/tmp/shots"
 var main: Node
@@ -74,7 +74,7 @@ func _process(delta: float) -> void:
 				var now := Time.get_unix_time_from_system()
 				var est: Dictionary = Game.save["estate"]
 				for b in [["main", 5], ["storage", 3], ["barn", 4], ["board", 2], ["sawmill", 3], ["mill", 1], ["kiln", 1],
-						["tower", 5], ["wall", 3], ["camp", 6]]:
+						["tower", 5], ["wall", 3], ["camp", 6], ["academy", 3], ["loom", 2]]:
 					est[b[0]]["level"] = b[1]
 				est["sawmill"]["since"] = now - 3.0 * 3600.0
 				est["mill"]["until"] = now + 25.0 * 60.0
@@ -85,6 +85,10 @@ func _process(delta: float) -> void:
 				res["smith"]["chapter"] = 1
 				res["smith"]["taken"] = true
 				res["miller"]["arrived"] = true
+				# Академия: склад изучен, идёт стройка
+				Game.save["academy"]["levels"]["storage"] = 1
+				Game.save["academy"]["active"] = "build"
+				Game.save["academy"]["until"] = Time.get_unix_time_from_system() + 600.0
 				# Дикие земли: три зверя, один отряд уже в походе
 				Game.save["animals"]["chicken"] = 3
 				Game.save["animals"]["cow"] = 2

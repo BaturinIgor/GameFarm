@@ -2,10 +2,12 @@ class_name Residents
 ## Жители деревни (документ "Новая экономика", этап 3): переезжают с чётными уровнями главного дома,
 ## у каждого история из 5 глав - разговор и задание. Реплики - строки story.<житель>.<глава>.a/b/end.
 
-const IDS := ["smith", "miller", "weaver", "scholar", "tracker"]
+const IDS := ["elder", "smith", "miller", "weaver", "scholar", "tracker"]
 
 ## main - с какого уровня главного дома переезжает, icon - значок, sheet - лист персонажа из пака.
 const SPECS := {
+	# Старейшина живёт в деревне с самого начала и ведёт общий сюжет по планетам
+	"elder": {"main": 1, "icon": "star", "sheet": "shepherd"},
 	"smith": {"main": 2, "icon": "hammer", "sheet": "miner"},
 	"miller": {"main": 4, "icon": "seed_wheat", "sheet": "harvester"},
 	"weaver": {"main": 6, "icon": "wardrobe", "sheet": "cultivator"},
@@ -16,6 +18,18 @@ const SPECS := {
 ## Главы: level - уровень героя, task - что сделать, crystals - награда (монеты и опыт - от уровня главы).
 ## give - отдать со склада, kill - победить монстров после взятия задания, build - здание усадьбы до уровня.
 const CHAPTERS := {
+	# Сюжет по планетам: домашняя, Ember, Azure. visit - открыть проход в локацию
+	"elder": [
+		{"level": 4, "crystals": 10, "task": {"type": "visit", "loc": "hills"}},
+		{"level": 12, "crystals": 15, "task": {"type": "visit", "loc": "swamp"}},
+		{"level": 30, "crystals": 20, "task": {"type": "visit", "loc": "caves"}},
+		{"level": 45, "crystals": 25, "task": {"type": "visit", "loc": "ashPlains"}},
+		{"level": 47, "crystals": 25, "task": {"type": "visit", "loc": "amberWoods"}},
+		{"level": 49, "crystals": 30, "task": {"type": "visit", "loc": "fireCanyon"}},
+		{"level": 54, "crystals": 30, "task": {"type": "visit", "loc": "starMeadows"}},
+		{"level": 56, "crystals": 35, "task": {"type": "visit", "loc": "frostSpires"}},
+		{"level": 58, "crystals": 40, "task": {"type": "visit", "loc": "crystalReef"}},
+	],
 	"smith": [
 		{"level": 3, "crystals": 10, "task": {"type": "give", "items": [["wood", 40], ["stone", 30]]}},
 		{"level": 5, "crystals": 12, "task": {"type": "give", "items": [["coal", 20], ["stone", 20]]}},
@@ -103,4 +117,6 @@ static func task_text(task: Dictionary) -> String:
 			return L.t("story.task.kill", [Monsters.name_of(task["kind"])])
 		"build":
 			return L.t("story.task.build", [Estate.name_of(task["id"]), int(task["n"])])
+		"visit":
+			return L.t("story.task.visit", [Locations.name_of(task["loc"])])
 	return ""
