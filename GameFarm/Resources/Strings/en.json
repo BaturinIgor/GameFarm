@@ -443,6 +443,7 @@
  "effect.yieldKind": "{1}: +{0} yield",
  "energy.ad": "+{0} for a video ({1} left)",
  "energy.buy": "+{0} for",
+ "energy.foodLeft": "Energy from food today: {0} of {1} left. Food can't raise energy above the maximum.",
  "energy.full": "Energy is full",
  "energy.fullIn": "Full in {0}",
  "energy.gained": "Energy +{0}",

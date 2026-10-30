@@ -248,9 +248,7 @@ func _steps_card() -> Control:
 			h.add_theme_constant_override("separation", 3)
 			h.alignment = BoxContainer.ALIGNMENT_CENTER
 			h.add_child(UiKit.icon(str(part[0]), 16))
-			var t := UiKit.label(str(part[1]), 11)
-			t.clip_text = true
-			h.add_child(t)
+			h.add_child(UiKit.label(str(part[1]), 11))
 			c.add_child(h)
 		if own:
 			var ok := HousePanel.check_mark(20)

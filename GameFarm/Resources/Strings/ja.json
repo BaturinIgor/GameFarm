@@ -443,6 +443,7 @@
  "effect.yieldKind": "{1}の獲得量+{0}",
  "energy.ad": "動画で+{0}（残り{1}）",
  "energy.buy": "+{0}を購入",
+ "energy.foodLeft": "今日の食事のエネルギー：残り {0}/{1}。食事では上限を超えません。",
  "energy.full": "エネルギーは満タンです",
  "energy.fullIn": "満タンまで {0}",
  "energy.gained": "エネルギー+{0}",

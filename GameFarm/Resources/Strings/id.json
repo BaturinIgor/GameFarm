@@ -443,6 +443,7 @@
  "effect.yieldKind": "{1}: +{0} hasil",
  "energy.ad": "+{0} dari video (sisa {1})",
  "energy.buy": "+{0} seharga",
+ "energy.foodLeft": "Energi dari makanan hari ini: sisa {0} dari {1}. Makanan tidak melebihi batas maksimum.",
  "energy.full": "Energi penuh",
  "energy.fullIn": "Penuh dalam {0}",
  "energy.gained": "Energi +{0}",

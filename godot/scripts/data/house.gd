@@ -280,9 +280,10 @@ const DISH_BUFF := {
 const BUFF_KEYS := ["yield", "xp", "speed", "sell", "crit", "animals"]
 
 
-## Сколько энергии даёт блюдо: чем позже открывается, тем больше (хлеб 100, сок 310).
+## Сколько энергии даёт блюдо: чем позже открывается, тем больше (хлеб 60, сок 168).
+## Еда даёт не больше EnergySystem.FOOD_PER_DAY в день и не выше запаса.
 static func dish_energy(dish: String) -> int:
-	return 100 + 24 * maxi(0, DISHES.find(dish))
+	return 60 + 12 * maxi(0, DISHES.find(dish))
 
 
 static func dish_name(dish: String) -> String:

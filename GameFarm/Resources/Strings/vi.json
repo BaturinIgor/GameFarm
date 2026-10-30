@@ -443,6 +443,7 @@
  "effect.yieldKind": "{1}: +{0} sản lượng",
  "energy.ad": "+{0} khi xem video (còn {1})",
  "energy.buy": "+{0} với",
+ "energy.foodLeft": "Năng lượng từ đồ ăn hôm nay: còn {0}/{1}. Đồ ăn không vượt quá mức tối đa.",
  "energy.full": "Năng lượng đã đầy",
  "energy.fullIn": "Đầy sau {0}",
  "energy.gained": "Năng lượng +{0}",

@@ -443,6 +443,7 @@
  "effect.yieldKind": "{1}: 획득량 +{0}",
  "energy.ad": "영상 보고 +{0} ({1} 남음)",
  "energy.buy": "+{0} 구매",
+ "energy.foodLeft": "오늘 음식으로 얻는 에너지: {1} 중 {0} 남음. 음식으로는 최대치를 넘길 수 없어요.",
  "energy.full": "에너지가 가득 찼어요",
  "energy.fullIn": "{0} 후 가득 참",
  "energy.gained": "에너지 +{0}",

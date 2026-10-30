@@ -443,6 +443,7 @@
  "effect.yieldKind": "{1}: +{0} Ertrag",
  "energy.ad": "+{0} per Video (noch {1})",
  "energy.buy": "+{0} für",
+ "energy.foodLeft": "Energie aus Essen heute: noch {0} von {1}. Essen füllt nicht über das Maximum auf.",
  "energy.full": "Energie ist voll",
  "energy.fullIn": "Voll in {0}",
  "energy.gained": "Energie +{0}",

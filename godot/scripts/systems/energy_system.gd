@@ -1,13 +1,15 @@
 class_name EnergySystem
 extends RefCounted
-## Энергия: 1 удар по ресурсу - 1 энергия. Запас 800, восстанавливается сама (1 за 36 секунд, полный запас
+## Энергия: 1 удар по ресурсу - 1 энергия. Запас 600, восстанавливается сама (1 за 45 секунд, полный запас
 ## примерно за 8 часов). Ещё: новый уровень (до полного), блюда с кухни, ролик, покупка за кристаллы,
 ## бесконечная энергия на время (покупка и последняя платная ступень ивента), награды жителей и набегов.
 ## Бой, грядки, звери и производство энергию не тратят. Экспедиции по билетам - тоже.
 ## В Game.save: energy = {value, at, inf_until, buy_day, bought, ad_day, ads}.
 
-const BASE_MAX := 800.0
-const REGEN_SECONDS := 36.0
+const BASE_MAX := 600.0
+const REGEN_SECONDS := 45.0
+## Еда даёт не больше стольких единиц в день и не поднимает выше запаса (иначе кухня - бесконечная энергия).
+const FOOD_PER_DAY := 240
 const AD_ENERGY := 150
 const ADS_PER_DAY := 3
 const BUY_ENERGY := 250
@@ -26,7 +28,8 @@ func defaults(save: Dictionary) -> void:
 	var e: Dictionary = raw if raw is Dictionary else {}
 	save["energy"] = {"value": float(e.get("value", BASE_MAX)), "at": float(e.get("at", _now())),
 		"inf_until": float(e.get("inf_until", 0.0)), "buy_day": int(e.get("buy_day", -1)), "bought": int(e.get("bought", 0)),
-		"ad_day": int(e.get("ad_day", -1)), "ads": int(e.get("ads", 0))}
+		"ad_day": int(e.get("ad_day", -1)), "ads": int(e.get("ads", 0)),
+		"food_day": int(e.get("food_day", -1)), "food": int(e.get("food", 0))}
 
 
 func _e() -> Dictionary:
@@ -94,6 +97,32 @@ func add(n: float, toast := false) -> void:
 	if toast:
 		Game.show_toast("px:bolt", L.t("energy.gained", [int(n)]))
 	Game.mark_dirty()
+
+
+## Сколько энергии ещё может дать еда сегодня.
+func food_left() -> int:
+	var e := _e()
+	if int(e.get("food_day", -1)) != ShopSystem.day_index():
+		return FOOD_PER_DAY
+	return maxi(0, FOOD_PER_DAY - int(e.get("food", 0)))
+
+
+## Энергия от блюда: в пределах дневного лимита и не выше запаса. Возвращает, сколько добавилось.
+func add_food(n: int) -> int:
+	var e := _e()
+	var today := ShopSystem.day_index()
+	if int(e.get("food_day", -1)) != today:
+		e["food_day"] = today
+		e["food"] = 0
+	var v := value()
+	var gain := mini(mini(n, food_left()), int(maxf(0.0, max_value() - v)))
+	if gain <= 0:
+		return 0
+	e["food"] = int(e["food"]) + gain
+	e["value"] = v + float(gain)
+	Game.show_toast("px:bolt", L.t("energy.gained", [gain]))
+	Game.mark_dirty()
+	return gain
 
 
 ## Новый уровень: до полного запаса.

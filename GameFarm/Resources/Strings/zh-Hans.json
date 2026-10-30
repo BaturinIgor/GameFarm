@@ -443,6 +443,7 @@
  "effect.yieldKind": "{1}产量 +{0}",
  "energy.ad": "看视频 +{0}（剩余 {1}）",
  "energy.buy": "+{0}，花费",
+ "energy.foodLeft": "今日食物能量：剩余 {0}/{1}。食物不会让能量超过上限。",
  "energy.full": "能量已满",
  "energy.fullIn": "{0} 后满",
  "energy.gained": "能量 +{0}",

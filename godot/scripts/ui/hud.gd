@@ -15,16 +15,18 @@ const WINDOWS := [
 const LEVEL_PANEL := "res://scripts/ui/level_panel.gd"
 ## Плашки справа под монетами (блюдо, этаж дома, ивент...): Control, сам прячется, когда не нужен.
 const PILLS := [
-	"res://scripts/ui/energy_pill.gd",
 	"res://scripts/ui/shop_pill.gd",
+	"res://scripts/ui/home_floor_pill.gd",
+	"res://scripts/ui/dungeon_pill.gd",
+]
+## Маленькие плашки (таймеры): в один ряд с переносом, чтобы столбец справа не рос вниз.
+const MINI_PILLS := [
 	"res://scripts/ui/estate_pill.gd",
 	"res://scripts/ui/raid_pill.gd",
 	"res://scripts/ui/event_pill.gd",
 	"res://scripts/ui/meal_pill.gd",
 	"res://scripts/ui/expedition_pill.gd",
 	"res://scripts/ui/event_map_pill.gd",
-	"res://scripts/ui/home_floor_pill.gd",
-	"res://scripts/ui/dungeon_pill.gd",
 ]
 
 ## Текущая шапка: фичи сцены показывают через неё карточки и окна.
@@ -35,6 +37,7 @@ var _prompts := VBoxContainer.new()
 var _pills := VBoxContainer.new()
 var _level_box: PanelContainer
 var _coin_box: PanelContainer
+var _energy: EnergyRow
 var _pack_box: PanelContainer
 var _potion: PotionButton
 ## Ряд справа над нижней панелью: расходники и зелье.
@@ -155,6 +158,9 @@ func _build_top() -> void:
 	col.add_child(_level_name)
 	_xp_bar = UiKit.bar(0.0, "gold", 140, 14, " ")
 	col.add_child(_xp_bar)
+	# Энергия - под опытом, рядом со здоровьем
+	_energy = EnergyRow.new()
+	col.add_child(_energy)
 	# Здоровье: видно в бою или если ранен
 	col.add_child(CombatCards.HpStrip.new())
 	_level_box = level_box
@@ -241,6 +247,17 @@ func _build_top() -> void:
 			var pill: Control = load(path).new()
 			pill.size_flags_horizontal = Control.SIZE_SHRINK_END
 			_pills.add_child(pill)
+	var mini := HFlowContainer.new()
+	mini.alignment = FlowContainer.ALIGNMENT_END
+	mini.add_theme_constant_override("h_separation", 6)
+	mini.add_theme_constant_override("v_separation", 6)
+	mini.custom_minimum_size = Vector2(220, 0)
+	mini.size_flags_horizontal = Control.SIZE_SHRINK_END
+	mini.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pills.add_child(mini)
+	for path in MINI_PILLS:
+		if ResourceLoader.exists(path):
+			mini.add_child(load(path).new())
 
 
 func _build_bottom() -> void:
@@ -505,6 +522,8 @@ func _fit_top() -> void:
 		return
 	_level_name.custom_minimum_size.x = w
 	_xp_bar.custom_minimum_size.x = w
+	if _energy != null:
+		_energy.bar.custom_minimum_size.x = maxf(40.0, w - 36.0)
 	_level_box.reset_size()
 
 

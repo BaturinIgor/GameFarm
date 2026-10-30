@@ -33,6 +33,9 @@ func build() -> void:
 			_meal_card(m["dish"], float(m["until"]))
 	if Game.house.total_dishes() > 0:
 		section_title(L.t("kitchen.pantry"))
+		var fl := UiKit.label(L.t("energy.foodLeft", [Game.energy.food_left(), EnergySystem.FOOD_PER_DAY]), 12, UiKit.INK_SOFT)
+		fl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		content.add_child(fl)
 		for dish in House.DISHES:
 			if Game.house.dishes(dish) > 0:
 				_pantry_row(dish)

@@ -443,6 +443,7 @@
  "effect.yieldKind": "{1}: +{0} de coleta",
  "energy.ad": "+{0} por um vídeo (restantes: {1})",
  "energy.buy": "+{0} por",
+ "energy.foodLeft": "Energia da comida hoje: restam {0} de {1}. Comida não passa do máximo.",
  "energy.full": "Energia cheia",
  "energy.fullIn": "Cheia em {0}",
  "energy.gained": "Energia +{0}",

@@ -443,6 +443,7 @@
  "effect.yieldKind": "{1}: +{0} verim",
  "energy.ad": "Video karşılığı +{0} ({1} kaldı)",
  "energy.buy": "+{0} için",
+ "energy.foodLeft": "Bugün yemekten enerji: {1} içinden {0} kaldı. Yemek enerjiyi azaminin üstüne çıkarmaz.",
  "energy.full": "Enerji dolu",
  "energy.fullIn": "{0} sonra dolacak",
  "energy.gained": "Enerji +{0}",

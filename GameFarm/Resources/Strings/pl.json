@@ -443,6 +443,7 @@
  "effect.yieldKind": "{1}: +{0} do zbiorów",
  "energy.ad": "+{0} za film (zostało: {1})",
  "energy.buy": "+{0} za",
+ "energy.foodLeft": "Energia z jedzenia dziś: zostało {0} z {1}. Jedzenie nie podnosi powyżej maksimum.",
  "energy.full": "Energia pełna",
  "energy.fullIn": "Pełna za {0}",
  "energy.gained": "Energia +{0}",
