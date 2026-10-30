@@ -95,6 +95,12 @@ func open_dungeon_chest() -> void:
 	Game.add_to_storage("essence", essence, false)
 	var potions := 2 if first else (1 if randf() < 0.3 else 0)
 	Game.save["potions"] = int(Game.save.get("potions", 0)) + potions
+	# Иногда в сундуке расходник из открытых по уровню
+	var open_items: Array = Consumables.IDS.filter(func(c: String) -> bool: return Game.combat.consumable_open(c))
+	if not open_items.is_empty() and (first or randf() < 0.35):
+		var item: String = open_items.pick_random()
+		Game.combat.add_consumable(item, 1)
+		Game.show_toast("px:potion", L.t("toast.itemFound", [Consumables.name_of(item)]))
 	var weapon := ""
 	var boss_weapon := Dungeons.weapon(id)
 	if Dungeons.is_boss_floor(floor_n) and not Game.combat.owns_weapon(boss_weapon) \

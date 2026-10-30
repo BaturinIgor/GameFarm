@@ -36,7 +36,38 @@ func _init() -> void:
 
 ## Во сколько раз медленнее идёт герой (укус с замедлением).
 static func hero_speed_mult() -> float:
-	return 0.65 if hero_slow_left > 0.0 else 1.0
+	var m := 0.65 if hero_slow_left > 0.0 else 1.0
+	if Game.combat.buff_active("swift"):
+		m *= 1.0 + float(Consumables.spec("swift")["power"])
+	return m
+
+
+## Бомба: удар по всем монстрам вокруг героя. false - бросать не в кого.
+func throw_bomb() -> bool:
+	var w := _world
+	if w == null or fainting:
+		return false
+	var hero := w.player.position
+	var radius := float(Consumables.spec("bomb")["radius"])
+	var targets: Array = []
+	for s in slots:
+		var m: MonsterNode = s["node"]
+		if m != null and m.alive and m.position.distance_to(hero) < radius:
+			targets.append(m)
+	if targets.is_empty():
+		Game.show_toast("px:flame", L.t("toast.bombNoTarget"))
+		return false
+	var power := float(Consumables.spec("bomb")["power"])
+	for m in targets:
+		var foe: MonsterNode = m
+		damage_monster(foe, Game.combat.weapon_damage(foe.boss) * power * Game.combat.bestiary_mult(foe.kind), hero, true)
+	Fx.ring(w.fx, hero, Color(1, 0.6, 0.2), radius)
+	Fx.scatter(w.fx, hero - Vector2(0, 10), 18, Color(1, 0.7, 0.3), Sprites.icon("flame"), 16.0, radius * 0.7, 40.0, 0.7)
+	w.shake = maxf(w.shake, 9.0)
+	Sound.play("rockBreak")
+	Sound.play("crit", 0.6)
+	Input.vibrate_handheld(60)
+	return true
 
 
 func build(world: World) -> void:
@@ -175,7 +206,7 @@ func nearest_monster(reach: float, origin: Vector2) -> MonsterNode:
 func _strike_monster(world: World, foe: MonsterNode, stats: Stats) -> void:
 	world.player.swing("sword", foe.position, stats.hit_interval)
 	Sound.play("chop", 0.8)
-	var damage: float = Game.combat.weapon_damage(foe.boss)
+	var damage: float = Game.combat.weapon_damage(foe.boss) * Game.combat.bestiary_mult(foe.kind)
 	var crit := false
 	if stats.titan:
 		_titan_hits += 1

@@ -15,6 +15,9 @@ var in_combat := false
 ## Босс на арене для полоски сверху: {"name", "fraction"} или null.
 var boss_info: Variant = null
 
+## Действующие эликсиры: id -> когда кончатся (unix). Не сохраняются.
+var buff_until: Dictionary = {}
+
 var _last_second_wind := -1.0e9
 var _last_stand_at := -1.0e9
 var _last_potion := -1.0e9
@@ -35,8 +38,17 @@ func defaults(save: Dictionary) -> void:
 	# Королевский меч приходит вместе с садом
 	if Game.premium.owns("garden") and int(weapons.get("royalSword", 0)) == 0:
 		weapons["royalSword"] = Weapons.start_tier("royalSword")
-	for key in ["potions", "huntDay", "kills"]:
+	for key in ["potions", "huntDay", "kills", "bossKills"]:
 		save[key] = int(save.get(key, 0))
+	# Расходники, победы по видам монстров и забранные ступени бестиария
+	for key in ["consumables", "killsBy", "bestiary"]:
+		var clean := {}
+		var raw: Variant = save.get(key, {})
+		if raw is Dictionary:
+			for k in raw:
+				if raw[k] is float or raw[k] is int:
+					clean[str(k)] = maxi(0, int(raw[k]))
+		save[key] = clean
 	# Как в iOS: если хоть один заказ не читается, список пустой
 	var list: Array = []
 	var raw_hunts: Variant = save.get("hunts", [])
@@ -88,6 +100,8 @@ func set_boss_info(info: Variant) -> void:
 ## Урон герою с учётом шлема. Возвращает, сколько здоровья ушло.
 func hurt_hero(amount: float) -> float:
 	var dealt := amount * (1.0 - defense())
+	if buff_active("guard"):
+		dealt *= 1.0 - float(Consumables.spec("guard")["power"])
 	var top := max_hp()
 	var next := maxf(0.0, minf(hp, top) - dealt)
 	# Второе дыхание (броня 10 ступени): раз в 5 минут герой не падает.
@@ -100,6 +114,13 @@ func hurt_hero(amount: float) -> float:
 		_last_stand_at = _now()
 		next = top * 0.25
 		Game.show_toast("px:heart_shield", L.t("toast.lastStand"))
+	# Свиток второго шанса: срабатывает сам, если остальное не спасло
+	if next <= 0.0 and consumable_count("revive") > 0:
+		Game.save["consumables"]["revive"] = consumable_count("revive") - 1
+		next = top * float(Consumables.spec("revive")["power"])
+		Game.show_toast("px:scroll2", L.t("toast.revive"))
+		Sound.play("success")
+		Game.mark_dirty()
 	hp = next
 	return dealt
 
@@ -167,7 +188,8 @@ func weapon_damage(boss := false) -> float:
 	var base := ToolSystem.sword_damage(Game.level, effective_weapon_tier(w)) * Weapons.mult(w)
 	var rage := 1.0 + s.berserk if hp_fraction() < 0.5 else 1.0
 	var vs_boss := 1.0 + float(gear.get("boss_damage", 0.0)) + s.boss_bonus if boss else 1.0
-	return base * s.damage_mult * s.sword_mult * s.weapon_mult * rage * vs_boss
+	var elixir := 1.0 + float(Consumables.spec("strength")["power"]) if buff_active("strength") else 1.0
+	return base * s.damage_mult * s.sword_mult * s.weapon_mult * rage * vs_boss * elixir
 
 
 ## Ступень оружия не выше той, что доступна кузнецу на текущем уровне:
@@ -249,6 +271,102 @@ func drink_potion() -> void:
 	Game.mark_dirty()
 
 
+# MARK: Расходники
+
+func consumable_count(id: String) -> int:
+	return int(Game.save.get("consumables", {}).get(id, 0))
+
+
+func consumable_open(id: String) -> bool:
+	return Game.level >= Consumables.level(id)
+
+
+func consumable_price(id: String, count: int) -> int:
+	return Consumables.price(id, Game.level) * count
+
+
+func buy_consumable(id: String, count: int) -> bool:
+	var price := consumable_price(id, count)
+	if not consumable_open(id) or int(Game.save["coins"]) < price:
+		return false
+	Game.save["coins"] = int(Game.save["coins"]) - price
+	add_consumable(id, count)
+	Sound.play("purchase")
+	return true
+
+
+func add_consumable(id: String, count: int) -> void:
+	var c: Dictionary = Game.save["consumables"]
+	c[id] = int(c.get(id, 0)) + count
+	Game.mark_dirty()
+
+
+func buff_active(id: String) -> bool:
+	return float(buff_until.get(id, 0.0)) > _now()
+
+
+func buff_left(id: String) -> float:
+	return maxf(0.0, float(buff_until.get(id, 0.0)) - _now())
+
+
+## Выпить эликсир или бросить бомбу. Эликсир того же вида продлевает действие.
+func use_consumable(id: String) -> bool:
+	if consumable_count(id) <= 0 or not Consumables.usable(id):
+		return false
+	if id == "bomb":
+		if MonstersFeature.current == null or not MonstersFeature.current.throw_bomb():
+			return false
+	else:
+		buff_until[id] = maxf(_now(), float(buff_until.get(id, 0.0))) + float(Consumables.spec(id)["duration"])
+		Sound.play("luck")
+	Game.save["consumables"][id] = consumable_count(id) - 1
+	Game.emit_event("consumable", {"id": id})
+	Game.mark_dirty()
+	return true
+
+
+# MARK: Бестиарий
+
+func kills_of(kind: String) -> int:
+	return int(Game.save.get("killsBy", {}).get(kind, 0))
+
+
+## Сколько ступеней бестиария уже забрано по виду.
+func bestiary_claimed(kind: String) -> int:
+	return int(Game.save.get("bestiary", {}).get(kind, 0))
+
+
+## Ступень, которую можно забрать (-1 - нечего).
+func bestiary_ready(kind: String) -> int:
+	var t := bestiary_claimed(kind)
+	if t >= Consumables.BESTIARY_TIERS.size():
+		return -1
+	return t if kills_of(kind) >= int(Consumables.BESTIARY_TIERS[t]) else -1
+
+
+func bestiary_ready_count() -> int:
+	var n := 0
+	for kind in Monsters.KINDS:
+		if bestiary_ready(kind) >= 0:
+			n += 1
+	return n
+
+
+func claim_bestiary(kind: String) -> void:
+	var t := bestiary_ready(kind)
+	if t < 0:
+		return
+	Game.save["bestiary"][kind] = t + 1
+	Game.shop.add_crystals(int(Consumables.BESTIARY_CRYSTALS[t]), true)
+	Sound.play("treasure")
+	Game.save_now()
+
+
+## Прибавка к урону по виду монстра от ступеней бестиария.
+func bestiary_mult(kind: String) -> float:
+	return 1.0 + Consumables.BESTIARY_DAMAGE * float(bestiary_claimed(kind))
+
+
 # MARK: Убийства
 
 ## Монстр побеждён: опыт, монеты, трофеи, заказы стражника. Возвращает {coins, loot}.
@@ -257,6 +375,10 @@ func note_kill(kind: String, level: int, boss := false) -> Dictionary:
 	var st: Dictionary = Monsters.stats(kind, level, boss, [])
 	var coins := int(st.get("coins", 0))
 	Game.save["kills"] = int(Game.save.get("kills", 0)) + 1
+	var by: Dictionary = Game.save["killsBy"]
+	by[kind] = int(by.get(kind, 0)) + 1
+	if boss:
+		Game.save["bossKills"] = int(Game.save.get("bossKills", 0)) + 1
 	Game.add_coins(coins)
 	var loot := randi_range(1, 4 if kind == "slimeGold" else 2)
 	var dungeon := Game.dungeons.in_dungeon()

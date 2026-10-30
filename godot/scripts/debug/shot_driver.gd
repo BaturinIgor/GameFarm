@@ -6,7 +6,7 @@ extends Node
 const ORIGIN := Vector2(195, 620)
 const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", "kitchen", "garden", "trader", "hunt",
 	"dungeon", "trophies", "collection", "legacy", "wardrobe", "map", "events", "shop",
-	"shop:vip", "shop:crystals", "shop:market", "shop:free"]
+	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary"]
 
 var dir := "/tmp/shots"
 var main: Node
@@ -67,6 +67,8 @@ func _process(delta: float) -> void:
 				# Окно стартового набора закрывало бы снимки окон
 				Game.save["starterOffers"] = 2
 				Game.save["crystals"] = 520
+				Game.save["consumables"] = {"strength": 2, "guard": 1, "swift": 3}
+				Game.save["killsBy"] = {"slimeGreen": 31, "orc": 12, "slimeBlue": 4}
 				Game.save["offerPopupDay"] = ShopSystem.day_index()
 				Game.save["coins"] = 25000
 				for k in ["wood", "stone", "clay", "coal", "iron", "berries", "fish", "apples"]:
@@ -81,8 +83,9 @@ func _process(delta: float) -> void:
 				var w: String = WINDOWS[t / 2]
 				if t % 2 == 0 and _opened != w:
 					_opened = w
-					if w.begins_with("shop:"):
-						main.hud.open_window(ShopPanel.new(w.substr(5)))
+					if ":" in w:
+						var parts := w.split(":")
+						main.hud.open_window(load("res://scripts/ui/%s_panel.gd" % parts[0]).new(parts[1]))
 					else:
 						var path := "res://scripts/ui/%s_panel.gd" % w
 						if ResourceLoader.exists(path):

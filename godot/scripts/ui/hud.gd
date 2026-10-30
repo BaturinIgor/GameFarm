@@ -33,6 +33,8 @@ var _pills := VBoxContainer.new()
 var _level_box: PanelContainer
 var _pack_box: PanelContainer
 var _potion: PotionButton
+## Ряд справа над нижней панелью: расходники и зелье.
+var _combat_row := CombatRow.new()
 var _minimap: MiniMap
 var _pro_crown: TextureRect
 var _badge_box: PanelContainer
@@ -235,10 +237,17 @@ func _build_bottom() -> void:
 	_prompts.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_prompts.add_theme_constant_override("separation", 8)
 	root.add_child(_prompts)
-	# Зелье справа над нижней панелью, под карточками
+	# Зелье и расходники справа над нижней панелью, под карточками
+	_combat_row.size_flags_horizontal = Control.SIZE_SHRINK_END
+	_combat_row.add_theme_constant_override("separation", 8)
+	_combat_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_prompts.add_child(_combat_row)
+	var items := ConsumableBar.new()
+	items.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_combat_row.add_child(items)
 	_potion = PotionButton.new()
-	_potion.size_flags_horizontal = Control.SIZE_SHRINK_END
-	_prompts.add_child(_potion)
+	_potion.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_combat_row.add_child(_potion)
 
 
 ## Подсказка новичку (TutorialCard): как ходить, добывать и сдавать на склад.
@@ -351,7 +360,7 @@ func set_prompt(key: String, card: Control) -> void:
 		if card.get_parent() == null:
 			_prompts.add_child(card)
 			if _potion != null:
-				_prompts.move_child(_potion, -1)
+				_prompts.move_child(_combat_row, -1)
 
 
 func _update_badges() -> void:
@@ -508,3 +517,13 @@ func close_window() -> void:
 		_window.queue_free()
 	_window = null
 	Sound.set_window_open(false)
+
+
+## Ряд зелья и расходников: виден, только когда видна хоть одна кнопка (иначе лишний отступ в столбце).
+class CombatRow extends HBoxContainer:
+	func _process(_delta: float) -> void:
+		var any := false
+		for c in get_children():
+			if c is Control and (c as Control).visible:
+				any = true
+		visible = any
