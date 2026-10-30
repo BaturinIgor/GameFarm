@@ -22,7 +22,8 @@ if command -v ffmpeg > /dev/null; then
   mkdir -p "$G/assets/audio"
   for f in "$ROOT"/GameFarm/Resources/Audio/*.m4a; do
     out="$G/assets/audio/$(basename "${f%.m4a}").ogg"
-    [ -f "$out" ] || ffmpeg -loglevel error -y -i "$f" -c:a libvorbis -q:a 4 "$out"
+    [ -f "$out" ] || ffmpeg -loglevel error -y -i "$f" -c:a libvorbis -q:a 4 "$out" \
+      || { echo "ffmpeg: не удалось перекодировать $(basename "$f")"; exit 1; }
   done
 fi
 if [ -n "$ASSETS_KEY" ]; then
