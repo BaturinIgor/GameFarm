@@ -1377,6 +1377,7 @@
  "storage.sellTab": "このタブを全部売る",
  "storage.sellTab.confirm": "全部売る：{0}？",
  "storage.sellTab.message": "{0}コインもらえるよ。レシピや強化に使う素材も売れてしまうよ。",
+ "storage.sold": "+{0} コイン",
  "storage.tab.food": "食べ物",
  "storage.tab.goods": "品物",
  "storage.tab.loot": "戦利品",

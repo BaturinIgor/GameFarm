@@ -1,0 +1,9 @@
+Шрифты игры (все под SIL Open Font License 1.1, текст лицензии - OFL.txt):
+
+Nunito-700.ttf, Nunito-900.ttf - Nunito, Copyright 2014 The Nunito Project Authors.
+
+Шрифты-замены для языков, которых нет в Nunito (подмножества только с символами строк игры,
+собираются tools/make_fallback_fonts.py):
+NotoSansJP-Bold-sub.otf, NotoSansKR-Bold-sub.otf, NotoSansSC-Bold-sub.otf, NotoSansTC-Bold-sub.otf -
+  Noto Sans CJK Bold, Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.
+Poppins-Devanagari-sub.ttf - Poppins Bold, Copyright 2020 The Poppins Project Authors.

@@ -1377,6 +1377,7 @@
  "storage.sellTab": "ขายทั้งหมดในแท็บนี้",
  "storage.sellTab.confirm": "ขายทั้งหมด: {0}?",
  "storage.sellTab.message": "คุณจะได้ {0} เหรียญ ทรัพยากรสำหรับสูตรอาหารและการอัปเกรดก็จะถูกขายด้วย",
+ "storage.sold": "+{0} เหรียญ",
  "storage.tab.food": "อาหาร",
  "storage.tab.goods": "สินค้า",
  "storage.tab.loot": "ของดรอป",

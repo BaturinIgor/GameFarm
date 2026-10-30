@@ -273,28 +273,38 @@ class CloseButton extends Button:
 		button_up.connect(func() -> void: scale = Vector2.ONE)
 
 	func _draw() -> void:
+		# Один красный круг с мягкой тенью снизу (раньше под ним был второй круг-"губа" с контуром - выглядело
+		# как два круга друг на друге) и белый крестик со скруглёнными концами
 		var red: Array = UiKit.TONES["red"]
 		var c := Vector2(SIDE / 2.0, SIDE / 2.0)
-		var r := SIDE / 2.0
-		draw_circle(c + Vector2(0, 3), r, red[2])
-		draw_circle(c + Vector2(0, 3), r, UiKit.OUTLINE, false, 2.0, true)
+		var r := SIDE / 2.0 - 1.0
 		var pressed := get_draw_mode() == DRAW_PRESSED or get_draw_mode() == DRAW_HOVER_PRESSED
 		if pressed:
-			c.y += 2.0
+			c.y += 1.5
+		else:
+			draw_circle(c + Vector2(0, 2.5), r, Color(0, 0, 0, 0.22), true, -1.0, true)
 		_gradient_disc(c, r, red[0], red[1])
-		draw_circle(c, r - 1.0, UiKit.OUTLINE, false, 2.0, true)
-		# Крестик
+		draw_circle(c, r, UiKit.OUTLINE, false, 2.0, true)
+		# Блик сверху
+		draw_arc(c, r - 4.0, PI * 1.15, PI * 1.6, 12, Color(1, 1, 1, 0.35), 2.0, true)
+		# Крестик: сначала тёмная обводка обеих линий, потом белые линии - чтобы обводка второй линии
+		# не перечёркивала первую посередине
 		var k := r * 0.36
-		for d in [Vector2(1, 1), Vector2(1, -1)]:
-			draw_line(c - d * k, c + d * k, red[2], 6.0, true)
-			draw_line(c - d * k, c + d * k, Color.WHITE, 3.5, true)
+		var lines := [[c - Vector2(k, k), c + Vector2(k, k)], [c - Vector2(k, -k), c + Vector2(k, -k)]]
+		for layer in [[red[2], 6.5], [Color.WHITE, 3.5]]:
+			var col: Color = layer[0]
+			var w: float = layer[1]
+			for ln in lines:
+				draw_line(ln[0], ln[1], col, w, true)
+				draw_circle(ln[0], w / 2.0, col, true, -1.0, true)
+				draw_circle(ln[1], w / 2.0, col, true, -1.0, true)
 
 	func _gradient_disc(c: Vector2, r: float, top: Color, bottom: Color) -> void:
 		var pts := PackedVector2Array()
 		var colors := PackedColorArray()
-		for i in 32:
-			var a := TAU * float(i) / 32.0
-			var p := c + Vector2(cos(a), sin(a)) * (r - 1.0)
+		for i in 48:
+			var a := TAU * float(i) / 48.0
+			var p := c + Vector2(cos(a), sin(a)) * r
 			pts.append(p)
 			colors.append(top.lerp(bottom, clampf((p.y - (c.y - r)) / (2.0 * r), 0.0, 1.0)))
 		draw_polygon(pts, colors)

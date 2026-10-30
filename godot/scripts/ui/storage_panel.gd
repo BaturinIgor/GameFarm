@@ -108,15 +108,35 @@ func _row(parent: Control, kind: String) -> void:
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col.add_theme_constant_override("separation", 0)
 	row.add_child(col)
-	col.add_child(UiKit.label(Res.name_of(kind), 15))
-	col.add_child(UiKit.label(L.t("storage.row", [Fmt.n(have), price]), 12, UiKit.INK_SOFT))
-	if have >= 10:
-		var ten := UiKit.button("10", "wood", 13, true)
-		ten.pressed.connect(func() -> void: Game.sell(kind, 10))
-		row.add_child(ten)
-	var all := UiKit.button(L.t("storage.sellAll") if have >= 10 else L.t("storage.sell"), "green", 13, true)
-	all.pressed.connect(func() -> void: Game.sell(kind, have))
-	row.add_child(all)
+	var name_l := UiKit.label(Res.name_of(kind), 15)
+	name_l.clip_text = true
+	name_l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	col.add_child(name_l)
+	var info := UiKit.label(L.t("storage.row", [Fmt.n(have), price]), 12, UiKit.INK_SOFT)
+	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(info)
+	# Продать 1, 10, 100 или всё; лишние кнопки не показываются
+	var buttons := HBoxContainer.new()
+	buttons.add_theme_constant_override("separation", 3)
+	buttons.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(buttons)
+	for n in [1, 10, 100]:
+		if have > n:
+			var b := UiKit.button(str(n), "wood", 13, true)
+			b.custom_minimum_size = Vector2(34 if n < 100 else 42, 34)
+			var count: int = n
+			b.pressed.connect(func() -> void: _sold(kind, Game.sell(kind, count)))
+			buttons.add_child(b)
+	var all := UiKit.button(L.t("storage.sellAll") if have > 1 else L.t("storage.sell"), "green", 13, true)
+	all.custom_minimum_size = Vector2(46, 34)
+	all.pressed.connect(func() -> void: _sold(kind, Game.sell(kind, have)))
+	buttons.add_child(all)
+
+
+## Подсказка о выручке после продажи.
+func _sold(kind: String, coins: int) -> void:
+	if coins > 0:
+		Game.show_toast("res:" + kind, L.t("storage.sold", [Fmt.n(coins)]))
 
 
 func _sell_tab_button(list: Array) -> void:

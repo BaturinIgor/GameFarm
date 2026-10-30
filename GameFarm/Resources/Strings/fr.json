@@ -1377,6 +1377,7 @@
  "storage.sellTab": "Tout vendre ici",
  "storage.sellTab.confirm": "Tout vendre : {0} ?",
  "storage.sellTab.message": "Tu recevras {0} pièces. Les ressources pour les recettes et les améliorations seront aussi vendues.",
+ "storage.sold": "+{0} pièces",
  "storage.tab.food": "Nourriture",
  "storage.tab.goods": "Produits",
  "storage.tab.loot": "Trophées",

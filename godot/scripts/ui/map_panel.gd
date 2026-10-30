@@ -412,6 +412,18 @@ func _expedition_row(id: String, busy: bool) -> PanelContainer:
 	col.add_child(_wrap(Locations.name_of(id), 14, UiKit.INK))
 	col.add_child(_wrap(Expeditions.perk(id), 12, UiKit.INK_SOFT))
 	col.add_child(UiKit.label(L.t("exp.minutes", [int(Expeditions.duration(id) / 60.0)]), 11, UiKit.INK_SOFT))
+	# Не хватает инструментов: какие уровни нужны (красным), перед входом ещё и окно с вопросом
+	var gear := Expeditions.gear(id)
+	for m in gear["missing"]:
+		var need := HBoxContainer.new()
+		need.add_theme_constant_override("separation", 4)
+		need.add_child(UiKit.icon(Tools.icon_name(str(m["tool"])), 14))
+		var nl := UiKit.label(L.t("exp.gear.need", [L.t("tool." + str(m["tool"])), int(m["need"]), int(m["have"])]),
+			11, UiKit.BAD)
+		nl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		nl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		need.add_child(nl)
+		col.add_child(need)
 	var parts: Array = [["t", L.t("exp.go")], ["t", str(price)], ["i", "ticket"]]
 	if maps > 0:
 		parts.append_array([["t", str(maps)], ["i", "tmap"]])
@@ -420,9 +432,22 @@ func _expedition_row(id: String, busy: bool) -> PanelContainer:
 	b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	var p := Game.premium
 	b.disabled = p.tickets() < price or p.maps() < maps or busy
-	b.pressed.connect(func() -> void:
+	var go := func() -> void:
 		if Game.premium.start_expedition(id):
-			close())
+			close()
+	b.pressed.connect(func() -> void:
+		var g := Expeditions.gear(id)
+		if (g["missing"] as Array).is_empty():
+			go.call()
+			return
+		var lines := PackedStringArray()
+		for m in g["missing"]:
+			lines.append(L.t("exp.gear.need", [L.t("tool." + str(m["tool"])), int(m["need"]), int(m["have"])]))
+		var text := L.t("exp.gear.text", [int(g["blocked"]), int(g["total"])]) + "\n" + "\n".join(lines)
+		ConfirmPopup.ask("px:" + Tools.icon_name(str(g["missing"][0]["tool"])), L.t("exp.gear.title"), text,
+			L.t("exp.gear.go"), "orange", go, L.t("exp.gear.workshop"), func() -> void:
+				if Hud.current != null:
+					Hud.current.open_window(WorkshopPanel.new())))
 	col.add_child(b)
 	return box
 

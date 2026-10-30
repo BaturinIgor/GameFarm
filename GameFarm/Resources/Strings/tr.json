@@ -1377,6 +1377,7 @@
  "storage.sellTab": "Buradakilerin hepsini sat",
  "storage.sellTab.confirm": "Hepsi satılsın mı: {0}?",
  "storage.sellTab.message": "{0} para alacaksın. Tarifler ve geliştirmeler için gereken kaynaklar da satılır.",
+ "storage.sold": "+{0} altın",
  "storage.tab.food": "Yiyecek",
  "storage.tab.goods": "Ürünler",
  "storage.tab.loot": "Ganimet",

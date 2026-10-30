@@ -27,6 +27,9 @@ void fragment() {
 }
 """
 
+## Середина фигуры героя над точкой ног (в точках мира).
+const HERO_MID := 18.0
+
 var _key := ""
 var _aura: Node2D
 var _tick := 0.0
@@ -71,10 +74,30 @@ func _apply(world: World) -> void:
 	if pets:
 		for n in world.entities.get_children():
 			if n is CompanionNode and not n.has_meta("glow"):
-				var g := Fx.glow(Color(0.55, 1.0, 0.75), 70.0, -8.0, 0.5)
+				var g := Fx.glow(Color(0.55, 1.0, 0.75), 70.0, 12.0, 0.5)
 				g.z_index = -1
 				n.add_child(g)
 				n.set_meta("glow", g)
+
+
+## Кольцо: прозрачная середина, яркая полоса ближе к краю, мягкий спад наружу.
+static var _ring: Texture2D
+
+
+static func _ring_texture() -> Texture2D:
+	if _ring == null:
+		var g := Gradient.new()
+		g.offsets = PackedFloat32Array([0.0, 0.5, 0.8, 1.0])
+		g.colors = PackedColorArray([Color(1, 1, 1, 0.0), Color(1, 1, 1, 0.1), Color(1, 1, 1, 0.85), Color(1, 1, 1, 0.0)])
+		var t := GradientTexture2D.new()
+		t.gradient = g
+		t.fill = GradientTexture2D.FILL_RADIAL
+		t.fill_from = Vector2(0.5, 0.5)
+		t.fill_to = Vector2(1.0, 0.5)
+		t.width = 128
+		t.height = 128
+		_ring = t
+	return _ring
 
 
 static func _rainbow_material() -> ShaderMaterial:
@@ -96,19 +119,28 @@ func _set_aura(world: World, on: bool) -> void:
 	_aura = Node2D.new()
 	_aura.z_index = -1
 	world.player.add_child(_aura)
-	var halo := Fx.glow(Color(1.0, 0.85, 0.35), 110.0, -26.0, 0.45)
+	# Ореол - светлое кольцо вокруг героя (в середине почти прозрачное, чтобы не было яркого пятна),
+	# центр - середина фигуры (рисунок от 40 точек над ногами до ног), а не точка у ног
+	var halo := Sprite2D.new()
+	halo.texture = _ring_texture()
+	halo.scale = Vector2.ONE * 92.0 / 128.0
+	halo.position = Vector2(0, -HERO_MID)
+	halo.modulate = Color(1.0, 0.85, 0.4, 0.5)
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	halo.material = mat
 	_aura.add_child(halo)
 	var tw := halo.create_tween().set_loops()
-	tw.tween_property(halo, "modulate:a", 0.25, 1.1).set_trans(Tween.TRANS_SINE)
-	tw.tween_property(halo, "modulate:a", 0.5, 1.1).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(halo, "modulate:a", 0.3, 1.3).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(halo, "modulate:a", 0.55, 1.3).set_trans(Tween.TRANS_SINE)
 	var p := CPUParticles2D.new()
 	p.texture = Fx.glow_texture()
-	p.amount = 18
+	p.amount = 12
 	p.lifetime = 1.1
 	p.local_coords = false
 	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
 	p.emission_sphere_radius = 14.0
-	p.position = Vector2(0, -18)
+	p.position = Vector2(0, -HERO_MID)
 	p.direction = Vector2(0, -1)
 	p.spread = 60.0
 	p.gravity = Vector2(0, -18)
@@ -117,7 +149,7 @@ func _set_aura(world: World, on: bool) -> void:
 	p.scale_amount_min = 0.08
 	p.scale_amount_max = 0.16
 	var ramp := Gradient.new()
-	ramp.set_color(0, Color(1.0, 0.95, 0.6, 0.9))
+	ramp.set_color(0, Color(1.0, 0.95, 0.6, 0.7))
 	ramp.set_color(1, Color(1.0, 0.6, 0.9, 0.0))
 	p.color_ramp = ramp
 	p.z_index = 30

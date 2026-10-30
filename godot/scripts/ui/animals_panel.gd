@@ -148,8 +148,9 @@ func build_top() -> void:
 
 func _tabs() -> void:
 	var items: Array = []
+	var counts := Game.animals.tab_counts()
 	for t in TABS:
-		items.append([t, L.t("animals.tab." + t)])
+		items.append([t, L.t("animals.tab." + t), int(counts.get(t, 0))])
 	top_bar.add_child(UiKit.tabs(items, tab, func(id: String) -> void:
 		tab = id
 		scroll_to_top()))

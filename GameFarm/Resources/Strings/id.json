@@ -1377,6 +1377,7 @@
  "storage.sellTab": "Jual semua di sini",
  "storage.sellTab.confirm": "Jual semua: {0}?",
  "storage.sellTab.message": "Kamu akan dapat {0} koin. Sumber daya untuk resep dan peningkatan juga ikut terjual.",
+ "storage.sold": "+{0} koin",
  "storage.tab.food": "Makanan",
  "storage.tab.goods": "Barang",
  "storage.tab.loot": "Trofi",

@@ -16,6 +16,7 @@ var _trace := 0.0
 var _opened := ""
 var _shot_done := ""
 var _sub := 0
+var _lang := ""
 
 
 func _ready() -> void:
@@ -85,9 +86,9 @@ func _process(delta: float) -> void:
 				res["smith"]["chapter"] = 1
 				res["smith"]["taken"] = true
 				res["miller"]["arrived"] = true
-				# Украшения куплены: сияние, переливы, светлячки питомцев, ночная поляна (видна после выхода из дома)
+				# Куплены сияние и светлячки питомцев; переливы и ночную поляну можно примерить (кнопка в магазине)
 				var bought: Array = Game.save.get("purchases", [])
-				for cid in Products.COSMETICS:
+				for cid in ["aura", "petGlow"]:
 					bought.append(Products.id(cid))
 				Game.save["purchases"] = bought
 				res["smith"]["friend"] = 150
@@ -132,8 +133,15 @@ func _process(delta: float) -> void:
 					_check_layout(w)
 			else:
 				main.hud.close_window()
-				_step = 5
-				_time = 300.0
+				_step = 41
+				_time = 260.0
+				_sub = 0
+		41:
+			# Ещё снимки: магазин после покупок, выбор языка, окна на японском, хинди и тайском, экспедиции
+			var k := int((_time - 260.0) / 1.2)
+			if k != _sub:
+				_sub = k
+				_extra(k)
 		5:
 			# По порядку: "Где взять" для глины, разговор с мельником, жители у дома
 			if _sub == 0 and _time > 300.5:
@@ -162,7 +170,9 @@ func _process(delta: float) -> void:
 				_shot_done = "energy"
 				_shot("6_energy")
 				_free_overlays()
-			elif _sub == 4 and _time > 306.0:
+				# Примерка переливов: плашка внизу и наряд героя на следующем снимке
+				CosmeticPreview.start("rainbow")
+			elif _sub == 4 and _time > 306.8:
 				_sub = 5
 				_shot("7_world_level18")
 				# Набег: волна выходит с краёв карты, башни стреляют. Герой у левой башни
@@ -299,6 +309,68 @@ func _nearest(world: World) -> ResourceSpot:
 				bd = d
 				best = s
 	return best
+
+
+## Шаги дополнительных снимков (по одному раз в 1,2 секунды).
+func _extra(k: int) -> void:
+	match k:
+		1:
+			for p in ["flash", "step1", "crystals1"]:
+				Game.premium.grant(p)
+			main.hud.open_window(ShopPanel.new("offers"))
+		2:
+			_scroll_window(560)
+		3:
+			_shot("6_shop_bought")
+			_check_layout("shop_bought")
+			_scroll_window(100000)
+		4:
+			_shot("6_shop_extras")
+			main.hud.open_window(ShopPanel.new("crystals"))
+		5:
+			_shot("6_shop_crystals_bought")
+			main.hud.open_window(MapPanel.new())
+		6:
+			_scroll_window(100000)
+		7:
+			_shot("6_map_expeditions")
+			main.hud.close_window()
+			LanguagePopup.open()
+		8:
+			_shot("6_language")
+			for n in main.hud.find_children("*", "", true, false):
+				if n is LanguagePopup:
+					n.queue_free()
+			_lang = L.code
+			L.set_language("ja")
+			main.hud.open_window(QuestsPanel.new())
+		9:
+			_shot("6_quests_ja")
+			_check_layout("quests_ja")
+			L.set_language("hi")
+			main.hud.open_window(load("res://scripts/ui/level_panel.gd").new("settings"))
+		10:
+			_shot("6_settings_hi")
+			L.set_language("th")
+			main.hud.open_window(QuestsPanel.new())
+		11:
+			_shot("6_quests_th")
+			L.set_language(_lang)
+			main.hud.open_window(StoragePanel.new())
+		12:
+			_shot("6_storage_full")
+			_check_layout("storage_full")
+			main.hud.close_window()
+		13:
+			_step = 5
+			_time = 300.0
+			_sub = 0
+
+
+func _scroll_window(y: int) -> void:
+	for n in main.hud.find_children("*", "", true, false):
+		if n is Sheet:
+			(n as Sheet)._scroll.scroll_vertical = y
 
 
 func _shot(name: String) -> void:

@@ -1377,6 +1377,7 @@
  "storage.sellTab": "이 탭 전부 팔기",
  "storage.sellTab.confirm": "전부 팔까: {0}?",
  "storage.sellTab.message": "코인 {0}개를 받아. 레시피와 강화에 필요한 자원도 함께 팔려.",
+ "storage.sold": "+{0} 코인",
  "storage.tab.food": "음식",
  "storage.tab.goods": "상품",
  "storage.tab.loot": "전리품",

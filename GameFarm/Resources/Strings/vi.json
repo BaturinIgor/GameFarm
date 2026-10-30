@@ -1377,6 +1377,7 @@
  "storage.sellTab": "Bán hết ở đây",
  "storage.sellTab.confirm": "Bán hết: {0}?",
  "storage.sellTab.message": "Bạn sẽ nhận {0} xu. Tài nguyên dùng cho công thức và nâng cấp cũng sẽ bị bán.",
+ "storage.sold": "+{0} xu",
  "storage.tab.food": "Thức ăn",
  "storage.tab.goods": "Hàng hóa",
  "storage.tab.loot": "Chiến lợi phẩm",

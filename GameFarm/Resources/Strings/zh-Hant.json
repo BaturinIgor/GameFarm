@@ -1377,6 +1377,7 @@
  "storage.sellTab": "賣出本頁全部",
  "storage.sellTab.confirm": "全部賣出：{0}？",
  "storage.sellTab.message": "你將獲得 {0} 金幣。食譜和升級所需的資源也會一併賣掉。",
+ "storage.sold": "+{0} 金幣",
  "storage.tab.food": "食物",
  "storage.tab.goods": "商品",
  "storage.tab.loot": "戰利品",

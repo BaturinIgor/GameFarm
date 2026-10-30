@@ -27,6 +27,13 @@ static func dialogs() -> bool:
 	return _flag("dialogs", true)
 
 
-## Украшение включено: куплено и не выключено в настройках.
+## Примерка украшения из магазина (CosmeticPreview): какое и до какого времени (секунды с запуска).
+static var preview_id := ""
+static var preview_until := 0.0
+
+
+## Украшение включено: куплено и не выключено в настройках, или его сейчас примеряют.
 static func cosmetic(id: String) -> bool:
+	if id == preview_id and Time.get_ticks_msec() / 1000.0 < preview_until:
+		return true
 	return Game.premium.owns(id) and _flag("cos_" + id, true)

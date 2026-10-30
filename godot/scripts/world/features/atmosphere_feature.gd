@@ -9,6 +9,10 @@ var _clouds: Array = []        ## Sprite2D
 var _critters: Array = []      ## {node, heading, phase, flier}
 var _on_camera: Array = []     ## узлы на камере (погода, тонировка, темнота) - убрать при смене карты
 var _size := Vector2.ZERO
+## Сияющая поляна: её узлы, чтобы включать и выключать без перезахода (примерка, настройки).
+var _night: Array = []
+var _night_on := false
+var _night_tick := 0.0
 
 static var _spark: Texture2D
 static var _dark: Texture2D
@@ -36,14 +40,34 @@ func build(world: World) -> void:
 		rect.z_index = 900
 		_camera_child(world, rect)
 	# Сияющая поляна (покупка): ночь, светлячки и светящиеся грибы, ягоды и цветы
-	if world.loaded == "meadow" and Settings.cosmetic("glowMeadow"):
-		_glow_meadow(world, str(spec.get("weather", "")))
+	_night.clear()
+	_night_on = false
+	_sync_night(world)
 	if bool(spec.get("dark", false)):
 		var dark := Sprite2D.new()
 		dark.texture = _darkness()
 		dark.scale = Vector2.ONE * 2600.0 / 512.0
 		dark.z_index = 940
 		_camera_child(world, dark)
+
+
+## Включить или выключить сияющую поляну, если это изменилось.
+func _sync_night(world: World) -> void:
+	var want := world.loaded == "meadow" and Settings.cosmetic("glowMeadow")
+	if want == _night_on:
+		return
+	_night_on = want
+	if want:
+		var before := _on_camera.size()
+		_glow_meadow(world, str(world.spec.get("weather", "")))
+		for i in range(before, _on_camera.size()):
+			_night.append(_on_camera[i])
+		return
+	for n in _night:
+		if is_instance_valid(n):
+			n.queue_free()
+		_on_camera.erase(n)
+	_night.clear()
 
 
 func _glow_meadow(world: World, weather: String) -> void:
@@ -66,6 +90,7 @@ func _glow_meadow(world: World, weather: String) -> void:
 		g.position += s.position
 		g.z_index = 950
 		world.fx.add_child(g)
+		_night.append(g)
 		var tw := g.create_tween().set_loops()
 		tw.tween_property(g, "modulate:a", 0.25, randf_range(1.2, 2.2)).set_trans(Tween.TRANS_SINE)
 		tw.tween_property(g, "modulate:a", 0.6, randf_range(1.2, 2.2)).set_trans(Tween.TRANS_SINE)
@@ -75,9 +100,12 @@ func _glow_meadow(world: World, weather: String) -> void:
 		w.position = world.house_rect.get_center()
 		w.z_index = 950
 		world.fx.add_child(w)
+		_night.append(w)
 
 
 func clear(_w: World) -> void:
+	_night.clear()
+	_night_on = false
 	_clouds.clear()
 	_critters.clear()
 	for n in _on_camera:
@@ -86,7 +114,12 @@ func clear(_w: World) -> void:
 	_on_camera.clear()
 
 
-func process(_world: World, dt: float) -> void:
+func process(world: World, dt: float) -> void:
+	_night_tick -= dt
+	if _night_tick <= 0.0:
+		_night_tick = 0.5
+		if world.spec.get("kind", "") != "home" and world.spec.get("kind", "") != "dungeon":
+			_sync_night(world)
 	for s in _clouds:
 		var c: Sprite2D = s
 		if not is_instance_valid(c):

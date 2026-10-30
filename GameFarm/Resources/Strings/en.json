@@ -1377,6 +1377,7 @@
  "storage.sellTab": "Sell everything here",
  "storage.sellTab.confirm": "Sell everything: {0}?",
  "storage.sellTab.message": "You will get {0} coins. Resources needed for recipes and upgrades will be sold too.",
+ "storage.sold": "+{0} coins",
  "storage.tab.food": "Food",
  "storage.tab.goods": "Goods",
  "storage.tab.loot": "Loot",

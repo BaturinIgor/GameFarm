@@ -33,6 +33,29 @@ static func maps(id: String) -> int:
 	return 0
 
 
+## Каких инструментов не хватает, чтобы добыть всё в экспедиции: [{tool, need, have}] и сколько ресурсов
+## не получится добыть: {"missing": [...], "blocked": n, "total": m}.
+static func gear(id: String) -> Dictionary:
+	var need := {}
+	var blocked := 0
+	var total := 0
+	for s in MapLayout.load_layout(id).spots:
+		var spec := Nodes.spec(str(s["type"]))
+		var tool := str(spec.get("tool", "hand"))
+		if not tool in Tools.GATHERING:
+			continue
+		total += 1
+		var tier := int(spec.get("tier", 1))
+		need[tool] = maxi(int(need.get(tool, 0)), tier)
+		if not Game.can_harvest(spec):
+			blocked += 1
+	var missing: Array = []
+	for tool in Tools.GATHERING:
+		if need.has(tool) and Game.effective_tier(tool) < int(need[tool]):
+			missing.append({"tool": tool, "need": int(need[tool]), "have": Game.effective_tier(tool)})
+	return {"missing": missing, "blocked": blocked, "total": total}
+
+
 ## Дорогие вылазки длятся дольше: на каждый билет сверху ещё минута.
 static func duration(id: String) -> float:
 	return DURATION + float(cost(id) - 1 + maps(id)) * 60.0

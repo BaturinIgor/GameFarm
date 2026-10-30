@@ -519,30 +519,11 @@ func _language_row(c: VBoxContainer) -> void:
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(l)
-	var pick := OptionButton.new()
-	pick.focus_mode = Control.FOCUS_NONE
-	pick.fit_to_longest_item = false
-	var style := UiKit.pill_style()
-	style.set_corner_radius_all(10)
-	for state in ["normal", "hover", "pressed", "disabled"]:
-		pick.add_theme_stylebox_override(state, style)
-	pick.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	pick.add_theme_font_override("font", UiKit.font())
-	pick.add_theme_font_size_override("font_size", 13)
-	for k in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
-		pick.add_theme_color_override(k, Color.WHITE)
-	pick.add_theme_color_override("font_outline_color", UiKit.WOOD_DARK)
-	pick.add_theme_constant_override("outline_size", 3)
-	for i in L.CODES.size():
-		var code: String = L.CODES[i]
-		pick.add_item(L.NAMES.get(code, code), i)
-		if code == L.code:
-			pick.select(i)
-	pick.get_popup().add_theme_font_size_override("font_size", 16)
-	pick.item_selected.connect(func(index: int) -> void:
-		var code: String = L.CODES[index]
-		if code != L.code:
-			L.set_language(code))
+	# Кнопка с текущим языком открывает окно со списком (LanguagePopup)
+	var pick := UiKit.button(str(L.NAMES.get(L.code, L.code)) + "  ›", "wood", 13, true)
+	pick.custom_minimum_size = Vector2(130, 34)
+	pick.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	pick.pressed.connect(LanguagePopup.open)
 	row.add_child(pick)
 
 

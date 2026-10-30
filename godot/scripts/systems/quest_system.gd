@@ -119,6 +119,7 @@ func claim_quest(id: String) -> void:
 	var fresh := Quests.make(Game.level, gatherable_kinds(), _producer_kinds(), qs)
 	qs.insert(mini(index, qs.size()), fresh)
 	Game.gain_xp(int(quest["xp"]))
+	Game.emit_event("quest", {})
 	Game.mark_dirty()
 
 

@@ -47,11 +47,17 @@ func _tabs() -> void:
 
 # MARK: Задания
 
-## Цели дня: три задачи за кристаллы.
-func _daily_card() -> Control:
-	var parts := ShopPanel.shop_card(L.t("daily.title"), "purple")
+## Цели дня (week = false) или недели: задачи за кристаллы, сундук за все цели и время до новых.
+func _goals_card(week: bool) -> Control:
+	var daily := Game.daily
+	var parts := ShopPanel.shop_card(L.t("weekly.title" if week else "daily.title"), "blue" if week else "purple")
 	var v: VBoxContainer = parts[1]
-	var goals := Game.daily.goals()
+	var left := func() -> String:
+		return L.t("goals.renew", [EventsPanel.long_countdown(DailySystem.week_left() if week else ShopSystem.next_day_in())])
+	var timer := CombatCards.LiveLabel.new(left, 11, UiKit.INK_SOFT)
+	timer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(timer)
+	var goals: Array = daily.week_goals() if week else daily.goals()
 	for i in goals.size():
 		var g: Dictionary = goals[i]
 		var row := HBoxContainer.new()
@@ -71,16 +77,58 @@ func _daily_card() -> Control:
 			row.add_child(ok)
 		else:
 			var idx := i
-			var b := MapPanel.icon_button([["i", "gem"], ["t", str(g["crystals"])]], "green" if Game.daily.done(g) else "gray", 13)
-			b.disabled = not Game.daily.done(g)
+			var b := MapPanel.icon_button([["i", "gem"], ["t", str(g["crystals"])]], "green" if daily.done(g) else "gray", 13)
+			b.disabled = not daily.done(g)
 			b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			b.pressed.connect(func() -> void: Game.daily.claim(idx))
+			b.pressed.connect(func() -> void: Game.daily.claim(idx, week))
 			row.add_child(b)
+	v.add_child(_goals_bonus(week))
 	return parts[0]
 
 
+## Сундук за все цели: что внутри и кнопка (серая, пока не все цели забраны).
+func _goals_bonus(week: bool) -> Control:
+	var daily := Game.daily
+	var p := PanelContainer.new()
+	var st := UiKit.box(Color(UiKit.PARCHMENT_DEEP, 0.55), Color(UiKit.WOOD_DARK, 0.3), 12, 1, false)
+	st.set_content_margin_all(8)
+	p.add_theme_stylebox_override("panel", st)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	p.add_child(row)
+	var chest := UiKit.icon("chest_gold" if week else "chest", 32)
+	chest.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(chest)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 1)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(col)
+	var t := UiKit.label(L.t("weekly.bonus" if week else "daily.bonus"), 13)
+	t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(t)
+	var what := HBoxContainer.new()
+	what.add_theme_constant_override("separation", 4)
+	col.add_child(what)
+	what.add_child(UiKit.icon("gem", 14))
+	what.add_child(UiKit.label(str(daily.bonus_crystals(week)), 12, UiKit.INK_SOFT))
+	what.add_child(UiKit.icon("coins", 14))
+	what.add_child(UiKit.label(Fmt.n(daily.bonus_coins(week)), 12, UiKit.INK_SOFT))
+	if daily.bonus_taken(week):
+		var ok := HousePanel.check_mark(22)
+		ok.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(ok)
+	else:
+		var b := UiKit.button(L.t("goals.open"), "orange" if daily.bonus_ready(week) else "gray", 13, true)
+		b.disabled = not daily.bonus_ready(week)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		b.pressed.connect(func() -> void: Game.daily.take_bonus(week))
+		row.add_child(b)
+	return p
+
+
 func _quests_list() -> void:
-	content.add_child(_daily_card())
+	content.add_child(_goals_card(false))
+	content.add_child(_goals_card(true))
 	var list := Game.quests.current_quests()
 	content.add_child(UiKit.label(L.t("quests.done", [int(Game.save.get("questsDone", 0))]), 14))
 	var claimable := Game.quests.claimable_quests()

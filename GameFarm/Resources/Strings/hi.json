@@ -1377,6 +1377,7 @@
  "storage.sellTab": "यहाँ का सब बेचो",
  "storage.sellTab.confirm": "सब बेचें: {0}?",
  "storage.sellTab.message": "तुम्हें {0} सिक्के मिलेंगे। रेसिपी और अपग्रेड वाले रिसोर्स भी बिक जाएँगे।",
+ "storage.sold": "+{0} सिक्के",
  "storage.tab.food": "खाना",
  "storage.tab.goods": "सामान",
  "storage.tab.loot": "ट्रॉफ़ी",

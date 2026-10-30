@@ -179,8 +179,10 @@ func _flash_card() -> Control:
 	var variant := shop.flash_variant()
 	var p := PanelContainer.new()
 	var st := GameStyle.make(Color("e8463c"), Color("ffcf4a"), 18.0)
-	st.outline_width = 4.0
-	st.set_content_margin_all(14)
+	st.outline_width = 3.0
+	st.border_width = 4.0
+	st.border_color = Color("ffcf4a")
+	st.set_content_margin_all(16)
 	p.add_theme_stylebox_override("panel", st)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 8)
@@ -209,14 +211,19 @@ func _flash_card() -> Control:
 	timer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(timer)
 	if shop.flash_bought():
-		v.add_child(UiKit.label(L.t("shop.flash.bought"), 13, Color.WHITE, 4))
-	else:
-		v.add_child(BuyButton.new("flash", "orange"))
-	# Карточка мягко пульсирует, чтобы её заметили
-	p.resized.connect(func() -> void: p.pivot_offset = p.size / 2.0)
+		var done := UiKit.label(L.t("shop.flash.bought"), 13, Color.WHITE, 4)
+		done.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		done.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		v.add_child(done)
+		return p
+	v.add_child(BuyButton.new("flash", "orange"))
+	# Рамка мягко переливается золотым, чтобы карточку заметили (сама карточка не растёт и не вылезает)
+	var glow := func(t: float) -> void:
+		st.border_color = Color("ffb52e").lerp(Color("fff7cf"), t)
+		st.emit_changed()
 	var tw := p.create_tween().set_loops()
-	tw.tween_property(p, "scale", Vector2.ONE * 1.015, 0.8).set_trans(Tween.TRANS_SINE)
-	tw.tween_property(p, "scale", Vector2.ONE, 0.8).set_trans(Tween.TRANS_SINE)
+	tw.tween_method(glow, 0.0, 1.0, 0.9).set_trans(Tween.TRANS_SINE)
+	tw.tween_method(glow, 1.0, 0.0, 0.9).set_trans(Tween.TRANS_SINE)
 	return p
 
 
@@ -238,6 +245,7 @@ func _steps_card() -> Control:
 		cs.set_content_margin_all(6)
 		cell.add_theme_stylebox_override("panel", cs)
 		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		cell.clip_contents = true
 		row.add_child(cell)
 		var c := VBoxContainer.new()
 		c.add_theme_constant_override("separation", 3)
@@ -246,13 +254,29 @@ func _steps_card() -> Control:
 		price.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		c.add_child(price)
 		for part in pack_parts(Products.STEPS[k]):
+			var text := str(part[1])
+			if text.length() > 6:
+				# Длинная подпись (украшение): значок сверху, подпись под ним с переносом
+				var ic := UiKit.icon(str(part[0]), 16)
+				ic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+				c.add_child(ic)
+				var l := UiKit.label(text, 11)
+				l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+				l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+				l.custom_minimum_size = Vector2(40, 0)
+				c.add_child(l)
+				continue
 			var h := HBoxContainer.new()
 			h.add_theme_constant_override("separation", 3)
 			h.alignment = BoxContainer.ALIGNMENT_CENTER
 			h.add_child(UiKit.icon(str(part[0]), 16))
-			h.add_child(UiKit.label(str(part[1]), 11))
+			h.add_child(UiKit.label(text, 11))
 			c.add_child(h)
 		if own:
+			var gap := Control.new()
+			gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
+			gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			c.add_child(gap)
 			var ok := HousePanel.check_mark(20)
 			ok.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 			c.add_child(ok)
@@ -265,7 +289,15 @@ func _steps_card() -> Control:
 	return parts[0]
 
 
-## Строка украшения или набора: значок, название, что даёт, кнопка с ценой.
+## Значок украшения или набора.
+static func extra_icon(product: String) -> String:
+	var icon := {"aura": "star", "rainbow": "rainbow", "glowMeadow": "spark", "petGlow": "paw", "builder": "hammer",
+		"energyPack": "bolt", "attemptsPack": "key"}
+	return str(icon.get(product, "chest"))
+
+
+## Строка украшения или набора: значок, название, что даёт, кнопка с ценой. У украшения, которого ещё нет, -
+## кнопка "Примерить" (CosmeticPreview).
 func _extra_row(product: String) -> PanelContainer:
 	var p := PanelContainer.new()
 	var st := UiKit.box(UiKit.PARCHMENT_LIGHT, UiKit.TONES[Products.tone(product)][1], 14, 2, false)
@@ -274,20 +306,28 @@ func _extra_row(product: String) -> PanelContainer:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	p.add_child(row)
-	var icon := {"aura": "star", "rainbow": "rainbow", "glowMeadow": "spark", "petGlow": "paw", "builder": "hammer",
-		"energyPack": "bolt", "attemptsPack": "key"}
-	row.add_child(UiKit.icon(str(icon.get(product, "chest")), 34))
+	var ic := UiKit.crisp("px:" + extra_icon(product), 32.0)
+	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(ic)
 	var col := VBoxContainer.new()
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col.add_theme_constant_override("separation", 2)
 	row.add_child(col)
 	col.add_child(UiKit.label(Products.title(product), 14))
 	col.add_child(_wrap(L.t("product.%s.desc" % product), 11, UiKit.INK_SOFT))
+	var buttons := VBoxContainer.new()
+	buttons.add_theme_constant_override("separation", 6)
+	buttons.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(buttons)
 	var b := BuyButton.new(product, Products.tone(product), "", true)
 	b.size_flags_horizontal = Control.SIZE_SHRINK_END
-	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	b.custom_minimum_size = Vector2(84, 36)
-	row.add_child(b)
+	buttons.add_child(b)
+	if product in Products.COSMETICS and not Game.premium.owns(product):
+		var t := UiKit.button(L.t("shop.try"), "wood", 13, true)
+		t.custom_minimum_size = Vector2(84, 32)
+		t.pressed.connect(func() -> void: CosmeticPreview.start(product))
+		buttons.add_child(t)
 	return p
 
 
@@ -525,21 +565,40 @@ func _balance_card() -> PanelContainer:
 
 
 ## Горка кристаллов: чем больше пачка, тем больше камней.
+## Кучка кристаллов: кристаллы одного размера в целое число раз больше рисунка, стоят ровными рядами
+## (задние выше), кучка по центру. Места - в пикселях рисунка 16x16: [x, y], сначала задние.
 static func gem_pile(count: int, side: float) -> Control:
 	var holder := Control.new()
-	holder.custom_minimum_size = Vector2(side, side)
 	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var spots: Array = [[0.5, 0.5, 0.8]]
+	var u := maxf(1.0, roundf(side / 32.0))
+	var spots: Array = []
 	match count:
-		2: spots = [[0.36, 0.55, 0.62], [0.64, 0.45, 0.62]]
-		3: spots = [[0.3, 0.6, 0.55], [0.7, 0.6, 0.55], [0.5, 0.36, 0.6]]
-		4: spots = [[0.28, 0.66, 0.5], [0.72, 0.66, 0.5], [0.36, 0.34, 0.5], [0.64, 0.38, 0.55]]
-		5, 6: spots = [[0.22, 0.7, 0.46], [0.5, 0.72, 0.5], [0.78, 0.7, 0.46], [0.36, 0.38, 0.5], [0.66, 0.36, 0.56]]
+		0, 1:
+			spots = [[0, 0]]
+			u = maxf(1.0, roundf(side * 0.75 / 16.0))
+		2: spots = [[11, 0], [0, 5]]
+		3: spots = [[8, 0], [0, 7], [16, 7]]
+		4: spots = [[12, 0], [0, 9], [12, 9], [24, 9]]
+		5: spots = [[6, 0], [18, 0], [0, 9], [12, 9], [24, 9]]
+		_: spots = [[12, 0], [6, 8], [18, 8], [0, 16], [12, 16], [24, 16]]
+	var max_x := 0
+	var max_y := 0
 	for sp in spots:
-		var k: float = sp[2]
-		var g := UiKit.icon("gem", side * k)
-		g.position = Vector2(sp[0] * side - side * k / 2.0, sp[1] * side - side * k / 2.0)
-		g.size = Vector2(side * k, side * k)
+		max_x = maxi(max_x, int(sp[0]))
+		max_y = maxi(max_y, int(sp[1]))
+	# У рисунка кристалла пустые строки сверху (2) и снизу (1) - центрируем по видимой части
+	var w := float(max_x + 16) * u
+	var top := 2.0 * u
+	var vis := float(max_y + 15) * u - top
+	var box := Vector2(maxf(w, side), maxf(vis, side))
+	holder.custom_minimum_size = box
+	var off := Vector2(floorf((box.x - w) / 2.0), floorf((box.y - vis) / 2.0) - top)
+	for sp in spots:
+		var g := UiKit.icon("gem", 16.0 * u)
+		g.material = null
+		g.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		g.size = Vector2.ONE * 16.0 * u
+		g.position = off + Vector2(float(sp[0]), float(sp[1])) * u
 		holder.add_child(g)
 	return holder
 
@@ -582,6 +641,11 @@ func _pack_tile(key: String, index: int) -> PanelContainer:
 		var was := _wrap(L.t("crystals.firstX2", [Fmt.n(int(pack["n"]))]), 10, UiKit.INK_SOFT)
 		was.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		v.add_child(was)
+	# Кнопки в ряду плиток на одной высоте, даже если у соседней плитки нет подписи
+	var gap := Control.new()
+	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.add_child(gap)
 	var b := BuyButton.new(key, "purple", "", true)
 	v.add_child(b)
 	return p
@@ -938,14 +1002,12 @@ static func art(product: String, side: float) -> Control:
 	var main_k := 1.0
 	var badge := ""
 	var badge_k := 0.42
-	var shift := Vector2(0.08, 0.04)
 	match product:
 		"starter":
 			main = "px:chest_gold"
 			main_k = 0.9
 			badge = "an:duckHat"
 			badge_k = 0.5
-			shift = Vector2(0.1, 0.05)
 		"pro":
 			main = "skin:genie"
 			badge = "px:crown"
@@ -980,12 +1042,28 @@ static func art(product: String, side: float) -> Control:
 			badge = "px:gem"
 	if main == "":
 		return holder
-	var m := UiKit.icon_any(main, side * main_k)
-	m.position = Vector2.ONE * side * (1.0 - main_k)
-	holder.add_child(m)
+	# Размеры - в целое число раз больше рисунка, чтобы пиксели были ровные
+	var m := UiKit.crisp(main, side * main_k, side * 1.04)
+	var ms := m.custom_minimum_size
+	var b: Control = null
+	var bs := Vector2.ZERO
 	if badge != "":
-		var b := UiKit.icon_any(badge, side * badge_k)
-		b.position = Vector2.ONE * side * (1.0 - badge_k) + shift * side
+		b = UiKit.crisp(badge, side * badge_k, side * 0.5)
+		bs = b.custom_minimum_size
+	# Со значком главный рисунок чуть левее и выше, чтобы вместе они стояли по центру
+	var full := Vector2(side, side)
+	var nudge := (bs * 0.2).floor()
+	var pos := ((full - ms) / 2.0 - nudge).floor()
+	# Внутри картинки; если рисунок больше её (фигурка героя) - ровно по центру
+	pos.x = clampf(pos.x, minf(0.0, floorf((side - ms.x) / 2.0)), maxf(0.0, side - ms.x))
+	pos.y = clampf(pos.y, minf(0.0, floorf((side - ms.y) / 2.0)), maxf(0.0, side - ms.y))
+	m.position = pos
+	m.size = ms
+	holder.add_child(m)
+	if b != null:
+		var at := m.position + ms - (bs * 0.8).floor()
+		b.position = Vector2(minf(at.x, side - bs.x), minf(at.y, side - bs.y)).floor()
+		b.size = bs
 		holder.add_child(b)
 	return holder
 

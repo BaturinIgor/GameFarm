@@ -1377,6 +1377,7 @@
  "storage.sellTab": "Продать всё во вкладке",
  "storage.sellTab.confirm": "Продать всё: {0}?",
  "storage.sellTab.message": "Получишь {0} монет. Ресурсы для рецептов и улучшений тоже уйдут.",
+ "storage.sold": "+{0} монет",
  "storage.tab.food": "Еда",
  "storage.tab.goods": "Товары",
  "storage.tab.loot": "Трофеи",

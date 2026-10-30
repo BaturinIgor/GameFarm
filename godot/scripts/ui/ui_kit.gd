@@ -29,6 +29,23 @@ const TONES := {
 }
 
 static var _font: Font
+static var _pixel_mat: ShaderMaterial
+## Пиксельный рисунок при любом масштабе: все пиксели одного размера, края сглажены на один пиксель экрана
+## (при обычном ближайшем пикселе картинка 16x16 размером 22 точки выходит "кривой" - пиксели разной ширины).
+const PIXEL_SHADER := """shader_type canvas_item;
+varying vec4 tint;
+void vertex() {
+	tint = COLOR;
+}
+void fragment() {
+	vec2 size = 1.0 / TEXTURE_PIXEL_SIZE;
+	vec2 pix = UV * size;
+	vec2 seam = floor(pix + 0.5);
+	vec2 dudv = max(fwidth(pix), vec2(0.0001));
+	pix = seam + clamp((pix - seam) / dudv, vec2(-0.5), vec2(0.5));
+	COLOR = texture(TEXTURE, pix / size) * tint;
+}
+"""
 static var _body_font: Font
 
 
@@ -36,6 +53,8 @@ static func font() -> Font:
 	if _font == null:
 		# load, а не preload: при чистом импорте шрифт ещё не готов, когда скрипты уже разбираются
 		_font = load("res://fonts/Nunito-900.ttf")
+		_fallback_code = "-"
+	_sync_fallbacks()
 	return _font
 
 
@@ -43,7 +62,57 @@ static func font() -> Font:
 static func body_font() -> Font:
 	if _body_font == null:
 		_body_font = load("res://fonts/Nunito-700.ttf")
+		_fallback_code = "-"
+	_sync_fallbacks()
 	return _body_font
+
+
+# MARK: Шрифты-замены
+
+## В Nunito нет японского, корейского, китайского и хинди - их буквы берутся из шрифтов-замен
+## (tools/make_fallback_fonts.py), тайский и эмодзи - из системы телефона. Иначе вместо букв квадратики.
+const FALLBACK_FONTS := {"ja": "NotoSansJP-Bold-sub.otf", "ko": "NotoSansKR-Bold-sub.otf",
+	"zh-Hans": "NotoSansSC-Bold-sub.otf", "zh-Hant": "NotoSansTC-Bold-sub.otf"}
+const DEVANAGARI_FONT := "Poppins-Devanagari-sub.ttf"
+static var _fallback_code := "-"
+static var _fallback_fonts: Dictionary = {}
+static var _system: SystemFont
+
+
+static func _fallback_font(file: String) -> Font:
+	if not _fallback_fonts.has(file):
+		var path := "res://fonts/" + file
+		_fallback_fonts[file] = load(path) if ResourceLoader.exists(path) else null
+	return _fallback_fonts[file]
+
+
+## Замены по порядку: у японского, китайского и корейского одни и те же знаки рисуются по-разному,
+## поэтому шрифт текущего языка - первым.
+static func _sync_fallbacks() -> void:
+	if _fallback_code == L.code:
+		return
+	_fallback_code = L.code
+	var order: Array = ["ja", "ko", "zh-Hans", "zh-Hant"]
+	if L.code in order:
+		order.erase(L.code)
+		order.push_front(L.code)
+	var list: Array[Font] = []
+	var dev := _fallback_font(DEVANAGARI_FONT)
+	if dev != null:
+		list.append(dev)
+	for c in order:
+		var f := _fallback_font(str(FALLBACK_FONTS[c]))
+		if f != null:
+			list.append(f)
+	if _system == null:
+		_system = SystemFont.new()
+		_system.font_names = PackedStringArray(["Noto Sans Thai", "Noto Sans Thai UI", "Thonburi", "Sukhumvit Set",
+			"Leelawadee UI", "Tahoma", "sans-serif"])
+		_system.font_weight = 700
+	list.append(_system)
+	for main in [_font, _body_font]:
+		if main != null:
+			(main as Font).fallbacks = list
 
 
 static func box(fill: Color, border := OUTLINE, radius := 16, width := 3, shadow := true) -> StyleBoxFlat:
@@ -195,8 +264,40 @@ static func icon(name: String, size := 24.0) -> TextureRect:
 	t.custom_minimum_size = Vector2(size, size)
 	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	pixel_art(t)
 	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return t
+
+
+## Ровные пиксели у картинки в любом размере (см. PIXEL_SHADER).
+static func pixel_art(c: CanvasItem) -> void:
+	if _pixel_mat == null:
+		var sh := Shader.new()
+		sh.code = PIXEL_SHADER
+		_pixel_mat = ShaderMaterial.new()
+		_pixel_mat.shader = sh
+	c.material = _pixel_mat
+	c.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+
+
+## Картинка ровно в целое число раз больше рисунка (16 -> 32, 48...), ближайшее к target и не больше limit.
+## Для крупных картинок в магазине: так пиксели одинаковые и без сглаживания.
+static func crisp(code: String, target: float, limit := 0.0) -> Control:
+	var c := icon_any(code, target)
+	var t := c as TextureRect
+	if t == null or t.texture == null:
+		return c
+	var ts := t.texture.get_size()
+	var big := maxf(ts.x, ts.y)
+	var k := maxf(1.0, roundf(target / big))
+	while limit > 0.0 and k > 1.0 and big * k > limit:
+		k -= 1.0
+	var s := ts * k
+	t.custom_minimum_size = s
+	t.size = s
+	t.stretch_mode = TextureRect.STRETCH_SCALE
+	t.material = null
+	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	return t
 
 
