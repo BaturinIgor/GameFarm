@@ -96,13 +96,15 @@ def fonts_check():
         return
     files = {code: name for code, (_, name) in mf.CJK_FACES.items()}
     files["hi"] = mf.DEVANAGARI_FILE
+    files["th"] = mf.THAI_FILE
     for code, name in files.items():
         path = os.path.join(mf.OUT, name)
         if not os.path.exists(path):
             print(f"fonts: нет {name}, запусти tools/make_fallback_fonts.py")
             continue
         cmap = TTFont(path).getBestCmap()
-        lost = [c for c in mf.chars_of(code) if ord(c) not in cmap and (code != "hi" or 0x0900 <= ord(c) <= 0x097F)]
+        script = {"hi": (0x0900, 0x097F), "th": (0x0E00, 0x0E7F)}.get(code, (0, 0x10FFFF))
+        lost = [c for c in mf.chars_of(code) if ord(c) not in cmap and script[0] <= ord(c) <= script[1]]
         if lost:
             print(f"fonts: {code} - нет символов {''.join(lost[:20])}, запусти tools/make_fallback_fonts.py")
 

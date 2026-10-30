@@ -112,23 +112,24 @@ func _row(parent: Control, kind: String) -> void:
 	name_l.clip_text = true
 	name_l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	col.add_child(name_l)
-	var info := UiKit.label(L.t("storage.row", [Fmt.n(have), price]), 12, UiKit.INK_SOFT)
+	var info := UiKit.label(L.t("storage.row", [Fmt.n(have), price]), 11, UiKit.INK_SOFT)
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(info)
 	# Продать 1, 10, 100 или всё; лишние кнопки не показываются
 	var buttons := HBoxContainer.new()
-	buttons.add_theme_constant_override("separation", 3)
+	buttons.add_theme_constant_override("separation", 2)
 	buttons.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(buttons)
 	for n in [1, 10, 100]:
 		if have > n:
-			var b := UiKit.button(str(n), "wood", 13, true)
-			b.custom_minimum_size = Vector2(34 if n < 100 else 42, 34)
+			var b := UiKit.button(str(n), "wood", 12, true)
+			var w := 30.0 if n == 1 else (33.0 if n == 10 else 40.0)
+			b.custom_minimum_size = Vector2(w, 34)
 			var count: int = n
 			b.pressed.connect(func() -> void: _sold(kind, Game.sell(kind, count)))
 			buttons.add_child(b)
-	var all := UiKit.button(L.t("storage.sellAll") if have > 1 else L.t("storage.sell"), "green", 13, true)
-	all.custom_minimum_size = Vector2(46, 34)
+	var all := UiKit.button(L.t("storage.sellAll") if have > 1 else L.t("storage.sell"), "green", 12, true)
+	all.custom_minimum_size = Vector2(42, 34)
 	all.pressed.connect(func() -> void: _sold(kind, Game.sell(kind, have)))
 	buttons.add_child(all)
 

@@ -88,7 +88,7 @@ static func _ring_texture() -> Texture2D:
 	if _ring == null:
 		var g := Gradient.new()
 		g.offsets = PackedFloat32Array([0.0, 0.5, 0.8, 1.0])
-		g.colors = PackedColorArray([Color(1, 1, 1, 0.0), Color(1, 1, 1, 0.1), Color(1, 1, 1, 0.85), Color(1, 1, 1, 0.0)])
+		g.colors = PackedColorArray([Color(1, 1, 1, 0.0), Color(1, 1, 1, 0.06), Color(1, 1, 1, 0.7), Color(1, 1, 1, 0.0)])
 		var t := GradientTexture2D.new()
 		t.gradient = g
 		t.fill = GradientTexture2D.FILL_RADIAL
@@ -131,8 +131,8 @@ func _set_aura(world: World, on: bool) -> void:
 	halo.material = mat
 	_aura.add_child(halo)
 	var tw := halo.create_tween().set_loops()
-	tw.tween_property(halo, "modulate:a", 0.3, 1.3).set_trans(Tween.TRANS_SINE)
-	tw.tween_property(halo, "modulate:a", 0.55, 1.3).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(halo, "modulate:a", 0.25, 1.3).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(halo, "modulate:a", 0.5, 1.3).set_trans(Tween.TRANS_SINE)
 	var p := CPUParticles2D.new()
 	p.texture = Fx.glow_texture()
 	p.amount = 12

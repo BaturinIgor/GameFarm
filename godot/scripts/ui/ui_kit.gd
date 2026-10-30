@@ -74,6 +74,8 @@ static func body_font() -> Font:
 const FALLBACK_FONTS := {"ja": "NotoSansJP-Bold-sub.otf", "ko": "NotoSansKR-Bold-sub.otf",
 	"zh-Hans": "NotoSansSC-Bold-sub.otf", "zh-Hant": "NotoSansTC-Bold-sub.otf"}
 const DEVANAGARI_FONT := "Poppins-Devanagari-sub.ttf"
+## Запасной тайский (пиксельный Unifont), если в телефоне нет своего тайского шрифта.
+const THAI_FONT := "Unifont-Thai-sub.otf"
 static var _fallback_code := "-"
 static var _fallback_fonts: Dictionary = {}
 static var _system: SystemFont
@@ -110,6 +112,9 @@ static func _sync_fallbacks() -> void:
 			"Leelawadee UI", "Tahoma", "sans-serif"])
 		_system.font_weight = 700
 	list.append(_system)
+	var thai := _fallback_font(THAI_FONT)
+	if thai != null:
+		list.append(thai)
 	for main in [_font, _body_font]:
 		if main != null:
 			(main as Font).fallbacks = list

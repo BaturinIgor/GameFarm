@@ -9,7 +9,9 @@
 Исходники (лицензия SIL OFL 1.1, как у Nunito):
   - Noto Sans CJK Bold (пакет fonts-noto-cjk): /usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc
   - Poppins Bold (деванагари): /usr/share/fonts/truetype/google-fonts/Poppins-Bold.ttf
-Тайский не входит: свободного шрифта под рукой нет, тайский берётся из системы телефона (SystemFont в UiKit).
+  - Unifont (тайский, пиксельный; двойная лицензия OFL 1.1 / GPL 2, берём по OFL):
+    /usr/share/fonts/opentype/unifont/unifont.otf
+    Тайский сначала ищется в системе телефона (SystemFont в UiKit), Unifont - запасной, если системного нет.
 
 Запуск: python3 tools/make_fallback_fonts.py
 """
@@ -35,6 +37,8 @@ CJK_FACES = {
     "zh-Hant": ("Noto Sans CJK TC", "NotoSansTC-Bold-sub.otf"),
 }
 DEVANAGARI_FILE = "Poppins-Devanagari-sub.ttf"
+THAI = "/usr/share/fonts/opentype/unifont/unifont.otf"
+THAI_FILE = "Unifont-Thai-sub.otf"
 
 
 def language_names():
@@ -88,6 +92,10 @@ def main():
     path = os.path.join(OUT, DEVANAGARI_FILE)
     got, want = save_subset(TTFont(DEVANAGARI), chars, path)
     print("%s: %d/%d символов, %d КБ" % (DEVANAGARI_FILE, got, want, os.path.getsize(path) // 1024))
+    chars = [c for c in chars_of("th") if 0x0E00 <= ord(c) <= 0x0E7F]
+    path = os.path.join(OUT, THAI_FILE)
+    got, want = save_subset(TTFont(THAI), chars, path)
+    print("%s: %d/%d символов, %d КБ" % (THAI_FILE, got, want, os.path.getsize(path) // 1024))
 
 
 if __name__ == "__main__":
