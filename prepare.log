@@ -1,0 +1,4 @@
+python: /opt/homebrew/bin/python3 Python 3.15.0
+*** WARNING : deprecated key derivation used.
+Using -iter or -pbkdf2 would be better.
+layouts:       52, strings:       17, sprites:      653, audio:      158 (нет кодировщика), splash: yes

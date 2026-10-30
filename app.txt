@@ -1,0 +1,90 @@
+== bundle
+total 163304
+drwxr-xr-x  12 runner  staff       384 Oct 30 19:27 .
+drwxr-xr-x   3 runner  staff        96 Oct 30 19:26 ..
+-rw-r--r--   1 runner  staff     28240 Oct 30 19:26 AppIcon60x60@2x.png
+-rw-r--r--   1 runner  staff     37819 Oct 30 19:26 AppIcon76x76@2x~ipad.png
+-rw-r--r--   1 runner  staff    888568 Oct 30 19:26 Assets.car
+drwxr-xr-x   3 runner  staff        96 Oct 30 19:26 en.lproj
+-rwxr-xr-x   1 runner  staff  61976000 Oct 30 19:27 HarvestHollow
+-rw-r--r--   1 runner  staff  20661116 Oct 30 19:26 HarvestHollow.pck
+-rw-r--r--   1 runner  staff      1495 Oct 30 19:26 Info.plist
+drwxr-xr-x   5 runner  staff       160 Oct 30 19:26 Launch Screen.storyboardc
+-rw-r--r--   1 runner  staff         8 Oct 30 19:26 PkgInfo
+-rw-r--r--   1 runner  staff       990 Oct 30 19:26 PrivacyInfo.xcprivacy
+== Info.plist
+{
+  "BuildMachineOSBuild" => "25G83"
+  "CADisableMinimumFrameDurationOnPhone" => true
+  "CFBundleDevelopmentRegion" => "en"
+  "CFBundleDisplayName" => "Harvest Hollow"
+  "CFBundleExecutable" => "HarvestHollow"
+  "CFBundleIcons" => {
+    "CFBundlePrimaryIcon" => {
+      "CFBundleIconFiles" => [
+        0 => "AppIcon60x60"
+      ]
+      "CFBundleIconName" => "AppIcon"
+    }
+  }
+  "CFBundleIcons~ipad" => {
+    "CFBundlePrimaryIcon" => {
+      "CFBundleIconFiles" => [
+        0 => "AppIcon60x60"
+        1 => "AppIcon76x76"
+      ]
+    }
+  }
+  "CFBundleIdentifier" => "com.personal.gamefarm"
+  "CFBundleInfoDictionaryVersion" => "6.0"
+  "CFBundleName" => "HarvestHollow"
+  "CFBundlePackageType" => "APPL"
+  "CFBundleShortVersionString" => "2.0.21"
+  "CFBundleSupportedPlatforms" => [
+    0 => "iPhoneOS"
+  ]
+  "CFBundleVersion" => "2.0.21"
+  "DTCompiler" => "com.apple.compilers.llvm.clang.1_0"
+  "DTPlatformBuild" => "23F81a"
+  "DTPlatformName" => "iphoneos"
+  "DTPlatformVersion" => "26.5"
+  "DTSDKBuild" => "23F81a"
+  "DTSDKName" => "iphoneos26.5"
+  "DTXcode" => "2660"
+  "DTXcodeBuild" => "17F113"
+  "ITSAppUsesNonExemptEncryption" => false
+  "LSRequiresIPhoneOS" => true
+  "LSSupportsOpeningDocumentsInPlace" => true
+  "MinimumOSVersion" => "14.0"
+  "NSCameraUsageDescription" => ""
+  "NSMicrophoneUsageDescription" => ""
+  "NSPhotoLibraryUsageDescription" => ""
+  "UIDeviceFamily" => [
+    0 => 1
+  ]
+  "UIFileSharingEnabled" => true
+  "UILaunchStoryboardName" => "Launch Screen"
+  "UIRequiredDeviceCapabilities" => [
+    0 => "arm64"
+  ]
+  "UIRequiresFullScreen" => true
+  "UIStatusBarHidden" => true
+  "UISupportedInterfaceOrientations" => [
+    0 => "UIInterfaceOrientationPortrait"
+  ]
+  "UISupportedInterfaceOrientations~ipad" => [
+    0 => "UIInterfaceOrientationPortrait"
+  ]
+}
+== sizes
+4.0K	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/en.lproj
+4.0K	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/Info.plist
+4.0K	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/PkgInfo
+4.0K	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/PrivacyInfo.xcprivacy
+ 12K	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/Launch Screen.storyboardc
+ 28K	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/AppIcon60x60@2x.png
+ 40K	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/AppIcon76x76@2x~ipad.png
+868K	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/Assets.car
+ 20M	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/HarvestHollow.pck
+ 59M	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/HarvestHollow
+ 80M	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app
