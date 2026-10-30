@@ -388,8 +388,15 @@ func _order_card(o: Dictionary) -> PanelContainer:
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 6)
 	v.add_child(head)
-	var title := UiKit.label(L.t("orders.cart") if cart else L.t("orders.order"), 15)
+	var from := str(o.get("from", ""))
+	if from != "":
+		var face := TraderPanel.portrait(Residents.sheet(from), 30)
+		face.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		head.add_child(face)
+	var title := UiKit.label(L.t("orders.cart") if cart else (Residents.name_of(from) if from != "" else L.t("orders.order")), 15)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	title.clip_text = true
 	head.add_child(title)
 	# Награда
 	head.add_child(_reward("coin", Fmt.n(int(o["coins"]))))

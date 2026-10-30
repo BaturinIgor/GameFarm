@@ -406,6 +406,7 @@ func _update_badges() -> void:
 			"quests":
 				if Game.quests.has_method("claimable_count"):
 					n = Game.quests.claimable_count()
+				n += Game.residents.attention_count()
 		var badge: PanelContainer = _badges[id]
 		badge.visible = n > 0
 		if n > 0:

@@ -409,9 +409,14 @@ func _new_order(cart: bool) -> Dictionary:
 		items.append([kind, n])
 		total += p * float(n)
 	var pay := ORDER_PAY
+	# Половину обычных заказов дают жители деревни
+	var from := ""
+	var people: Array = Game.residents.arrived_list()
+	if not cart and not people.is_empty() and randf() < 0.5:
+		from = people[randi() % people.size()]
 	return {"id": "%d" % randi(), "items": items, "coins": int(round(total * pay)),
 		"xp": maxi(3, int(total / 4.0)), "crystals": CART_CRYSTALS if cart else (1 if randf() < 0.08 else 0),
-		"cart": cart, "wait": 0.0}
+		"cart": cart, "wait": 0.0, "from": from}
 
 
 func can_complete(o: Dictionary) -> bool:

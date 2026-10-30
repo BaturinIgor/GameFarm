@@ -6,7 +6,7 @@ extends Node
 const ORIGIN := Vector2(195, 620)
 const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", "kitchen", "garden", "trader", "hunt", "level:settings",
 	"dungeon", "trophies", "collection", "legacy", "wardrobe", "map", "events", "shop",
-	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders"]
+	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story"]
 
 var dir := "/tmp/shots"
 var main: Node
@@ -77,6 +77,12 @@ func _process(delta: float) -> void:
 				est["sawmill"]["since"] = now - 3.0 * 3600.0
 				est["mill"]["until"] = now + 25.0 * 60.0
 				Game.save["storage"]["wheat"] = 120
+				# Жители: кузнец ждёт сдачи главы 2, мельник с новым заданием
+				var res: Dictionary = Game.save["residents"]
+				res["smith"]["arrived"] = true
+				res["smith"]["chapter"] = 1
+				res["smith"]["taken"] = true
+				res["miller"]["arrived"] = true
 				Game.estate.tick()
 				Game.save["offerPopupDay"] = ShopSystem.day_index()
 				Game.save["coins"] = 25000
@@ -118,7 +124,25 @@ func _process(delta: float) -> void:
 				for n in main.hud.find_children("*", "", true, false):
 					if n is WherePopup:
 						n.queue_free()
-			if _time > 302.5:
+			# Разговор с мельником: последняя реплика с заданием и кнопками
+			if _time > 302.0 and _shot_done == "where_done":
+				_shot_done = "dialog"
+				DialogPopup.talk("miller")
+			if _time > 303.0 and _shot_done == "dialog":
+				_shot_done = "dialog_next"
+				for n in main.hud.find_children("*", "", true, false):
+					if n is DialogPopup:
+						n.call("_advance")
+						n.call("_advance")
+			if _time > 304.5 and _shot_done == "dialog_next":
+				_shot_done = "dialog_done"
+				_shot("6_dialog")
+				for n in main.hud.find_children("*", "", true, false):
+					if n is DialogPopup:
+						n.queue_free()
+				# Герой у дома: жители с "!" и "?"
+				world_at_home()
+			if _time > 306.5:
 				_shot("7_world_level18")
 				LevelUpOverlay.present(17, 18)
 				_step = 6
@@ -238,3 +262,11 @@ func _shot(name: String) -> void:
 	var img := get_viewport().get_texture().get_image()
 	img.save_png(dir.path_join(name + ".png"))
 	print("shot saved: ", name)
+
+
+## Поставить героя у дома на поляне, чтобы жители попали в кадр.
+func world_at_home() -> void:
+	var world: World = main.world
+	if world == null or world.loaded != "meadow":
+		return
+	world.player.position = world.layout.base + Vector2(0, 170)

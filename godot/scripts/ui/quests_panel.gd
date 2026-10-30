@@ -12,8 +12,9 @@ static var _gray: Shader
 var tab := "quests"
 
 
-func _init() -> void:
+func _init(start_tab := "quests") -> void:
 	title_key = "hud.quests"
+	tab = start_tab
 
 
 func build() -> void:
@@ -21,6 +22,8 @@ func build() -> void:
 		_achievements_list()
 	elif tab == "hunts":
 		content.add_child(CombatCards.hunts_list())
+	elif tab == "story":
+		_story_list()
 	else:
 		_quests_list()
 
@@ -34,6 +37,7 @@ func _tabs() -> void:
 	var items := [
 		["quests", L.t("hud.quests"), Game.quests.claimable_quests()],
 		["hunts", L.t("hunt.tab"), Game.combat.claimable_hunts()],
+		["story", L.t("story.tab"), Game.residents.attention_count()],
 		["achievements", L.t("quests.achievements"), Game.quests.claimable_achievements()],
 	]
 	top_bar.add_child(UiKit.tabs(items, tab, func(id: String) -> void:
@@ -160,6 +164,76 @@ func _quest_card(q: Dictionary) -> void:
 	free_btn.pressed.connect(func() -> void:
 		Ads.show_rewarded(func() -> void: Game.quests.reroll_quest(id, true)))
 	row.add_child(free_btn)
+
+
+# MARK: Жители
+
+## Истории жителей: глава, задание, кнопка разговора. Кто переедет следующим - внизу.
+func _story_list() -> void:
+	var rs := Game.residents
+	var list := rs.arrived_list()
+	for id in list:
+		_resident_card(id)
+	var next := rs.next_away()
+	if next != "":
+		_resident_card(next)
+	var hint := UiKit.label(L.t("story.hint", [Locations.name_of("meadow")]), 12, UiKit.INK_SOFT)
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content.add_child(hint)
+
+
+func _resident_card(id: String) -> void:
+	var rs := Game.residents
+	var s := rs.state(id)
+	var wants := s == "ready" or s == "new"
+	var p := PanelContainer.new()
+	var style := UiKit.box(UiKit.PARCHMENT_LIGHT if s != "away" else Color(UiKit.PARCHMENT_DEEP, 0.6),
+		UiKit.TONES["green"][1] if wants else Color(UiKit.WOOD_DARK, 0.45), 18, 3 if wants else 2, false)
+	style.set_content_margin_all(14)
+	p.add_theme_stylebox_override("panel", style)
+	content.add_child(p)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 10)
+	p.add_child(v)
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 12)
+	v.add_child(top)
+	var portrait := TraderPanel.portrait(Residents.sheet(id), 56)
+	portrait.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	if s == "away":
+		portrait.modulate = Color(1, 1, 1, 0.5)
+	top.add_child(portrait)
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_theme_constant_override("separation", 3)
+	top.add_child(col)
+	col.add_child(UiKit.label(Residents.name_of(id), 16))
+	var total := Residents.chapters(id).size()
+	if s != "away":
+		col.add_child(UiKit.bar(float(rs.chapter(id)) / float(total), "purple", 150.0, 12.0,
+			L.t("story.chapter", [mini(rs.chapter(id) + 1, total), total]) if s != "done" else L.t("story.finished")))
+	var status := UiKit.label(ResidentCard.status_text(id), 13, UiKit.INK_SOFT)
+	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(status)
+	if s == "active" or s == "ready" or s == "new":
+		var task: Dictionary = rs.current(id)["task"]
+		if task["type"] == "give":
+			v.add_child(UiKit.cost_view({"items": task["items"]}, 13))
+		elif s != "new":
+			var pr := rs.progress(id)
+			var bar := UiKit.bar(float(pr[0]) / float(maxi(1, int(pr[1]))), "green" if s == "ready" else "orange", 0.0, 16.0,
+				"%s · %s / %s" % [Residents.task_text(task), Fmt.n(int(pr[0])), Fmt.n(int(pr[1]))])
+			bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			v.add_child(bar)
+		if s == "new":
+			v.add_child(DialogPopup.reward_row(Residents.reward(id, rs.chapter(id))))
+	if wants:
+		var b := UiKit.button(L.t("story.talk") if s == "new" else L.t("story.handIn"), "green", 15)
+		b.pressed.connect(func() -> void:
+			DialogPopup.talk(id)
+			Input.vibrate_handheld(20))
+		v.add_child(b)
 
 
 # MARK: Достижения
