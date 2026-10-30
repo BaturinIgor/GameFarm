@@ -50,9 +50,9 @@ static func gear(id: String) -> Dictionary:
 		if not Game.can_harvest(spec):
 			blocked += 1
 	var missing: Array = []
-	for tool in Tools.GATHERING:
-		if need.has(tool) and Game.effective_tier(tool) < int(need[tool]):
-			missing.append({"tool": tool, "need": int(need[tool]), "have": Game.effective_tier(tool)})
+	for t in Tools.GATHERING:
+		if need.has(t) and Game.effective_tier(t) < int(need[t]):
+			missing.append({"tool": t, "need": int(need[t]), "have": Game.effective_tier(t)})
 	return {"missing": missing, "blocked": blocked, "total": total}
 
 

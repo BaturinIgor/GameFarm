@@ -642,10 +642,10 @@ func _pack_tile(key: String, index: int) -> PanelContainer:
 		was.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		v.add_child(was)
 	# Кнопки в ряду плиток на одной высоте, даже если у соседней плитки нет подписи
-	var gap := Control.new()
-	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	v.add_child(gap)
+	var push := Control.new()
+	push.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	push.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.add_child(push)
 	var b := BuyButton.new(key, "purple", "", true)
 	v.add_child(b)
 	return p
