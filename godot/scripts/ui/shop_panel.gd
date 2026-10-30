@@ -198,7 +198,9 @@ func _flash_card() -> Control:
 	big.label_settings = big.label_settings.duplicate()
 	big.label_settings.font_color = Color("fff3a0")
 	col.add_child(big)
-	col.add_child(UiKit.label(L.t("shop.flash.sub"), 12, Color.WHITE, 4))
+	var sub := UiKit.label(L.t("shop.flash.sub"), 12, Color.WHITE, 4)
+	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(sub)
 	v.add_child(_parts_flow(pack_parts(variant), 15, Color.WHITE))
 	var left := func() -> String: return L.t("shop.flash.ends", [House.countdown(ShopSystem.next_day_in())])
 	var timer := CombatCards.LiveLabel.new(left, 13, Color.WHITE)

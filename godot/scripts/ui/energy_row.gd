@@ -32,10 +32,12 @@ func _init() -> void:
 	p.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	plus.add_child(p)
 	add_child(plus)
-	_dot = UiKit.count_badge(0)
-	(_dot.get_child(0) as Label).text = "!"
-	_dot.scale = Vector2.ONE * 0.75
-	_dot.position = Vector2(8, -9)
+	# Готова бесплатная энергия: маленькая красная точка в углу плюса
+	_dot = Panel.new()
+	_dot.add_theme_stylebox_override("panel", UiKit.box(UiKit.BAD, Color.WHITE, 5, 1, false))
+	_dot.size = Vector2(9, 9)
+	_dot.position = Vector2(10, -4)
+	_dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_dot.visible = false
 	plus.add_child(_dot)
 	gui_input.connect(func(e: InputEvent) -> void:
