@@ -503,7 +503,7 @@ func _gift_card() -> Control:
 		b.pressed.connect(func() -> void:
 			var got := Game.shop.claim_gift()
 			for k in got:
-				var icon2 := {"coins": "coins", "energy": "bolt", "crystals": "gem", "tickets": "ticket"}.get(k, "chest")
+				var icon2: String = str({"coins": "coins", "energy": "bolt", "crystals": "gem", "tickets": "ticket"}.get(k, "chest"))
 				Game.show_toast("px:" + str(icon2), "+%s" % Fmt.n(int(got[k]))))
 		v.add_child(b)
 	var hint := _wrap(L.t("gift.hint"), 11, UiKit.INK_SOFT)
