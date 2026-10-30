@@ -236,7 +236,7 @@ func _production(id: String) -> VBoxContainer:
 	if e.rate(id) > 0.0:
 		var p := e.pending(id)
 		var cap := e.capacity_of(id)
-		var frac := 1.0 if e.full(id) else p - floor(p)
+		var frac: float = 1.0 if e.full(id) else p - floorf(p)
 		var bar := UiKit.bar(frac, "orange" if not e.full(id) else "gold", 0.0, 14.0,
 			L.t("estate.accum", [mini(int(floor(p)), cap), cap]))
 		bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
