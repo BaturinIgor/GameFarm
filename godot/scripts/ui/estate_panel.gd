@@ -67,17 +67,15 @@ func _build_buildings() -> void:
 			content.add_child(_locked_card(id))
 
 
-## Строители и склад одной строкой.
-func _status_row() -> HBoxContainer:
+## Строители и склад одной строкой (на узком экране переносится).
+func _status_row() -> HFlowContainer:
 	var e := Game.estate
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 8)
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 8)
+	row.add_theme_constant_override("v_separation", 6)
 	var free := e.builders_total() - e.builders_busy()
 	row.add_child(_chip("hammer", L.t("estate.builders", [free, e.builders_total()]), "green" if free > 0 else "orange"))
 	row.add_child(_chip("chest", L.t("estate.limit", [Fmt.n(e.storage_limit())]), "wood"))
-	var gap := Control.new()
-	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(gap)
 	if not bool(Game.save.get("builder3", false)):
 		var b := MapPanel.icon_button([["t", "+"], ["i", "hammer"], ["i", "gem"], ["t", str(Estate.BUILDER_CRYSTALS)]], "purple", 12)
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
