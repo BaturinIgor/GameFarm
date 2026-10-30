@@ -1,0 +1,300 @@
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_cattail2.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_cattail2.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_cattail.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_cattail.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_cattail.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_cattail.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_carrot_young.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_carrot_young.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_carrot_young.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_carrot_young.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_carrot_wild.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_carrot_wild.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_carrot_wild.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_carrot_wild.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_carrot_ripe.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_carrot_ripe.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_carrot_ripe.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_carrot_ripe.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_campfire_anim.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_campfire_anim.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_campfire_anim.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_campfire_anim.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_cactus.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_cactus.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_cactus.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_cactus.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_cabbage.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_cabbage.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_cabbage.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_cabbage.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bush_redberry.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bush_redberry.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bush_redberry.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bush_redberry.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bush_leafy3.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bush_leafy3.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bush_leafy3.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bush_leafy3.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bush_leafy2.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bush_leafy2.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bush_leafy2.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bush_leafy2.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bush_leafy.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bush_leafy.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bush_leafy.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bush_leafy.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bush_cloud_star.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bush_cloud_star.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bush_cloud_star.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bush_cloud_star.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bush_cloud.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bush_cloud.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bush_cloud.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bush_cloud.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bush_berry.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bush_berry.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bush_berry.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bush_berry.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bush.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bush.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bush.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bush.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bunting.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bunting.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bunting.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bunting.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_boulder4.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_boulder4.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_boulder4.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_boulder4.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_boulder3.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_boulder3.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_boulder3.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_boulder3.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_boulder2.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_boulder2.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_boulder2.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_boulder2.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_boulder.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_boulder.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_boulder.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_boulder.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bookshelf.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bookshelf.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bookshelf.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bookshelf.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_boat.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_boat.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_boat.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_boat.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bench.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bench.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bench.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bench.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_beehive_full.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_beehive_full.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_beehive_full.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_beehive_full.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_beehive.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_beehive.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_beehive.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_beehive.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bed.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bed.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bed.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bed.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_basket.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_basket.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_basket.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_basket.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_barrel_water.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_barrel_water.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_barrel_water.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_barrel_water.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_barrel_berries.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_barrel_berries.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_barrel_berries.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_barrel_berries.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_barrel.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_barrel.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_barrel.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_barrel.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bamboo.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bamboo.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_bamboo.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_bamboo.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_atlas.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_atlas.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_atlas.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_atlas.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_anvil.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_anvil.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_anvil.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_anvil.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_unicorn.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_unicorn.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_unicorn.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_unicorn.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_swan.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_swan.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_swan.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_swan.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_sheep.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_sheep.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_sheep.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_sheep.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_rooster.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_rooster.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_rooster.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_rooster.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_pig.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_pig.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_pig.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_pig.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_mouse.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_mouse.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_mouse.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_mouse.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_horse.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_horse.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_horse.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_horse.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_goose.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_goose.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_goose.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_goose.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_goldenGoose.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_goldenGoose.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_goldenGoose.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_goldenGoose.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_frog.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_frog.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_frog.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_frog.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_duckHat.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_duckHat.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_duckHat.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_duckHat.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_duck.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_duck.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_duck.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_duck.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_cow.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_cow.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_cow.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_cow.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_chicken.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_chicken.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_chicken.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_chicken.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_capybaraAlbino.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_capybaraAlbino.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_capybaraAlbino.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_capybaraAlbino.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_capybara.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_capybara.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_capybara.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_capybara.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_butterfly.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_butterfly.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_butterfly.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_butterfly.png
+
+CopyPNGFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_bee.png /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_bee.png (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/copypng -compress -strip-PNG-text /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Sprites/sp_an_bee.png /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/sp_an_bee.png
+
+Copy /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/Frameworks/UserMessagingPlatform.framework /Users/runner/work/GameFarm/GameFarm/build/SourcePackages/artifacts/swift-package-manager-google-user-messaging-platform/UserMessagingPlatform/UserMessagingPlatform.xcframework/ios-arm64_x86_64-simulator/UserMessagingPlatform.framework (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks -remove-static-executable /Users/runner/work/GameFarm/GameFarm/build/SourcePackages/artifacts/swift-package-manager-google-user-messaging-platform/UserMessagingPlatform/UserMessagingPlatform.xcframework/ios-arm64_x86_64-simulator/UserMessagingPlatform.framework /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/Frameworks
+note: Injecting stub binary into codeless framework (in target 'GameFarm' from project 'GameFarm')
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -x c -c /dev/null -target arm64-apple-ios100.0-simulator -o /private/var/folders/n6/hn37q6pj7sj_9dmqqc2113800000gn/T/swbuild.tmp.WayWiPfX/Data.noindex/arm64-apple.o
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -dynamiclib -Xlinker -adhoc_codesign -target arm64-apple-ios100.0-simulator -o /private/var/folders/n6/hn37q6pj7sj_9dmqqc2113800000gn/T/swbuild.tmp.WayWiPfX/Data.noindex/arm64-apple /private/var/folders/n6/hn37q6pj7sj_9dmqqc2113800000gn/T/swbuild.tmp.WayWiPfX/Data.noindex/arm64-apple.o
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/lipo -create -output /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/Frameworks/UserMessagingPlatform.framework/UserMessagingPlatform /private/var/folders/n6/hn37q6pj7sj_9dmqqc2113800000gn/T/swbuild.tmp.WayWiPfX/Data.noindex/arm64-apple
+
+Copy /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/Frameworks/GoogleMobileAds.framework /Users/runner/work/GameFarm/GameFarm/build/SourcePackages/artifacts/swift-package-manager-google-mobile-ads/GoogleMobileAds/GoogleMobileAds.xcframework/ios-arm64_x86_64-simulator/GoogleMobileAds.framework (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks -remove-static-executable /Users/runner/work/GameFarm/GameFarm/build/SourcePackages/artifacts/swift-package-manager-google-mobile-ads/GoogleMobileAds/GoogleMobileAds.xcframework/ios-arm64_x86_64-simulator/GoogleMobileAds.framework /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/Frameworks
+note: Injecting stub binary into codeless framework (in target 'GameFarm' from project 'GameFarm')
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -x c -c /dev/null -target arm64-apple-ios13.0-simulator -o /private/var/folders/n6/hn37q6pj7sj_9dmqqc2113800000gn/T/swbuild.tmp.fuh6xX2K/Data.noindex/arm64-apple.o
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -dynamiclib -Xlinker -adhoc_codesign -target arm64-apple-ios13.0-simulator -o /private/var/folders/n6/hn37q6pj7sj_9dmqqc2113800000gn/T/swbuild.tmp.fuh6xX2K/Data.noindex/arm64-apple /private/var/folders/n6/hn37q6pj7sj_9dmqqc2113800000gn/T/swbuild.tmp.fuh6xX2K/Data.noindex/arm64-apple.o
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/lipo -create -output /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/Frameworks/GoogleMobileAds.framework/GoogleMobileAds /private/var/folders/n6/hn37q6pj7sj_9dmqqc2113800000gn/T/swbuild.tmp.fuh6xX2K/Data.noindex/arm64-apple
+
+LinkAssetCatalog /Users/runner/work/GameFarm/GameFarm/GameFarm/Resources/Assets.xcassets (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-linkAssetCatalog --thinned /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/assetcatalog_output/thinned --thinned-dependencies /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/assetcatalog_dependencies_thinned --thinned-info-plist-content /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/assetcatalog_generated_info.plist_thinned --unthinned /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/assetcatalog_output/unthinned --unthinned-dependencies /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/assetcatalog_dependencies_unthinned --unthinned-info-plist-content /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/assetcatalog_generated_info.plist_unthinned --output /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app --plist-output /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/assetcatalog_generated_info.plist
+note: Emplaced /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/Assets.car (in target 'GameFarm' from project 'GameFarm')
+note: Emplaced /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/AppIcon76x76@2x~ipad.png (in target 'GameFarm' from project 'GameFarm')
+note: Emplaced /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/AppIcon60x60@2x.png (in target 'GameFarm' from project 'GameFarm')
+
+ProcessInfoPlistFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/Info.plist /Users/runner/work/GameFarm/GameFarm/GameFarm/Info.plist (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-infoPlistUtility /Users/runner/work/GameFarm/GameFarm/GameFarm/Info.plist -producttype com.apple.product-type.application -genpkginfo /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/assetcatalog_generated_info.plist -scanforprivacyfile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/Frameworks/GoogleMobileAds.framework -scanforprivacyfile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/Frameworks/UserMessagingPlatform.framework -o /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/Info.plist
+warning: 'UIRequiresFullScreen' has been deprecated starting in iOS 26.0 and will be ignored in a future release. See the UIRequiresFullScreen documentation for more details. (in target 'GameFarm' from project 'GameFarm')
+
+SwiftDriverJobDiscovery normal arm64 Compiling Ads.swift, Animals.swift, AnimalsView.swift, Art.swift, Collection.swift, CollectionView.swift, CombatNodes.swift, Components.swift, ContentView.swift, DungeonUI.swift, Dungeons.swift, Effects.swift, Entities.swift, Events.swift, EventsView.swift, Expeditions.swift, FarmNodes.swift, Farming.swift, GameFarmApp.swift, GameScene.swift, GameState.swift, GardenUI.swift, GateNode.swift, Gear.swift, HomeUI.swift, House.swift, HouseView.swift, HuntView.swift, L10n.swift, Legacy.swift, LegacyView.swift, LevelView.swift, Locations.swift, MapView.swift, MiniMap.swift, Monsters.swift, NodeArt.swift, Overlays.swift, PixelNodeArt.swift, Platform.swift, Premium.swift, Quests.swift, QuestsView.swift, Resources.swift, Rules.swift, SaveData.swift, ShopView.swift, ShotMode.swift, Sound.swift, SoundFX.swift, Sprites.swift, StorageView.swift, Store.swift, Talents.swift, TalentsView.swift, Theme.swift, Tools.swift, TraderView.swift, WorkshopView.swift, World.swift, WorldMap.swift, WorldUI.swift, GeneratedAssetSymbols.swift (in target 'GameFarm' from project 'GameFarm')
+
+SwiftDriver\ Compilation\ Requirements GameFarm normal arm64 com.apple.xcode.tools.swift.compiler (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name GameFarm -O -whole-module-optimization @/Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm.SwiftFileList -DSIDELOAD -Xcc -fmodule-map-file\=/Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GeneratedModuleMaps-iphonesimulator/UserMessagingPlatformTarget.modulemap -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios26.0-simulator -g -module-cache-path /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -swift-version 5 -I /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator -F /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/PackageFrameworks -F /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/PackageFrameworks -F /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator -c -num-threads 3 -Xcc -ivfsstatcache -Xcc /Users/runner/work/GameFarm/GameFarm/build/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache -output-file-map /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/GameFarm/GameFarm/build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/GameFarm-generated-files.hmap -Xcc -I/Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/GameFarm-own-target-headers.hmap -Xcc -I/Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/GameFarm-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm-e2b0ff6ebd780d1820f3ee18ecb3a328-VFS-iphonesimulator/all-product-headers.yaml -Xcc -iquote -Xcc /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/GameFarm-project-headers.hmap -Xcc -I/Users/runner/work/GameFarm/GameFarm/build/SourcePackages/checkouts/swift-package-manager-google-user-messaging-platform/UserMessagingPlatformTarget/include -Xcc -I/Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/include -Xcc -I/Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/DerivedSources -emit-objc-header -emit-objc-header-path /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm-Swift.h -working-directory /Users/runner/work/GameFarm/GameFarm -no-emit-module-separately-wmo
+
+SwiftMergeGeneratedHeaders /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/DerivedSources/GameFarm-Swift.h /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm-Swift.h (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-swiftHeaderTool -arch arm64 /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm-Swift.h -o /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/DerivedSources/GameFarm-Swift.h
+
+Copy /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.swiftmodule/arm64-apple-ios-simulator.swiftdoc /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm.swiftdoc (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm.swiftdoc /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.swiftmodule/arm64-apple-ios-simulator.swiftdoc
+
+Copy /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.swiftmodule/arm64-apple-ios-simulator.swiftmodule /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm.swiftmodule (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm.swiftmodule /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.swiftmodule/arm64-apple-ios-simulator.swiftmodule
+
+Copy /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.swiftmodule/arm64-apple-ios-simulator.abi.json /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm.abi.json (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm.abi.json /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.swiftmodule/arm64-apple-ios-simulator.abi.json
+
+Copy /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm.swiftsourceinfo (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm.swiftsourceinfo /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
+
+Ld /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/GameFarm normal (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios26.0-simulator -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -Os -L/Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphonesimulator -L/Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator -F/Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphonesimulator -F/Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/PackageFrameworks -F/Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/PackageFrameworks -F/Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator -filelist /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm.LinkFileList -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm_lto.o -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm_dependency_info.dat -fobjc-link-runtime -L/Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm.swiftmodule @/Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm-linker-args.resp -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -framework WebKit -framework GoogleMobileAds -framework UserMessagingPlatform -o /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/GameFarm -Xlinker -add_ast_path -Xlinker /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GoogleMobileAds.build/Release-iphonesimulator/GoogleMobileAdsTarget.build/Objects-normal/arm64/GoogleMobileAdsTarget.swiftmodule @/Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GoogleMobileAds.build/Release-iphonesimulator/GoogleMobileAdsTarget.build/Objects-normal/arm64/GoogleMobileAdsTarget-linker-args.resp
+
+ExtractAppIntentsMetadata (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.6.109.0.WsHjFh/Metal.xctoolchain --module-name GameFarm --sdk-root /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk --xcode-version 17F113 --platform-family iOS --deployment-target 26.0 --bundle-identifier com.personal.gamefarm --output /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app --target-triple arm64-apple-ios26.0-simulator --binary-file /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/GameFarm --dependency-file /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm_dependency_info.dat --stringsdata-file /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm.SwiftFileList --metadata-file-list /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/GameFarm.DependencyMetadataFileList --static-metadata-file-list /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/GameFarm.DependencyStaticMetadataFileList --swift-const-vals-list /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/Objects-normal/arm64/GameFarm.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-10-30 11:28:58.797 appintentsmetadataprocessor[16422:51284] Starting appintentsmetadataprocessor export
+2026-10-30 11:28:58.814 appintentsmetadataprocessor[16422:51284] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+GenerateDSYMFile /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app.dSYM /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/GameFarm (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/dsymutil /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/GameFarm -o /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app.dSYM
+
+CopySwiftLibs /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/GameFarm --scan-folder /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/Frameworks --scan-folder /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/PlugIns --scan-folder /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/SystemExtensions --scan-folder /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/Extensions --platform iphonesimulator --toolchain /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.6.109.0.WsHjFh/Metal.xctoolchain --toolchain /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+Ignoring --strip-bitcode because --sign was not passed
+
+AppIntentsSSUTraining (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/Info.plist --temp-dir-path /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/ssu --bundle-id com.personal.gamefarm --product-path /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app --extracted-metadata-path /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/Metadata.appintents --metadata-file-list /Users/runner/work/GameFarm/GameFarm/build/Build/Intermediates.noindex/GameFarm.build/Release-iphonesimulator/GameFarm.build/GameFarm.DependencyMetadataFileList --source-file /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app/Info.plist --archive-ssu-assets
+2026-10-30 11:28:58.949 appintentsnltrainingprocessor[16426:51293] Parsing options for appintentsnltrainingprocessor
+2026-10-30 11:28:58.950 appintentsnltrainingprocessor[16426:51293] Starting AppIntents SSU YAML Generation
+2026-10-30 11:28:58.959 appintentsnltrainingprocessor[16426:51293] No AppShortcuts found - Skipping.
+
+RegisterExecutionPolicyException /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-RegisterExecutionPolicyException /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app
+
+Validate /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    builtin-validationUtility /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app -shallow-bundle -infoplist-subpath Info.plist
+
+Touch /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app (in target 'GameFarm' from project 'GameFarm')
+    cd /Users/runner/work/GameFarm/GameFarm
+    /usr/bin/touch -c /Users/runner/work/GameFarm/GameFarm/build/Build/Products/Release-iphonesimulator/GameFarm.app
+
+** BUILD SUCCEEDED **
+
