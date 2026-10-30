@@ -22,8 +22,6 @@ func _ready() -> void:
 	if i >= 0 and i + 1 < args.size():
 		dir = args[i + 1]
 	DirAccess.make_dir_recursive_absolute(dir)
-	# Снимки на русском: длинные подписи лучше всего показывают, что не помещается
-	L.set_language("ru", false)
 
 
 func _process(delta: float) -> void:
@@ -65,6 +63,8 @@ func _process(delta: float) -> void:
 				_shot("5_storage_window")
 				# Прокачанный герой: окна с содержимым
 				Game.save["level"] = 18
+				# Окно стартового набора закрывало бы снимки окон
+				Game.save["starterOffers"] = 2
 				Game.save["coins"] = 25000
 				for k in ["wood", "stone", "clay", "coal", "iron", "berries", "fish", "apples"]:
 					Game.save["storage"][k] = 300
@@ -141,7 +141,13 @@ func _check_layout(w: String) -> void:
 		print("LAYOUT OK %s width=%.0f" % [w, panel.size.x])
 		return
 	print("LAYOUT OVERFLOW %s panel_right=%.0f screen=%.0f" % [w, right, limit])
-	_report_overflow(sheet.content, sheet._scroll.size.x, w, 0)
+	# Сколько места на самом деле: экран минус отступы панели (8 + 8) и поля её рамки
+	var st := panel.get_theme_stylebox("panel")
+	var avail := limit - 16.0 - (st.get_margin(SIDE_LEFT) + st.get_margin(SIDE_RIGHT) if st != null else 0.0)
+	var head: Control = sheet._title.get_parent()
+	if head.get_combined_minimum_size().x > avail + 0.5:
+		print("  %s header min=%.0f avail=%.0f" % [w, head.get_combined_minimum_size().x, avail])
+	_report_overflow(sheet.content, avail, w, 0)
 
 
 func _report_overflow(node: Control, avail: float, w: String, depth: int) -> void:

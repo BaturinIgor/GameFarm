@@ -398,9 +398,10 @@ func _refresh_values() -> void:
 
 func _refresh_texts() -> void:
 	_refresh_values()
-	for b in root.find_children("*", "Button", true, false):
-		if b.has_meta("key"):
-			b.text = L.t(b.get_meta("key"))
+	# Подписи вкладок - Label, у кнопок с текстом - сама кнопка
+	for n in root.find_children("*", "", true, false):
+		if n.has_meta("key") and (n is Label or n is Button):
+			n.text = L.t(n.get_meta("key"))
 
 
 func _on_toast(icon: String, text: String) -> void:

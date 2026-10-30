@@ -10,6 +10,9 @@ func _ready() -> void:
 	if "--check-scripts" in OS.get_cmdline_user_args():
 		get_tree().quit(1 if not CheckScripts.run().is_empty() else 0)
 		return
+	# Снимки в CI - на русском: длинные подписи лучше показывают, что не помещается
+	if "--shots" in OS.get_cmdline_user_args():
+		L.set_language("ru", false)
 	var joy_layer := CanvasLayer.new()
 	joy_layer.layer = 5
 	var joystick := Joystick.new()

@@ -373,7 +373,7 @@ func _expedition_row(id: String, busy: bool) -> PanelContainer:
 	col.add_theme_constant_override("separation", 3)
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(col)
-	col.add_child(UiKit.label(Locations.name_of(id), 14))
+	col.add_child(_wrap(Locations.name_of(id), 14, UiKit.INK))
 	col.add_child(_wrap(Expeditions.perk(id), 12, UiKit.INK_SOFT))
 	col.add_child(UiKit.label(L.t("exp.minutes", [int(Expeditions.duration(id) / 60.0)]), 11, UiKit.INK_SOFT))
 	var parts: Array = [["t", L.t("exp.go")], ["t", str(price)], ["i", "ticket"]]
@@ -381,13 +381,13 @@ func _expedition_row(id: String, busy: bool) -> PanelContainer:
 		parts.append_array([["t", str(maps)], ["i", "tmap"]])
 	var tone := "purple" if maps > 0 else ("orange" if price >= 3 else "green")
 	var b := icon_button(parts, tone)
-	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	var p := Game.premium
 	b.disabled = p.tickets() < price or p.maps() < maps or busy
 	b.pressed.connect(func() -> void:
 		if Game.premium.start_expedition(id):
 			close())
-	row.add_child(b)
+	col.add_child(b)
 	return box
 
 
@@ -509,7 +509,7 @@ static func _fill_box(box: BoxContainer, parent: Control) -> BoxContainer:
 static func _wrap(text: String, font_size: int, color: Color) -> Label:
 	var l := UiKit.label(text, font_size, color)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	l.custom_minimum_size = Vector2(120, 0)
+	l.custom_minimum_size = Vector2(90, 0)
 	return l
 
 

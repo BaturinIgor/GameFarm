@@ -1,16 +1,8 @@
 name: Build IPA
 
+# Swift-версия заморожена: единая версия игры - Godot (android.yml, ios-godot.yml).
+# Старую сборку IPA можно запустить только вручную.
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - "README.md"
-      - "godot/**"
-      - "docs/**"
-      - "tools/godot_sync.sh"
-      - "tools/make_splash.py"
-      - ".github/workflows/android.yml"
-      - ".github/workflows/ios-godot.yml"
   workflow_dispatch:
 
 permissions:

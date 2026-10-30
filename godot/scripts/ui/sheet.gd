@@ -55,6 +55,10 @@ func _ready() -> void:
 	x.custom_minimum_size = Vector2(40, 36)
 	x.pressed.connect(close)
 	head.add_child(x)
+	_title.clip_text = true
+	_title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_fit_title()
+	_title.resized.connect(_fit_title)
 
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -67,6 +71,7 @@ func _ready() -> void:
 	Game.changed.connect(func() -> void: _dirty = true)
 	L.language_changed.connect(func() -> void:
 		_title.text = L.t(title_key)
+		_fit_title()
 		_dirty = true)
 	# Появление снизу
 	_panel.modulate.a = 0.0
@@ -86,6 +91,18 @@ func _process(_delta: float) -> void:
 		build()
 		touch_scroll(content)
 		_scroll.set_deferred("scroll_vertical", keep)
+
+
+## Длинное название окна (особенно на русском) уменьшаем до 15, чтобы оно влезало рядом с монетами.
+func _fit_title() -> void:
+	var room := _title.size.x
+	if room <= 0.0:
+		room = get_viewport_rect().size.x - 16.0 - 24.0 - 170.0
+	var fs := 22
+	while fs > 15 and UiKit.font().get_string_size(_title.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 12.0 > room:
+		fs -= 1
+	if _title.label_settings.font_size != fs:
+		_title.label_settings.font_size = fs
 
 
 ## Прокрутка пальцем: элементы внутри прокрутки не должны забирать касание себе (STOP),
