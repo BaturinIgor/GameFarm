@@ -1775,6 +1775,27 @@ extension GameState {
         return true
     }
 
+    // MARK: Снимки для CI
+
+    /// Прокачанный герой для снимков окон (аргумент запуска -shots, см. ShotMode),
+    /// как в godot/scripts/debug/shot_driver.gd: 18 уровень, 25000 монет, по 300 основных ресурсов.
+    func applyShotsProgress() {
+        guard ShotMode.enabled else { return }
+        save.level = 18
+        save.xp = 0
+        save.bestLevel = max(save.bestLevel, save.level)
+        save.coins = 25000
+        let kinds: [ResourceKind] = [.wood, .stone, .clay, .coal, .iron, .berries, .fish, .apples]
+        for kind in kinds {
+            save.storage[kind] = 300
+        }
+        recalc()
+        ensureQuests()
+        offerPopup = false
+        loginPopup = false
+        markDirty()
+    }
+
     // MARK: Прогулка по дому
 
     var currentFloor: HouseFloor? { save.current.floor }

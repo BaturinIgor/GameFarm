@@ -11,6 +11,7 @@ on:
       - "tools/make_splash.py"
       - ".github/workflows/android.yml"
       - ".github/workflows/ios-godot.yml"
+      - ".github/workflows/swift-shots.yml"
   workflow_dispatch:
 
 permissions:

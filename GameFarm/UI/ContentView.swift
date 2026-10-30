@@ -155,6 +155,39 @@ struct ContentView: View {
             if new == nil && old != nil { Sound.shared.play(.close) }
             scene.windowOpen = new != nil
         }
+        .task {
+            if ShotMode.enabled { await runShots() }
+        }
+    }
+
+    /// Снимки экрана для CI (только с аргументом запуска -shots, см. ShotMode):
+    /// луг на старте, прокачанный герой и окна по очереди, как в godot/scripts/debug/shot_driver.gd.
+    private func runShots() async {
+        let game = GameState.shared
+        ShotMode.prepare()
+        await ShotMode.pause(4)
+        await ShotMode.shot("1_start")
+        game.applyShotsProgress()
+        await ShotMode.pause(1)
+        for which in ShotMode.windows {
+            closeAll()
+            sheet = which
+            await ShotMode.pause(2)
+            await ShotMode.shot("6_\(which.rawValue)")
+            closeAll()
+            await ShotMode.pause(0.7)
+        }
+        await ShotMode.pause(1.3)
+        await ShotMode.shot("7_world_level18")
+        game.levelUp = LevelUpInfo(from: 17, to: 18)
+        await ShotMode.pause(2)
+        await ShotMode.shot("8_level_up")
+        game.levelUp = nil
+        await ShotMode.pause(0.5)
+        game.enterHouse()
+        await ShotMode.pause(3)
+        await ShotMode.shot("9_home")
+        ShotMode.finish()
     }
 
     @ViewBuilder

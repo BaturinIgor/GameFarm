@@ -372,6 +372,8 @@ enum SaveFile {
     }
 
     static func load() -> SaveData {
+        // Снимки для CI (аргумент запуска -shots) начинаются с чистого прогресса.
+        if ShotMode.enabled { return SaveData() }
         guard let data = try? Data(contentsOf: url) else { return SaveData() }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .secondsSince1970
@@ -384,7 +386,7 @@ enum SaveFile {
     }
 
     static func write(_ save: SaveData) {
-        guard let data = encode(save) else { return }
+        guard !ShotMode.enabled, let data = encode(save) else { return }
         try? data.write(to: url, options: .atomic)
     }
 
@@ -406,7 +408,7 @@ enum SaveFile {
     }
 
     static func writeAutoBackup(_ save: SaveData) {
-        guard let data = encode(save) else { return }
+        guard !ShotMode.enabled, let data = encode(save) else { return }
         try? data.write(to: autoBackupURL, options: .atomic)
         // копия под старым названием игры больше не нужна
         let old = autoBackupURL.deletingLastPathComponent().appendingPathComponent("GameFarm-backup.json")

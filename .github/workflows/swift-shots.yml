@@ -1,0 +1,241 @@
+name: Swift screenshots
+
+# Снимки экрана старой Swift-версии (GameFarm/) в симуляторе iPhone с экраном 390x844 точек,
+# чтобы сравнить её с Godot-версией (снимки Godot - в ветке ci-logs-android, папка shots).
+# Приложение запускается с аргументом -shots (GameFarm/App/ShotMode.swift): само выдаёт прогресс,
+# по очереди открывает окна и перед каждым снимком пишет имя шага в tmp/shots/request своего контейнера.
+# Этот workflow ждёт файл, снимает экран (xcrun simctl io screenshot) и удаляет файл - приложение идёт дальше.
+# Снимки и логи кладутся в ветку ci-logs-swift-shots. Релизов нет, подпись не нужна.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [swift-shots]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: swift-shots
+  cancel-in-progress: true
+
+env:
+  BUNDLE_ID: com.personal.gamefarm
+  # 1_start + 18 окон + 7_world_level18 + 8_level_up + 9_home
+  EXPECTED_SHOTS: "22"
+  HOMEBREW_NO_AUTO_UPDATE: "1"
+  HOMEBREW_NO_INSTALL_CLEANUP: "1"
+  HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: "1"
+
+jobs:
+  shots:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unpack sprites
+        env:
+          ASSETS_KEY: ${{ secrets.ASSETS_KEY }}
+        run: |
+          set -o pipefail
+          if [ -z "$ASSETS_KEY" ]; then
+            echo "::warning::ASSETS_KEY secret is not set, building with emoji graphics"
+            exit 0
+          fi
+          if openssl enc -d -aes-256-cbc -md sha256 -in Art/sprites.enc -pass env:ASSETS_KEY | tar -xz -C GameFarm/Resources; then
+            echo "::notice::Sprites unpacked: $(ls GameFarm/Resources/Sprites | wc -l | tr -d ' ') files"
+          else
+            echo "::warning::Could not decrypt sprites, building with emoji graphics"
+            rm -rf GameFarm/Resources/Sprites
+          fi
+
+      - name: Install tools
+        run: |
+          brew install xcodegen
+          xcodebuild -version
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      # Чистый симулятор с экраном 390x844 точек (3x: 1170x2532) на самой новой среде iOS.
+      # Загружается сразу, чтобы успел подняться, пока идёт сборка.
+      - name: Create and boot simulator
+        run: |
+          set -e -o pipefail
+          mkdir -p logs
+          {
+            xcrun simctl list runtimes
+            xcrun simctl list devicetypes
+            xcrun simctl list devices available
+          } > logs/simulators.txt
+          python3 - > sim.env <<'EOF'
+          import json, subprocess, sys
+
+          def simctl(*args):
+              return json.loads(subprocess.check_output(["xcrun", "simctl", "list", *args, "-j"]))
+
+          runtimes = [r for r in simctl("runtimes")["runtimes"]
+                      if (r.get("platform") == "iOS" or r.get("name", "").startswith("iOS "))
+                      and r.get("isAvailable", True)]
+          if not runtimes:
+              sys.exit("No iOS simulator runtime")
+          runtimes.sort(key=lambda r: [int(x) for x in r["version"].split(".")])
+          runtime = runtimes[-1]
+          supported = {d["identifier"] for d in runtime.get("supportedDeviceTypes", [])}
+          if not supported:
+              supported = {d["identifier"] for d in simctl("devicetypes")["devicetypes"]}
+          base = "com.apple.CoreSimulator.SimDeviceType."
+          # Все эти модели - 390x844 точек
+          for name in ["iPhone-16e", "iPhone-14", "iPhone-13", "iPhone-13-Pro", "iPhone-12", "iPhone-12-Pro"]:
+              if base + name in supported:
+                  print("RUNTIME=" + runtime["identifier"])
+                  print("RUNTIME_NAME=" + runtime["name"].replace(" ", "_"))
+                  print("DEVTYPE=" + base + name)
+                  break
+          else:
+              sys.exit("No 390x844 iPhone for " + runtime["identifier"])
+          EOF
+          cat sim.env
+          . ./sim.env
+          UDID=$(xcrun simctl create "Shots iPhone" "$DEVTYPE" "$RUNTIME")
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          echo "DEVICE_INFO=${DEVTYPE##*.} / ${RUNTIME_NAME}" >> "$GITHUB_ENV"
+          echo "::notice::Simulator: ${DEVTYPE##*.}, ${RUNTIME_NAME}, $UDID"
+          xcrun simctl boot "$UDID"
+
+      - name: Build for simulator
+        run: |
+          set +e
+          xcodebuild \
+            -project GameFarm.xcodeproj \
+            -scheme GameFarm \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -destination "id=$UDID" \
+            -derivedDataPath build \
+            ONLY_ACTIVE_ARCH=YES \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS='$(inherited) SIDELOAD' \
+            build > build.log 2>&1
+          status=$?
+          echo "---- errors ----"
+          grep -E "error:|fatal error" build.log | sort -u | head -150
+          echo "---- tail ----"
+          tail -40 build.log
+          if [ $status -ne 0 ]; then
+            grep -E "error:|fatal error" build.log | sort -u | head -40 | sed 's/^/::error::/'
+          fi
+          exit $status
+
+      - name: Install app
+        run: |
+          set -e
+          APP="build/Build/Products/Release-iphonesimulator/GameFarm.app"
+          ls "$APP" > /dev/null
+          # Симулятору хватает подписи "для себя" (ad hoc)
+          if [ -d "$APP/Frameworks" ]; then
+            for f in "$APP"/Frameworks/*; do codesign --force --sign - --timestamp=none "$f" || true; done
+          fi
+          codesign --force --sign - --timestamp=none "$APP"
+          echo "::notice::Bundle: $(ls "$APP"/sp_*.png 2>/dev/null | wc -l | tr -d ' ') sprites, frameworks: $(ls "$APP/Frameworks" 2>/dev/null | tr '\n' ' ')"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl install "$UDID" "$APP"
+
+      - name: Run scenario and take screenshots
+        id: shots
+        run: |
+          mkdir -p shots logs
+          DATA=$(xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" data)
+          echo "data container: $DATA"
+          DIR="$DATA/tmp/shots"
+          rm -rf "$DIR"
+          xcrun simctl launch --terminate-running-process \
+            --stdout="$GITHUB_WORKSPACE/logs/app_stdout.log" --stderr="$GITHUB_WORKSPACE/logs/app_stderr.log" \
+            "$UDID" "$BUNDLE_ID" -shots || { echo "::error::Could not launch the app"; exit 1; }
+          start=$(date +%s)
+          tick=0
+          result=ok
+          while true; do
+            if [ -f "$DIR/request" ]; then
+              name=$(cat "$DIR/request")
+              if [ -n "$name" ]; then
+                if xcrun simctl io "$UDID" screenshot --type=png "shots/swift_${name}.png" > /dev/null 2>&1; then
+                  echo "$(( $(date +%s) - start ))s shot: swift_${name}.png"
+                else
+                  echo "::warning::Screenshot failed: $name"
+                fi
+                rm -f "$DIR/request"
+              fi
+            fi
+            [ -f "$DIR/finished" ] && break
+            if [ $(( $(date +%s) - start )) -gt 400 ]; then
+              echo "::error::The scenario did not finish in 400 s"
+              result=timeout
+              break
+            fi
+            tick=$((tick + 1))
+            if [ $((tick % 25)) -eq 0 ]; then
+              running=$(xcrun simctl spawn "$UDID" launchctl list 2>/dev/null)
+              case "$running" in
+                *"UIKitApplication:$BUNDLE_ID"*) ;;
+                *) echo "::error::The app is not running (crash?)"; result=crash; break ;;
+              esac
+            fi
+            sleep 0.2
+          done
+          if [ "$result" != ok ]; then
+            xcrun simctl io "$UDID" screenshot --type=png shots/debug_last_screen.png > /dev/null 2>&1 || true
+          fi
+          sleep 1
+          xcrun simctl terminate "$UDID" "$BUNDLE_ID" > /dev/null 2>&1 || true
+          cp "$DIR/driver.log" logs/driver.log 2>/dev/null || true
+          xcrun simctl spawn "$UDID" log show --last 20m --style compact --predicate 'process == "GameFarm"' 2>/dev/null \
+            | tail -600 > logs/app_unified.log || true
+          mkdir -p logs/crashes
+          cp ~/Library/Logs/DiagnosticReports/GameFarm* logs/crashes/ 2>/dev/null || true
+          echo "---- driver.log ----"
+          cat logs/driver.log 2>/dev/null || echo "(no driver.log)"
+          echo "---- app stderr (tail) ----"
+          tail -30 logs/app_stderr.log 2>/dev/null || true
+          ls -la shots
+          count=$(ls shots/swift_*.png 2>/dev/null | wc -l | tr -d ' ')
+          size=$(sips -g pixelWidth -g pixelHeight shots/swift_1_start.png 2>/dev/null | awk '/pixel/ {print $2}' | paste -sd x -)
+          echo "SHOT_COUNT=$count" >> "$GITHUB_ENV"
+          echo "SHOT_SIZE=$size" >> "$GITHUB_ENV"
+          echo "::notice::Screenshots: $count of $EXPECTED_SHOTS, size ${size:-?} px"
+          if [ "$result" != ok ] || [ "$count" -lt "$EXPECTED_SHOTS" ] || grep -q "shot timeout" logs/driver.log 2>/dev/null; then
+            echo "::error::Not all screenshots were taken"
+            exit 1
+          fi
+
+      - name: Publish screenshots and logs to ci-logs-swift-shots branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          OUT="$RUNNER_TEMP/out"
+          rm -rf "$OUT"
+          mkdir -p "$OUT"
+          cp -R logs/. "$OUT/" 2>/dev/null || true
+          [ -d shots ] && cp -R shots "$OUT/" || true
+          if [ -f build.log ]; then
+            grep -E "error:|fatal error" build.log | sort -u > "$OUT/build_errors.txt" || true
+            tail -300 build.log > "$OUT/build_tail.txt"
+          fi
+          {
+            echo "Swift screenshots, run ${{ github.run_number }} (${{ github.ref_name }} @ ${GITHUB_SHA::7})"
+            echo "Device: ${DEVICE_INFO:-?}, screenshots: ${SHOT_COUNT:-0} of $EXPECTED_SHOTS, size ${SHOT_SIZE:-?} px"
+            echo "Godot screenshots for comparison: branch ci-logs-android, folder shots"
+          } > "$OUT/README.txt"
+          cd "$OUT"
+          git init -q
+          git checkout -q -b ci-logs-swift-shots
+          git config user.name "ci"
+          git config user.email "ci@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Swift screenshots run ${{ github.run_number }}"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:ci-logs-swift-shots
+          echo "::notice::Published to ci-logs-swift-shots: $(ls shots 2>/dev/null | wc -l | tr -d ' ') files in shots/"
