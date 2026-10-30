@@ -51,7 +51,7 @@ func _ready() -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 0)
 	_panel.add_child(col)
-	col.add_child(_header())
+	col.add_child(_window_header())
 	var body := MarginContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("margin_left", int(BODY_MARGIN))
@@ -109,7 +109,7 @@ func _process(delta: float) -> void:
 
 
 ## Шапка окна (WindowHeader): деревянная доска, монеты слева, название по центру, круглый крестик справа.
-func _header() -> Control:
+func _window_header() -> Control:
 	var head := PanelContainer.new()
 	var wood := GameStyle.make(UiKit.WOOD_LIGHT, UiKit.WOOD, 22.0)
 	wood.radii = Vector4(22, 22, 0, 0)
