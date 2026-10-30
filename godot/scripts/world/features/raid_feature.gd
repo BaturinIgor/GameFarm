@@ -5,7 +5,7 @@ extends WorldFeature
 ## Башни стреляют по ним, частокол замедляет в своей зоне, герой и питомцы дерутся как обычно.
 
 ## Желаемые места башен относительно склада.
-const SPOTS := [Vector2(-230, 60), Vector2(230, 60), Vector2(-170, 300), Vector2(170, 300)]
+const SPOTS := [Vector2(-180, 60), Vector2(180, 60), Vector2(-130, 250), Vector2(130, 250)]
 
 var _towers: Array = []
 var _walls: Array = []
@@ -73,7 +73,10 @@ func _build_defense(world: World) -> void:
 		if n is ResidentNode:
 			taken.append(n.position)
 	for i in count:
-		var p = _place(world, world.layout.base + SPOTS[i], taken)
+		# Сначала ищем место не дальше 260 точек от склада, чтобы башня его прикрывала
+		var p = _place(world, world.layout.base + SPOTS[i], taken, 260.0)
+		if not (p is Vector2):
+			p = _place(world, world.layout.base + SPOTS[i], taken, INF)
 		if not (p is Vector2):
 			continue
 		taken.append(p)
@@ -96,8 +99,8 @@ func _build_defense(world: World) -> void:
 						_walls.append(s)
 
 
-## Ближайшая к желаемой подходящая клетка (кольцами до 5 клеток).
-func _place(world: World, want: Vector2, taken: Array):
+## Ближайшая к желаемой подходящая клетка (кольцами до 5 клеток) не дальше max_d от склада.
+func _place(world: World, want: Vector2, taken: Array, max_d: float):
 	var layout := world.layout
 	var start := layout.col_row(want)
 	for radius in 6:
@@ -111,7 +114,7 @@ func _place(world: World, want: Vector2, taken: Array):
 						and layout.walkable_cell(c, r - 1)):
 					continue
 				var p := layout.center(c, r)
-				if p.distance_to(layout.base) < 120.0:
+				if p.distance_to(layout.base) < 120.0 or p.distance_to(layout.base) > max_d:
 					continue
 				if world.house_rect.has_area() and world.house_rect.grow(40.0).has_point(p):
 					continue
@@ -119,11 +122,11 @@ func _place(world: World, want: Vector2, taken: Array):
 					continue
 				if layout.props.any(func(pr: Dictionary) -> bool: return p.distance_to(pr["pos"]) < 44.0):
 					continue
-				if taken.any(func(q: Vector2) -> bool: return p.distance_to(q) < 110.0):
+				if taken.any(func(q: Vector2) -> bool: return p.distance_to(q) < 90.0):
 					continue
-				if layout.stall is Vector2 and p.distance_to(layout.stall) < 120.0:
+				if layout.stall is Vector2 and p.distance_to(layout.stall) < 100.0:
 					continue
-				if layout.board is Vector2 and p.distance_to(layout.board) < 90.0:
+				if layout.board is Vector2 and p.distance_to(layout.board) < 80.0:
 					continue
 				if layout.pen.has_area() and layout.pen.grow(40.0).has_point(p):
 					continue

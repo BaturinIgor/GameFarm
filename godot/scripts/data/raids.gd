@@ -67,7 +67,7 @@ static func tower_damage(n: int) -> float:
 
 
 static func tower_range(n: int) -> float:
-	return 170.0 + 6.0 * float(n)
+	return 230.0 + 6.0 * float(n)
 
 
 const TOWER_RATE := 1.2
