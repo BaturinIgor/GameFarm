@@ -20,18 +20,23 @@ func _init() -> void:
 	bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bar)
+	# Плюс в простом Control, чтобы точку можно было поставить в угол (контейнеры растягивают детей)
+	var holder := Control.new()
+	holder.custom_minimum_size = Vector2(16, 16)
+	holder.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var plus := PanelContainer.new()
 	var ps := UiKit.box(UiKit.TONES["green"][0], UiKit.OUTLINE, 7, 2, false)
 	ps.set_content_margin_all(0)
 	plus.add_theme_stylebox_override("panel", ps)
-	plus.custom_minimum_size = Vector2(16, 16)
-	plus.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	plus.size = Vector2(16, 16)
 	plus.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(plus)
 	var p := UiKit.title("+", 11)
 	p.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	p.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	plus.add_child(p)
-	add_child(plus)
+	add_child(holder)
 	# Готова бесплатная энергия: маленькая красная точка в углу плюса
 	_dot = Panel.new()
 	_dot.add_theme_stylebox_override("panel", UiKit.box(UiKit.BAD, Color.WHITE, 5, 1, false))
@@ -39,7 +44,7 @@ func _init() -> void:
 	_dot.position = Vector2(10, -4)
 	_dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_dot.visible = false
-	plus.add_child(_dot)
+	holder.add_child(_dot)
 	gui_input.connect(func(e: InputEvent) -> void:
 		var mb := e as InputEventMouseButton
 		if mb != null and mb.button_index == MOUSE_BUTTON_LEFT and not mb.pressed:
