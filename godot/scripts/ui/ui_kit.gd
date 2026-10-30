@@ -33,7 +33,8 @@ static var _font: Font
 
 static func font() -> Font:
 	if _font == null:
-		_font = preload("res://fonts/Nunito-900.ttf")
+		# load, а не preload: при чистом импорте шрифт ещё не готов, когда скрипты уже разбираются
+		_font = load("res://fonts/Nunito-900.ttf")
 	return _font
 
 

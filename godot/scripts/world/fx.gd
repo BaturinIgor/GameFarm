@@ -39,7 +39,7 @@ static func label_settings(size: int, color := Color.WHITE, outline := 5) -> Lab
 	if _settings.has(key):
 		return _settings[key]
 	var ls := LabelSettings.new()
-	ls.font = preload("res://fonts/Nunito-900.ttf")
+	ls.font = UiKit.font()
 	ls.font_size = size
 	ls.font_color = color
 	ls.outline_size = outline
