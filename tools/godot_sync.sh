@@ -17,13 +17,29 @@ if python3 -c "import PIL" 2> /dev/null; then
 else
   echo "Нет Pillow (pip install pillow): assets/splash.png не создан, будет заставка Godot"
 fi
-# Звуки: m4a из iOS в ogg (Godot не читает m4a). Нужен ffmpeg; без него звуков не будет.
-if command -v ffmpeg > /dev/null; then
+# Звуки: m4a из iOS в ogg (Godot не читает m4a). Нужен ffmpeg с libvorbis или oggenc (vorbis-tools)
+# вместе с afconvert (есть на macOS) или ffmpeg для чтения m4a. Без них звуков не будет.
+ENC=""
+if command -v ffmpeg > /dev/null && ffmpeg -hide_banner -encoders 2> /dev/null | grep -q libvorbis; then
+  ENC=ffmpeg
+elif command -v oggenc > /dev/null && command -v afconvert > /dev/null; then
+  ENC=afconvert
+elif command -v oggenc > /dev/null && command -v ffmpeg > /dev/null; then
+  ENC=ffmpeg-oggenc
+fi
+to_ogg() {
+  case "$ENC" in
+    ffmpeg) ffmpeg -loglevel error -y -i "$1" -c:a libvorbis -q:a 4 "$2" ;;
+    afconvert) afconvert -f WAVE -d LEI16 "$1" "$2.wav" && oggenc -Q -q 4 -o "$2" "$2.wav" && rm -f "$2.wav" ;;
+    ffmpeg-oggenc) ffmpeg -loglevel error -i "$1" -f wav - | oggenc -Q -q 4 -o "$2" - ;;
+  esac
+}
+if [ -n "$ENC" ]; then
   mkdir -p "$G/assets/audio"
   for f in "$ROOT"/GameFarm/Resources/Audio/*.m4a; do
     out="$G/assets/audio/$(basename "${f%.m4a}").ogg"
-    [ -f "$out" ] || ffmpeg -loglevel error -y -i "$f" -c:a libvorbis -q:a 4 "$out" \
-      || { echo "ffmpeg: не удалось перекодировать $(basename "$f")"; exit 1; }
+    [ -f "$out" ] || to_ogg "$f" "$out" \
+      || { rm -f "$out" "$out.wav"; echo "$ENC: не удалось перекодировать $(basename "$f")"; exit 1; }
   done
 fi
 if [ -n "$ASSETS_KEY" ]; then
@@ -33,4 +49,4 @@ if [ -n "$ASSETS_KEY" ]; then
   mv "$TMP/Sprites" "$G/assets/sprites"
   rm -rf "$TMP"
 fi
-echo "layouts: $(ls "$G/data/layouts" | wc -l), strings: $(ls "$G/data/strings" | wc -l), sprites: $(ls "$G/assets/sprites" | wc -l), audio: $(ls "$G/assets/audio" 2>/dev/null | wc -l), splash: $([ -f "$G/assets/splash.png" ] && echo yes || echo no)"
+echo "layouts: $(ls "$G/data/layouts" | wc -l), strings: $(ls "$G/data/strings" | wc -l), sprites: $(ls "$G/assets/sprites" | wc -l), audio: $(ls "$G/assets/audio" 2>/dev/null | wc -l) (${ENC:-нет кодировщика}), splash: $([ -f "$G/assets/splash.png" ] && echo yes || echo no)"
