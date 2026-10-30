@@ -1384,6 +1384,7 @@
  "stats.xp": "XP",
  "stats.yield": "Recursos por coleta",
  "storage.backpackHint": "Leve-os ao armazém 📦 para vender. Os recursos da mochila também contam para melhorias e locais.",
+ "storage.count": "{0} un.",
  "storage.empty": "O armazém está vazio",
  "storage.empty.hint": "Colete recursos e leve-os ao armazém 📦 no meio do pátio. Os recursos armazenados podem ser vendidos por moedas.",
  "storage.inBackpack": "🎒 Na mochila",

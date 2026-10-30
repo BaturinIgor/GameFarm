@@ -1384,6 +1384,7 @@
  "stats.xp": "EP",
  "stats.yield": "Ressourcen pro Ernte",
  "storage.backpackHint": "Bring sie zum Lager 📦, um sie zu verkaufen. Ressourcen im Rucksack zählen auch für Upgrades und Gebiete.",
+ "storage.count": "{0} Stk.",
  "storage.empty": "Das Lager ist leer",
  "storage.empty.hint": "Sammle Ressourcen und bring sie zum Lager 📦 in der Mitte des Hofs. Gelagerte Ressourcen kannst du für Münzen verkaufen.",
  "storage.inBackpack": "🎒 Im Rucksack",

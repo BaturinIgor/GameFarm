@@ -1384,6 +1384,7 @@
  "stats.xp": "EXP",
  "stats.yield": "Tài nguyên mỗi lần khai thác",
  "storage.backpackHint": "Mang chúng tới kho 📦 để bán. Tài nguyên trong ba lô cũng được tính khi nâng cấp và mở khu vực.",
+ "storage.count": "{0} cái",
  "storage.empty": "Kho trống",
  "storage.empty.hint": "Thu thập tài nguyên và mang tới kho 📦 ở giữa sân. Tài nguyên trong kho có thể bán lấy xu.",
  "storage.inBackpack": "🎒 Trong ba lô",

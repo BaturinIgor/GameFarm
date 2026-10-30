@@ -1384,6 +1384,7 @@
  "stats.xp": "XP",
  "stats.yield": "Ressources par récolte",
  "storage.backpackHint": "Apporte-les à l'entrepôt 📦 pour les vendre. Les ressources du sac à dos comptent aussi pour les améliorations et les zones.",
+ "storage.count": "{0} unités",
  "storage.empty": "L'entrepôt est vide",
  "storage.empty.hint": "Récolte des ressources et apporte-les à l'entrepôt 📦 au milieu de la cour. Les ressources stockées peuvent être vendues contre des pièces.",
  "storage.inBackpack": "🎒 Dans le sac à dos",

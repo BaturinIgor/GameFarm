@@ -1384,6 +1384,7 @@
  "stats.xp": "XP",
  "stats.yield": "Risorse per raccolta",
  "storage.backpackHint": "Portale al magazzino 📦 per venderle. Le risorse nello zaino contano anche per i miglioramenti e le zone.",
+ "storage.count": "{0} pz",
  "storage.empty": "Il magazzino è vuoto",
  "storage.empty.hint": "Raccogli risorse e portale al magazzino 📦 al centro del cortile. Le risorse in magazzino si possono vendere per monete.",
  "storage.inBackpack": "🎒 Nello zaino",

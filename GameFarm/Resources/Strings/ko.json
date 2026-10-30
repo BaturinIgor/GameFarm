@@ -1384,6 +1384,7 @@
  "stats.xp": "경험치",
  "stats.yield": "채집당 자원",
  "storage.backpackHint": "팔려면 창고 📦로 가져가. 가방 속 자원도 강화와 지역 해금에 쓸 수 있어.",
+ "storage.count": "{0}개",
  "storage.empty": "창고가 비어 있어",
  "storage.empty.hint": "자원을 모아서 마당 한가운데 있는 창고 📦로 가져와. 창고에 있는 자원은 팔아서 코인으로 바꿀 수 있어.",
  "storage.inBackpack": "🎒 가방 속",

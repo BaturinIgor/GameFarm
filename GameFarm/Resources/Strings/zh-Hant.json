@@ -1384,6 +1384,7 @@
  "stats.xp": "經驗值",
  "stats.yield": "每次採集資源量",
  "storage.backpackHint": "把它們帶到倉庫 📦 才能賣出。背包裡的資源也能用於升級和解鎖區域。",
+ "storage.count": "{0} 個",
  "storage.empty": "倉庫空空如也",
  "storage.empty.hint": "採集資源並帶到庭院中央的倉庫 📦。倉庫裡的資源可以賣出換金幣。",
  "storage.inBackpack": "🎒 背包中",

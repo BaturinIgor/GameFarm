@@ -1384,6 +1384,7 @@
  "stats.xp": "XP",
  "stats.yield": "Sumber daya per panen",
  "storage.backpackHint": "Bawa ke gudang 📦 untuk dijual. Sumber daya di ransel juga terhitung untuk peningkatan dan lokasi.",
+ "storage.count": "{0} buah",
  "storage.empty": "Gudang kosong",
  "storage.empty.hint": "Kumpulkan sumber daya dan bawa ke gudang 📦 di tengah halaman. Sumber daya di gudang bisa dijual untuk koin.",
  "storage.inBackpack": "🎒 Di ransel",

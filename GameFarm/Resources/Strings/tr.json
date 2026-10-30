@@ -1384,6 +1384,7 @@
  "stats.xp": "Deneyim",
  "stats.yield": "Toplama başına kaynak",
  "storage.backpackHint": "Satmak için onları depoya 📦 götür. Çantadaki kaynaklar da geliştirmeler ve bölgeler için sayılır.",
+ "storage.count": "{0} adet",
  "storage.empty": "Depo boş",
  "storage.empty.hint": "Kaynak topla ve onları avlunun ortasındaki depoya 📦 getir. Depodaki kaynaklar para karşılığında satılabilir.",
  "storage.inBackpack": "🎒 Çantada",

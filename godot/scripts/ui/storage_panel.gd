@@ -112,8 +112,11 @@ func _row(parent: Control, kind: String) -> void:
 	name_l.clip_text = true
 	name_l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	col.add_child(name_l)
-	var info := UiKit.label(L.t("storage.row", [Fmt.n(have), price]), 11, UiKit.INK_SOFT)
-	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# Всегда одна строка: сколько есть и цена за штуку ("300 шт  ·  4 🪙"), длинное обрезается многоточием,
+	# чтобы строки склада не растягивались
+	var info := UiKit.label(L.t("storage.count", [Fmt.n(have)]) + "  ·  %s 🪙" % Fmt.n(price), 12, UiKit.INK_SOFT)
+	info.clip_text = true
+	info.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	col.add_child(info)
 	# Продать 1, 10, 100 или всё; лишние кнопки не показываются
 	var buttons := HBoxContainer.new()

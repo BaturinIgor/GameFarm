@@ -1384,6 +1384,7 @@
  "stats.xp": "Doświadczenie",
  "stats.yield": "Surowce na zbiór",
  "storage.backpackHint": "Zanieś je do magazynu 📦, aby sprzedać. Surowce z plecaka też liczą się do ulepszeń i lokacji.",
+ "storage.count": "{0} szt.",
  "storage.empty": "Magazyn jest pusty",
  "storage.empty.hint": "Zbieraj surowce i zanoś je do magazynu 📦 na środku podwórka. Surowce z magazynu możesz sprzedać za monety.",
  "storage.inBackpack": "🎒 W plecaku",

@@ -1384,6 +1384,7 @@
  "stats.xp": "経験値",
  "stats.yield": "1回の採集量",
  "storage.backpackHint": "売るには倉庫 📦 まで運ぼう。リュックの中の素材も強化やエリア解放に使えるよ。",
+ "storage.count": "{0}個",
  "storage.empty": "倉庫はからっぽ",
  "storage.empty.hint": "素材を集めて、広場の真ん中にある倉庫 📦 に運ぼう。倉庫の素材はコインで売れるよ。",
  "storage.inBackpack": "🎒 リュックの中",

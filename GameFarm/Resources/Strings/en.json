@@ -1384,6 +1384,7 @@
  "stats.xp": "XP",
  "stats.yield": "Resources per harvest",
  "storage.backpackHint": "Bring them to the storage 📦 to sell. Backpack resources also count for upgrades and locations.",
+ "storage.count": "{0} pcs",
  "storage.empty": "Storage is empty",
  "storage.empty.hint": "Gather resources and bring them to the storage 📦 in the middle of the yard. Stored resources can be sold for coins.",
  "storage.inBackpack": "🎒 In backpack",

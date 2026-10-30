@@ -1384,6 +1384,7 @@
  "stats.xp": "经验",
  "stats.yield": "每次采集资源量",
  "storage.backpackHint": "把它们带到仓库 📦 就能出售。背包里的资源也可以用于升级和解锁地点。",
+ "storage.count": "{0} 个",
  "storage.empty": "仓库是空的",
  "storage.empty.hint": "采集资源，然后带到院子中央的仓库 📦。仓库里的资源可以卖钱换金币。",
  "storage.inBackpack": "🎒 背包中",
