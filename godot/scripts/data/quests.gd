@@ -2,6 +2,9 @@ class_name Quests
 ## Задания доски и постоянные достижения (порт Quests.swift).
 ## Задание - словарь как в iOS-сохранении: id (UUID), type, resource (только у сбора), target, progress, coins, xp.
 
+## Опыт за задание - доля уровня (в новой экономике 8%: иначе задания перевешивают добычу).
+const QUEST_XP := 0.08
+
 const TYPES := ["gather", "harvest", "sell", "deposit", "tame", "treasure"]
 
 ## Иконки заданий (в iOS эмодзи: ⛏️ 🪙 📦 🐾 🎁), у сбора - иконка ресурса.
@@ -76,18 +79,18 @@ static func make(level: int, available: Array, producers: Array, avoid: Array) -
 			var price := Res.price(k)
 			var raw := (40.0 + lvl * 6.0) / pow(float(price), 0.55)
 			var target := maxi(5, int(round(raw / 5.0)) * 5)
-			return _quest("gather", k, target, int(float(target * price) * 1.5) + level * 20, int(xp_base * 0.18))
+			return _quest("gather", k, target, int(float(target * price) * 1.5) + level * 20, int(xp_base * QUEST_XP))
 		"harvest":
-			return _quest("harvest", "", 20 + level * 2, 40 + level * 30, int(xp_base * 0.2))
+			return _quest("harvest", "", 20 + level * 2, 40 + level * 30, int(xp_base * QUEST_XP))
 		"sell":
 			var target := maxi(100, int(round(pow(lvl, 1.5) * 40.0 / 50.0)) * 50)
-			return _quest("sell", "", target, target / 4 + level * 10, int(xp_base * 0.15))
+			return _quest("sell", "", target, target / 4 + level * 10, int(xp_base * QUEST_XP))
 		"deposit":
-			return _quest("deposit", "", 50 + level * 10, 30 + level * 25, int(xp_base * 0.18))
+			return _quest("deposit", "", 50 + level * 10, 30 + level * 25, int(xp_base * QUEST_XP))
 		"tame":
-			return _quest("tame", "", 1, 100 + level * 40, int(xp_base * 0.25))
+			return _quest("tame", "", 1, 100 + level * 40, int(xp_base * QUEST_XP))
 		_:
-			return _quest("treasure", "", 2 if level >= 15 else 1, 60 + level * 30, int(xp_base * 0.2))
+			return _quest("treasure", "", 2 if level >= 15 else 1, 60 + level * 30, int(xp_base * QUEST_XP))
 
 
 static func _quest(type: String, resource: String, target: int, coins: int, xp: int) -> Dictionary:

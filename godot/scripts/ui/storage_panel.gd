@@ -7,6 +7,7 @@ const TABS := {
 	"food": ["crop", "food", "farm"],
 	"loot": ["loot"],
 	"rare": ["gem", "treasure"],
+	"goods": ["goods"],
 }
 
 var tab := "materials"

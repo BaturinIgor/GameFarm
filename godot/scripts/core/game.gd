@@ -9,6 +9,12 @@ signal level_up(from_level: int, to_level: int)
 signal event(name: String, data: Dictionary)
 
 const SAVE_PATH := "user://save.json"
+## Версия экономики: старые сохранения (до усадьбы) начинаются заново, см. _load_save.
+const ECONOMY := 2
+const ECONOMY_KEEP := ["purchases", "granted", "consumed", "crystals", "crystalFirst", "maxUntil", "maxDailyDay",
+	"maxSkinMonth", "ownedSkins", "eventSkins", "skin", "offersSeen"]
+## Прогресс только что сброшен из-за новой экономики (окно-пояснение при запуске).
+var economy_reset := false
 const MAX_LEVEL := 60
 const MAX_ACTIVE_ANIMALS := 5
 
@@ -29,11 +35,13 @@ var legacy := LegacySystem.new()
 var premium := PremiumSystem.new()
 var shop := ShopSystem.new()
 var world_map := WorldMapSystem.new()
+var estate := EstateSystem.new()
+var daily := DailySystem.new()
 
 ## Все системы по порядку: для значений по умолчанию и событий.
 var systems: Array:
 	get: return [talents, workshop, animals, quests, house, garden, combat, dungeons, events, collection, legacy, premium, shop,
-		world_map]
+		world_map, estate, daily]
 ## Где появиться после перехода через проход (id прохода).
 var arrival_gate := ""
 ## В доме: у какой станции появиться (exit, up, down); на лугу - у двери дома.
@@ -77,7 +85,7 @@ static func default_save() -> Dictionary:
 		"animals": {}, "active": [], "gathered": {},
 		"harvests": 0, "coinsEarned": 0, "lastSeen": Time.get_unix_time_from_system(),
 		"tutorialDone": false, "openGates": [], "tickets": 1, "bestLevel": 1,
-		"skin": "farmer",
+		"skin": "farmer", "economy": ECONOMY,
 	}
 
 
@@ -86,7 +94,14 @@ func _load_save() -> Dictionary:
 	if FileAccess.file_exists(SAVE_PATH):
 		var text := FileAccess.get_file_as_string(SAVE_PATH)
 		var parsed = JSON.parse_string(text)
-		if parsed is Dictionary:
+		if parsed is Dictionary and int(parsed.get("economy", 1)) < ECONOMY:
+			# Новая экономика: прогресс начинается заново. Старый файл - в копию, покупки и кристаллы остаются.
+			DirAccess.copy_absolute(SAVE_PATH, "user://save.economy%d-backup.json" % int(parsed.get("economy", 1)))
+			for k in ECONOMY_KEEP:
+				if parsed.has(k):
+					data[k] = parsed[k]
+			economy_reset = true
+		elif parsed is Dictionary:
 			for k in parsed:
 				data[k] = parsed[k]
 		elif text.strip_edges() != "":
@@ -135,8 +150,9 @@ func show_toast(icon: String, text: String) -> void:
 
 # MARK: Уровень и опыт
 
+## Опыт до следующего уровня: 25 * L^2.3 (до 60 уровня - 5,4 млн, игра на месяцы).
 static func xp_to_next(level: int) -> int:
-	return int(round(22.0 * pow(float(level), 1.5)))
+	return int(round(25.0 * pow(float(level), 2.3)))
 
 
 static func talent_points_at(level: int) -> int:
@@ -148,7 +164,7 @@ static func capacity_at(level: int) -> int:
 
 
 static func level_coin_reward(level: int) -> int:
-	return 25 * level
+	return int(round(40.0 * pow(float(level), 1.5)))
 
 
 var level: int:
@@ -228,7 +244,26 @@ func add_to_backpack(kind: String, n: int) -> int:
 	return put
 
 
+var _full_toast_at := -100.0
+
+
+## Склад полон: тост не чаще раза в 20 секунд.
+func _storage_full(kind: String) -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	if now - _full_toast_at < 20.0:
+		return
+	_full_toast_at = now
+	show_toast("res:" + kind, L.t("toast.storageFull", [Res.name_of(kind), estate.storage_limit()]))
+
+
 func add_to_storage(kind: String, n: int, counts := true) -> int:
+	if n <= 0:
+		return 0
+	# Лимит склада (уровень склада в усадьбе): лишнее не помещается
+	var room := estate.storage_room(kind)
+	if room < n:
+		_storage_full(kind)
+	n = mini(n, room)
 	if n <= 0:
 		return 0
 	save["storage"][kind] = int(save["storage"].get(kind, 0)) + n
@@ -243,9 +278,20 @@ func deposit_backpack() -> int:
 	var total := backpack_count
 	if total <= 0:
 		return 0
+	# Сдаём, сколько влезает на склад; остальное остаётся в рюкзаке (можно продать)
+	var left := {}
+	total = 0
 	for kind in save["backpack"]:
-		save["storage"][kind] = int(save["storage"].get(kind, 0)) + int(save["backpack"][kind])
-	save["backpack"] = {}
+		var n := int(save["backpack"][kind])
+		var put := mini(n, estate.storage_room(kind))
+		save["storage"][kind] = int(save["storage"].get(kind, 0)) + put
+		total += put
+		if n - put > 0:
+			left[kind] = n - put
+			_storage_full(kind)
+	save["backpack"] = left
+	if total <= 0:
+		return 0
 	emit_event("deposit", {"amount": total})
 	if stats.storekeeper_xp > 0:
 		gain_xp(stats.storekeeper_xp * (total / 10))
@@ -442,7 +488,7 @@ func recalc() -> void:
 	s.helper_yield = 1.0 + 0.15 * r.call("beastLoot")
 	s.producer_mult = (1.0 + 0.2 * r.call("nightShift")) * (1.0 + 0.1 * r.call("herdsman")) * (1.0 + 0.1 * r.call("herd"))
 	s.double_product_chance = 0.08 * r.call("rancher")
-	s.offline_hours = (PremiumSystem.PRO_OFFLINE_HOURS if premium.has_pro() else 6.0) + 2.0 * r.call("pasture")
+	s.offline_hours = (PremiumSystem.PRO_OFFLINE_HOURS if premium.has_pro() else Estate.CAP_HOURS) + 2.0 * r.call("pasture")
 	s.star_step = 0.25 + 0.05 * r.call("starFood")
 	s.double_star_chance = 0.15 * r.call("starHunter")
 
@@ -541,7 +587,7 @@ func recalc() -> void:
 		+ (float(ShopSystem.MAX_BACKPACK) if shop.max_active() else 0.0)
 
 	for id in save.get("active", []):
-		var m := s.star_multiplier(int(save["animals"].get(id, 1))) * s.animal_mult * animals.boost(id)
+		var m := minf(Stats.MAX_ANIMAL, s.star_multiplier(int(save["animals"].get(id, 1))) * s.animal_mult * animals.boost(id))
 		for e in animals.effects(id):
 			var v := float(e.get("v", 0.0))
 			match e["type"]:
@@ -585,9 +631,10 @@ func recalc() -> void:
 		speed_bonus += 0.15
 	s.speed = Stats.BASE_SPEED * minf(Stats.MAX_SPEED_MULT, (1.0 + speed_bonus) * strider)
 	s.crit_chance = minf(0.75, crit_bonus)
-	s.respawn_mult = 1.0 / (1.0 + respawn_bonus)
-	s.xp_mult = 1.0 + xp_bonus
-	s.sell_mult = 1.0 + 0.01 * (lvl - 1.0) + sell_bonus
+	# Потолки: все источники складываются, потом режутся (новая экономика)
+	s.respawn_mult = maxf(Stats.MIN_RESPAWN, 1.0 / (1.0 + respawn_bonus))
+	s.xp_mult = minf(Stats.MAX_XP, 1.0 + xp_bonus)
+	s.sell_mult = minf(Stats.MAX_SELL, 1.0 + 0.01 * (lvl - 1.0) + sell_bonus)
 	s.capacity = int(capacity)
 	stats = s
 

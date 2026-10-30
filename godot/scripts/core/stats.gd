@@ -93,8 +93,16 @@ var keep_pack := false
 var kill_heal := 0.0
 
 
+## Потолки бонусов (новая экономика).
+const MAX_YIELD := 2.5
+const MAX_XP := 2.5
+const MAX_SELL := 2.0
+const MAX_ANIMAL := 3.0
+const MIN_RESPAWN := 0.4
+
+
 func yield_multiplier(kind: String) -> float:
-	return 1.0 + yield_all + float(yield_category.get(Res.category(kind), 0.0)) + float(yield_kind.get(kind, 0.0))
+	return minf(MAX_YIELD, 1.0 + yield_all + float(yield_category.get(Res.category(kind), 0.0)) + float(yield_kind.get(kind, 0.0)))
 
 
 func star_multiplier(stars: int) -> float:

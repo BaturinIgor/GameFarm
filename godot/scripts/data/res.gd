@@ -1,7 +1,7 @@
 class_name Res
 ## Ресурсы: группы, базовые цены, иконки. Идентификаторы - строки, как в iOS-версии и в сохранениях.
 
-const CATEGORIES := ["wood", "stone", "ore", "gem", "food", "crop", "farm", "treasure", "loot"]
+const CATEGORIES := ["wood", "stone", "ore", "gem", "food", "crop", "farm", "treasure", "loot", "goods"]
 
 const KINDS := [
 	"wood", "bamboo", "stone", "clay", "coal", "iron", "gold", "sulfur", "obsidian", "ice", "diamond", "crystal", "ruby",
@@ -10,6 +10,8 @@ const KINDS := [
 	"shell", "coral", "pearl", "cloud", "stardust",
 	"wheat", "tomato", "potato", "strawberry", "corn", "cabbage", "eggplant", "pumpkin", "sunflower", "chili", "grapes",
 	"slime", "bone", "tusk", "essence",
+	# Товары усадьбы (Estate.RECIPES): делаются в зданиях из сырья
+	"planks", "slats", "brick", "lime", "iron_bar", "gold_bar", "flour", "oil",
 ]
 
 const CATEGORY := {
@@ -24,6 +26,8 @@ const CATEGORY := {
 	"wheat": "crop", "tomato": "crop", "potato": "crop", "strawberry": "crop", "corn": "crop", "cabbage": "crop",
 	"eggplant": "crop", "pumpkin": "crop", "sunflower": "crop", "chili": "crop", "grapes": "crop",
 	"slime": "loot", "bone": "loot", "tusk": "loot", "essence": "loot",
+	"planks": "goods", "slats": "goods", "brick": "goods", "lime": "goods", "iron_bar": "goods", "gold_bar": "goods",
+	"flour": "goods", "oil": "goods",
 }
 
 ## Базовая цена продажи в монетах.
@@ -57,6 +61,9 @@ static func category(kind: String) -> String:
 
 
 static func price(kind: String) -> int:
+	# Товар стоит как его сырьё с наценкой
+	if Estate.is_good(kind):
+		return Estate.price(kind)
 	return PRICE.get(kind, 1)
 
 

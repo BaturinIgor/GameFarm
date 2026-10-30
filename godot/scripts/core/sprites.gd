@@ -5,6 +5,8 @@ extends Node
 
 const SCALE := 2.0
 const DIR := "res://assets/sprites/"
+## Свои рисунки вне пака (не шифруются): tools/make_goods_icons.py.
+const ART_DIR := "res://assets/art/"
 
 var manifest: Dictionary = {}
 var _textures: Dictionary = {}
@@ -51,6 +53,9 @@ func texture(name: String) -> Texture2D:
 		tex = a
 	else:
 		tex = _load_png(name)
+	# Свои рисунки (товары усадьбы и т.п.) лежат открыто в assets/art
+	if tex == null and ResourceLoader.exists(ART_DIR + name + ".png"):
+		tex = load(ART_DIR + name + ".png") as Texture2D
 	_textures[name] = tex
 	return tex
 

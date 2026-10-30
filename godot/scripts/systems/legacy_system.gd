@@ -11,6 +11,10 @@ const KEEP := [
 	"cards", "shiny", "eventKey", "eventPoints", "eventFree", "eventVip", "eventBonus", "vipKeys", "eventSeen",
 	"eventDecor", "eventSkins", "eventStage", "eventProgress", "eventBest", "eventBoons", "eventChoice",
 	"potions", "dungeonBest", "weapon",
+	# Новое: кристаллы и магазин, усадьба, бестиарий - остаются после перерождения
+	"crystals", "crystalFirst", "maxUntil", "maxDailyDay", "maxSkinMonth", "ownedSkins", "bundleUntil", "offersSeen",
+	"offerPopupDay", "dealDay", "adCrystalsDay", "adCrystals", "estate", "builder3", "speedAds", "killsBy", "bestiary",
+	"bossKills", "economy", "daily",
 ]
 
 

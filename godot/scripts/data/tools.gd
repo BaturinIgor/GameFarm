@@ -58,10 +58,15 @@ static func required_level(tool: String, tier: int) -> int:
 
 
 ## Цена улучшения до ступени: {"coins": n, "items": [[kind, n], ...]}.
+## Монеты в новой экономике в 6 раз дороже (игра длиннее, доход за уровень больше).
+const COIN_MULT := 6
+
 static func cost(tool: String, tier: int) -> Dictionary:
 	var t: Dictionary = COSTS.get(tool, {})
 	var c = t.get(tier, null)
-	return c if c != null else {"coins": 0, "items": []}
+	if c == null:
+		return {"coins": 0, "items": []}
+	return {"coins": int(c.get("coins", 0)) * COIN_MULT, "items": c.get("items", [])}
 
 
 const COSTS := {

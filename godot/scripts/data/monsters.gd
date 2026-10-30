@@ -192,5 +192,6 @@ static func stats(kind: String, level: int, boss := false, _traits: Array = []) 
 		"damage": 4.0 * pow(1.09, l) * strength(kind) * (1.6 if boss else 1.0),
 		"speed": speed(kind) * (0.9 if boss else 1.0),
 		"xp": int((8.0 + l * 2.5 * toughness(kind)) * (10.0 if boss else 1.0)),
-		"coins": int((4.0 + l * 1.5) * (6.0 if kind == "slimeGold" else 1.0) * (15.0 if boss else 1.0)),
+		# x2.5 в новой экономике: бой должен окупаться
+		"coins": int((4.0 + l * 1.5) * 2.5 * (6.0 if kind == "slimeGold" else 1.0) * (15.0 if boss else 1.0)),
 	}

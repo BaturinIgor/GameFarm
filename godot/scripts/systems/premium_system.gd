@@ -5,7 +5,7 @@ extends RefCounted
 ## luckUntil, luckReadyAt, adsWatched, gardenChestAt, tickets, maps, lastFreeTicket,
 ## expedition = {location, endsAt, returnTo, loot: {вид: n}, coins} (как ExpeditionRun); нет экспедиции - нет ключа.
 
-const PRO_OFFLINE_HOURS := 24.0
+const PRO_OFFLINE_HOURS := 12.0
 const STARTER_BACKPACK := 30
 const CAPYBARA_YIELD := 0.1
 const STARTER_COINS := 2500
@@ -14,6 +14,8 @@ const STARTER_SECOND_LEVEL := 15
 const STARTER_WINDOW := 48.0 * 3600.0
 const LUCK_DURATION := 10.0 * 60.0
 const LUCK_COOLDOWN := 10.0 * 60.0
+## Удача не чаще 3 раз в день (и с Pro, и в тестовой сборке): награда, а не постоянный бонус.
+const LUCK_PER_DAY := 3
 ## Королевский сундук открывается раз в сутки.
 const GARDEN_CHEST_EVERY := 22.0 * 3600.0
 
@@ -238,6 +240,13 @@ func activate_luck(from_ad: bool) -> void:
 	var until := _now() + LUCK_DURATION * (ShopSystem.MAX_LUCK_MULT if Game.shop.max_active() else 1.0)
 	Game.save["luckUntil"] = until
 	Game.save["luckReadyAt"] = until + LUCK_COOLDOWN
+	# Дневной лимит: после третьей удачи следующая - завтра
+	var today := ShopSystem.day_index()
+	var used := int(Game.save.get("luckUses", 0)) if int(Game.save.get("luckDay", 0)) == today else 0
+	Game.save["luckDay"] = today
+	Game.save["luckUses"] = used + 1
+	if used + 1 >= LUCK_PER_DAY:
+		Game.save["luckReadyAt"] = maxf(until + LUCK_COOLDOWN, House.start_of_day() + 86400.0)
 	if from_ad:
 		Game.save["adsWatched"] = int(Game.save.get("adsWatched", 0)) + 1
 	Game.show_toast("px:clover", L.t("toast.luck"))

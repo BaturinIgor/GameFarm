@@ -93,8 +93,9 @@ func _progress(type: String, kind: String, amount: int) -> void:
 		Game.mark_dirty()
 
 
+## Готовые задания плюс цели дня (точка на кнопке и вкладке заданий).
 func claimable_quests() -> int:
-	return current_quests().filter(func(q: Dictionary) -> bool: return Quests.is_done(q)).size()
+	return current_quests().filter(func(q: Dictionary) -> bool: return Quests.is_done(q)).size() + Game.daily.claimable()
 
 
 func _index(id: String) -> int:

@@ -6,7 +6,7 @@ extends Node
 const ORIGIN := Vector2(195, 620)
 const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", "kitchen", "garden", "trader", "hunt",
 	"dungeon", "trophies", "collection", "legacy", "wardrobe", "map", "events", "shop",
-	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary"]
+	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders"]
 
 var dir := "/tmp/shots"
 var main: Node
@@ -69,6 +69,15 @@ func _process(delta: float) -> void:
 				Game.save["crystals"] = 520
 				Game.save["consumables"] = {"strength": 2, "guard": 1, "swift": 3}
 				Game.save["killsBy"] = {"slimeGreen": 31, "orc": 12, "slimeBlue": 4}
+				# Усадьба: несколько зданий, одно строится, лесопилка накопила доски
+				var now := Time.get_unix_time_from_system()
+				var est: Dictionary = Game.save["estate"]
+				for b in [["main", 5], ["storage", 3], ["board", 2], ["sawmill", 3], ["mill", 1], ["kiln", 1]]:
+					est[b[0]]["level"] = b[1]
+				est["sawmill"]["since"] = now - 3.0 * 3600.0
+				est["mill"]["until"] = now + 25.0 * 60.0
+				Game.save["storage"]["wheat"] = 120
+				Game.estate.tick()
 				Game.save["offerPopupDay"] = ShopSystem.day_index()
 				Game.save["coins"] = 25000
 				for k in ["wood", "stone", "clay", "coal", "iron", "berries", "fish", "apples"]:

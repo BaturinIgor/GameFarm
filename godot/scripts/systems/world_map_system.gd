@@ -141,7 +141,9 @@ func is_gate_open(id: String) -> bool:
 
 ## Цена прохода. Короткий путь между двумя уже открытыми локациями стоит вдвое дешевле.
 func gate_cost(g: Dictionary) -> Dictionary:
-	var cost := Game.discounted(g["cost"])
+	# Монеты прохода в новой экономике x4
+	var base: Dictionary = g["cost"]
+	var cost := Game.discounted({"coins": int(base.get("coins", 0)) * 4, "items": base.get("items", [])})
 	if g["a"] in reachable and g["b"] in reachable:
 		return _scaled(cost, 0.5)
 	return cost

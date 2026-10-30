@@ -43,7 +43,40 @@ func _tabs() -> void:
 
 # MARK: Задания
 
+## Цели дня: три задачи за кристаллы.
+func _daily_card() -> Control:
+	var parts := ShopPanel.shop_card(L.t("daily.title"), "purple")
+	var v: VBoxContainer = parts[1]
+	var goals := Game.daily.goals()
+	for i in goals.size():
+		var g: Dictionary = goals[i]
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		v.add_child(row)
+		var col := VBoxContainer.new()
+		col.add_theme_constant_override("separation", 3)
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(col)
+		var t := UiKit.label(DailySystem.text(g), 13, UiKit.INK_SOFT if g["claimed"] else UiKit.INK)
+		t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		col.add_child(t)
+		col.add_child(UiKit.bar(float(g["progress"]) / float(maxi(1, int(g["target"]))), "purple", 150.0, 12.0,
+			"%s / %s" % [Fmt.n(int(g["progress"])), Fmt.n(int(g["target"]))]))
+		if g["claimed"]:
+			var ok := HousePanel.check_mark(22)
+			row.add_child(ok)
+		else:
+			var idx := i
+			var b := MapPanel.icon_button([["i", "gem"], ["t", str(g["crystals"])]], "green" if Game.daily.done(g) else "gray", 13)
+			b.disabled = not Game.daily.done(g)
+			b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			b.pressed.connect(func() -> void: Game.daily.claim(idx))
+			row.add_child(b)
+	return parts[0]
+
+
 func _quests_list() -> void:
+	content.add_child(_daily_card())
 	var list := Game.quests.current_quests()
 	content.add_child(UiKit.label(L.t("quests.done", [int(Game.save.get("questsDone", 0))]), 14))
 	var claimable := Game.quests.claimable_quests()

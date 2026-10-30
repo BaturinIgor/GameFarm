@@ -28,6 +28,10 @@ func _ready() -> void:
 	# Подписка MAX: пропуск текущего ивента и образ месяца
 	Game.shop.sync_max()
 	Game.recalc()
+	# Новая экономика: объясняем, почему прогресс начался заново
+	if Game.economy_reset:
+		Game.economy_reset = false
+		InfoPopup.show_info(L.t("economy.title"), L.t("economy.text"), "px:hammer")
 	# Звери-производители работали, пока игры не было
 	OfflineOverlay.check()
 	CalendarPanel.check()
