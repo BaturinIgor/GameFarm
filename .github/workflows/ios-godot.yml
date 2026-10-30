@@ -6,7 +6,7 @@ name: Build IPA (Godot)
 
 on:
   push:
-    branches: [main, godot-ios]
+    branches: [main]
     paths:
       - "godot/**"
       - "Art/**"
@@ -217,6 +217,7 @@ jobs:
           fi
           cp godot/assets/splash.png "$L/" 2>/dev/null || true
           cp build-ios/HarvestHollow/HarvestHollow-Info.plist "$L/Info.plist" 2>/dev/null || true
+          cp "build-ios/HarvestHollow/Launch Screen.storyboard" "$L/LaunchScreen.storyboard" 2>/dev/null || true
           echo "run ${{ github.run_number }}, ref ${{ github.ref_name }}, sha ${{ github.sha }}" > "$L/README.txt"
           grep -hE "ERROR|error:" "$L"/*.log 2>/dev/null | head -30 | sed 's/^/::warning::/' || true
           cd "$L"
