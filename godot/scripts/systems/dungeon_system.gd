@@ -84,6 +84,14 @@ func ad_attempt() -> void:
 	Game.mark_dirty()
 
 
+## Бесплатная попытка раз в 2 дня (Freebies "dungeon").
+func free_attempt() -> void:
+	var d := _day()
+	d["extra"] = int(d["extra"]) + 1
+	Game.show_toast("px:key", L.t("free.attempt"))
+	Game.mark_dirty()
+
+
 func attempt_price() -> int:
 	return Dungeons.ATTEMPT_PRICE + Dungeons.ATTEMPT_STEP * int(_day()["bought"])
 

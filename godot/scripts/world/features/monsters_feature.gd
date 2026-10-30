@@ -502,7 +502,7 @@ func _set_hunter_card(on: bool) -> void:
 			_hunter_card = null
 			Hud.current.set_prompt("hunter", null)
 		return
-	var badge := int(Game.combat.claimable_hunts())
+	var badge := int(Game.combat.claimable_hunts()) + (1 if Freebies.ready("potion") else 0)
 	if _hunter_card != null and is_instance_valid(_hunter_card) and badge == _hunter_badge and L.code == _hunter_lang:
 		return
 	_hunter_badge = badge

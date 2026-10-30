@@ -231,6 +231,7 @@ static func attempts_card() -> Control:
 	var hint := UiKit.label(L.t("dungeon.attemptsHint"), 11, UiKit.INK_SOFT)
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(hint)
+	v.add_child(FreeButton.new("dungeon", L.t("free.attempt"), func() -> void: Game.dungeons.free_attempt()))
 	var more := HBoxContainer.new()
 	more.add_theme_constant_override("separation", 8)
 	v.add_child(more)

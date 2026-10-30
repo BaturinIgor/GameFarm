@@ -407,6 +407,8 @@ func _update_badges() -> void:
 			"talents":
 				if Game.talents.has_method("points_free"):
 					n = Game.talents.points_free()
+			"animals":
+				n = Game.animals.upgradable_count()
 			"quests":
 				if Game.quests.has_method("claimable_count"):
 					n = Game.quests.claimable_count()

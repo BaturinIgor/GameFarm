@@ -59,6 +59,8 @@ func _fill(v: VBoxContainer) -> void:
 	col.add_child(CombatCards.LiveLabel.new(state, 12, UiKit.INK_SOFT))
 	v.add_child(UiKit.bar(minf(1.0, en.value() / en.max_value()), "gold", 0.0, 18.0,
 		"%d / %d" % [int(en.value()), int(en.max_value())]))
+	# Бесплатно раз в 8 часов
+	v.add_child(FreeButton.new("energy", "+%d" % Freebies.ENERGY, func() -> void: Game.energy.add(Freebies.ENERGY, true)))
 	# Ролик
 	var ad := Ads.reward_button(L.t("energy.ad", [EnergySystem.AD_ENERGY, en.ads_left()]), "blue", 14)
 	ad.disabled = en.ads_left() <= 0

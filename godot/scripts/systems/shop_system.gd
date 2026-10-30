@@ -170,6 +170,67 @@ func _max_month_skin() -> void:
 	give_skin(skin)
 
 
+# MARK: Ежедневный подарок
+
+## Подарок дня без ролика: серия из 7 дней, седьмой - большой сундук. Пропуск дня начинает серию заново.
+static func gift_reward(day_n: int) -> Dictionary:
+	var coins := int(round(Game.level_coin_reward(Game.level) * 0.15 / 10.0)) * 10
+	match day_n:
+		1: return {"coins": coins}
+		2: return {"energy": 100}
+		3: return {"coins": coins * 2}
+		4: return {"crystals": 3}
+		5: return {"energy": 200}
+		6: return {"coins": coins * 3, "tickets": 1}
+	return {"crystals": 10, "energy": 300, "tickets": 1}
+
+
+func gift_ready() -> bool:
+	return int(Game.save.get("giftDay", -1)) != day_index()
+
+
+## Какой день серии будет следующим (1-7).
+func gift_next_day() -> int:
+	var last := int(Game.save.get("giftDay", -1))
+	var streak := int(Game.save.get("giftStreak", 0))
+	if last == day_index():
+		return streak
+	if last == day_index() - 1 and streak < 7:
+		return streak + 1
+	return 1
+
+
+func claim_gift() -> Dictionary:
+	if not gift_ready():
+		return {}
+	var n := gift_next_day()
+	Game.save["giftDay"] = day_index()
+	Game.save["giftStreak"] = n
+	var r := gift_reward(n)
+	if r.has("coins"):
+		Game.add_coins(int(r["coins"]))
+	if r.has("energy"):
+		Game.energy.add(int(r["energy"]))
+	if r.has("crystals"):
+		add_crystals(int(r["crystals"]))
+	if r.has("tickets"):
+		Game.save["tickets"] = Game.premium.tickets() + int(r["tickets"])
+	Sound.play("treasure")
+	Game.mark_dirty()
+	Game.save_now()
+	return r
+
+
+## Секунд до следующего подарка (до начала нового дня).
+static func next_day_in() -> float:
+	return House.start_of_day() + 86400.0 - Time.get_unix_time_from_system()
+
+
+func give_market_free(item: String) -> void:
+	_give_market(item)
+	Game.mark_dirty()
+
+
 func max_daily_ready() -> bool:
 	return max_active() and int(Game.save.get("maxDailyDay", 0)) != day_index()
 
@@ -294,7 +355,7 @@ func note_popup_shown(offer_id: String) -> void:
 
 ## Точка на кнопке магазина: новое предложение, кристаллы MAX или бесплатные кристаллы.
 func has_news() -> bool:
-	return not new_offers().is_empty() or max_daily_ready()
+	return not new_offers().is_empty() or max_daily_ready() or gift_ready() or Freebies.ready("market")
 
 
 # MARK: Лавка за кристаллы

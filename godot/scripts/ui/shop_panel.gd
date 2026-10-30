@@ -80,7 +80,8 @@ func build_top() -> void:
 func _tab_news(id: String) -> bool:
 	var shop := Game.shop
 	match id:
-		"offers": return not shop.new_offers().is_empty()
+		"offers": return not shop.new_offers().is_empty() or shop.gift_ready()
+		"market": return Freebies.ready("market")
 		"vip": return shop.max_daily_ready()
 		"free": return shop.ad_crystals_left() > 0 or Game.premium.luck_ready() or Game.house.can_claim_login()
 	return false
@@ -110,6 +111,7 @@ func _close_detail() -> void:
 # MARK: Акции
 
 func _build_offers() -> void:
+	content.add_child(_gift_card())
 	var offers := Game.shop.current_offers()
 	for o in offers:
 		content.add_child(_featured(o["product"]))
@@ -458,8 +460,76 @@ func _free_crystals_tile() -> Button:
 
 # MARK: Лавка
 
+## Подарок дня: 7 клеток серии, сегодняшняя подсвечена, кнопка "Забрать" или таймер до завтра.
+func _gift_card() -> Control:
+	var shop := Game.shop
+	var parts := shop_card(L.t("gift.title"), "gold")
+	var v: VBoxContainer = parts[1]
+	var today := shop.gift_next_day()
+	var claimed := not shop.gift_ready()
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 4)
+	v.add_child(row)
+	for d in range(1, 8):
+		var cell := PanelContainer.new()
+		var done := d < today or (d == today and claimed)
+		var cur := d == today and not claimed
+		var st := UiKit.box(Color("ddefc8") if done else (Color("fff3c4") if cur else UiKit.PARCHMENT_LIGHT),
+			UiKit.TONES["gold"][1] if cur else Color(UiKit.WOOD_DARK, 0.35), 8, 3 if cur else 1, false)
+		st.set_content_margin_all(2)
+		cell.add_theme_stylebox_override("panel", st)
+		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(cell)
+		var col := VBoxContainer.new()
+		col.alignment = BoxContainer.ALIGNMENT_CENTER
+		col.add_theme_constant_override("separation", 0)
+		cell.add_child(col)
+		var r := ShopSystem.gift_reward(d)
+		var icon := "chest_gold" if d == 7 else ("gem" if r.has("crystals") else ("bolt" if r.has("energy") else "coins"))
+		var ic := UiKit.icon(icon, 22)
+		ic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		col.add_child(ic)
+		var amount := "" if d == 7 else Fmt.compact(int(r.get("crystals", r.get("energy", r.get("coins", 0)))))
+		var t := UiKit.label(amount if amount != "" else L.t("gift.day", [d]), 10, UiKit.INK)
+		t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		col.add_child(t)
+	if claimed:
+		var left := func() -> String: return L.t("free.in", [House.countdown(ShopSystem.next_day_in())])
+		var l := CombatCards.LiveLabel.new(left, 13, UiKit.INK_SOFT)
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		v.add_child(l)
+	else:
+		var b := UiKit.button(L.t("gift.claim", [today]), "gold", 16)
+		b.pressed.connect(func() -> void:
+			var got := Game.shop.claim_gift()
+			for k in got:
+				var icon2 := {"coins": "coins", "energy": "bolt", "crystals": "gem", "tickets": "ticket"}.get(k, "chest")
+				Game.show_toast("px:" + str(icon2), "+%s" % Fmt.n(int(got[k]))))
+		v.add_child(b)
+	var hint := _wrap(L.t("gift.hint"), 11, UiKit.INK_SOFT)
+	v.add_child(hint)
+	return parts[0]
+
+
+## Бесплатный товар лавки раз в сутки (меняется по дням).
+func _free_market_card() -> Control:
+	var parts := shop_card(L.t("free.market.title"), "green")
+	var v: VBoxContainer = parts[1]
+	var item := Freebies.market_item()
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	v.add_child(row)
+	row.add_child(UiKit.icon(str(ShopSystem.MARKET[item]["icon"]), 34))
+	var t := _wrap(market_name(item), 14)
+	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(t)
+	v.add_child(FreeButton.new("market", "", func() -> void: Game.shop.give_market_free(item)))
+	return parts[0]
+
+
 func _build_market() -> void:
 	content.add_child(_hint_row(L.t("market.hint")))
+	content.add_child(_free_market_card())
 	content.add_child(_deal_card())
 	content.add_child(EventsPanel.section(L.t("market.section.goods")))
 	for item in ShopSystem.MARKET:

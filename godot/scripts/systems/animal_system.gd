@@ -98,6 +98,28 @@ func tame_cost(id: String) -> Dictionary:
 	return {"coins": int(ceil(float(cost.get("coins", 0)) * factor)), "items": items}
 
 
+## Сколько зверей ждут игрока: можно купить звезду в лавке, пробудить или взять с собой на свободное место.
+func upgradable_count() -> int:
+	var n := 0
+	var coins := int(Game.save["coins"])
+	for id in Animals.IDS:
+		var lvl := Animals.shop_level(id)
+		if lvl >= 0 and Game.level >= lvl and stars(id) < Animals.MAX_STARS:
+			var price := shop_price(id)
+			if price >= 0 and coins >= price:
+				n += 1
+				continue
+		if can_awaken(id):
+			n += 1
+	# Есть свободное место рядом с героем и зверь, который сидит дома
+	if active().size() < max_active():
+		for id in owned():
+			if not is_active(id) and not Game.wild.on_squad(id):
+				n += 1
+				break
+	return n
+
+
 func buy(id: String) -> bool:
 	var level := Animals.shop_level(id)
 	if level < 0 or Game.level < level or stars(id) >= Animals.MAX_STARS:

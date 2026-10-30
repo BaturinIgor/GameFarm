@@ -5,6 +5,7 @@ extends Button
 
 var _bar: GameBar
 var _tick := 0.0
+var _dot: Control
 
 
 func _init() -> void:
@@ -41,6 +42,11 @@ func _init() -> void:
 	plus.add_child(p)
 	row.add_child(plus)
 	custom_minimum_size = Vector2(150, 30)
+	_dot = UiKit.count_badge(0)
+	(_dot.get_child(0) as Label).text = "!"
+	_dot.position = Vector2(-6, -7)
+	_dot.visible = false
+	add_child(_dot)
 	pressed.connect(EnergyPopup.open)
 	_refresh()
 
@@ -55,6 +61,7 @@ func _process(delta: float) -> void:
 
 func _refresh() -> void:
 	var e := Game.energy
+	_dot.visible = Freebies.ready("energy")
 	var label := _bar.get_child(0) as Label
 	if e.infinite():
 		_bar.value = 1.0
