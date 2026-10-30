@@ -185,7 +185,7 @@ static func _dungeon_card(id: String, on_enter: Callable) -> Control:
 	if Dungeons.is_boss_floor(floor_n) and not Game.combat.owns_weapon(weapon):
 		var sword := UiKit.icon("sword", 15)
 		sword.modulate = Weapons.color(weapon)
-		var wt := _tag(sword, Weapons.name_of(weapon), 11)
+		var wt := _tag(sword, Weapons.name_of(weapon), 11, true)
 		wt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		rrow.add_child(wt)
 
@@ -254,15 +254,17 @@ static func _pick(id: String, f: int) -> void:
 
 
 ## Значок и подпись белым по тёмному.
-static func _tag(icon: Control, text: String, size: int) -> HBoxContainer:
+static func _tag(icon: Control, text: String, size: int, clip := false) -> HBoxContainer:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 3)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(icon)
 	var l := UiKit.label(text, size, Color.WHITE, 3)
-	l.clip_text = true
-	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# Обрезается только длинная подпись (название оружия), числа видны целиком
+	l.clip_text = clip
+	if clip:
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(l)
 	return row
 
