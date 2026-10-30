@@ -26,17 +26,31 @@ static var _portraits: Dictionary = {}
 var _expanded: Dictionary = {}
 
 
-func _init() -> void:
+var tab := "profile"
+
+
+func _init(start_tab := "profile") -> void:
 	title_key = "profile.title"
+	tab = start_tab
+
+
+## Профиль и настройки - две вкладки, настройки разложены по разделам.
+func build_top() -> void:
+	var items := [["profile", L.t("profile.tab.profile")], ["settings", L.t("profile.tab.settings")]]
+	top_bar.add_child(UiKit.tabs(items, tab, func(id: String) -> void:
+		tab = id
+		scroll_to_top()))
 
 
 func build() -> void:
+	if tab == "settings":
+		_settings()
+		return
 	_progress_card()
 	_bonuses_card()
 	_upcoming_card()
 	_stats_card()
 	content.add_child(LegacyPanel.profile_card())
-	_settings_card()
 
 
 # MARK: Награды и открытия уровней
@@ -464,8 +478,34 @@ func _stat_row(parent: Control, icon: String, title: String, value: String) -> v
 
 # MARK: Настройки
 
-func _settings_card() -> void:
-	var c := card()
+func _settings() -> void:
+	# Звук
+	section_title(L.t("settings.section.sound"))
+	var snd := card()
+	snd.add_child(_switch_row(L.t("settings.music"), "", Sound.music_on, func(on: bool) -> void: Sound.music_on = on))
+	snd.add_child(_switch_row(L.t("settings.sounds"), "", Sound.sfx_on, func(on: bool) -> void: Sound.sfx_on = on))
+	# Игра
+	section_title(L.t("settings.section.game"))
+	var game := card()
+	_language_row(game)
+	game.add_child(_divider())
+	game.add_child(_switch_row(L.t("settings.raids"), L.t("settings.raids.hint"), Settings.raids(),
+		func(on: bool) -> void: Settings.set_value("raids", on)))
+	game.add_child(_switch_row(L.t("settings.dialogs"), L.t("settings.dialogs.hint"), Settings.dialogs(),
+		func(on: bool) -> void: Settings.set_value("dialogs", on)))
+	game.add_child(_switch_row(L.t("settings.battery"), L.t("settings.battery.hint"), Sound.battery_saver,
+		func(on: bool) -> void: Sound.battery_saver = on))
+	# Внешний вид
+	section_title(L.t("settings.section.look"))
+	var look := card()
+	look.add_child(WardrobePanel.profile_row())
+	# Покупки
+	section_title(L.t("settings.section.purchases"))
+	var buy := card()
+	_purchases_rows(buy)
+
+
+func _language_row(c: VBoxContainer) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	c.add_child(row)
@@ -498,15 +538,6 @@ func _settings_card() -> void:
 		if code != L.code:
 			L.set_language(code))
 	row.add_child(pick)
-	c.add_child(_divider())
-	c.add_child(_switch_row(L.t("settings.music"), "", Sound.music_on, func(on: bool) -> void: Sound.music_on = on))
-	c.add_child(_switch_row(L.t("settings.sounds"), "", Sound.sfx_on, func(on: bool) -> void: Sound.sfx_on = on))
-	c.add_child(_switch_row(L.t("settings.battery"), L.t("settings.battery.hint"), Sound.battery_saver,
-		func(on: bool) -> void: Sound.battery_saver = on))
-	c.add_child(_divider())
-	c.add_child(WardrobePanel.profile_row())
-	c.add_child(_divider())
-	_purchases_rows(c)
 
 
 ## Pro (если куплен), восстановление покупок и сброс тестовых покупок (сборка без магазина, как SIDELOAD).

@@ -247,7 +247,10 @@ static func cost_view(cost: Dictionary, size := 13) -> HFlowContainer:
 		flow.add_child(_chip("coins", Fmt.n(coins), int(Game.save["coins"]) >= coins, size))
 	for it in cost.get("items", []):
 		var have := Game.amount(it[0])
-		flow.add_child(_chip(it[0], "%s/%s" % [Fmt.n(have), Fmt.n(int(it[1]))], have >= int(it[1]), size))
+		var chip := _chip(it[0], "%s/%s" % [Fmt.n(have), Fmt.n(int(it[1]))], have >= int(it[1]), size)
+		# Нажатие на ресурс - "Где взять"
+		WherePopup.tap_to_open(chip, str(it[0]))
+		flow.add_child(chip)
 	return flow
 
 

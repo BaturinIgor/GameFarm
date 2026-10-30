@@ -14,7 +14,7 @@ const KEEP := [
 	# Новое: кристаллы и магазин, усадьба, бестиарий - остаются после перерождения
 	"crystals", "crystalFirst", "maxUntil", "maxDailyDay", "maxSkinMonth", "ownedSkins", "bundleUntil", "offersSeen",
 	"offerPopupDay", "dealDay", "adCrystalsDay", "adCrystals", "estate", "builder3", "speedAds", "killsBy", "bestiary",
-	"bossKills", "economy", "daily",
+	"bossKills", "economy", "daily", "settings",
 ]
 
 

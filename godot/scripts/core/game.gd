@@ -12,9 +12,11 @@ const SAVE_PATH := "user://save.json"
 ## Версия экономики: старые сохранения (до усадьбы) начинаются заново, см. _load_save.
 const ECONOMY := 2
 const ECONOMY_KEEP := ["purchases", "granted", "consumed", "crystals", "crystalFirst", "maxUntil", "maxDailyDay",
-	"maxSkinMonth", "ownedSkins", "eventSkins", "skin", "offersSeen"]
+	"maxSkinMonth", "ownedSkins", "eventSkins", "skin", "offersSeen", "settings"]
 ## Прогресс только что сброшен из-за новой экономики (окно-пояснение при запуске).
 var economy_reset := false
+## Какой ресурс сейчас ищем ("Где взять" -> "Перейти"): стрелка у края экрана ведёт к ближайшей точке.
+var nav_target := ""
 const MAX_LEVEL := 60
 const MAX_ACTIVE_ANIMALS := 5
 
@@ -253,7 +255,7 @@ func _storage_full(kind: String) -> void:
 	if now - _full_toast_at < 20.0:
 		return
 	_full_toast_at = now
-	show_toast("res:" + kind, L.t("toast.storageFull", [Res.name_of(kind), estate.storage_limit()]))
+	show_toast("res:" + kind, L.t("toast.storeFull." + Estate.store_of(kind), [estate.storage_limit_of(kind)]))
 
 
 func add_to_storage(kind: String, n: int, counts := true) -> int:

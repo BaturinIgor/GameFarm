@@ -27,7 +27,7 @@ func defaults(save: Dictionary) -> void:
 		var b: Dictionary = raw.get(id, {}) if raw is Dictionary and raw.get(id) is Dictionary else {}
 		var level := clampi(int(b.get("level", 0)), 0, Estate.max_level(id))
 		# Главный дом и склад есть с самого начала
-		if id == "main" or id == "storage":
+		if id == "main" or id == "storage" or id == "barn":
 			level = maxi(1, level)
 		var recipe := str(b.get("recipe", ""))
 		if Estate.produces(id) and not recipe in Estate.recipes(id):
@@ -217,14 +217,30 @@ func buy_builder() -> bool:
 
 # MARK: Склад
 
-## Лимит каждого вида ресурса на складе.
-func storage_limit() -> int:
-	return Estate.storage_limit(level("storage"))
+## Вместимость хранилища ("storage" или "barn").
+func capacity(store: String) -> int:
+	return Estate.capacity(store, level(store))
 
 
-## Сколько ещё влезет этого вида.
+## Сколько лежит в хранилище всего.
+func stored(store: String) -> int:
+	var n := 0
+	var st: Dictionary = Game.save["storage"]
+	for kind in st:
+		if Estate.store_of(str(kind)) == store:
+			n += int(st[kind])
+	return n
+
+
+## Вместимость хранилища, где лежит этот ресурс (для текстов).
+func storage_limit_of(kind: String) -> int:
+	return capacity(Estate.store_of(kind))
+
+
+## Сколько ещё влезет: общее свободное место в нужном хранилище.
 func storage_room(kind: String) -> int:
-	return maxi(0, storage_limit() - int(Game.save["storage"].get(kind, 0)))
+	var store := Estate.store_of(kind)
+	return maxi(0, capacity(store) - stored(store))
 
 
 # MARK: Производство
@@ -389,7 +405,7 @@ func _new_order(cart: bool) -> Dictionary:
 		var p := float(Estate.price(kind))
 		var n := maxi(1, int(round(value / float(picked.size()) / p)))
 		# Не больше, чем влезает на склад
-		n = mini(n, maxi(1, storage_limit() / 2))
+		n = mini(n, maxi(1, storage_limit_of(kind) / 6))
 		items.append([kind, n])
 		total += p * float(n)
 	var pay := ORDER_PAY

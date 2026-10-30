@@ -75,7 +75,8 @@ func _status_row() -> HFlowContainer:
 	row.add_theme_constant_override("v_separation", 6)
 	var free := e.builders_total() - e.builders_busy()
 	row.add_child(_chip("hammer", L.t("estate.builders", [free, e.builders_total()]), "green" if free > 0 else "orange"))
-	row.add_child(_chip("chest", L.t("estate.limit", [Fmt.n(e.storage_limit())]), "wood"))
+	row.add_child(_chip("chest", "%s/%s" % [Fmt.n(e.stored("storage")), Fmt.n(e.capacity("storage"))], "wood"))
+	row.add_child(_chip("wheat", "%s/%s" % [Fmt.n(e.stored("barn")), Fmt.n(e.capacity("barn"))], "wood"))
 	if not bool(Game.save.get("builder3", false)):
 		var b := MapPanel.icon_button([["t", "+"], ["i", "hammer"], ["i", "gem"], ["t", str(Estate.BUILDER_CRYSTALS)]], "purple", 12)
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -163,8 +164,9 @@ func _effect_text(id: String) -> String:
 	match id:
 		"main":
 			return L.t("estate.main.effect", [lvl])
-		"storage":
-			return L.t("estate.storage.effect", [Fmt.n(Estate.storage_limit(lvl)), Fmt.n(Estate.storage_limit(lvl + 1))])
+		"storage", "barn":
+			return L.t("estate.store.effect", [Fmt.n(e.stored(id)), Fmt.n(Estate.capacity(id, lvl)),
+				Fmt.n(Estate.capacity(id, lvl + 1))])
 		"board":
 			return L.t("estate.board.effect", [e.orders_slots()]) if lvl > 0 else Estate.info(id)
 	if lvl == 0:
@@ -305,7 +307,16 @@ func _upgrade_row(id: String) -> VBoxContainer:
 		b.pressed.connect(func() -> void: Game.estate.start_upgrade(id))
 		v.add_child(b)
 	else:
-		v.add_child(_wrap(L.t(block[0], block[1]), 12, UiKit.TONES["orange"][2]))
+		var why := HBoxContainer.new()
+		why.add_theme_constant_override("separation", 8)
+		v.add_child(why)
+		why.add_child(_wrap(L.t(block[0], block[1]), 12, UiKit.TONES["orange"][2]))
+		# Причина с кнопкой: к главному дому (он первый в списке)
+		if block[0] == "estate.block.main":
+			var go := UiKit.button(L.t("estate.toMain"), "wood", 12, true)
+			go.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			go.pressed.connect(scroll_to_top)
+			why.add_child(go)
 	return v
 
 
@@ -391,7 +402,9 @@ func _order_card(o: Dictionary) -> PanelContainer:
 	v.add_child(flow)
 	for it in o["items"]:
 		var have := Game.storage_of(it[0])
-		flow.add_child(_need_chip(it[0], have, int(it[1])))
+		var chip := _need_chip(it[0], have, int(it[1]))
+		WherePopup.tap_to_open(chip, str(it[0]))
+		flow.add_child(chip)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	v.add_child(row)

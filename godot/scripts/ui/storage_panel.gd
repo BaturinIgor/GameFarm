@@ -18,6 +18,7 @@ func _init() -> void:
 
 
 func build() -> void:
+	content.add_child(_capacity_row())
 	if Game.backpack_count > 0:
 		_backpack_card()
 	var list := _kinds(tab)
@@ -127,3 +128,37 @@ func _sell_tab_button(list: Array) -> void:
 		for k in list:
 			Game.sell(k, Game.storage_of(k)))
 	content.add_child(b)
+
+
+## Склад и амбар: сколько занято из вместимости, нажатие - улучшить в усадьбе.
+func _capacity_row() -> HBoxContainer:
+	var e := Game.estate
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	for store in ["storage", "barn"]:
+		var b := Button.new()
+		b.focus_mode = Control.FOCUS_NONE
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.custom_minimum_size = Vector2(0, 44)
+		var st := UiKit.box(UiKit.PARCHMENT_LIGHT, Color(UiKit.WOOD_DARK, 0.45), 12, 2, false)
+		st.set_content_margin_all(6)
+		for k in ["normal", "hover", "pressed", "hover_pressed", "focus"]:
+			b.add_theme_stylebox_override(k, st)
+		var col := VBoxContainer.new()
+		col.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		col.offset_left = 8
+		col.offset_right = -8
+		col.alignment = BoxContainer.ALIGNMENT_CENTER
+		col.add_theme_constant_override("separation", 2)
+		col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(col)
+		col.add_child(UiKit.label(Estate.name_of(store), 12))
+		var used := e.stored(store)
+		var cap := e.capacity(store)
+		var bar := UiKit.bar(float(used) / float(maxi(1, cap)), "red" if used >= cap else "green", 100.0, 12.0,
+			"%s/%s" % [Fmt.n(used), Fmt.n(cap)])
+		bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_child(bar)
+		b.pressed.connect(func() -> void: EstatePanel.open())
+		row.add_child(b)
+	return row

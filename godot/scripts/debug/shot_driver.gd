@@ -4,7 +4,7 @@ extends Node
 ## несёт добычу на склад, открывается окно склада. На каждом шаге - снимок.
 
 const ORIGIN := Vector2(195, 620)
-const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", "kitchen", "garden", "trader", "hunt",
+const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", "kitchen", "garden", "trader", "hunt", "level:settings",
 	"dungeon", "trophies", "collection", "legacy", "wardrobe", "map", "events", "shop",
 	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders"]
 
@@ -72,7 +72,7 @@ func _process(delta: float) -> void:
 				# Усадьба: несколько зданий, одно строится, лесопилка накопила доски
 				var now := Time.get_unix_time_from_system()
 				var est: Dictionary = Game.save["estate"]
-				for b in [["main", 5], ["storage", 3], ["board", 2], ["sawmill", 3], ["mill", 1], ["kiln", 1]]:
+				for b in [["main", 5], ["storage", 3], ["barn", 4], ["board", 2], ["sawmill", 3], ["mill", 1], ["kiln", 1]]:
 					est[b[0]]["level"] = b[1]
 				est["sawmill"]["since"] = now - 3.0 * 3600.0
 				est["mill"]["until"] = now + 25.0 * 60.0
@@ -108,7 +108,17 @@ func _process(delta: float) -> void:
 				_step = 5
 				_time = 300.0
 		5:
-			if _time > 302.0:
+			# "Где взять" для глины: локации, звери, монстры
+			if _time > 300.5 and _shot_done != "where" and _shot_done != "where_done":
+				_shot_done = "where"
+				WherePopup.open("clay")
+			if _time > 301.5 and _shot_done == "where":
+				_shot_done = "where_done"
+				_shot("6_where_clay")
+				for n in main.hud.find_children("*", "", true, false):
+					if n is WherePopup:
+						n.queue_free()
+			if _time > 302.5:
 				_shot("7_world_level18")
 				LevelUpOverlay.present(17, 18)
 				_step = 6

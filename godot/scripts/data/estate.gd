@@ -4,13 +4,14 @@ class_name Estate
 ## Здание работает не выше уровня (уровень героя / 3 + 1) - так после перерождения доход растёт заново.
 
 ## Порядок - как в окне усадьбы.
-const IDS := ["main", "storage", "board", "sawmill", "mill", "kiln", "smelter"]
+const IDS := ["main", "storage", "barn", "board", "sawmill", "mill", "kiln", "smelter"]
 
 ## hero - с какого уровня героя открывается, time/cost - множители времени и цены, max - потолок уровня,
 ## sprite - картинка из пака, recipes - что производит (первый рецепт - по умолчанию).
 const BUILDINGS := {
 	"main": {"hero": 1, "time": 1.5, "cost": 1.6, "max": 20, "sprite": "house"},
 	"storage": {"hero": 1, "time": 0.8, "cost": 0.8, "max": 20, "sprite": "chest_anim"},
+	"barn": {"hero": 1, "time": 0.8, "cost": 0.7, "max": 20, "sprite": "hay_big"},
 	"board": {"hero": 2, "time": 0.6, "cost": 0.7, "max": 10, "sprite": "quest_board"},
 	"sawmill": {"hero": 3, "time": 1.0, "cost": 1.0, "max": 20, "sprite": "house_red", "recipes": ["planks", "slats"]},
 	"mill": {"hero": 5, "time": 1.0, "cost": 1.0, "max": 20, "sprite": "windmill", "recipes": ["flour", "oil"]},
@@ -38,9 +39,12 @@ const BUILD_GROWTH := 1.48
 ## Производство: ценность товара в час 25 * 1.17^(n-1).
 const PROD_BASE := 25.0
 const PROD_GROWTH := 1.17
-## Склад: лимит каждого вида 300 * 1.3^(n-1).
-const STORAGE_BASE := 300.0
+## Как в Hay Day: два хранилища с общей вместимостью. Амбар - урожай, еда и продукты ферм, склад - всё остальное.
+## Вместимость 1000 * 1.3^(n-1) у склада и 600 * 1.3^(n-1) у амбара.
+const STORAGE_BASE := 1000.0
+const BARN_BASE := 600.0
 const STORAGE_GROWTH := 1.3
+const BARN_CATEGORIES := ["crop", "food", "farm"]
 ## Сколько часов копит здание (Pro - больше).
 const CAP_HOURS := 8.0
 const CAP_HOURS_PRO := 12.0
@@ -137,9 +141,15 @@ static func per_hour(good: String, n: int) -> float:
 	return PROD_BASE * pow(PROD_GROWTH, float(n - 1)) / float(price(good))
 
 
-## Лимит склада на каждый вид ресурса.
-static func storage_limit(n: int) -> int:
-	return int(round(STORAGE_BASE * pow(STORAGE_GROWTH, float(maxi(1, n) - 1)) / 10.0) * 10)
+## Вместимость хранилища ("storage" или "barn") на уровне n.
+static func capacity(store: String, n: int) -> int:
+	var base := BARN_BASE if store == "barn" else STORAGE_BASE
+	return int(round(base * pow(STORAGE_GROWTH, float(maxi(1, n) - 1)) / 10.0) * 10)
+
+
+## В каком хранилище лежит ресурс.
+static func store_of(kind: String) -> String:
+	return "barn" if Res.category(kind) in BARN_CATEGORIES else "storage"
 
 
 ## Сколько кристаллов стоит ускорить оставшееся время (15 минут - 2, час - 3, 8 часов - 12).
