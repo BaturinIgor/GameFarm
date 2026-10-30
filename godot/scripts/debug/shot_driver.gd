@@ -73,7 +73,8 @@ func _process(delta: float) -> void:
 				# Усадьба: несколько зданий, одно строится, лесопилка накопила доски
 				var now := Time.get_unix_time_from_system()
 				var est: Dictionary = Game.save["estate"]
-				for b in [["main", 5], ["storage", 3], ["barn", 4], ["board", 2], ["sawmill", 3], ["mill", 1], ["kiln", 1]]:
+				for b in [["main", 5], ["storage", 3], ["barn", 4], ["board", 2], ["sawmill", 3], ["mill", 1], ["kiln", 1],
+						["tower", 5], ["wall", 3]]:
 					est[b[0]]["level"] = b[1]
 				est["sawmill"]["since"] = now - 3.0 * 3600.0
 				est["mill"]["until"] = now + 25.0 * 60.0
@@ -136,7 +137,20 @@ func _process(delta: float) -> void:
 				_free_overlays()
 				world_at_home()
 			elif _sub == 4 and _time > 306.0:
+				_sub = 5
 				_shot("7_world_level18")
+				# Набег: волна выходит с краёв карты, башни стреляют
+				Game.save["raid"]["next"] = Time.get_unix_time_from_system() - 1.0
+			elif _sub == 5 and _time > 311.0:
+				_sub = 6
+				_shot("7_raid")
+				print("raid live: ", Game.raids.live)
+				if MonstersFeature.current != null:
+					for sl in MonstersFeature.current.slots:
+						if sl.get("raid", false) and sl["node"] != null:
+							MonstersFeature.current.remove_raider(sl["node"])
+				Game.raids.live = {}
+				Game.save["raid"]["next"] = Time.get_unix_time_from_system() + 8.0 * 3600.0
 				LevelUpOverlay.present(17, 18)
 				_step = 6
 				_time = 400.0

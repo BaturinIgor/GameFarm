@@ -176,6 +176,30 @@ func spawn(kind: String, level: int, point: Vector2, monster_traits: Array, boss
 	return node
 
 
+## Монстр набега: идёт к складу, на героя отвлекается вблизи, камера его не останавливает.
+func spawn_raider(kind: String, level: int, point: Vector2, target: Vector2) -> MonsterNode:
+	var node := MonsterNode.new(kind, level, point, Monsters.roll_traits(level))
+	node.aggro_range = 170.0
+	node.leash_range = 5000.0
+	node.home = target
+	node._goal = target
+	_world.entities.add_child(node)
+	slots.append({"kind": kind, "level": level, "point": point, "node": node, "respawn": INF, "raid": true})
+	return node
+
+
+## Монстр набега дошёл до склада: уносит добычу и исчезает (без награды).
+func remove_raider(node: MonsterNode) -> void:
+	for s in slots:
+		if s["node"] == node:
+			s["node"] = null
+			s["respawn"] = INF
+	node.alive = false
+	var tw := node.create_tween()
+	tw.tween_property(node, "modulate:a", 0.0, 0.35)
+	tw.tween_callback(node.queue_free)
+
+
 func any_alive() -> bool:
 	for s in slots:
 		var m = s["node"]
@@ -276,7 +300,9 @@ func damage_monster(foe: MonsterNode, damage: float, from: Vector2, strong: bool
 	for s in slots:
 		if s["node"] == foe:
 			s["node"] = null
-			s["respawn"] = INF if w.spec["kind"] == "dungeon" or foe.boss else randf_range(35.0, 55.0)
+			s["respawn"] = INF if w.spec["kind"] == "dungeon" or foe.boss or s.get("raid", false) else randf_range(35.0, 55.0)
+			if s.get("raid", false):
+				Game.raids.note_killed()
 	return result
 
 
@@ -298,8 +324,8 @@ func _update_monsters(world: World, dt: float, stats: Stats) -> void:
 				world.entities.add_child(m)
 				s["node"] = m
 			continue
-		# Далеко от камеры монстры стоят на месте.
-		if absf(m.position.x - cam.x) >= view.x or absf(m.position.y - cam.y) >= view.y:
+		# Далеко от камеры монстры стоят на месте (кроме идущих в набег).
+		if not s.get("raid", false) and (absf(m.position.x - cam.x) >= view.x or absf(m.position.y - cam.y) >= view.y):
 			continue
 		var dot := m.tick_effects(dt)
 		if dot > 0.0:

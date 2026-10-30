@@ -4,7 +4,7 @@ class_name Estate
 ## Здание работает не выше уровня (уровень героя / 3 + 1) - так после перерождения доход растёт заново.
 
 ## Порядок - как в окне усадьбы.
-const IDS := ["main", "storage", "barn", "board", "sawmill", "mill", "kiln", "smelter"]
+const IDS := ["main", "storage", "barn", "board", "sawmill", "mill", "kiln", "smelter", "tower", "wall"]
 
 ## hero - с какого уровня героя открывается, time/cost - множители времени и цены, max - потолок уровня,
 ## sprite - картинка из пака, recipes - что производит (первый рецепт - по умолчанию).
@@ -17,6 +17,9 @@ const BUILDINGS := {
 	"mill": {"hero": 5, "time": 1.0, "cost": 1.0, "max": 20, "sprite": "windmill", "recipes": ["flour", "oil"]},
 	"kiln": {"hero": 6, "time": 1.0, "cost": 1.0, "max": 20, "sprite": "clay_pit", "recipes": ["brick", "lime"]},
 	"smelter": {"hero": 9, "time": 1.1, "cost": 1.1, "max": 20, "sprite": "anvil", "recipes": ["iron_bar", "gold_bar"]},
+	# Защита от набегов: свои рисунки (tools/make_defense_art.py)
+	"tower": {"hero": 10, "time": 1.0, "cost": 1.1, "max": 20, "sprite": "tower"},
+	"wall": {"hero": 10, "time": 0.9, "cost": 0.9, "max": 20, "sprite": "palisade"},
 }
 
 ## Товары: из чего делаются. Цена товара - сырьё по цене продажи с наценкой за работу.

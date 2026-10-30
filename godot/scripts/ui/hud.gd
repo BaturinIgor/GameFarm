@@ -17,6 +17,7 @@ const LEVEL_PANEL := "res://scripts/ui/level_panel.gd"
 const PILLS := [
 	"res://scripts/ui/shop_pill.gd",
 	"res://scripts/ui/estate_pill.gd",
+	"res://scripts/ui/raid_pill.gd",
 	"res://scripts/ui/event_pill.gd",
 	"res://scripts/ui/meal_pill.gd",
 	"res://scripts/ui/expedition_pill.gd",

@@ -169,6 +169,17 @@ func _effect_text(id: String) -> String:
 				Fmt.n(Estate.capacity(id, lvl + 1))])
 		"board":
 			return L.t("estate.board.effect", [e.orders_slots()]) if lvl > 0 else Estate.info(id)
+		"tower":
+			if lvl == 0:
+				return Estate.info(id)
+			var t := e.working_level(id)
+			return L.t("estate.tower.effect", [Raids.tower_count(lvl), Fmt.n(int(Raids.tower_damage(t))),
+				Raids.tower_count(lvl + 1)])
+		"wall":
+			if lvl == 0:
+				return Estate.info(id)
+			return L.t("estate.wall.effect", [int(round((1.0 - Raids.wall_slow(lvl)) * 100.0)),
+				int(round((1.0 - Raids.wall_slow(lvl + 1)) * 100.0))])
 	if lvl == 0:
 		return Estate.info(id)
 	var good := e.recipe(id)
