@@ -262,7 +262,7 @@ func set_recipe(id: String, good: String) -> void:
 func rate(id: String) -> float:
 	if not Estate.produces(id) or building(id):
 		return 0.0
-	return Estate.per_hour(recipe(id), working_level(id)) * Game.academy.mult("workshops")
+	return Estate.per_hour(recipe(id), working_level(id)) * Game.academy.mult("workshops") * Game.residents.friend_mult(id)
 
 
 func cap_hours() -> float:
@@ -427,7 +427,7 @@ func _new_order(cart: bool) -> Dictionary:
 	var people: Array = Game.residents.arrived_list()
 	if not cart and not people.is_empty() and randf() < 0.5:
 		from = people[randi() % people.size()]
-	return {"id": "%d" % randi(), "items": items, "coins": int(round(total * pay * Game.academy.mult("orders"))),
+	return {"id": "%d" % randi(), "items": items, "coins": int(round(total * pay * Game.academy.mult("orders") * Game.residents.friend_mult("orders"))),
 		"xp": maxi(3, int(total / 4.0)), "crystals": CART_CRYSTALS if cart else (1 if randf() < 0.08 else 0),
 		"cart": cart, "wait": 0.0, "from": from}
 

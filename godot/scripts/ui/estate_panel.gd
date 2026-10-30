@@ -33,7 +33,7 @@ func build_top() -> void:
 	var e := Game.estate
 	var items := [["buildings", L.t("estate.tab.buildings"), e.ready_count(), "hammer"]]
 	if e.orders_open():
-		items.append(["orders", L.t("estate.tab.orders"), e.ready_orders(), "quest"])
+		items.append(["orders", L.t("estate.tab.orders"), e.ready_orders() + Game.fair.ready_count(), "quest"])
 	if Game.academy.open():
 		items.append(["academy", L.t("estate.tab.academy"), 0, "book"])
 	top_bar.add_child(UiKit.tabs(items, tab, func(id: String) -> void:
@@ -383,6 +383,7 @@ func _build_orders() -> void:
 	var e := Game.estate
 	var hint := _wrap(L.t("orders.hint"), 12, UiKit.INK_SOFT)
 	content.add_child(hint)
+	content.add_child(_fair_card())
 	var list := e.orders()
 	# Повозка - первой
 	var sorted: Array = list.filter(func(o: Dictionary) -> bool: return o["cart"]) + \
@@ -396,6 +397,52 @@ func _build_orders() -> void:
 		var l := CombatCards.LiveLabel.new(left, 12, UiKit.INK_SOFT)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		content.add_child(l)
+
+
+## Ярмарка выходного дня: лоты жителей (товар, сколько, монеты и кристаллы) или когда откроется.
+func _fair_card() -> Control:
+	var parts := MapPanel._ribbon_card(L.t("fair.title"), "gold")
+	var v: VBoxContainer = parts[1]
+	var f := Game.fair
+	if not FairSystem.weekend():
+		var t := _wrap(L.t("fair.closed"), 12, UiKit.INK_SOFT)
+		v.add_child(t)
+		return parts[0]
+	var list := f.lots()
+	if list.is_empty():
+		v.add_child(_wrap(L.t("fair.noGoods"), 12, UiKit.INK_SOFT))
+		return parts[0]
+	v.add_child(_wrap(L.t("fair.hint"), 12, UiKit.INK_SOFT))
+	for i in list.size():
+		var lot: Dictionary = list[i]
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		v.add_child(row)
+		if str(lot["from"]) != "":
+			var face := TraderPanel.portrait(Residents.sheet(lot["from"]), 30)
+			face.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			row.add_child(face)
+		var chip := _need_chip(lot["good"], Game.storage_of(lot["good"]), int(lot["n"]))
+		chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		WherePopup.tap_to_open(chip, str(lot["good"]))
+		row.add_child(chip)
+		var reward := HBoxContainer.new()
+		reward.add_theme_constant_override("separation", 6)
+		reward.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		reward.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		reward.add_child(_reward("coin", Fmt.n(int(lot["coins"]))))
+		reward.add_child(_reward("gem", str(lot["crystals"])))
+		row.add_child(reward)
+		if f.sold(i):
+			row.add_child(HousePanel.check_mark(22))
+			continue
+		var b := UiKit.button(L.t("fair.sell"), "green", 12, true)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		b.disabled = not f.can_sell(i)
+		var idx := i
+		b.pressed.connect(func() -> void: Game.fair.sell(idx))
+		row.add_child(b)
+	return parts[0]
 
 
 func _order_card(o: Dictionary) -> PanelContainer:

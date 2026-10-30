@@ -14,7 +14,8 @@ func defaults(save: Dictionary) -> void:
 		var r: Dictionary = raw.get(id, {}) if raw is Dictionary and raw.get(id) is Dictionary else {}
 		clean[id] = {"arrived": bool(r.get("arrived", false)),
 			"chapter": clampi(int(r.get("chapter", 0)), 0, Residents.chapters(id).size()),
-			"taken": bool(r.get("taken", false)), "base": int(r.get("base", 0))}
+			"taken": bool(r.get("taken", false)), "base": int(r.get("base", 0)),
+			"friend": int(r.get("friend", 0)), "giftDay": int(r.get("giftDay", -1)), "gifts": int(r.get("gifts", 0))}
 	save["residents"] = clean
 	# Старые сохранения: кто уже должен жить в деревне - живёт, без оповещений
 	var est: Variant = save.get("estate", {})
@@ -132,6 +133,57 @@ func attention_count() -> int:
 		if s == "new" or s == "ready":
 			n += 1
 	return n
+
+
+# MARK: Дружба
+
+func friend_points(id: String) -> int:
+	return int(_r(id)["friend"])
+
+
+func friend_level(id: String) -> int:
+	return Residents.friend_level(friend_points(id))
+
+
+func gifts_left(id: String) -> int:
+	var r := _r(id)
+	if int(r["giftDay"]) != ShopSystem.day_index():
+		return Residents.GIFTS_PER_DAY
+	return maxi(0, Residents.GIFTS_PER_DAY - int(r["gifts"]))
+
+
+## Подарить один товар со склада. Возвращает полученные очки (0 - нельзя).
+func give(id: String, good: String) -> int:
+	if not arrived(id) or gifts_left(id) <= 0 or Game.storage_of(good) <= 0:
+		return 0
+	var r := _r(id)
+	var today := ShopSystem.day_index()
+	if int(r["giftDay"]) != today:
+		r["giftDay"] = today
+		r["gifts"] = 0
+	r["gifts"] = int(r["gifts"]) + 1
+	Game.save["storage"][good] = Game.storage_of(good) - 1
+	var before := friend_level(id)
+	var pts := Residents.gift_points(id, good)
+	r["friend"] = int(r["friend"]) + pts
+	if friend_level(id) > before:
+		Game.show_toast("px:heart", L.t("friend.levelUp", [Residents.name_of(id), friend_level(id)]))
+		Sound.play("levelUp")
+		Game.recalc()
+	Game.mark_dirty()
+	return pts
+
+
+## Бонус дружбы по виду: множитель (1 - нет бонуса). Каждый житель усиливает своё.
+func friend_mult(bonus: String) -> float:
+	var m := 1.0
+	if not Game.save.has("residents"):
+		return m
+	for id in Residents.FRIEND:
+		var f: Dictionary = Residents.FRIEND[id]
+		if str(f["bonus"]) == bonus and arrived(id):
+			m += float(f["step"]) * float(friend_level(id))
+	return m
 
 
 ## Кто переедет следующим (для подсказки в списке).

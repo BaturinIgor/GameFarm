@@ -85,6 +85,8 @@ func _process(delta: float) -> void:
 				res["smith"]["chapter"] = 1
 				res["smith"]["taken"] = true
 				res["miller"]["arrived"] = true
+				res["smith"]["friend"] = 150
+				res["elder"]["friend"] = 50
 				# Академия: склад изучен, идёт стройка
 				Game.save["academy"]["levels"]["storage"] = 2
 				Game.save["academy"]["levels"]["stamina"] = 2

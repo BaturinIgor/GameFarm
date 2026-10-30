@@ -88,7 +88,7 @@ func start(id: String) -> bool:
 		return false
 	Game.pay(Academy.cost(id, level(id) + 1))
 	_a()["active"] = id
-	_a()["until"] = _now() + Academy.seconds(id, level(id) + 1)
+	_a()["until"] = _now() + Academy.seconds(id, level(id) + 1) * Game.residents.friend_mult("research")
 	Game.mark_dirty()
 	Game.save_now()
 	return true

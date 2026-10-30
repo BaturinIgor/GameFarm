@@ -228,6 +228,19 @@ func _resident_card(id: String) -> void:
 			v.add_child(bar)
 		if s == "new":
 			v.add_child(DialogPopup.reward_row(Residents.reward(id, rs.chapter(id))))
+	# Дружба: сердечки и подарок
+	if s != "away":
+		var frow := HBoxContainer.new()
+		frow.add_theme_constant_override("separation", 8)
+		v.add_child(frow)
+		var hs := GiftPopup.hearts(rs.friend_level(id), 16)
+		hs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		hs.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		frow.add_child(hs)
+		var gift := UiKit.button(L.t("friend.gift"), "wood", 12, true)
+		var rid: String = id
+		gift.pressed.connect(func() -> void: GiftPopup.open(rid))
+		frow.add_child(gift)
 	if wants:
 		var b := UiKit.button(L.t("story.talk") if s == "new" else L.t("story.handIn"), "green", 15)
 		b.pressed.connect(func() -> void:

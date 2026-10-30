@@ -68,6 +68,48 @@ const CHAPTERS := {
 }
 
 
+# MARK: Дружба
+
+## Пороги очков дружбы для уровней 1-5.
+const FRIEND_LEVELS := [40, 120, 260, 480, 800]
+## Сколько подарков в день принимает один житель.
+const GIFTS_PER_DAY := 3
+## Любимые подарки (вдвое больше очков) и бонус дружбы: что усиливает и на сколько за уровень.
+const FRIEND := {
+	"elder": {"likes": ["jewel", "silk"], "bonus": "orders", "step": 0.02},
+	"smith": {"likes": ["iron_bar", "gold_bar"], "bonus": "smelter", "step": 0.05},
+	"miller": {"likes": ["flour", "oil"], "bonus": "mill", "step": 0.05},
+	"weaver": {"likes": ["cloth", "silk"], "bonus": "loom", "step": 0.05},
+	"scholar": {"likes": ["cut_gem", "lime"], "bonus": "research", "step": -0.04},
+	"tracker": {"likes": ["planks", "jewel"], "bonus": "squads", "step": 0.05},
+}
+
+
+static func likes(id: String) -> Array:
+	return FRIEND.get(id, {}).get("likes", [])
+
+
+## Очки за один подарок: от цены товара, любимый - вдвое больше.
+static func gift_points(id: String, good: String) -> int:
+	var p := maxi(1, int(round(float(Estate.price(good)) / 6.0)))
+	return p * (2 if good in likes(id) else 1)
+
+
+static func friend_level(points: int) -> int:
+	var n := 0
+	for t in FRIEND_LEVELS:
+		if points >= int(t):
+			n += 1
+	return n
+
+
+## Бонус дружбы для подписи: "+10% к производству мельницы" и т.п.
+static func friend_bonus_text(id: String, level: int) -> String:
+	var f: Dictionary = FRIEND.get(id, {})
+	var p := int(round(float(f.get("step", 0.0)) * float(level) * 100.0))
+	return L.t("friend.bonus." + str(f.get("bonus", "")), ["%+d%%" % p])
+
+
 static func name_of(id: String) -> String:
 	return L.t("resident." + id)
 
