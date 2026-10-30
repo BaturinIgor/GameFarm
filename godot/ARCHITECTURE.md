@@ -12,6 +12,14 @@
 - Полная проверка - CI `.github/workflows/android.yml`: импорт, загрузка всех скриптов (`-- --check-scripts`,
   `scripts/debug/check_scripts.gd`), прогон без экрана, снимки экрана
   (`scripts/debug/shot_driver.gd`), сборка APK. Логи и снимки CI кладёт в ветку `ci-logs-android`.
+- iOS - `.github/workflows/ios-godot.yml` (macOS): импорт, `--check-scripts`, экспорт пресета "iOS" в проект Xcode
+  (без подписи), `xcodebuild archive`, `HarvestHollow.ipa` для SideStore. Bundle id `com.personal.gamefarm`, как у
+  Swift-версии, поэтому ставится поверх. Иконку 1024 (`assets/app_icon.png`) копирует `godot_sync.sh` из
+  `GameFarm/Resources/Assets.xcassets`, остальные размеры Godot делает сам. Логи - в ветке `ci-logs-ios`.
+- Заставка: `tools/make_splash.py` (Pillow) рисует `assets/splash.png` - иконка и название. Это boot splash движка
+  и экран запуска iOS. Потом главная сцена `scenes/splash.tscn` (`scripts/splash.gd`) показывает ту же картинку с
+  полоской загрузки, в фоне грузит `scenes/main.tscn` и плавно переходит в игру. При `--check-scripts`, `--shots`
+  и запуске без экрана сразу открывает `main.tscn`. Снимки заставки в CI: `-- --splash-shot <папка>`.
 
 ## Координаты и масштаб
 

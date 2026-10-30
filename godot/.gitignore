@@ -11,3 +11,6 @@ data/strings/
 export/
 *.apk
 *.aab
+# Иконка iOS и картинка заставки (tools/godot_sync.sh)
+assets/app_icon.png
+assets/splash.png

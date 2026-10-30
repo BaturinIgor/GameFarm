@@ -1,0 +1,224 @@
+name: Build IPA (Godot)
+
+# iOS-сборка Godot-версии для установки через SideStore: экспорт проекта Xcode из Godot,
+# xcodebuild без подписи, IPA. Bundle id тот же, что у Swift-версии (com.personal.gamefarm),
+# поэтому SideStore ставит поверх. Логи кладутся в ветку ci-logs-ios.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "godot/**"
+      - "Art/**"
+      - "GameFarm/Resources/Layouts/**"
+      - "GameFarm/Resources/Strings/**"
+      - "GameFarm/Resources/Audio/**"
+      - "GameFarm/Resources/Assets.xcassets/AppIcon.appiconset/**"
+      - "tools/godot_sync.sh"
+      - "tools/make_splash.py"
+      - ".github/workflows/ios-godot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-ipa-godot-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: "4.5.1"
+  HOMEBREW_NO_AUTO_UPDATE: "1"
+  HOMEBREW_NO_INSTALL_CLEANUP: "1"
+  HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: "1"
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      # ogg из m4a: ffmpeg ставится только если звуки поменялись
+      - name: Cache converted audio
+        id: cache-audio
+        uses: actions/cache@v4
+        with:
+          path: godot/assets/audio
+          key: ogg-${{ hashFiles('GameFarm/Resources/Audio/**') }}-v1
+
+      - name: Prepare assets
+        env:
+          ASSETS_KEY: ${{ secrets.ASSETS_KEY }}
+          AUDIO_CACHED: ${{ steps.cache-audio.outputs.cache-hit }}
+        run: |
+          set -e
+          if [ "$AUDIO_CACHED" != "true" ]; then
+            command -v ffmpeg > /dev/null || brew install ffmpeg > /dev/null
+          fi
+          python3 -c "import PIL" 2> /dev/null \
+            || python3 -m pip install -q --break-system-packages pillow \
+            || python3 -m pip install -q --user pillow
+          sh tools/godot_sync.sh
+          test -f godot/assets/splash.png || { echo "::error::assets/splash.png не создан"; exit 1; }
+
+      - name: Cache Godot
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot-bin
+            ~/godot-templates
+          key: godot-macos-${{ env.GODOT_VERSION }}-ios-v1
+
+      # Редактор для macOS и из шаблонов экспорта только ios.zip
+      - name: Download Godot and iOS export template
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          set -e
+          mkdir -p ~/godot-bin ~/godot-templates
+          BASE="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          curl -fsSL -o "$RUNNER_TEMP/godot.zip" "$BASE/Godot_v${GODOT_VERSION}-stable_macos.universal.zip"
+          unzip -q "$RUNNER_TEMP/godot.zip" -d ~/godot-bin
+          curl -fsSL -o "$RUNNER_TEMP/templates.tpz" "$BASE/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q "$RUNNER_TEMP/templates.tpz" templates/ios.zip templates/version.txt -d "$RUNNER_TEMP/tpl"
+          mv "$RUNNER_TEMP"/tpl/templates/* ~/godot-templates/
+          rm -f "$RUNNER_TEMP/godot.zip" "$RUNNER_TEMP/templates.tpz"
+          ls -la ~/godot-bin ~/godot-templates
+
+      - name: Set up Godot
+        run: |
+          TPL="$HOME/Library/Application Support/Godot/export_templates"
+          mkdir -p "$TPL"
+          ln -sfn "$HOME/godot-templates" "$TPL/${GODOT_VERSION}.stable"
+          echo "GODOT=$HOME/godot-bin/Godot.app/Contents/MacOS/Godot" >> "$GITHUB_ENV"
+          "$HOME/godot-bin/Godot.app/Contents/MacOS/Godot" --version
+          xcodebuild -version
+
+      - name: Import project
+        timeout-minutes: 10
+        run: |
+          set -o pipefail
+          "$GODOT" --headless --path godot --import 2>&1 | tee import.log | tail -40
+          if grep -E "SCRIPT ERROR|Parse Error|ERROR: .*(Failed|parse|Parse)" import.log; then
+            echo "::error::Script errors during import"
+            exit 1
+          fi
+
+      - name: Compile all scripts
+        timeout-minutes: 5
+        run: |
+          set +e
+          "$GODOT" --headless --path godot -- --check-scripts > check.log 2>&1
+          code=$?
+          tail -40 check.log
+          if [ $code -ne 0 ] || grep -E "SCRIPT ERROR|Parse Error" check.log; then
+            echo "::error::Scripts failed to compile"
+            exit 1
+          fi
+
+      # Только проект Xcode (application/export_project_only), подписи нет.
+      # Team ID в пресете - заглушка: Godot без него не экспортирует, при сборке он сбрасывается.
+      - name: Export Xcode project
+        timeout-minutes: 15
+        run: |
+          set -o pipefail
+          V="2.0.${{ github.run_number }}"
+          perl -pi -e "s/^application\/short_version=.*/application\/short_version=\"$V\"/; s/^application\/version=.*/application\/version=\"$V\"/" godot/export_presets.cfg
+          rm -rf build-ios && mkdir -p build-ios
+          "$GODOT" --headless --verbose --path godot --export-release "iOS" "$GITHUB_WORKSPACE/build-ios/HarvestHollow.xcodeproj" 2>&1 | tee export.log | tail -60
+          ls -la build-ios
+          test -d build-ios/HarvestHollow.xcodeproj || { echo "::error::Godot did not export the Xcode project"; exit 1; }
+
+      - name: Build (xcodebuild archive, no signing)
+        run: |
+          set +e
+          xcodebuild \
+            -project build-ios/HarvestHollow.xcodeproj \
+            -scheme HarvestHollow \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$GITHUB_WORKSPACE/build-ios/HarvestHollow.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            archive > build.log 2>&1
+          status=$?
+          grep -E "error:|fatal error" build.log | sort -u > errors.txt
+          echo "---- errors ----"
+          head -100 errors.txt
+          head -40 errors.txt | sed 's/^/::error::/'
+          echo "---- tail ----"
+          tail -40 build.log
+          exit $status
+
+      # Псевдоподпись ldid, как в build.yml: SideStore переподписывает приложение своим сертификатом
+      - name: Package IPA
+        run: |
+          set -e
+          brew install ldid > /dev/null
+          APP="build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app"
+          ls -la "$APP"
+          if [ -d "$APP/Frameworks" ]; then
+            for f in "$APP"/Frameworks/*.framework; do [ -d "$f" ] && ldid -S "$f/$(basename "$f" .framework)" || true; done
+            for f in "$APP"/Frameworks/*.dylib; do [ -f "$f" ] && ldid -S "$f" || true; done
+          fi
+          ldid -S "$APP/HarvestHollow"
+          {
+            echo "== bundle"; ls -la "$APP"
+            echo "== Info.plist"; plutil -p "$APP/Info.plist"
+            echo "== sizes"; du -sh "$APP" "$APP"/* | sort -h | tail -15
+          } > app.txt
+          rm -rf ipa HarvestHollow.ipa
+          mkdir -p ipa/Payload
+          cp -R "$APP" ipa/Payload/
+          (cd ipa && zip -qry ../HarvestHollow.ipa Payload)
+          ls -lh HarvestHollow.ipa
+          echo "::notice::HarvestHollow.ipa: $(du -h HarvestHollow.ipa | cut -f1), версия 2.0.${{ github.run_number }}"
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: HarvestHollow-ipa
+          path: HarvestHollow.ipa
+
+      - name: Publish release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="ios-godot-build-${{ github.run_number }}"
+          gh release create "$TAG" HarvestHollow.ipa \
+            --target "${{ github.sha }}" \
+            --title "Harvest Hollow для iOS (Godot), сборка ${{ github.run_number }}" \
+            --notes "Скачай HarvestHollow.ipa на iPhone и установи через SideStore: вкладка My Apps, кнопка +, выбрать файл. Ставится поверх прежней версии (тот же bundle id com.personal.gamefarm)." \
+            --prerelease
+
+      # Логи без скачивания артефактов: отдельная ветка с одним коммитом
+      - name: Publish logs to ci-logs-ios branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          L="$RUNNER_TEMP/ci-logs"
+          rm -rf "$L" && mkdir -p "$L"
+          cp import.log check.log export.log errors.txt app.txt "$L/" 2>/dev/null || true
+          if [ -f build.log ]; then
+            tail -400 build.log > "$L/build_tail.txt"
+            [ "$(wc -c < build.log)" -lt 20000000 ] && cp build.log "$L/"
+          fi
+          cp godot/assets/splash.png "$L/" 2>/dev/null || true
+          cp build-ios/HarvestHollow/HarvestHollow-Info.plist "$L/Info.plist" 2>/dev/null || true
+          echo "run ${{ github.run_number }}, ref ${{ github.ref_name }}, sha ${{ github.sha }}" > "$L/README.txt"
+          grep -hE "ERROR|error:" "$L"/*.log 2>/dev/null | head -30 | sed 's/^/::warning::/' || true
+          cd "$L"
+          git init -q -b ci-logs-ios
+          git config user.name "ci"
+          git config user.email "ci@users.noreply.github.com"
+          git add -A
+          git commit -q -m "iOS Godot logs run ${{ github.run_number }}"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" HEAD:ci-logs-ios \
+            || echo "::warning::Could not push logs"

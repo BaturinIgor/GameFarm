@@ -1,5 +1,6 @@
-; Harvest Hollow на Godot: Android (позже и iOS).
-; Спрайты, раскладки карт и строки копирует tools/godot_sync.sh (в CI то же самое).
+; Harvest Hollow на Godot: Android и iOS.
+; Спрайты, раскладки карт, строки, звуки, иконку iOS и картинку заставки (assets/splash.png)
+; готовит tools/godot_sync.sh (в CI то же самое).
 
 config_version=5
 
@@ -7,10 +8,14 @@ config_version=5
 
 config/name="Harvest Hollow"
 config/description="Top-down farming adventure"
-run/main_scene="res://scenes/main.tscn"
+run/main_scene="res://scenes/splash.tscn"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="res://icon.png"
 run/low_processor_mode=false
+boot_splash/bg_color=Color(0.2, 0.596, 0.294, 1)
+boot_splash/image="res://assets/splash.png"
+boot_splash/fullsize=true
+boot_splash/use_filter=true
 
 [autoload]
 
