@@ -21,7 +21,7 @@ func _process(_delta: float) -> void:
 	if not visible:
 		_shown = ""
 		return
-	var key := "%s|%d|%d|%d|%s|%s|%s" % [run["dungeon"], int(run["floor"]), int(run["wave"]), int(run["waves"]),
+	var key := "%s|%d|%d|%d|%d|%s|%s|%s" % [run["dungeon"], int(run["floor"]), int(run.get("stage", 1)), int(run["wave"]), int(run["waves"]),
 		run["cleared"], d.can_go_deeper(), L.code]
 	if key == _shown:
 		return
@@ -49,7 +49,7 @@ func _build(run: Dictionary) -> void:
 	col.add_child(title)
 	var cleared: bool = run["cleared"]
 	var text := L.t("dungeon.pill.cleared", [run["floor"]]) if cleared \
-		else L.t("dungeon.pill", [run["floor"], maxi(1, int(run["wave"])), run["waves"]])
+		else L.t("dungeon.pillStage", [run["floor"], run.get("stage", 1), Dungeons.STAGES, maxi(1, int(run["wave"])), run["waves"]])
 	col.add_child(UiKit.label(text, 11, UiKit.GOLD if cleared else Color(1, 1, 1, 0.9), 3))
 	# Этаж пройден: кнопки второй строкой, иначе плашка шире экрана и закрывает рюкзак
 	var buttons: BoxContainer = _row

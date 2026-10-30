@@ -21,6 +21,7 @@ func build() -> void:
 
 ## Список подземелий в parent (без лавки зелий). on_enter вызывается после входа (закрыть окно).
 static func build_list(parent: Control, on_enter: Callable) -> void:
+	parent.add_child(attempts_card())
 	for id in Dungeons.IDS:
 		parent.add_child(_dungeon_card(id, on_enter))
 	parent.add_child(_section(L.t("dungeon.soon")))
@@ -178,6 +179,8 @@ static func _dungeon_card(id: String, on_enter: Callable) -> Control:
 	rewards.add_child(rrow)
 	rrow.add_child(_tag(UiKit.icon("coin", 15), Fmt.n(Dungeons.coins(id, floor_n, first)), 12))
 	rrow.add_child(_tag(essence_icon(15), str(Dungeons.essence(id, floor_n, first)), 12))
+	if first:
+		rrow.add_child(_tag(UiKit.icon("gem", 15), str(Dungeons.first_crystals(id, floor_n)), 12))
 	var weapon := Dungeons.weapon(id)
 	if Dungeons.is_boss_floor(floor_n) and not Game.combat.owns_weapon(weapon):
 		var sword := UiKit.icon("sword", 15)
@@ -187,14 +190,62 @@ static func _dungeon_card(id: String, on_enter: Callable) -> Control:
 		rrow.add_child(wt)
 
 	var boss_floor_now := Dungeons.is_boss_floor(floor_n)
+	var buttons := HBoxContainer.new()
+	buttons.add_theme_constant_override("separation", 8)
+	v.add_child(buttons)
+	# Пройденный этаж можно зачистить: попытка, награда сразу, без боя
+	if floor_n <= best:
+		var sweep := UiKit.button(L.t("dungeon.sweep"), "blue", 14)
+		sweep.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		sweep.disabled = Game.dungeons.attempts_left() <= 0 or Game.dungeons.run != null
+		sweep.pressed.connect(func() -> void:
+			var got := Game.dungeons.sweep(id, floor_n)
+			if not got.is_empty():
+				Game.show_toast("px:chest_gold", L.t("dungeon.swept", [floor_n, Fmt.n(int(got["coins"])), int(got["essence"])])))
+		buttons.add_child(sweep)
 	var enter := UiKit.button(L.t("dungeon.enterBoss") if boss_floor_now else L.t("dungeon.enter"),
 		"orange" if boss_floor_now else "green")
+	enter.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	enter.disabled = not Game.dungeons.can_enter(id, floor_n)
 	enter.pressed.connect(func() -> void:
 		Game.dungeons.start_dungeon(id, floor_n)
 		on_enter.call())
-	v.add_child(enter)
+	buttons.add_child(enter)
 	return card
+
+
+## Попытки на сегодня: сколько осталось, ещё одна за ролик или за кристаллы.
+static func attempts_card() -> Control:
+	var parts := _card()
+	var v: VBoxContainer = parts[1]
+	var d := Game.dungeons
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	v.add_child(row)
+	row.add_child(UiKit.icon("key", 30))
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_theme_constant_override("separation", 2)
+	row.add_child(col)
+	col.add_child(UiKit.label(L.t("dungeon.attempts", [d.attempts_left(), d.attempts_total()]), 15))
+	var hint := UiKit.label(L.t("dungeon.attemptsHint"), 11, UiKit.INK_SOFT)
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(hint)
+	var more := HBoxContainer.new()
+	more.add_theme_constant_override("separation", 8)
+	v.add_child(more)
+	var ad := Ads.reward_button(L.t("dungeon.attemptAd"), "blue", 13, true)
+	ad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ad.disabled = d.ad_attempts_left() <= 0
+	ad.pressed.connect(func() -> void: Ads.show_rewarded(func() -> void: Game.dungeons.ad_attempt()))
+	more.add_child(ad)
+	var buy := MapPanel.icon_button([["t", "+1"], ["i", "gem"], ["t", str(d.attempt_price())]], "purple", 13)
+	buy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	buy.pressed.connect(func() -> void:
+		if not Game.dungeons.buy_attempt():
+			Game.show_toast("px:gem", L.t("crystals.notEnough", [Fmt.n(Game.dungeons.attempt_price() - Game.shop.crystals())])))
+	more.add_child(buy)
+	return parts[0]
 
 
 static func _pick(id: String, f: int) -> void:

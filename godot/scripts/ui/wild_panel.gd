@@ -125,7 +125,7 @@ func _sector_card(sec: Dictionary) -> Control:
 				c.add_child(_reward_row([["essence", r["essence"]], ["gem", r["crystals"]]]))
 				var b := UiKit.button(L.t("wild.fight"), "orange", 14)
 				var dungeon: String = spec["dungeon"]
-				b.disabled = not Game.dungeons.can_enter(dungeon, clampi(int(spec["floor"]), 1, Game.dungeons.dungeon_best(dungeon) + 1))
+				b.disabled = not Game.dungeons.can_enter(dungeon, clampi(int(spec["floor"]), 1, Game.dungeons.dungeon_best(dungeon) + 1), true)
 				b.pressed.connect(func() -> void:
 					if w.start_lair(id):
 						close())

@@ -7,6 +7,13 @@ const IDS := ["slimeCaves", "boneCrypt", "orcCamp", "frostHollow", "fireDepths"]
 const COMING := ["sunkenTemple", "starMaze"]
 
 const FLOORS := 10
+## На этаже 5 этапов, в каждом 2-4 волны; в конце 5-го этапа - босс.
+const STAGES := 5
+## Попытки в день: вход в подземелье тратит одну (спуск глубже внутри забега - нет). Pro +1, MAX +2.
+const ATTEMPTS := 3
+const AD_ATTEMPTS := 1
+const ATTEMPT_PRICE := 15
+const ATTEMPT_STEP := 10
 
 ## Карта подземелья.
 const LOCATION := {"slimeCaves": "dSlime", "boneCrypt": "dCrypt", "orcCamp": "dOrc", "frostHollow": "dFrost",
@@ -111,12 +118,13 @@ static func is_boss_floor(floor_n: int) -> bool:
 	return floor_n == 5 or floor_n == 10
 
 
+## Волн на этапе: 2 на этажах 1-4, 3 на 5-8, 4 на 9-10.
 static func waves(floor_n: int) -> int:
-	return 2 if floor_n <= 3 else (3 if floor_n <= 7 else 4)
+	return 2 if floor_n <= 4 else (3 if floor_n <= 8 else 4)
 
 
 static func monsters_per_wave(floor_n: int) -> int:
-	return mini(7, 3 + floor_n / 2)
+	return mini(6, 2 + floor_n / 2)
 
 
 static func monster_level(id: String, floor_n: int) -> int:
@@ -137,16 +145,22 @@ static func boss_traits(floor_n: int) -> int:
 	return 3 if floor_n >= 10 else 2
 
 
-## Награда за этаж: монеты и эссенция. Первое прохождение - втрое больше и зелья.
+## Награда за этаж: монеты и эссенция (этаж из 5 этапов - вдвое больше прежнего). Первое прохождение - втрое больше,
+## кристаллы и зелья.
 static func coins(id: String, floor_n: int, first: bool) -> int:
-	var base := float(60 + base_level(id) * 12) * (1.0 + float(floor_n) * 0.35) * (2.0 if is_boss_floor(floor_n) else 1.0)
+	var base := float(60 + base_level(id) * 12) * (1.0 + float(floor_n) * 0.35) * (2.0 if is_boss_floor(floor_n) else 1.0) * 2.0
 	return int(base * (3.0 if first else 1.0))
 
 
 static func essence(id: String, floor_n: int, first: bool) -> int:
 	var tier := maxi(0, IDS.find(id))
-	var base := 1 + tier + floor_n / 3 + (3 + tier if is_boss_floor(floor_n) else 0)
+	var base := (1 + tier + floor_n / 3 + (3 + tier if is_boss_floor(floor_n) else 0)) * 2
 	return base * (3 if first else 1)
+
+
+## Кристаллы за первое прохождение этажа.
+static func first_crystals(id: String, floor_n: int) -> int:
+	return 2 + maxi(0, IDS.find(id)) + (3 if is_boss_floor(floor_n) else 0)
 
 
 ## Шанс, что босс отдаст оружие (на 10 этаже при первом прохождении - всегда).

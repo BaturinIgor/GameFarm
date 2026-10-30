@@ -57,6 +57,10 @@ func process(world: World, dt: float) -> void:
 	if monsters.any_alive():
 		return
 	if int(run["wave"]) >= int(run["waves"]):
+		# Этап пройден: следующий этап или, после пятого, этаж пройден
+		if Game.dungeons.next_stage():
+			_wave_timer = WAVE_DELAY * 1.8
+			return
 		Game.dungeons.dungeon_cleared()
 		_spawn_rewards(world)
 		return
@@ -74,7 +78,7 @@ func _spawn_wave(world: World, monsters: MonstersFeature, n: int, run: Dictionar
 	var id: String = run["dungeon"]
 	var floor_n := int(run["floor"])
 	var level := Dungeons.monster_level(id, floor_n)
-	var boss_wave := Dungeons.is_boss_floor(floor_n) and n == int(run["waves"])
+	var boss_wave := int(run.get("stage", 1)) >= Dungeons.STAGES and n == int(run["waves"])
 	var hero := world.player.position
 	var all: Array = world.layout.slots.map(func(s: Dictionary) -> Vector2: return s["pos"])
 	var points := all.filter(func(p: Vector2) -> bool: return p.distance_to(hero) > 150.0)
@@ -94,7 +98,7 @@ func _spawn_wave(world: World, monsters: MonstersFeature, n: int, run: Dictionar
 	else:
 		for p in points.slice(0, Dungeons.monsters_per_wave(floor_n)):
 			_add(world, monsters, mobs.pick_random(), level, p, false, Monsters.pick_traits(Dungeons.traits(floor_n)), null)
-		Game.show_toast("px:sword", L.t("toast.wave", [n, run["waves"]]))
+		Game.show_toast("px:sword", L.t("dungeon.stageWave", [run.get("stage", 1), Dungeons.STAGES, n, run["waves"]]))
 
 
 func _add(world: World, monsters: MonstersFeature, kind: String, level: int, p: Vector2, boss: bool, traits: Array,

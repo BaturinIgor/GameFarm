@@ -21,6 +21,10 @@ func defaults(save: Dictionary) -> void:
 	for k in best.keys():
 		best[k] = int(best[k])
 	save["dungeonBest"] = best
+	var day: Variant = save.get("dungeonDay", {})
+	var dd: Dictionary = day if day is Dictionary else {}
+	save["dungeonDay"] = {"day": int(dd.get("day", -1)), "used": int(dd.get("used", 0)), "extra": int(dd.get("extra", 0)),
+		"ads": int(dd.get("ads", 0)), "bought": int(dd.get("bought", 0))}
 	# Забег не сохраняется: из подземелья просыпаемся на лугу
 	if Locations.kind(str(save.get("current", "meadow"))) == "dungeon":
 		save["current"] = "meadow"
@@ -40,14 +44,78 @@ func in_dungeon() -> bool:
 	return Locations.kind(Game.current) == "dungeon" and run != null
 
 
-func can_enter(id: String, floor_n: int) -> bool:
-	return Game.level >= Dungeons.level(id) and floor_n >= 1 and floor_n <= mini(Dungeons.FLOORS, dungeon_best(id) + 1) \
-		and Game.save.get("expedition") == null and run == null
+# MARK: Попытки
+
+## Счётчик попыток за сегодня (с новым днём обнуляется).
+func _day() -> Dictionary:
+	var d: Dictionary = Game.save["dungeonDay"]
+	if int(d["day"]) != ShopSystem.day_index():
+		d["day"] = ShopSystem.day_index()
+		d["used"] = 0
+		d["extra"] = 0
+		d["ads"] = 0
+		d["bought"] = 0
+	return d
 
 
-func start_dungeon(id: String, floor_n: int) -> void:
-	if not can_enter(id, floor_n):
+func attempts_total() -> int:
+	var n := Dungeons.ATTEMPTS + int(_day()["extra"])
+	if Game.shop.max_active():
+		n += 2
+	elif Game.premium.has_pro():
+		n += 1
+	return n
+
+
+func attempts_left() -> int:
+	return maxi(0, attempts_total() - int(_day()["used"]))
+
+
+func ad_attempts_left() -> int:
+	return maxi(0, Dungeons.AD_ATTEMPTS - int(_day()["ads"]))
+
+
+func ad_attempt() -> void:
+	if ad_attempts_left() <= 0:
 		return
+	var d := _day()
+	d["ads"] = int(d["ads"]) + 1
+	d["extra"] = int(d["extra"]) + 1
+	Game.mark_dirty()
+
+
+func attempt_price() -> int:
+	return Dungeons.ATTEMPT_PRICE + Dungeons.ATTEMPT_STEP * int(_day()["bought"])
+
+
+func buy_attempt() -> bool:
+	if not Game.shop.spend_crystals(attempt_price()):
+		return false
+	var d := _day()
+	d["bought"] = int(d["bought"]) + 1
+	d["extra"] = int(d["extra"]) + 1
+	Game.mark_dirty()
+	Game.save_now()
+	return true
+
+
+func _use_attempt() -> void:
+	var d := _day()
+	d["used"] = int(d["used"]) + 1
+	Game.mark_dirty()
+
+
+func can_enter(id: String, floor_n: int, free := false) -> bool:
+	return Game.level >= Dungeons.level(id) and floor_n >= 1 and floor_n <= mini(Dungeons.FLOORS, dungeon_best(id) + 1) \
+		and Game.save.get("expedition") == null and run == null and (free or attempts_left() > 0)
+
+
+## Войти в подземелье: тратит попытку (логово диких земель - free, без попытки).
+func start_dungeon(id: String, floor_n: int, free := false) -> void:
+	if not can_enter(id, floor_n, free):
+		return
+	if not free:
+		_use_attempt()
 	if Game.backpack_count > 0:
 		Game.deposit_backpack()
 	var here := Locations.kind(Game.current)
@@ -60,8 +128,20 @@ func start_dungeon(id: String, floor_n: int) -> void:
 
 
 func _new_run(id: String, floor_n: int, kills := 0, coins := 0, essence := 0) -> Dictionary:
-	return {"dungeon": id, "floor": floor_n, "wave": 0, "waves": Dungeons.waves(floor_n), "cleared": false,
+	return {"dungeon": id, "floor": floor_n, "stage": 1, "wave": 0, "waves": Dungeons.waves(floor_n), "cleared": false,
 		"chest_opened": false, "kills": kills, "coins": coins, "essence": essence}
+
+
+## Этап пройден: следующий этап того же этажа (волны заново). false - это был последний этап.
+func next_stage() -> bool:
+	if run == null or int(run["stage"]) >= Dungeons.STAGES:
+		return false
+	run["stage"] = int(run["stage"]) + 1
+	run["wave"] = 0
+	Game.combat.heal(0.25)
+	Game.show_toast("px:stairs", L.t("dungeon.stage", [run["stage"], Dungeons.STAGES]))
+	Game.changed.emit()
+	return true
 
 
 func set_dungeon_wave(wave: int) -> void:
@@ -117,6 +197,7 @@ func open_dungeon_chest() -> void:
 		var best: Dictionary = Game.save.get("dungeonBest", {})
 		best[id] = floor_n
 		Game.save["dungeonBest"] = best
+		Game.shop.add_crystals(Dungeons.first_crystals(id, floor_n), true)
 		if Dungeons.is_boss_floor(floor_n):
 			Game.recalc()
 			Game.show_toast("px:star", L.t("toast.dungeonTalent"))
@@ -171,6 +252,27 @@ func leave_dungeon() -> void:
 	Game.combat.heal_full()
 	Game.mark_dirty()
 	Game.save_now()
+
+
+## Зачистка пройденного этажа: тратит попытку и сразу даёт награду этажа (без оружия и кристаллов первого раза).
+func sweep(id: String, floor_n: int) -> Dictionary:
+	if floor_n < 1 or floor_n > dungeon_best(id) or attempts_left() <= 0 or run != null:
+		return {}
+	_use_attempt()
+	var bonus := 1.0 + Game.stats.dungeon_bonus
+	var coins := int(float(Dungeons.coins(id, floor_n, false)) * bonus)
+	var essence := int(round(float(Dungeons.essence(id, floor_n, false)) * bonus))
+	Game.add_coins(coins)
+	Game.add_to_storage("essence", essence, false)
+	var potions := 1 if randf() < 0.3 else 0
+	Game.save["potions"] = int(Game.save.get("potions", 0)) + potions
+	var maps := 1 if Dungeons.is_boss_floor(floor_n) or randf() < 0.15 else 0
+	Game.save["maps"] = int(Game.save.get("maps", 0)) + maps
+	Game.emit_event("dungeon_sweep", {"dungeon": id, "floor": floor_n})
+	Sound.play("treasure")
+	Game.mark_dirty()
+	Game.save_now()
+	return {"coins": coins, "essence": essence, "potions": potions, "maps": maps}
 
 
 ## Награда за убийство в подземелье копится в итоге забега.

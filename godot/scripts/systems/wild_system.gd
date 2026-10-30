@@ -141,10 +141,10 @@ func start_lair(sector_id: String) -> bool:
 	var spec: Dictionary = Wild.RINGS[int(sec["ring"])]
 	var id: String = spec["dungeon"]
 	var fl := clampi(int(spec["floor"]), 1, Game.dungeons.dungeon_best(id) + 1)
-	if not Game.dungeons.can_enter(id, fl):
+	if not Game.dungeons.can_enter(id, fl, true):
 		return false
 	lair = sector_id
-	Game.dungeons.start_dungeon(id, fl)
+	Game.dungeons.start_dungeon(id, fl, true)
 	return true
 
 
