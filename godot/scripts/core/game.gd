@@ -62,7 +62,7 @@ func emit_event(name: String, data := {}) -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_WM_CLOSE_REQUEST \
-			or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+			or what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_GO_BACK_REQUEST:
 		save_now()
 
 
@@ -84,10 +84,14 @@ static func default_save() -> Dictionary:
 func _load_save() -> Dictionary:
 	var data := default_save()
 	if FileAccess.file_exists(SAVE_PATH):
-		var parsed = JSON.parse_string(FileAccess.get_file_as_string(SAVE_PATH))
+		var text := FileAccess.get_file_as_string(SAVE_PATH)
+		var parsed = JSON.parse_string(text)
 		if parsed is Dictionary:
 			for k in parsed:
 				data[k] = parsed[k]
+		elif text.strip_edges() != "":
+			# Файл испорчен: сначала копия, чтобы прогресс можно было достать, потом игра с нуля
+			DirAccess.copy_absolute(SAVE_PATH, "user://save.broken-%d.json" % int(Time.get_unix_time_from_system()))
 	# Числа из JSON приходят дробными: приводим счётчики к целым
 	for key in ["level", "xp", "coins", "harvests", "coinsEarned", "tickets", "bestLevel"]:
 		data[key] = int(data.get(key, 0))

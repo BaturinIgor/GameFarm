@@ -42,6 +42,9 @@ var _badges: Dictionary = {}
 var _level_label: Label
 var _level_name: Label
 var _xp_bar: ProgressBar
+## Ширина подписи нижней кнопки: 7 кнопок в ряд на узком экране.
+const TAB_LABEL_WIDTH := 44.0
+
 var _coins_label: Label
 var _crystals_label: Label
 var _pack_bar: ProgressBar
@@ -290,6 +293,8 @@ func _hud_button(w: Array) -> Control:
 	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	t.clip_text = true
 	t.set_meta("key", w[2])
+	t.set_meta("fit", 10)
+	UiKit.fit_label(t, TAB_LABEL_WIDTH, 10)
 	col.add_child(t)
 	var badge := UiKit.count_badge(0)
 	badge.position = Vector2(0, -7)
@@ -310,6 +315,23 @@ func open_named(id: String) -> void:
 
 ## Полноэкранная заставка поверх окон (новый уровень, доход за время без игры, клад).
 ## Заставка сама убирает себя через queue_free().
+## Кнопка "Назад" на Android: закрыть верхнюю заставку, иначе окно. false - закрывать было нечего.
+func back() -> bool:
+	if _overlay_layer.get_parent() != null:
+		var kids := _overlay_layer.get_children().filter(func(n: Node) -> bool: return not n.is_queued_for_deletion())
+		if not kids.is_empty():
+			var top: Node = kids[-1]
+			if top.has_method("close"):
+				top.call("close")
+			else:
+				top.queue_free()
+			return true
+	if has_window():
+		close_window()
+		return true
+	return false
+
+
 func show_overlay(c: Control) -> void:
 	if _overlay_layer.get_parent() == null:
 		_overlay_layer.layer = 20
@@ -391,7 +413,9 @@ func _process(delta: float) -> void:
 		_refresh_values()
 	if _shown_location != Game.current:
 		_shown_location = Game.current
-		_show_banner(Game.current)
+		# В доме названия нет (как в iOS): этажи меняются часто
+		if Locations.kind(Game.current) != "home":
+			_show_banner(Game.current)
 
 
 func _refresh_values() -> void:
@@ -426,14 +450,25 @@ func _refresh_texts() -> void:
 	for n in root.find_children("*", "", true, false):
 		if n.has_meta("key") and (n is Label or n is Button):
 			n.text = L.t(n.get_meta("key"))
+			if n is Label and n.has_meta("fit"):
+				UiKit.fit_label(n, TAB_LABEL_WIDTH, int(n.get_meta("fit")))
 
 
 func _on_toast(icon: String, text: String) -> void:
+	# Как в iOS: одинаковый тост не дублируется, на экране не больше трёх
+	var live := _toasts.get_children().filter(func(n: Node) -> bool: return not n.is_queued_for_deletion())
+	for t in live:
+		if t.get_meta("text", "") == text:
+			return
+	if live.size() >= 3:
+		live[0].queue_free()
 	var box := PanelContainer.new()
 	box.add_theme_stylebox_override("panel", UiKit.box(Color(UiKit.PARCHMENT_LIGHT, 0.97), UiKit.OUTLINE, 14, 2))
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.set_meta("text", text)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(row)
 	if icon != "":
 		row.add_child(UiKit.icon_any(icon, 22))

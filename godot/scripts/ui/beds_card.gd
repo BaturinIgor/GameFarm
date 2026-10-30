@@ -36,7 +36,7 @@ func _on_changed() -> void:
 
 
 func _process(delta: float) -> void:
-	if _dirty:
+	if _dirty and not UiKit.touch_held(self):
 		_dirty = false
 		_tick = 1.0
 		for c in _col.get_children():

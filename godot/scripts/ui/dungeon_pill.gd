@@ -51,11 +51,19 @@ func _build(run: Dictionary) -> void:
 	var text := L.t("dungeon.pill.cleared", [run["floor"]]) if cleared \
 		else L.t("dungeon.pill", [run["floor"], maxi(1, int(run["wave"])), run["waves"]])
 	col.add_child(UiKit.label(text, 11, UiKit.GOLD if cleared else Color(1, 1, 1, 0.9), 3))
+	# Этаж пройден: кнопки второй строкой, иначе плашка шире экрана и закрывает рюкзак
+	var buttons: BoxContainer = _row
+	if cleared:
+		buttons = HBoxContainer.new()
+		buttons.add_theme_constant_override("separation", 6)
+		col.add_child(buttons)
+		s.content_margin_right = 10
+		s.content_margin_bottom = 8
 	if cleared and Game.dungeons.can_go_deeper():
 		var deeper := UiKit.button(L.t("dungeon.deeper"), "green", 13, true)
 		deeper.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		deeper.pressed.connect(func() -> void: Game.dungeons.go_deeper())
-		_row.add_child(deeper)
+		buttons.add_child(deeper)
 	var leave := UiKit.button(L.t("dungeon.leave"), "wood" if cleared else "red", 13, true)
 	leave.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	leave.pressed.connect(func() -> void:
@@ -63,7 +71,7 @@ func _build(run: Dictionary) -> void:
 			Game.dungeons.leave_dungeon()
 		else:
 			DungeonPill.confirm_leave())
-	_row.add_child(leave)
+	buttons.add_child(leave)
 
 
 ## "Выйти из подземелья?": награда за этаж пропадёт, собранное останется.

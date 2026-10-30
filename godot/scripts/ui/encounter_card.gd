@@ -33,7 +33,7 @@ func _on_changed() -> void:
 
 
 func _process(_delta: float) -> void:
-	if _dirty:
+	if _dirty and not UiKit.touch_held(self):
 		_dirty = false
 		for c in _row.get_children():
 			c.queue_free()

@@ -70,7 +70,7 @@ func _check_treasure(world: World) -> void:
 	Fx.scatter(world.fx, p - Vector2(0, 20), 10, Color.WHITE, Sprites.icon("coin"), 18.0, 60.0, 40.0, 0.8)
 	Fx.scatter(world.fx, p - Vector2(0, 24), 8, Color(1, 0.9, 0.4), Sprites.icon("spark"), 14.0, 50.0, 30.0)
 	Fx.ring(world.fx, p, Color(1, 0.85, 0.3), 40.0)
-	Fx.text(world.fx, "+%s 🪙" % Fmt.n(int(reward["coins"])), p - Vector2(0, 60), Color(1, 0.9, 0.4), 18)
+	MonstersFeature.coins_fx(world.fx, int(reward["coins"]), p - Vector2(-10, 60), 18.0)
 	t.burst()
 	world.shake = maxf(world.shake, 4.0)
 	world.player.celebrate()

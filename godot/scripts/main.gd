@@ -52,7 +52,22 @@ func _ready() -> void:
 		add_child(driver)
 
 
+var _back_at := -10.0
+
+
 func _notification(what: int) -> void:
+	# Android "Назад": закрывает заставку или окно; без них - выход по второму нажатию
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		if hud != null and hud.back():
+			return
+		var now := Time.get_ticks_msec() / 1000.0
+		if now - _back_at < 2.0:
+			Game.save_now()
+			get_tree().quit()
+		else:
+			_back_at = now
+			Game.show_toast("", L.t("common.backToExit"))
+		return
 	if what == NOTIFICATION_APPLICATION_RESUMED:
 		OfflineOverlay.check()
 		CalendarPanel.check()

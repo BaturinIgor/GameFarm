@@ -122,7 +122,7 @@ func _sell_tab_button(list: Array) -> void:
 	var total := 0
 	for k in list:
 		total += Game.storage_of(k) * Game.sell_price(k)
-	var b := UiKit.button(L.t("storage.sellTab") + "  🪙 " + Fmt.n(total), "wood", 14, true)
+	var b := TraderPanel.coin_button(L.t("storage.sellTab"), total, "wood", 14)
 	b.pressed.connect(func() -> void:
 		for k in list:
 			Game.sell(k, Game.storage_of(k)))

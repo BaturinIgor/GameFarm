@@ -75,6 +75,19 @@ static func label(text: String, size := 14, color := INK, outline := 0) -> Label
 	return l
 
 
+## Палец (кнопка мыши) сейчас нажат над этим элементом: перестраивать его нельзя, иначе нажатие потеряется.
+static func touch_held(c: Control) -> bool:
+	return Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and c.get_global_rect().has_point(c.get_global_mouse_position())
+
+
+## Уменьшить шрифт подписи, чтобы текст влез в ширину (как minimumScaleFactor в iOS).
+static func fit_label(l: Label, width: float, max_size: int, min_size := 7) -> void:
+	var fs := max_size
+	while fs > min_size and font().get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > width:
+		fs -= 1
+	l.label_settings.font_size = fs
+
+
 static func title(text: String, size := 18) -> Label:
 	return label(text, size, Color.WHITE, 6)
 

@@ -15,6 +15,7 @@ var _coins: Label
 var _scroll := ScrollContainer.new()
 var _dirty := true
 var _to_top := false
+var _rebuild_cd := 0.0
 
 
 func _ready() -> void:
@@ -56,7 +57,7 @@ func _ready() -> void:
 	crow.add_child(UiKit.icon("gem" if header_currency == "crystals" else "coins", 18))
 	_coins = UiKit.title("0", 14)
 	crow.add_child(_coins)
-	var x := UiKit.button("✕", "red", 16, true)
+	var x := UiKit.button("×", "red", 20, true)
 	x.custom_minimum_size = Vector2(40, 36)
 	x.pressed.connect(close)
 	head.add_child(x)
@@ -89,9 +90,13 @@ func _ready() -> void:
 	tw.tween_property(_panel, "position:y", _panel.position.y - 40, 0.22).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
 
 
-func _process(_delta: float) -> void:
-	if _dirty:
+func _process(delta: float) -> void:
+	_rebuild_cd -= delta
+	# Не перестраиваем окно под пальцем (нажатие потерялось бы) и не чаще 4 раз в секунду:
+	# звери и плита меняют игру постоянно
+	if _dirty and (_to_top or (_rebuild_cd <= 0.0 and not UiKit.touch_held(_panel))):
 		_dirty = false
+		_rebuild_cd = 0.25
 		_coins.text = Fmt.n(Game.shop.crystals() if header_currency == "crystals" else int(Game.save["coins"]))
 		var keep := 0 if _to_top else _scroll.scroll_vertical
 		_to_top = false

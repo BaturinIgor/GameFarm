@@ -4,6 +4,8 @@ extends RefCounted
 
 ## Шанс получить карту коллекции из клада.
 const TREASURE_CARD_CHANCE := 0.35
+## Шанс найти в кладе карту сокровищ.
+const TREASURE_MAP_CHANCE := 0.06
 
 ## Сколько заданий на доске одновременно.
 var quest_slots: int:
@@ -231,6 +233,10 @@ func open_treasure() -> Dictionary:
 	for it in items:
 		Game.add_to_storage(it[0], it[1])
 	Game.save["treasures"] = int(Game.save.get("treasures", 0)) + 1
+	# Иногда в кладе карта сокровищ (TreasureMaps.treasureChance в iOS)
+	if randf() < TREASURE_MAP_CHANCE:
+		Game.save["maps"] = int(Game.save.get("maps", 0)) + 1
+		Game.show_toast("px:tmap", L.t("toast.map"))
 	Game.emit_event("treasure", {})
 	Game.gain_xp(maxi(5, Game.xp_needed / 25))
 	Game.mark_dirty()

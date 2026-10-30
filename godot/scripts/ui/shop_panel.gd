@@ -322,7 +322,9 @@ func _max_card() -> Control:
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	head.add_child(col)
 	var title := UiKit.title(Products.title("max"), 24)
-	title.label_settings.outline_color = tone[2]
+	title.label_settings.font_color = tone[1]
+	title.label_settings.outline_color = UiKit.OUTLINE
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(title)
 	var tag := _wrap(tagline("max"), 12, UiKit.INK_SOFT)
 	col.add_child(tag)
@@ -463,7 +465,7 @@ func _pack_tile(key: String, index: int) -> PanelContainer:
 	amount.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(amount)
 	if first:
-		var was := UiKit.label(L.t("crystals.firstX2", [Fmt.n(int(pack["n"]))]), 10, UiKit.INK_SOFT)
+		var was := _wrap(L.t("crystals.firstX2", [Fmt.n(int(pack["n"]))]), 10, UiKit.INK_SOFT)
 		was.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		v.add_child(was)
 	var b := BuyButton.new(key, "purple", "", true)

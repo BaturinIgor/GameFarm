@@ -13,6 +13,7 @@ var _barrier: Sprite2D
 var _sign := Node2D.new()
 var _label := Label.new()
 var _tag := Label.new()
+var _tag_icon := Sprite2D.new()
 
 
 func setup(place: Dictionary, open: bool, cell_size: float, stone: bool) -> void:
@@ -49,6 +50,10 @@ func setup(place: Dictionary, open: bool, cell_size: float, stone: bool) -> void
 	_tag.size = Vector2(220, 16)
 	_tag.position = Vector2(-110, -6)
 	_sign.add_child(_tag)
+	# Замок или корона - спрайтом: в шрифте нет таких эмодзи
+	_tag_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_tag_icon.scale = Vector2.ONE * 0.9
+	_sign.add_child(_tag_icon)
 	refresh_text()
 
 
@@ -62,14 +67,20 @@ func _ready() -> void:
 
 func refresh_text() -> void:
 	_label.text = Locations.name_of(to)
+	_tag_icon.visible = not is_open
 	if is_open:
 		_tag.text = ""
 	elif royal:
-		_tag.text = "👑"
+		_tag.text = ""
+		_tag_icon.texture = Sprites.icon("crown")
+		_tag_icon.position = Vector2(0, 2)
 	else:
 		var g := WorldGraph.gate(gate_id)
 		var lvl: int = WorldGraph.level(g) if not g.is_empty() else int(Locations.spec(to)["level"])
-		_tag.text = "🔒 " + L.t("common.lvl", [lvl])
+		_tag.text = "   " + L.t("common.lvl", [lvl])
+		_tag_icon.texture = Sprites.icon("key")
+		var w := UiKit.font().get_string_size(_tag.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
+		_tag_icon.position = Vector2(-w / 2.0 + 6.0, 2)
 
 
 func set_open(open: bool) -> void:

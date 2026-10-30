@@ -39,6 +39,9 @@ var house_rect := Rect2()
 var door_point = null
 var chest: Node2D
 var chest_box: Sprite2D
+## Круг склада и подпись над ним: круг растёт после таланта, подпись меняется с языком.
+var _deposit_ring: RingFx
+var _storage_title: Label
 
 var velocity := Vector2.ZERO
 var shake := 0.0
@@ -70,6 +73,16 @@ func _ready() -> void:
 	for path in FEATURES:
 		features.append(load(path).new())
 	build(Game.current)
+	L.language_changed.connect(_on_language)
+
+
+## Новый язык: подпись склада и таблички ворот (остальное перерисуется при смене локации).
+func _on_language() -> void:
+	if _storage_title != null and is_instance_valid(_storage_title):
+		_storage_title.text = L.t("scene.storage")
+	for g in gates:
+		if is_instance_valid(g):
+			g.refresh_text()
 
 
 func set_fader(rect: ColorRect) -> void:
@@ -97,6 +110,9 @@ func build(id: String) -> void:
 	house_rect = Rect2()
 	door_point = null
 	chest = null
+	chest_box = null
+	_deposit_ring = null
+	_storage_title = null
 
 	var bg: Color = spec["ground"]
 	match layout.edge:
@@ -198,6 +214,7 @@ func _build_base() -> void:
 	ring.color = Color(1, 1, 1, 0.5)
 	ring.fill_alpha = 0.07
 	flat.add_child(ring)
+	_deposit_ring = ring
 
 	# Дом стоит слева сверху от площадки склада. В экспедиции и на ивенте вместо дома палатка.
 	var house_name := "tent" if spec["kind"] in ["expedition", "event"] else "house"
@@ -230,6 +247,7 @@ func _build_base() -> void:
 	title.size = Vector2(160, 20)
 	title.position = Vector2(-80, -58)
 	chest.add_child(title)
+	_storage_title = title
 	var tw := title.create_tween().set_loops()
 	tw.tween_property(title, "position:y", -61.0, 1.2).set_trans(Tween.TRANS_SINE)
 	tw.tween_property(title, "position:y", -58.0, 1.2).set_trans(Tween.TRANS_SINE)
@@ -623,7 +641,7 @@ func _harvest(spot: ResourceSpot, by_helper := false) -> void:
 					shake = maxf(shake, 8.0)
 	if bonus_coins > 0:
 		Game.add_coins(bonus_coins)
-		Fx.text(fx, "+%s 🪙" % Fmt.n(bonus_coins), spot.position + Vector2(-30, -90), Color(1, 0.9, 0.4), 17)
+		MonstersFeature.coins_fx(fx, bonus_coins, spot.position + Vector2(-10, -90), 17.0)
 
 	var shown: Array = []
 	for g in gained:
@@ -643,7 +661,7 @@ func _harvest(spot: ResourceSpot, by_helper := false) -> void:
 		var chest_coins := 40 + Game.level * 12
 		Game.add_coins(chest_coins)
 		Game.premium.note_expedition_coins(chest_coins)
-		Fx.text(fx, "+%s 🪙" % Fmt.n(chest_coins), spot.position - Vector2(0, 70), Color(1, 0.9, 0.4), 17)
+		MonstersFeature.coins_fx(fx, chest_coins, spot.position - Vector2(-10, 70), 17.0)
 		Sound.play("coinBig")
 	for i in shown.size():
 		Fx.gain(fx, shown[i][0], shown[i][1], top - Vector2(0, i * 24), i * 0.1, by_helper)
@@ -655,7 +673,7 @@ func _harvest(spot: ResourceSpot, by_helper := false) -> void:
 		Fx.text(fx, "x%d!" % multiplier, top + Vector2(-36, -6), Color(0.5, 1, 0.5), 18)
 	if coins > 0:
 		Game.premium.note_expedition_coins(coins)
-		Fx.text(fx, "+%d 🪙" % coins, top + Vector2(38, 4), Color(1, 0.9, 0.4), 14, 0.15)
+		MonstersFeature.coins_fx(fx, coins, top + Vector2(52, 4), 14.0, 0.15)
 		Sound.play("coin", 0.5)
 	var respawn: float = float(spot.spec["respawn"]) * stats.respawn_mult
 	if direct:
@@ -753,6 +771,10 @@ func _update_loot(dt: float) -> void:
 
 func _check_base(dt: float, stats: Stats) -> void:
 	_deposit_cooldown -= dt
+	# Круг склада растёт вслед за талантом "Дальний склад"
+	if _deposit_ring != null and absf(_deposit_ring.radius - stats.deposit_radius) > 0.5:
+		_deposit_ring.radius = move_toward(_deposit_ring.radius, stats.deposit_radius, 120.0 * dt)
+		_deposit_ring.queue_redraw()
 	if _deposit_cooldown > 0.0 or Game.backpack_count <= 0 or chest == null:
 		return
 	if player.position.distance_to(layout.base) >= stats.deposit_radius:
@@ -763,12 +785,14 @@ func _check_base(dt: float, stats: Stats) -> void:
 	_deposit_cooldown = 0.6
 	Fx.text(fx, L.t("scene.deposited", [moved]), chest.position - Vector2(0, 64), Color(1, 0.9, 0.5), 16, 0.3)
 	if chest_box is Sprite2D and chest_box.hframes > 1:
-		var tw := create_tween()
-		var last := chest_box.hframes - 1
-		tw.tween_method(func(v: float) -> void: chest_box.frame = int(round(v)), 0.0, float(last), 0.05 * last)
+		# Твин на самом сундуке: ушли в дом - твин пропал вместе с ним
+		var box := chest_box
+		var tw := box.create_tween()
+		var last := box.hframes - 1
+		tw.tween_method(func(v: float) -> void: box.frame = int(round(v)), 0.0, float(last), 0.05 * last)
 		tw.tween_interval(0.4)
-		tw.tween_method(func(v: float) -> void: chest_box.frame = int(round(v)), float(last), 0.0, 0.05 * last)
-	var squash := create_tween()
+		tw.tween_method(func(v: float) -> void: box.frame = int(round(v)), float(last), 0.0, 0.05 * last)
+	var squash := chest.create_tween()
 	squash.tween_interval(0.4)
 	squash.tween_property(chest, "scale", Vector2(1.2, 0.88), 0.07)
 	squash.tween_property(chest, "scale", Vector2(0.94, 1.1), 0.08)
