@@ -99,6 +99,8 @@ func builders_total() -> int:
 		n += 1
 	if Game.shop.max_active():
 		n += 1
+	if Game.premium.owns("builder"):
+		n += 1
 	return n
 
 

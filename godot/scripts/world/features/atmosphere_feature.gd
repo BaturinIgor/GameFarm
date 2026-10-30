@@ -35,12 +35,46 @@ func build(world: World) -> void:
 		rect.position = -rect.size / 2.0
 		rect.z_index = 900
 		_camera_child(world, rect)
+	# Сияющая поляна (покупка): ночь, светлячки и светящиеся грибы, ягоды и цветы
+	if world.loaded == "meadow" and Settings.cosmetic("glowMeadow"):
+		_glow_meadow(world, str(spec.get("weather", "")))
 	if bool(spec.get("dark", false)):
 		var dark := Sprite2D.new()
 		dark.texture = _darkness()
 		dark.scale = Vector2.ONE * 2600.0 / 512.0
 		dark.z_index = 940
 		_camera_child(world, dark)
+
+
+func _glow_meadow(world: World, weather: String) -> void:
+	var night := ColorRect.new()
+	night.color = Color(0.05, 0.07, 0.22, 0.42)
+	night.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	night.size = Vector2(1400, 2000)
+	night.position = -night.size / 2.0
+	night.z_index = 900
+	_camera_child(world, night)
+	if weather != "fireflies":
+		_weather(world, "fireflies")
+	var colors := [Color(0.5, 1.0, 0.8), Color(1.0, 0.75, 0.4), Color(0.75, 0.6, 1.0)]
+	var i := 0
+	for s in world.spots:
+		i += 1
+		if i % 3 != 0:
+			continue
+		var g := Fx.glow(colors[i % colors.size()], 64.0, -10.0, 0.55)
+		g.position += s.position
+		g.z_index = 950
+		world.fx.add_child(g)
+		var tw := g.create_tween().set_loops()
+		tw.tween_property(g, "modulate:a", 0.25, randf_range(1.2, 2.2)).set_trans(Tween.TRANS_SINE)
+		tw.tween_property(g, "modulate:a", 0.6, randf_range(1.2, 2.2)).set_trans(Tween.TRANS_SINE)
+	# Окна дома светятся
+	if world.house_rect.has_area():
+		var w := Fx.glow(Color(1.0, 0.8, 0.4), 160.0, 0.0, 0.5)
+		w.position = world.house_rect.get_center()
+		w.z_index = 950
+		world.fx.add_child(w)
 
 
 func clear(_w: World) -> void:

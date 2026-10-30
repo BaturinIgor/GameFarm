@@ -67,8 +67,18 @@ func attempts_total() -> int:
 	return n
 
 
+## Сегодняшние попытки плюс купленные (купленные тратятся, когда дневные кончились).
 func attempts_left() -> int:
-	return maxi(0, attempts_total() - int(_day()["used"]))
+	return maxi(0, attempts_total() - int(_day()["used"])) + tokens()
+
+
+func tokens() -> int:
+	return int(Game.save.get("dungeonTokens", 0))
+
+
+func add_tokens(n: int) -> void:
+	Game.save["dungeonTokens"] = tokens() + n
+	Game.mark_dirty()
 
 
 func ad_attempts_left() -> int:
@@ -109,7 +119,10 @@ func buy_attempt() -> bool:
 
 func _use_attempt() -> void:
 	var d := _day()
-	d["used"] = int(d["used"]) + 1
+	if int(d["used"]) < attempts_total():
+		d["used"] = int(d["used"]) + 1
+	elif tokens() > 0:
+		Game.save["dungeonTokens"] = tokens() - 1
 	Game.mark_dirty()
 
 

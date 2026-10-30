@@ -12,6 +12,7 @@ const FEATURES: Array[String] = [
 	"res://scripts/world/features/trader_feature.gd",
 	"res://scripts/world/features/residents_feature.gd",
 	"res://scripts/world/features/raid_feature.gd",
+	"res://scripts/world/features/cosmetics_feature.gd",
 	"res://scripts/world/features/garden_feature.gd",
 	"res://scripts/world/features/monsters_feature.gd",
 	"res://scripts/world/features/dungeon_feature.gd",

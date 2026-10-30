@@ -499,6 +499,12 @@ func _settings() -> void:
 	section_title(L.t("settings.section.look"))
 	var look := card()
 	look.add_child(WardrobePanel.profile_row())
+	# Купленные украшения можно выключить
+	for cid in Products.COSMETICS:
+		if Game.premium.owns(cid):
+			var key: String = "cos_" + cid
+			look.add_child(_switch_row(Products.title(cid), L.t("cosmetic.%s.hint" % cid), Settings._flag(key, true),
+				func(on: bool) -> void: Settings.set_value(key, on)))
 	# Покупки
 	section_title(L.t("settings.section.purchases"))
 	var buy := card()

@@ -132,7 +132,66 @@ func grant(key: String) -> void:
 			if skin != "":
 				give_skin(skin)
 		Game.save["bundleUntil"].erase(key)
+	elif key == "flash":
+		_give_pack(Products.FLASH[day_index() % Products.FLASH.size()])
+		Game.save["flashDay"] = day_index()
+		Game.show_toast("px:chest_gold", L.t("toast.purchased", [Products.title(key)]))
+	elif key in Products.STEPS:
+		_give_pack(Products.STEPS[key])
+	elif key == "stepsAll":
+		var purchases: Array = Game.save.get("purchases", [])
+		for k in Products.STEP_KEYS:
+			_give_pack(Products.STEPS[k])
+			if not Products.id(k) in purchases:
+				purchases.append(Products.id(k))
+		Game.save["purchases"] = purchases
+	elif key == "energyPack":
+		Game.energy.add(Products.ENERGY_PACK, true)
+	elif key == "attemptsPack":
+		Game.dungeons.add_tokens(Products.ATTEMPTS_PACK)
+		Game.show_toast("px:key", L.t("toast.purchased", [Products.title(key)]))
 	Game.mark_dirty()
+
+
+## Содержимое набора: кристаллы, монеты, билеты, карты, энергия, бесконечная энергия, попытки, украшение.
+func _give_pack(p: Dictionary) -> void:
+	if p.has("crystals"):
+		add_crystals(int(p["crystals"]))
+	if p.has("coins"):
+		Game.add_coins(int(p["coins"]))
+	if p.has("tickets"):
+		Game.save["tickets"] = Game.premium.tickets() + int(p["tickets"])
+	if p.has("maps"):
+		Game.save["maps"] = Game.premium.maps() + int(p["maps"])
+	if p.has("energy"):
+		Game.energy.add(int(p["energy"]))
+	if p.has("infinite_hours"):
+		Game.energy.add_infinite(float(p["infinite_hours"]) * 3600.0)
+	if p.has("attempts"):
+		Game.dungeons.add_tokens(int(p["attempts"]))
+	if p.has("cosmetic"):
+		var purchases: Array = Game.save.get("purchases", [])
+		var id := Products.id(str(p["cosmetic"]))
+		if not id in purchases:
+			purchases.append(id)
+		Game.save["purchases"] = purchases
+
+
+## Предложение дня уже куплено сегодня.
+func flash_bought() -> bool:
+	return int(Game.save.get("flashDay", -1)) == day_index()
+
+
+func flash_variant() -> Dictionary:
+	return Products.FLASH[day_index() % Products.FLASH.size()]
+
+
+## Следующая ступень набора ("" - все куплены).
+func next_step() -> String:
+	for k in Products.STEP_KEYS:
+		if not Game.premium.owns(k):
+			return k
+	return ""
 
 
 # MARK: Подписка MAX

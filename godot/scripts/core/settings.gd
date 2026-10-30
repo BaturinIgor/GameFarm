@@ -25,3 +25,8 @@ static func raids() -> bool:
 ## Окна с диалогами жителей (задания сюжета остаются в списке).
 static func dialogs() -> bool:
 	return _flag("dialogs", true)
+
+
+## Украшение включено: куплено и не выключено в настройках.
+static func cosmetic(id: String) -> bool:
+	return Game.premium.owns(id) and _flag("cos_" + id, true)

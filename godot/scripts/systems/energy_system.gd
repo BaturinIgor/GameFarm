@@ -16,7 +16,7 @@ const BUY_STEP := 5
 const INFINITE_MINUTES := 30
 const INFINITE_PRICE := 60
 ## Сверх запаса можно накопить едой и покупками, но не больше двух запасов.
-const OVERFLOW := 2.0
+const OVERFLOW := 3.0
 
 var _hint_at := -100.0
 

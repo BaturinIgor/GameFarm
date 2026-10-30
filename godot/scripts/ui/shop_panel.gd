@@ -80,7 +80,7 @@ func build_top() -> void:
 func _tab_news(id: String) -> bool:
 	var shop := Game.shop
 	match id:
-		"offers": return not shop.new_offers().is_empty() or shop.gift_ready()
+		"offers": return not shop.new_offers().is_empty() or shop.gift_ready() or not shop.flash_bought()
 		"market": return Freebies.ready("market")
 		"vip": return shop.max_daily_ready()
 		"free": return shop.ad_crystals_left() > 0 or Game.premium.luck_ready() or Game.house.can_claim_login()
@@ -112,6 +112,8 @@ func _close_detail() -> void:
 
 func _build_offers() -> void:
 	content.add_child(_gift_card())
+	content.add_child(_flash_card())
+	content.add_child(_steps_card())
 	var offers := Game.shop.current_offers()
 	for o in offers:
 		content.add_child(_featured(o["product"]))
@@ -129,8 +131,164 @@ func _build_offers() -> void:
 		grid.add_child(_tile(product))
 	content.add_child(EventsPanel.section(L.t("shop.section.tickets")))
 	content.add_child(_tickets_row())
+	content.add_child(EventsPanel.section(L.t("shop.section.extras")))
+	for product in ["aura", "rainbow", "glowMeadow", "petGlow", "builder", "energyPack", "attemptsPack"]:
+		content.add_child(_extra_row(product))
 	# Всё, что сейчас на витрине, игрок увидел
 	Game.shop.mark_all_seen()
+
+
+# MARK: Предложение дня, ступени, украшения
+
+## Значок содержимого набора: [иконка, число или подпись].
+static func pack_parts(p: Dictionary) -> Array:
+	var out: Array = []
+	if p.has("crystals"):
+		out.append(["gem", Fmt.n(int(p["crystals"]))])
+	if p.has("energy"):
+		out.append(["bolt", Fmt.n(int(p["energy"]))])
+	if p.has("infinite_hours"):
+		out.append(["bolt", L.t("shop.infiniteHours", [int(p["infinite_hours"])])])
+	if p.has("tickets"):
+		out.append(["ticket", str(p["tickets"])])
+	if p.has("maps"):
+		out.append(["tmap", str(p["maps"])])
+	if p.has("attempts"):
+		out.append(["key", str(p["attempts"])])
+	if p.has("cosmetic"):
+		out.append(["star", Products.title(str(p["cosmetic"]))])
+	return out
+
+
+static func _parts_flow(parts: Array, size: int, color: Color) -> HFlowContainer:
+	var flow := HFlowContainer.new()
+	flow.add_theme_constant_override("h_separation", 12)
+	flow.add_theme_constant_override("v_separation", 6)
+	for part in parts:
+		var h := HBoxContainer.new()
+		h.add_theme_constant_override("separation", 4)
+		h.add_child(UiKit.icon(str(part[0]), size + 6))
+		h.add_child(UiKit.label(str(part[1]), size, color, 4 if color == Color.WHITE else 0))
+		flow.add_child(h)
+	return flow
+
+
+## Предложение дня: яркая карточка, "в N раз выгоднее", таймер до конца дня. Покупается раз в день.
+func _flash_card() -> Control:
+	var shop := Game.shop
+	var variant := shop.flash_variant()
+	var p := PanelContainer.new()
+	var st := GameStyle.make(Color("e8463c"), Color("ffcf4a"), 18.0)
+	st.outline_width = 4.0
+	st.set_content_margin_all(14)
+	p.add_theme_stylebox_override("panel", st)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 8)
+	p.add_child(v)
+	v.add_child(ribbon(L.t("shop.flash.title"), "gold", 16))
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 10)
+	v.add_child(top)
+	top.add_child(gem_pile(5, 64))
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	top.add_child(col)
+	var big := UiKit.title(L.t("shop.flash.ratio", [Products.flash_ratio(variant)]), 26)
+	big.label_settings = big.label_settings.duplicate()
+	big.label_settings.font_color = Color("fff3a0")
+	col.add_child(big)
+	col.add_child(UiKit.label(L.t("shop.flash.sub"), 12, Color.WHITE, 4))
+	v.add_child(_parts_flow(pack_parts(variant), 15, Color.WHITE))
+	var left := func() -> String: return L.t("shop.flash.ends", [House.countdown(ShopSystem.next_day_in())])
+	var timer := CombatCards.LiveLabel.new(left, 13, Color.WHITE)
+	timer.label_settings.outline_size = 4
+	timer.label_settings.outline_color = Color("7a1a0e")
+	timer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(timer)
+	if shop.flash_bought():
+		v.add_child(UiKit.label(L.t("shop.flash.bought"), 13, Color.WHITE, 4))
+	else:
+		v.add_child(BuyButton.new("flash", "orange"))
+	# Карточка мягко пульсирует, чтобы её заметили
+	p.resized.connect(func() -> void: p.pivot_offset = p.size / 2.0)
+	var tw := p.create_tween().set_loops()
+	tw.tween_property(p, "scale", Vector2.ONE * 1.015, 0.8).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(p, "scale", Vector2.ONE, 0.8).set_trans(Tween.TRANS_SINE)
+	return p
+
+
+## Ступенчатый набор: три ступени по очереди ($0.99, $1.99, $2.99) или все сразу за цену третьей.
+func _steps_card() -> Control:
+	var shop := Game.shop
+	var parts := shop_card(L.t("shop.steps.title"), "green")
+	var v: VBoxContainer = parts[1]
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	v.add_child(row)
+	var next := shop.next_step()
+	for k in Products.STEP_KEYS:
+		var cell := PanelContainer.new()
+		var own := Game.premium.owns(k)
+		var cur := k == next
+		var cs := UiKit.box(Color("ddefc8") if own else (Color("fff3c4") if cur else UiKit.PARCHMENT_LIGHT),
+			UiKit.TONES["gold"][1] if cur else Color(UiKit.WOOD_DARK, 0.35), 10, 3 if cur else 1, false)
+		cs.set_content_margin_all(6)
+		cell.add_theme_stylebox_override("panel", cs)
+		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(cell)
+		var c := VBoxContainer.new()
+		c.add_theme_constant_override("separation", 3)
+		cell.add_child(c)
+		var price := UiKit.label(Products.price(k), 14)
+		price.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		c.add_child(price)
+		for part in pack_parts(Products.STEPS[k]):
+			var h := HBoxContainer.new()
+			h.add_theme_constant_override("separation", 3)
+			h.alignment = BoxContainer.ALIGNMENT_CENTER
+			h.add_child(UiKit.icon(str(part[0]), 16))
+			var t := UiKit.label(str(part[1]), 11)
+			t.clip_text = true
+			h.add_child(t)
+			c.add_child(h)
+		if own:
+			var ok := HousePanel.check_mark(20)
+			ok.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			c.add_child(ok)
+	if next != "":
+		v.add_child(BuyButton.new(next, "green", "shop.steps.buy"))
+	if next == "step1":
+		v.add_child(BuyButton.new("stepsAll", "orange", "shop.steps.all"))
+	if next == "":
+		v.add_child(UiKit.label(L.t("shop.owned"), 13, UiKit.INK_SOFT))
+	return parts[0]
+
+
+## Строка украшения или набора: значок, название, что даёт, кнопка с ценой.
+func _extra_row(product: String) -> PanelContainer:
+	var p := PanelContainer.new()
+	var st := UiKit.box(UiKit.PARCHMENT_LIGHT, UiKit.TONES[Products.tone(product)][1], 14, 2, false)
+	st.set_content_margin_all(10)
+	p.add_theme_stylebox_override("panel", st)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	p.add_child(row)
+	var icon := {"aura": "star", "rainbow": "rainbow", "glowMeadow": "spark", "petGlow": "paw", "builder": "hammer",
+		"energyPack": "bolt", "attemptsPack": "key"}
+	row.add_child(UiKit.icon(str(icon.get(product, "chest")), 34))
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_theme_constant_override("separation", 2)
+	row.add_child(col)
+	col.add_child(UiKit.label(Products.title(product), 14))
+	col.add_child(_wrap(L.t("product.%s.desc" % product), 11, UiKit.INK_SOFT))
+	var b := BuyButton.new(product, Products.tone(product), "", true)
+	b.size_flags_horizontal = Control.SIZE_SHRINK_END
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.custom_minimum_size = Vector2(84, 36)
+	row.add_child(b)
+	return p
 
 
 ## Карточка с иконкой и текстом (когда показывать нечего).

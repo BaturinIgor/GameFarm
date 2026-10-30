@@ -85,6 +85,11 @@ func _process(delta: float) -> void:
 				res["smith"]["chapter"] = 1
 				res["smith"]["taken"] = true
 				res["miller"]["arrived"] = true
+				# Украшения куплены: сияние, переливы, светлячки питомцев, ночная поляна (видна после выхода из дома)
+				var bought: Array = Game.save.get("purchases", [])
+				for cid in Products.COSMETICS:
+					bought.append(Products.id(cid))
+				Game.save["purchases"] = bought
 				res["smith"]["friend"] = 150
 				res["elder"]["friend"] = 50
 				# Академия: склад изучен, идёт стройка
