@@ -19,7 +19,6 @@ func _init() -> void:
 func build() -> void:
 	if Game.backpack_count > 0:
 		_backpack_card()
-	_tabs()
 	var list := _kinds(tab)
 	if list.is_empty():
 		var c := card()
@@ -56,18 +55,18 @@ func _kinds(t: String) -> Array:
 	return out
 
 
+## Вкладки закреплены под шапкой: прокручивается только содержимое.
+func build_top() -> void:
+	_tabs()
+
+
 func _tabs() -> void:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 6)
-	content.add_child(row)
+	var items: Array = []
 	for t in TABS:
-		var b := UiKit.button(L.t("storage.tab." + t), "orange" if t == tab else "wood", 13, true)
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.clip_text = true
-		b.pressed.connect(func() -> void:
-			tab = t
-			_dirty = true)
-		row.add_child(b)
+		items.append([t, L.t("storage.tab." + t)])
+	top_bar.add_child(UiKit.tabs(items, tab, func(id: String) -> void:
+		tab = id
+		scroll_to_top()))
 
 
 func _backpack_card() -> void:

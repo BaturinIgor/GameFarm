@@ -64,62 +64,16 @@ func _set_tab(id: String) -> void:
 		return
 	tab = id
 	detail = ""
-	Sound.play("tap")
 	scroll_to_top()
 
 
 # MARK: Вкладки
 
 func build_top() -> void:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 4)
-	top_bar.add_child(row)
+	var items: Array = []
 	for t in TABS:
-		row.add_child(_tab_button(t))
-
-
-func _tab_button(t: Array) -> Button:
-	var id: String = t[0]
-	var on := id == tab
-	var tone: Array = UiKit.TONES["orange" if on else "wood"]
-	var b := Button.new()
-	var s := UiKit.box(tone[1], UiKit.OUTLINE, 12, 2, false)
-	s.set_content_margin_all(2)
-	s.shadow_color = tone[2]
-	s.shadow_offset = Vector2(0, 3)
-	s.shadow_size = 1
-	var down := s.duplicate() as StyleBoxFlat
-	down.bg_color = tone[2].lerp(tone[1], 0.5)
-	down.shadow_offset = Vector2(0, 1)
-	for st in ["normal", "hover", "disabled"]:
-		b.add_theme_stylebox_override(st, s)
-	b.add_theme_stylebox_override("pressed", down)
-	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	b.focus_mode = Control.FOCUS_NONE
-	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	b.custom_minimum_size = Vector2(0, 52)
-	var col := VBoxContainer.new()
-	col.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	col.add_theme_constant_override("separation", 1)
-	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	b.add_child(col)
-	var ic := UiKit.icon(t[1], 24)
-	ic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	col.add_child(ic)
-	var l := UiKit.title(L.t(t[2]), 10)
-	l.label_settings.outline_size = 4
-	l.label_settings.outline_color = tone[2] if on else UiKit.OUTLINE
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.clip_text = true
-	col.add_child(l)
-	if _tab_news(id):
-		var dot := UiKit.count_badge(0)
-		(dot.get_child(0) as Label).text = "!"
-		dot.position = Vector2(-4, -6)
-		b.add_child(dot)
-	b.pressed.connect(func() -> void: _set_tab(id))
-	return b
+		items.append([t[0], L.t(t[2]), 1 if _tab_news(t[0]) else 0, t[1]])
+	top_bar.add_child(UiKit.tabs(items, tab, func(id: String) -> void: _set_tab(id)))
 
 
 ## Точка на вкладке: там есть что-то новое или бесплатное.

@@ -80,7 +80,7 @@ func _refresh() -> void:
 		s.set_corner_radius_all(13)
 		s.set_content_margin_all(0)
 		s.bg_color = UiKit.TONES["orange"][1] if offer else Color(UiKit.WOOD, 0.95)
-		var down := s.duplicate() as StyleBoxFlat
+		var down := s.duplicate() as GameStyle
 		down.bg_color = s.bg_color.darkened(0.15)
 		for state in ["normal", "hover", "disabled"]:
 			_shop.add_theme_stylebox_override(state, s)

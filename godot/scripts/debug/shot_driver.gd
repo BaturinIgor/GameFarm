@@ -150,12 +150,7 @@ func _check_layout(w: String) -> void:
 		print("LAYOUT OK %s width=%.0f" % [w, panel.size.x])
 		return
 	print("LAYOUT OVERFLOW %s panel_right=%.0f screen=%.0f" % [w, right, limit])
-	# Сколько места на самом деле: экран минус отступы панели (8 + 8) и поля её рамки
-	var st := panel.get_theme_stylebox("panel")
-	var avail := limit - 16.0 - (st.get_margin(SIDE_LEFT) + st.get_margin(SIDE_RIGHT) if st != null else 0.0)
-	var head: Control = sheet._title.get_parent()
-	if head.get_combined_minimum_size().x > avail + 0.5:
-		print("  %s header min=%.0f avail=%.0f" % [w, head.get_combined_minimum_size().x, avail])
+	var avail := sheet.content_width()
 	_report_overflow(sheet.content, avail, w, 0)
 
 

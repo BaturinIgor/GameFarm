@@ -17,7 +17,6 @@ func _init() -> void:
 
 
 func build() -> void:
-	_tabs()
 	content.add_child(_wrap(L.t("gear.hint." + tab), 12, UiKit.INK_SOFT))
 	if tab == "defense":
 		content.add_child(CombatCards.hero_defense_card())
@@ -28,28 +27,18 @@ func build() -> void:
 			content.add_child(c)
 
 
+## Вкладки закреплены под шапкой: прокручивается только содержимое.
+func build_top() -> void:
+	_tabs()
+
+
 func _tabs() -> void:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 6)
-	content.add_child(row)
+	var items: Array = []
 	for t in TABS:
-		var b := UiKit.button(L.t("gear.tab." + t), "orange" if t == tab else "wood", 13, true)
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.clip_text = true
-		b.pressed.connect(func() -> void:
-			tab = t
-			_dirty = true)
-		row.add_child(b)
-		var n := Game.workshop.upgradable_among(TABS[t])
-		if n > 0:
-			var badge := UiKit.count_badge(mini(n, 99))
-			badge.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-			badge.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-			badge.offset_left = -16
-			badge.offset_right = 4
-			badge.offset_top = -6
-			badge.offset_bottom = 14
-			b.add_child(badge)
+		items.append([t, L.t("gear.tab." + t), Game.workshop.upgradable_among(TABS[t])])
+	top_bar.add_child(UiKit.tabs(items, tab, func(id: String) -> void:
+		tab = id
+		scroll_to_top()))
 
 
 func _tool_card(tool: String) -> void:

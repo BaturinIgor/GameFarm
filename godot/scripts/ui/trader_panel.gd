@@ -15,7 +15,6 @@ func _init() -> void:
 
 func build() -> void:
 	content.add_child(hello_row("merchant", [UiKit.label(L.t("trader.hello"), 13)]))
-	_tabs()
 	if tab == "seeds":
 		for crop in Farming.CROP_IDS:
 			_seed_row(crop)
@@ -37,18 +36,18 @@ func _refresh_text() -> String:
 	return L.t("trader.deals.refresh", [countdown(GardenSystem.next_deals_at() - GardenSystem.now())])
 
 
+## Вкладки закреплены под шапкой: прокручивается только содержимое.
+func build_top() -> void:
+	_tabs()
+
+
 func _tabs() -> void:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 6)
-	content.add_child(row)
+	var items: Array = []
 	for t in ["seeds", "deals"]:
-		var b := UiKit.button(L.t("trader.tab." + t), "orange" if t == tab else "wood", 13, true)
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.clip_text = true
-		b.pressed.connect(func() -> void:
-			tab = t
-			_dirty = true)
-		row.add_child(b)
+		items.append([t, L.t("trader.tab." + t)])
+	top_bar.add_child(UiKit.tabs(items, tab, func(id: String) -> void:
+		tab = id
+		scroll_to_top()))
 
 
 ## Семена одной культуры (SeedRow): сколько растёт, сколько даёт, цена.

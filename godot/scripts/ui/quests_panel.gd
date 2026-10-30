@@ -17,7 +17,6 @@ func _init() -> void:
 
 
 func build() -> void:
-	_tabs()
 	if tab == "achievements":
 		_achievements_list()
 	elif tab == "hunts":
@@ -26,39 +25,20 @@ func build() -> void:
 		_quests_list()
 
 
+## Вкладки закреплены под шапкой: прокручивается только содержимое.
+func build_top() -> void:
+	_tabs()
+
+
 func _tabs() -> void:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 6)
-	content.add_child(row)
 	var items := [
-		["quests", "hud.quests", Game.quests.claimable_quests()],
-		["hunts", "hunt.tab", Game.combat.claimable_hunts()],
-		["achievements", "quests.achievements", Game.quests.claimable_achievements()],
+		["quests", L.t("hud.quests"), Game.quests.claimable_quests()],
+		["hunts", L.t("hunt.tab"), Game.combat.claimable_hunts()],
+		["achievements", L.t("quests.achievements"), Game.quests.claimable_achievements()],
 	]
-	for it in items:
-		var id: String = it[0]
-		var b := UiKit.button("", "orange" if id == tab else "wood", 13, true)
-		b.custom_minimum_size = Vector2(0, 36)
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var inner := HBoxContainer.new()
-		inner.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		inner.alignment = BoxContainer.ALIGNMENT_CENTER
-		inner.add_theme_constant_override("separation", 4)
-		inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		b.add_child(inner)
-		inner.add_child(UiKit.title(L.t(it[1]), 13))
-		# Счётчик внутри вкладки, чтобы рамка его не перекрывала
-		var n := int(it[2])
-		if n > 0:
-			var badge := UiKit.count_badge(n)
-			badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			if n > 99:
-				(badge.get_child(0) as Label).text = "99+"
-			inner.add_child(badge)
-		b.pressed.connect(func() -> void:
-			tab = id
-			_dirty = true)
-		row.add_child(b)
+	top_bar.add_child(UiKit.tabs(items, tab, func(id: String) -> void:
+		tab = id
+		scroll_to_top()))
 
 
 # MARK: Задания

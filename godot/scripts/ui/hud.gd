@@ -38,6 +38,8 @@ var _combat_row := CombatRow.new()
 var _minimap: MiniMap
 var _pro_crown: TextureRect
 var _badge_box: PanelContainer
+var _portrait: TextureRect
+var _portrait_skin := ""
 var _prompt_cards: Dictionary = {}
 var _overlay_layer := CanvasLayer.new()
 var _badges: Dictionary = {}
@@ -102,38 +104,63 @@ func _build_top() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	level_box.add_child(row)
+	# Портрет героя в светлой рамке, номер уровня - в оранжевом кружке в углу (как в iOS)
 	var badge := PanelContainer.new()
-	var badge_style := UiKit.box(UiKit.TONES["orange"][1], UiKit.OUTLINE, 18, 2, false)
+	var badge_style := UiKit.box(UiKit.PARCHMENT_LIGHT, UiKit.OUTLINE, 10, 2, false)
 	badge_style.set_content_margin_all(2)
 	badge.add_theme_stylebox_override("panel", badge_style)
-	badge.custom_minimum_size = Vector2(36, 36)
-	row.add_child(badge)
+	var holder := Control.new()
+	holder.custom_minimum_size = Vector2(46, 46)
+	holder.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(holder)
+	badge.position = Vector2.ZERO
+	badge.size = Vector2(42, 42)
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(badge)
 	_badge_box = badge
-	_pro_crown = UiKit.icon("crown", 16)
-	root.add_child(_pro_crown)
-	_level_label = UiKit.title("1", 18)
+	_portrait = WardrobePanel.skin_icon(Skins.current(), 36)
+	_portrait_skin = Skins.current()
+	badge.add_child(_portrait)
+	var num := PanelContainer.new()
+	var ns := UiKit.box(UiKit.TONES["orange"][1], UiKit.OUTLINE, 11, 2, false)
+	ns.content_margin_left = 3
+	ns.content_margin_right = 3
+	ns.content_margin_top = 0
+	ns.content_margin_bottom = 0
+	num.add_theme_stylebox_override("panel", ns)
+	num.custom_minimum_size = Vector2(22, 22)
+	num.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_level_label = UiKit.title("1", 13)
+	_level_label.label_settings.outline_size = 4
 	_level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_level_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	badge.add_child(_level_label)
+	num.add_child(_level_label)
+	holder.add_child(num)
+	# Кружок выходит за рамку портрета вниз и вправо
+	num.resized.connect(func() -> void: num.position = Vector2(46, 46) - num.size * 0.8)
+	num.position = Vector2(46, 46) - Vector2(22, 22) * 0.8
+	_pro_crown = UiKit.icon("crown", 16)
+	root.add_child(_pro_crown)
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 2)
 	row.add_child(col)
 	_level_name = UiKit.title("", 13)
-	_level_name.custom_minimum_size = Vector2(118, 0)
+	_level_name.custom_minimum_size = Vector2(140, 0)
 	_level_name.clip_text = true
 	col.add_child(_level_name)
-	_xp_bar = UiKit.bar(0.0, "gold", 118, 14, " ")
+	_xp_bar = UiKit.bar(0.0, "gold", 140, 14, " ")
 	col.add_child(_xp_bar)
 	# Здоровье: видно в бою или если ранен
 	col.add_child(CombatCards.HpStrip.new())
 	_level_box = level_box
 
-	# Рюкзак под уровнем
+	# Рюкзак справа под монетами (как в iOS), первой плашкой в столбце справа
 	var pack_box := PanelContainer.new()
 	pack_box.add_theme_stylebox_override("panel", UiKit.pill_style())
-	pack_box.position = Vector2(10, top + 54)
 	pack_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(pack_box)
+	pack_box.size_flags_horizontal = Control.SIZE_SHRINK_END
+	_pills.add_child(pack_box)
 	_pack_box = pack_box
 	var prow := HBoxContainer.new()
 	prow.add_theme_constant_override("separation", 6)
@@ -142,7 +169,7 @@ func _build_top() -> void:
 	var pcol := VBoxContainer.new()
 	pcol.add_theme_constant_override("separation", 1)
 	prow.add_child(pcol)
-	_pack_bar = UiKit.bar(0.0, "green", 76, 14, " ")
+	_pack_bar = UiKit.bar(0.0, "green", 100, 14, " ")
 	_pack_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	pcol.add_child(_pack_bar)
 	_minimap = MiniMap.new()
@@ -184,7 +211,7 @@ func _build_top() -> void:
 	sep.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	sep.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	crow.add_child(sep)
-	crow.add_child(UiKit.icon("coins", 22))
+	crow.add_child(UiKit.icon("coin", 22))
 	_coins_label = UiKit.title("0", 16)
 	crow.add_child(_coins_label)
 
@@ -281,7 +308,7 @@ func _hud_button(w: Array) -> Control:
 	style.set_corner_radius_all(14)
 	style.set_content_margin_all(2)
 	for state in ["normal", "hover", "pressed", "disabled"]:
-		var s := style.duplicate() as StyleBoxFlat
+		var s := style.duplicate() as GameStyle
 		if state == "pressed":
 			s.bg_color = UiKit.WOOD_DARK
 		b.add_theme_stylebox_override(state, s)
@@ -428,13 +455,17 @@ func _process(delta: float) -> void:
 
 
 func _refresh_values() -> void:
+	# Сменили образ - новый портрет
+	if _portrait != null and _portrait_skin != Skins.current():
+		_portrait_skin = Skins.current()
+		var tex := LevelPanel.portrait(_portrait_skin)
+		if tex != null:
+			_portrait.texture = tex
 	if _pro_crown != null:
 		_pro_crown.visible = Game.premium.has_pro()
 		_pro_crown.global_position = _badge_box.global_position + Vector2(_badge_box.size.x - 10, -8)
-	if _level_box != null and _pack_box != null:
-		_pack_box.position.y = _level_box.get_rect().end.y + 8.0
-		if _minimap != null:
-			_minimap.position = Vector2(10, _pack_box.get_rect().end.y + 8.0)
+	if _level_box != null and _minimap != null:
+		_minimap.position = Vector2(10, _level_box.get_rect().end.y + 10.0)
 	_level_label.text = str(Game.level)
 	_level_name.text = Locations.name_of(Game.current)
 	_xp_bar.value = Game.level_progress

@@ -17,63 +17,16 @@ func _init(start_tab := "") -> void:
 
 
 func build_top() -> void:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 4)
-	top_bar.add_child(row)
+	var items: Array = []
 	for t in TABS:
-		row.add_child(_tab_button(t))
-
-
-func _tab_button(t: Array) -> Button:
-	var id: String = t[0]
-	var on := id == tab
-	var tone: Array = UiKit.TONES["orange" if on else "wood"]
-	var b := Button.new()
-	var s := UiKit.box(tone[1], UiKit.OUTLINE, 12, 2, false)
-	s.set_content_margin_all(2)
-	s.shadow_color = tone[2]
-	s.shadow_offset = Vector2(0, 3)
-	s.shadow_size = 1
-	var down := s.duplicate() as StyleBoxFlat
-	down.bg_color = tone[2].lerp(tone[1], 0.5)
-	down.shadow_offset = Vector2(0, 1)
-	for st in ["normal", "hover", "disabled"]:
-		b.add_theme_stylebox_override(st, s)
-	b.add_theme_stylebox_override("pressed", down)
-	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	b.focus_mode = Control.FOCUS_NONE
-	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	b.custom_minimum_size = Vector2(0, 50)
-	var col := VBoxContainer.new()
-	col.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	col.add_theme_constant_override("separation", 1)
-	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	b.add_child(col)
-	var ic := UiKit.icon(t[1], 22)
-	ic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	col.add_child(ic)
-	var l := UiKit.title(L.t(t[2]), 11)
-	l.label_settings.outline_size = 4
-	l.label_settings.outline_color = tone[2] if on else UiKit.OUTLINE
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.clip_text = true
-	UiKit.fit_label(l, 80.0, 11)
-	col.add_child(l)
-	var n := 0
-	match id:
-		"hunts": n = Game.combat.claimable_hunts()
-		"bestiary": n = Game.combat.bestiary_ready_count()
-	if n > 0:
-		var badge := UiKit.count_badge(mini(n, 99))
-		badge.position = Vector2(-4, -6)
-		b.add_child(badge)
-	b.pressed.connect(func() -> void:
-		if tab != id:
-			tab = id
-			Sound.play("tap")
-			scroll_to_top())
-	return b
+		var n := 0
+		match t[0]:
+			"hunts": n = Game.combat.claimable_hunts()
+			"bestiary": n = Game.combat.bestiary_ready_count()
+		items.append([t[0], L.t(t[2]), n, t[1]])
+	top_bar.add_child(UiKit.tabs(items, tab, func(id: String) -> void:
+		tab = id
+		scroll_to_top()))
 
 
 func build() -> void:

@@ -16,19 +16,20 @@ const GOOD := Color("3e8e3a")
 const BAD := Color("c0392b")
 const DIM := Color(0.1, 0.06, 0.03, 0.55)
 
-## Цвета кнопок: верх, основа, низ (тень).
+## Цвета кнопок как ButtonTone в iOS: верх, основа, губа (низ).
 const TONES := {
-	"green": [Color("8bd45a"), Color("5cb338"), Color("3a7d22")],
-	"orange": [Color("ffb04a"), Color("f08a1c"), Color("b35f0a")],
-	"red": [Color("f0725e"), Color("d9483a"), Color("962a1f")],
-	"blue": [Color("6cc3f2"), Color("3a9ad9"), Color("21679b")],
-	"purple": [Color("b58bf0"), Color("8a5ad9"), Color("5a3596")],
-	"gold": [Color("ffe07a"), Color("f2b632"), Color("a8740f")],
-	"wood": [Color("d29a62"), Color("a0673a"), Color("6b4122")],
-	"gray": [Color("bdb3a6"), Color("958a7c"), Color("665c50")],
+	"green": [Color("8bd45a"), Color("4fa83a"), Color("2e6e25")],
+	"orange": [Color("ffb04a"), Color("f0821e"), Color("a5520e")],
+	"red": [Color("f0725e"), Color("d2412f"), Color("8a2419")],
+	"blue": [Color("6cc3f2"), Color("2f8fd0"), Color("1c5a8a")],
+	"purple": [Color("b58bf0"), Color("7c55c9"), Color("4d3285")],
+	"gold": [Color("ffe07a"), Color("f0b22e"), Color("a8721a")],
+	"wood": [Color("d29a62"), Color("a0673a"), Color("5e3a1f")],
+	"gray": [Color("bdb3a6"), Color("958a7e"), Color("5f574f")],
 }
 
 static var _font: Font
+static var _body_font: Font
 
 
 static func font() -> Font:
@@ -36,6 +37,13 @@ static func font() -> Font:
 		# load, а не preload: при чистом импорте шрифт ещё не готов, когда скрипты уже разбираются
 		_font = load("res://fonts/Nunito-900.ttf")
 	return _font
+
+
+## Шрифт пояснений (серый текст): полегче, как .semibold в iOS.
+static func body_font() -> Font:
+	if _body_font == null:
+		_body_font = load("res://fonts/Nunito-700.ttf")
+	return _body_font
 
 
 static func box(fill: Color, border := OUTLINE, radius := 16, width := 3, shadow := true) -> StyleBoxFlat:
@@ -56,8 +64,15 @@ static func box(fill: Color, border := OUTLINE, radius := 16, width := 3, shadow
 	return s
 
 
-static func panel_style(radius := 18) -> StyleBoxFlat:
-	return box(PARCHMENT, OUTLINE, radius, 3)
+## Пергамент в деревянной рамке с жёсткой тенью (gamePanel в iOS).
+static func panel_style(radius := 18) -> GameStyle:
+	var s := GameStyle.make(PARCHMENT, PARCHMENT, float(radius))
+	s.border_width = 4.0
+	s.border_color = WOOD
+	s.shadow_offset = 4.0
+	s.shadow_color = Color(OUTLINE, 0.45)
+	s.set_content_margin_all(14)
+	return s
 
 
 ## Подпись: белая с обводкой (title) или тёмная на пергаменте.
@@ -65,7 +80,8 @@ static func label(text: String, size := 14, color := INK, outline := 0) -> Label
 	var l := Label.new()
 	l.text = text
 	var ls := LabelSettings.new()
-	ls.font = font()
+	# Серые пояснения - полегче, как в iOS; названия и заголовки - жирные
+	ls.font = body_font() if (outline == 0 and color == INK_SOFT) else font()
 	ls.font_size = size
 	ls.font_color = color
 	if outline > 0:
@@ -89,45 +105,85 @@ static func fit_label(l: Label, width: float, max_size: int, min_size := 7) -> v
 	l.label_settings.font_size = fs
 
 
+## Заголовок: белые буквы с обводкой (gameTitle в iOS: обводка тоньше у мелкого текста).
 static func title(text: String, size := 18) -> Label:
-	return label(text, size, Color.WHITE, 6)
+	return label(text, size, Color.WHITE, 5 if size >= 20 else 4)
 
 
-## Кнопка в игровом стиле: цветная "таблетка" с тенью снизу.
-static func button(text: String, tone := "green", size := 15, small := false) -> Button:
-	var b := Button.new()
+## Кнопка в игровом стиле (GameButton): градиент, светлая полоска, контур и губа снизу, как в iOS.
+static func button(text: String, tone := "green", size := 15, small := false) -> GameButton:
+	var b := GameButton.new(tone, small, size)
 	b.text = text
-	var c: Array = TONES.get(tone, TONES["green"])
-	var r := 12 if small else 14
-	var normal := box(c[1], OUTLINE, r, 3, false)
-	normal.shadow_color = c[2]
-	normal.shadow_offset = Vector2(0, 4)
-	normal.shadow_size = 1
-	normal.content_margin_top = 6 if small else 9
-	normal.content_margin_bottom = 6 if small else 9
-	var pressed := normal.duplicate()
-	pressed.bg_color = c[2].lerp(c[1], 0.5)
-	pressed.shadow_offset = Vector2(0, 1)
-	var hover := normal.duplicate()
-	hover.bg_color = c[0].lerp(c[1], 0.5)
-	var disabled := normal.duplicate()
-	disabled.bg_color = TONES["gray"][1]
-	disabled.shadow_color = TONES["gray"][2]
-	b.add_theme_stylebox_override("normal", normal)
-	b.add_theme_stylebox_override("hover", hover)
-	b.add_theme_stylebox_override("pressed", pressed)
-	b.add_theme_stylebox_override("disabled", disabled)
-	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	b.add_theme_font_override("font", font())
-	b.add_theme_font_size_override("font_size", size)
-	b.add_theme_color_override("font_color", Color.WHITE)
-	b.add_theme_color_override("font_hover_color", Color.WHITE)
-	b.add_theme_color_override("font_pressed_color", Color.WHITE)
-	b.add_theme_color_override("font_disabled_color", Color(1, 1, 1, 0.7))
-	b.add_theme_color_override("font_outline_color", OUTLINE)
-	b.add_theme_constant_override("outline_size", 5)
-	b.focus_mode = Control.FOCUS_NONE
 	return b
+
+
+## Деревянные вкладки (GameTabs): светлая дорожка, выбранная вкладка - деревянная плашка.
+## items = [[id, подпись, счётчик, иконка], ...] (счётчик и иконка - по желанию); on_select(id).
+## С иконками вкладки выше: иконка над подписью, счётчик - в углу.
+static func tabs(items: Array, selected: String, on_select: Callable) -> PanelContainer:
+	var track := PanelContainer.new()
+	var ts := box(PARCHMENT_DEEP, Color(WOOD_DARK, 0.5), 13, 2, false)
+	ts.set_content_margin_all(4)
+	track.add_theme_stylebox_override("panel", ts)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 4)
+	track.add_child(row)
+	for it in items:
+		var id: String = it[0]
+		var on := id == selected
+		var icon_name := str(it[3]) if it.size() > 3 else ""
+		var b := Button.new()
+		b.focus_mode = Control.FOCUS_NONE
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.custom_minimum_size = Vector2(0, 50 if icon_name != "" else 34)
+		var st: StyleBox = StyleBoxEmpty.new()
+		if on:
+			var g := GameStyle.make(WOOD_LIGHT, WOOD, 10.0)
+			g.outline_width = 1.5
+			st = g
+		for k in ["normal", "hover", "pressed", "hover_pressed", "focus", "disabled"]:
+			b.add_theme_stylebox_override(k, st)
+		var inner: BoxContainer = VBoxContainer.new() if icon_name != "" else HBoxContainer.new()
+		inner.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		inner.alignment = BoxContainer.ALIGNMENT_CENTER
+		inner.add_theme_constant_override("separation", 1 if icon_name != "" else 4)
+		inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(inner)
+		if icon_name != "":
+			var ic := icon(icon_name, 22)
+			ic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			if not on:
+				ic.modulate = Color(1, 1, 1, 0.8)
+			inner.add_child(ic)
+		var l := label(str(it[1]), 11 if icon_name != "" else 13, Color.WHITE if on else INK_SOFT, 4 if on else 0)
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		if on:
+			l.label_settings.outline_color = WOOD_DARK
+		else:
+			l.label_settings.font = font()
+		l.clip_text = true
+		l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		inner.add_child(l)
+		var n := int(it[2]) if it.size() > 2 else 0
+		if n > 0:
+			var badge := count_badge(mini(n, 99))
+			if icon_name != "":
+				badge.position = Vector2(-4, -6)
+				b.add_child(badge)
+			else:
+				badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+				inner.add_child(badge)
+		b.pressed.connect(func() -> void:
+			if id != selected:
+				Sound.play("tap")
+				on_select.call(id))
+		# Подпись уменьшается, если не влезает (minimumScaleFactor)
+		var base_size := 11 if icon_name != "" else 13
+		var badge_w := 24.0 if (n > 0 and icon_name == "") else 0.0
+		b.resized.connect(func() -> void:
+			fit_label(l, maxf(20.0, b.size.x - 8.0 - badge_w), base_size, 7))
+		row.add_child(b)
+	return track
 
 
 ## Иконка из спрайтов (ic_<имя>) в интерфейсе, без сглаживания.
@@ -241,9 +297,13 @@ static func count_badge(n: int) -> PanelContainer:
 	return p
 
 
-## Деревянная "плашка" (счётчики в шапке).
-static func pill_style() -> StyleBoxFlat:
-	var s := box(Color(WOOD, 0.95), OUTLINE, 14, 2, false)
+## Деревянная "плашка" (woodPill в iOS): светлее сверху, светлая черта внутри, контур и тень.
+static func pill_style() -> GameStyle:
+	var s := GameStyle.make(WOOD.lerp(Color.WHITE, 0.18), WOOD, 14.0)
+	s.frame_color = Color(1, 1, 1, 0.18)
+	s.frame_width = 2.0
+	s.shadow_offset = 3.0
+	s.shadow_color = Color(OUTLINE, 0.5)
 	s.content_margin_left = 8
 	s.content_margin_right = 10
 	s.content_margin_top = 4

@@ -14,7 +14,6 @@ func _init() -> void:
 
 func build() -> void:
 	_slots()
-	_tabs()
 	match tab:
 		"mine":
 			var mine := Game.animals.owned()
@@ -142,18 +141,18 @@ func _slot(id: String) -> Button:
 	return b
 
 
+## Вкладки закреплены под шапкой: прокручивается только содержимое.
+func build_top() -> void:
+	_tabs()
+
+
 func _tabs() -> void:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 4)
-	content.add_child(row)
+	var items: Array = []
 	for t in TABS:
-		var b := UiKit.button(L.t("animals.tab." + t), "orange" if t == tab else "wood", 13, true)
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.clip_text = true
-		b.pressed.connect(func() -> void:
-			tab = t
-			_dirty = true)
-		row.add_child(b)
+		items.append([t, L.t("animals.tab." + t)])
+	top_bar.add_child(UiKit.tabs(items, tab, func(id: String) -> void:
+		tab = id
+		scroll_to_top()))
 
 
 # MARK: Строка зверя (AnimalRow)
