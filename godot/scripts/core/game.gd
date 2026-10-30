@@ -27,11 +27,13 @@ var events := EventSystem.new()
 var collection := CollectionSystem.new()
 var legacy := LegacySystem.new()
 var premium := PremiumSystem.new()
+var shop := ShopSystem.new()
 var world_map := WorldMapSystem.new()
 
 ## Все системы по порядку: для значений по умолчанию и событий.
 var systems: Array:
-	get: return [talents, workshop, animals, quests, house, garden, combat, dungeons, events, collection, legacy, premium, world_map]
+	get: return [talents, workshop, animals, quests, house, garden, combat, dungeons, events, collection, legacy, premium, shop,
+		world_map]
 ## Где появиться после перехода через проход (id прохода).
 var arrival_gate := ""
 ## В доме: у какой станции появиться (exit, up, down); на лугу - у двери дома.
@@ -175,6 +177,7 @@ func gain_xp(base: int) -> void:
 	if level > int(save.get("bestLevel", 1)):
 		save["bestLevel"] = level
 	if level > from:
+		shop.on_level_up(from, level)
 		recalc()
 		level_up.emit(from, level)
 		Sound.play("levelUp")
@@ -530,7 +533,8 @@ func recalc() -> void:
 	crit_bonus += meal["crit"]
 	s.animal_mult += meal["animals"]
 	var capacity: float = float(capacity_at(level)) + 15.0 * r.call("bigPack") \
-		+ (float(PremiumSystem.STARTER_BACKPACK) if premium.owns("starter") else 0.0) + lg.call("pack")
+		+ (float(PremiumSystem.STARTER_BACKPACK) if premium.owns("starter") else 0.0) + lg.call("pack") \
+		+ (float(ShopSystem.MAX_BACKPACK) if shop.max_active() else 0.0)
 
 	for id in save.get("active", []):
 		var m := s.star_multiplier(int(save["animals"].get(id, 1))) * s.animal_mult * animals.boost(id)

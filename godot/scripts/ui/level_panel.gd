@@ -50,6 +50,7 @@ static func rewards(from: int, to: int) -> Array:
 	return [
 		_line("px:star", L.t("reward.talentPoints", [points])),
 		_line("px:coins", L.t("reward.coins", [Fmt.n(coins)])),
+		_line("px:gem", L.t("reward.crystals", [ShopSystem.level_crystals(from, to)])),
 		_line("px:bag", L.t("reward.backpack")),
 		_line("px:fist", L.t("reward.power")),
 	]

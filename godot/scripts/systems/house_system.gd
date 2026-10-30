@@ -443,6 +443,7 @@ func claim_login() -> void:
 			Game.add_coins(int(r["coins"]))
 			if Game.collection.has_method("random_card"):
 				Game.collection.call("random_card")
+	Game.shop.add_crystals(int(r.get("crystals", 0)))
 	Game.save["loginDay"] = _day_index()
 	Game.save["loginClaims"] = login_claims() + 1
 	Sound.play("treasure")

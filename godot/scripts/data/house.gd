@@ -345,7 +345,7 @@ static func login_reward(claim: int, level: int) -> Dictionary:
 		3: return {"type": "coinsAndWood", "coins": int(round(400.0 * m)), "wood": 30}
 		4: return {"type": "dish", "dish": LOGIN_DISHES[(claim / LOGIN_DAYS) % LOGIN_DISHES.size()]}
 		5: return {"type": "resource", "kind": "iron" if level >= 12 else "stone", "n": 20}
-	return {"type": "chest", "tickets": 2, "coins": int(round(800.0 * m))}
+	return {"type": "chest", "tickets": 2, "coins": int(round(800.0 * m)), "crystals": 20}
 
 
 # MARK: Время

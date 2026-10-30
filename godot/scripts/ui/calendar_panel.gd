@@ -158,6 +158,8 @@ static func reward_icon(r: Dictionary) -> VBoxContainer:
 			text = "x%d" % int(r["n"])
 		"chest":
 			pic.add_child(UiKit.icon("chest_gold", 28))
+			if int(r.get("crystals", 0)) > 0:
+				pic.add_child(UiKit.icon("gem", 18))
 			text = "%s +%d" % [Fmt.n(int(r["coins"])), int(r["tickets"])]
 			font_size = 10
 	var l := UiKit.label(text, font_size)

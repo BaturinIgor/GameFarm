@@ -61,7 +61,9 @@ static func is_unlocked(skin: String) -> bool:
 	match str(u[0]):
 		"free": return true
 		"level": return maxi(Game.level, int(Game.save.get("bestLevel", 1))) >= int(u[1])
-		"product": return Game.premium.owns(str(u[1]))
+		"product":
+			# Образ из коллекции можно получить и по одному: за кристаллы, в наборе или от MAX
+			return Game.premium.owns(str(u[1])) or (str(u[1]) == "skins" and Game.shop.owns_skin(skin))
 		"constellation": return Game.collection.is_complete(str(u[1]))
 		"event": return skin in Game.save.get("eventSkins", [])
 	return false

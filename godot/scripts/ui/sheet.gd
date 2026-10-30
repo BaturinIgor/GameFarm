@@ -4,12 +4,17 @@ extends Control
 ## и прокручиваемое содержимое. Наследники заполняют content в build() и обновляются при изменениях.
 
 var title_key := ""
+## Что показывать в шапке рядом с названием: монеты или кристаллы (магазин).
+var header_currency := "coins"
 var content := VBoxContainer.new()
+## Неподвижная полоса между шапкой и прокруткой (вкладки). Наследник заполняет её в build_top().
+var top_bar := VBoxContainer.new()
 var _panel := PanelContainer.new()
 var _title: Label
 var _coins: Label
 var _scroll := ScrollContainer.new()
 var _dirty := true
+var _to_top := false
 
 
 func _ready() -> void:
@@ -48,7 +53,7 @@ func _ready() -> void:
 	var crow := HBoxContainer.new()
 	crow.add_theme_constant_override("separation", 4)
 	coin_box.add_child(crow)
-	crow.add_child(UiKit.icon("coins", 18))
+	crow.add_child(UiKit.icon("gem" if header_currency == "crystals" else "coins", 18))
 	_coins = UiKit.title("0", 14)
 	crow.add_child(_coins)
 	var x := UiKit.button("✕", "red", 16, true)
@@ -60,6 +65,9 @@ func _ready() -> void:
 	_fit_title()
 	_title.resized.connect(_fit_title)
 
+	top_bar.add_theme_constant_override("separation", 8)
+	top_bar.visible = false
+	col.add_child(top_bar)
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_scroll.scroll_deadzone = 8
@@ -84,8 +92,13 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if _dirty:
 		_dirty = false
-		_coins.text = Fmt.n(int(Game.save["coins"]))
-		var keep := _scroll.scroll_vertical
+		_coins.text = Fmt.n(Game.shop.crystals() if header_currency == "crystals" else int(Game.save["coins"]))
+		var keep := 0 if _to_top else _scroll.scroll_vertical
+		_to_top = false
+		for c in top_bar.get_children():
+			c.queue_free()
+		build_top()
+		top_bar.visible = top_bar.get_child_count() > 0
 		for c in content.get_children():
 			c.queue_free()
 		build()
@@ -121,6 +134,17 @@ static func touch_scroll(node: Node) -> void:
 ## Заполнить content. Вызывается заново после любых изменений игры.
 func build() -> void:
 	pass
+
+
+## Заполнить top_bar (неподвижная полоса над прокруткой). Вызывается перед build().
+func build_top() -> void:
+	pass
+
+
+## Прокрутить содержимое в начало (после смены вкладки).
+func scroll_to_top() -> void:
+	_to_top = true
+	_dirty = true
 
 
 func close() -> void:

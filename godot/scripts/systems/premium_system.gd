@@ -57,7 +57,8 @@ func defaults(save: Dictionary) -> void:
 static func _repair_timers(save: Dictionary) -> bool:
 	var now := _now()
 	var fixed := false
-	if _is_number(save.get("luckReadyAt")) and float(save["luckReadyAt"]) - now > LUCK_DURATION + LUCK_COOLDOWN + 60.0:
+	# Удачу можно купить за кристаллы, поэтому она бывает длиннее: сбрасываем только явно сбитые часы
+	if _is_number(save.get("luckReadyAt")) and float(save["luckReadyAt"]) - now > 24.0 * 3600.0:
 		save.erase("luckUntil")
 		save.erase("luckReadyAt")
 		fixed = true
@@ -105,8 +106,9 @@ func owns(product: String) -> bool:
 	return Products.id(product) in Game.save.get("purchases", [])
 
 
+## Pro куплен или действует подписка MAX (в ней всё из Pro).
 func has_pro() -> bool:
-	return owns("pro")
+	return owns("pro") or Game.shop.max_active()
 
 
 ## Выдаёт покупку. Разовые награды (монеты, зверь) выдаются один раз даже при повторном восстановлении.
@@ -123,6 +125,14 @@ func grant(product: String, transaction := "") -> void:
 				return
 			used.append(transaction)
 			Game.save["consumed"] = used
+		if key == "max" or Products.is_crystals(key):
+			# Кристаллы и MAX: свой тост в ShopSystem
+			Game.shop.grant(key)
+			Sound.play("purchase")
+			Game.recalc()
+			Game.mark_dirty()
+			Game.save_now()
+			return
 		if key == "eventPass":
 			Game.events.activate_vip()
 		else:
@@ -152,6 +162,9 @@ func grant(product: String, transaction := "") -> void:
 				Game.save["skin"] = "knight"
 				Game.save.erase("gardenChestAt")
 				Game.combat.grant_weapon("royalSword")
+			_:
+				if Products.is_level_bundle(key):
+					Game.shop.grant(key)
 		Game.show_toast("px:chest_gold", L.t("toast.purchased", [Products.title(key)]))
 		Sound.play("purchase")
 	offer_popup = false
@@ -226,11 +239,24 @@ func luck_ready() -> bool:
 func activate_luck(from_ad: bool) -> void:
 	if not luck_ready():
 		return
-	var until := _now() + LUCK_DURATION
+	var until := _now() + LUCK_DURATION * (ShopSystem.MAX_LUCK_MULT if Game.shop.max_active() else 1.0)
 	Game.save["luckUntil"] = until
 	Game.save["luckReadyAt"] = until + LUCK_COOLDOWN
 	if from_ad:
 		Game.save["adsWatched"] = int(Game.save.get("adsWatched", 0)) + 1
+	Game.show_toast("px:clover", L.t("toast.luck"))
+	Sound.play("luck")
+	Game.mark_dirty()
+
+
+## Удача из лавки: продлевает текущую (или начинает новую), бесплатная удача ждёт, пока эта не кончится.
+func add_luck(seconds: float) -> void:
+	var now := _now()
+	var until = Game.save.get("luckUntil")
+	var from := maxf(now, float(until) if _is_number(until) else 0.0)
+	Game.save["luckUntil"] = from + seconds
+	var ready_at = Game.save.get("luckReadyAt")
+	Game.save["luckReadyAt"] = maxf(float(ready_at) if _is_number(ready_at) else 0.0, from + seconds)
 	Game.show_toast("px:clover", L.t("toast.luck"))
 	Sound.play("luck")
 	Game.mark_dirty()

@@ -49,8 +49,9 @@ func events_open() -> bool:
 	return Game.level >= Events.MIN_LEVEL
 
 
+## Пропуск куплен на этот ивент или действует MAX.
 func has_vip() -> bool:
-	return Events.current()["key"] in Game.save.get("vipKeys", [])
+	return Events.current()["key"] in Game.save.get("vipKeys", []) or Game.shop.max_active()
 
 
 func event_tier() -> int:
