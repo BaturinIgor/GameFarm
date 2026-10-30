@@ -20,6 +20,7 @@ var _action_time := 0.0
 var _action_length := 0.0
 var _frame_time := 0.06
 var _ring := RingFx.new()
+var _pick_tween: Tween
 
 
 func _ready() -> void:
@@ -76,14 +77,12 @@ var busy: bool:
 
 ## speed_ratio от 0 до 1: насколько быстро бежит персонаж.
 func animate(velocity: Vector2, speed_ratio: float, dt: float) -> void:
+	# Замах доигрывается и на бегу: иначе при добыче на ходу анимации не видно
 	if _action_time < _action_length:
 		_action_time += dt
-		if speed_ratio > 0.35:
-			_action_length = 0.0
-		else:
-			var n: int = ROW_FRAMES[_action_row]
-			_show(_action_row, mini(n - 1, int(_action_time / _frame_time)))
-			return
+		var n: int = ROW_FRAMES[_action_row]
+		_show(_action_row, mini(n - 1, int(_action_time / _frame_time)))
+		return
 	if speed_ratio > 0.05:
 		if velocity.length() > 6.0:
 			_face(velocity)
@@ -94,15 +93,18 @@ func animate(velocity: Vector2, speed_ratio: float, dt: float) -> void:
 		_show(facing, int(_clock))
 
 
-## Замах инструментом в сторону цели.
+## Замах инструментом в сторону цели. Руками (ягоды, грибы, урожай) - не замах, а "сорвать":
+## герой наклоняется к точке.
 func swing(tool: String, target: Vector2, interval := 0.55) -> void:
 	var d := target - position
-	_face(d)
 	var duration := clampf(interval * 0.8, 0.24, 0.42)
+	if tool == "hand":
+		_pick(d)
+		return
+	_face(d)
 	var base := 6
 	match tool:
 		"pickaxe": base = 9
-		"hand": base = 12
 		"rod":
 			base = 15
 			duration = maxf(duration, 0.4)
@@ -111,6 +113,18 @@ func swing(tool: String, target: Vector2, interval := 0.55) -> void:
 	_action_time = 0.0
 	_action_length = duration
 	_show(_action_row, 0)
+
+
+## Сорвать: короткий наклон к точке и обратно, кадры бега или покоя не прерываются.
+func _pick(d: Vector2) -> void:
+	if _pick_tween != null and _pick_tween.is_running():
+		return
+	var lean := Vector2(clampf(d.x, -1.0, 1.0) * 3.0, 3.0)
+	_pick_tween = create_tween()
+	_pick_tween.tween_property(root, "scale", Vector2(1.08, 0.86), 0.09).set_ease(Tween.EASE_OUT)
+	_pick_tween.parallel().tween_property(root, "position", lean, 0.09).set_ease(Tween.EASE_OUT)
+	_pick_tween.tween_property(root, "scale", Vector2.ONE, 0.16).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	_pick_tween.parallel().tween_property(root, "position", Vector2.ZERO, 0.16).set_ease(Tween.EASE_OUT)
 
 
 func look(target: Vector2) -> void:

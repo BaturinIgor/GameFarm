@@ -22,6 +22,8 @@ func _ready() -> void:
 	if i >= 0 and i + 1 < args.size():
 		dir = args[i + 1]
 	DirAccess.make_dir_recursive_absolute(dir)
+	# Снимки на русском: длинные подписи лучше всего показывают, что не помещается
+	L.set_language("ru", false)
 
 
 func _process(delta: float) -> void:
@@ -82,6 +84,7 @@ func _process(delta: float) -> void:
 				elif t % 2 == 1 and _shot_done != w:
 					_shot_done = w
 					_shot("6_" + w)
+					_check_layout(w)
 			else:
 				main.hud.close_window()
 				_step = 5
@@ -121,6 +124,57 @@ func _process(delta: float) -> void:
 			if _time > 712.0:
 				_shot("12_dungeon_later")
 				get_tree().quit()
+
+## Проверка вёрстки окна: панель не шире экрана, иначе ищем самые глубокие узлы,
+## которые не помещаются в родителя, и печатаем их (LAYOUT OVERFLOW в журнале CI).
+func _check_layout(w: String) -> void:
+	var sheet: Sheet = null
+	for n in main.hud.find_children("*", "", true, false):
+		if n is Sheet:
+			sheet = n
+	if sheet == null:
+		return
+	var limit := get_viewport().get_visible_rect().size.x
+	var panel: Control = sheet._panel
+	var right := panel.get_global_rect().end.x
+	if right <= limit + 0.5:
+		print("LAYOUT OK %s width=%.0f" % [w, panel.size.x])
+		return
+	print("LAYOUT OVERFLOW %s panel_right=%.0f screen=%.0f" % [w, right, limit])
+	_report_overflow(sheet.content, sheet._scroll.size.x, w, 0)
+
+
+func _report_overflow(node: Control, avail: float, w: String, depth: int) -> void:
+	var found := false
+	for c in node.get_children():
+		if not c is Control or not (c as Control).visible:
+			continue
+		var cm := (c as Control).get_combined_minimum_size().x
+		if cm > avail + 0.5:
+			found = true
+			var inner := avail
+			if c is PanelContainer:
+				var st := (c as Control).get_theme_stylebox("panel")
+				if st != null:
+					inner -= st.get_margin(SIDE_LEFT) + st.get_margin(SIDE_RIGHT)
+			elif c is MarginContainer:
+				inner -= (c as Control).get_theme_constant("margin_left") + (c as Control).get_theme_constant("margin_right")
+			if c is HBoxContainer or c is HFlowContainer:
+				var parts: Array = []
+				for k in c.get_children():
+					if k is Control and (k as Control).visible:
+						var txt := ""
+						if k is Label:
+							txt = (k as Label).text
+						elif k is Button:
+							txt = (k as Button).text
+						parts.append("%s(%.0f)%s" % [k.get_class(), (k as Control).get_combined_minimum_size().x, " '" + txt + "'" if txt != "" else ""])
+				print("  %s row min=%.0f avail=%.0f: %s" % [w, cm, avail, ", ".join(parts)])
+			if depth < 12:
+				_report_overflow(c, inner, w, depth + 1)
+	if not found and depth == 0:
+		print("  %s: no single child overflows" % w)
+
 
 func _touch(p: Vector2, pressed: bool) -> void:
 	var e := InputEventMouseButton.new()

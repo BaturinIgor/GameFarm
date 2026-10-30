@@ -390,7 +390,7 @@ func _refresh_values() -> void:
 	_pack_bar.value = fraction
 	(_pack_bar.get_child(0) as Label).text = "%d/%d" % [Game.backpack_count, cap]
 	var tone := "red" if fraction >= 1.0 else ("orange" if fraction > 0.8 else "green")
-	(_pack_bar.get_theme_stylebox("fill") as StyleBoxFlat).bg_color = UiKit.TONES[tone][1]
+	(_pack_bar as GameBar).tone = tone
 	_update_badges()
 	if _prompt_cards.has("tutorial") and bool(Game.save.get("tutorialDone", false)):
 		set_prompt("tutorial", null)

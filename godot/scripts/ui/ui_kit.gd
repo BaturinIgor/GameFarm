@@ -150,24 +150,13 @@ static func icon_any(code: String, size := 22.0) -> Control:
 
 
 ## Полоска прогресса (GameBar): тон из TONES, подпись поверх по центру.
-static func bar(value: float, tone := "green", width := 120.0, height := 12.0, text := "") -> ProgressBar:
-	var b := ProgressBar.new()
+static func bar(value: float, tone := "green", width := 120.0, height := 12.0, text := "") -> GameBar:
+	var b := GameBar.new()
 	b.custom_minimum_size = Vector2(width, height)
-	b.show_percentage = false
-	b.max_value = 1.0
-	b.step = 0.0
 	b.value = clampf(value, 0.0, 1.0)
-	var r := int(height / 2.0)
-	var bg := box(Color(WOOD_DARK, 0.85), OUTLINE, r, 2, false)
-	bg.set_content_margin_all(0)
-	var c: Array = TONES.get(tone, TONES["green"])
-	var fill := box(c[1], Color(0, 0, 0, 0), r, 0, false)
-	fill.set_content_margin_all(0)
-	b.add_theme_stylebox_override("background", bg)
-	b.add_theme_stylebox_override("fill", fill)
-	b.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.tone = tone
 	if text != "":
-		var l := label(text, maxi(9, int(height * 0.8)), Color.WHITE, 4)
+		var l := label(text, maxi(9, int(height * 0.72)), Color.WHITE, 4)
 		l.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER

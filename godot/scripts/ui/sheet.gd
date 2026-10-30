@@ -58,6 +58,7 @@ func _ready() -> void:
 
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_scroll.scroll_deadzone = 8
 	col.add_child(_scroll)
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	content.add_theme_constant_override("separation", 12)
@@ -83,7 +84,21 @@ func _process(_delta: float) -> void:
 		for c in content.get_children():
 			c.queue_free()
 		build()
+		touch_scroll(content)
 		_scroll.set_deferred("scroll_vertical", keep)
+
+
+## Прокрутка пальцем: элементы внутри прокрутки не должны забирать касание себе (STOP),
+## иначе ScrollContainer его не получает. Кнопки остаются кнопками: при начале прокрутки
+## нажатие на них само отменяется.
+static func touch_scroll(node: Node) -> void:
+	for c in node.get_children():
+		if c is ScrollContainer:
+			touch_scroll(c)
+			continue
+		if c is Control and (c as Control).mouse_filter == Control.MOUSE_FILTER_STOP:
+			(c as Control).mouse_filter = Control.MOUSE_FILTER_PASS
+		touch_scroll(c)
 
 
 ## Заполнить content. Вызывается заново после любых изменений игры.

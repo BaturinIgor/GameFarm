@@ -197,6 +197,17 @@ func _tree() -> void:
 	canvas.custom_minimum_size = Vector2(0, TOP + float(rows - 1) * ROW_HEIGHT + 70.0)
 	canvas.mouse_filter = Control.MOUSE_FILTER_PASS
 	content.add_child(canvas)
+	# Нажатие мимо узлов закрывает описание таланта
+	var press := [Vector2.ZERO]
+	canvas.gui_input.connect(func(e: InputEvent) -> void:
+		var mb := e as InputEventMouseButton
+		if mb == null or mb.button_index != MOUSE_BUTTON_LEFT:
+			return
+		if mb.pressed:
+			press[0] = mb.global_position
+		elif selected != "" and mb.global_position.distance_to(press[0]) < 12.0:
+			selected = ""
+			_dirty = true)
 	var nodes: Array = []
 	var color := Talents.branch_color(branch)
 	for id in list:
@@ -648,6 +659,8 @@ class TalentNode extends Control:
 			_press_at = mb.global_position
 		elif mb.global_position.distance_to(_press_at) < 12.0:
 			_tap.call(id)
+			# Касание узла не доходит до поля: иначе оно сразу закроет описание
+			accept_event()
 
 	## Медальон: тень, каменное кольцо цвета ветки, тёмная или светлая середина.
 	func _draw() -> void:
