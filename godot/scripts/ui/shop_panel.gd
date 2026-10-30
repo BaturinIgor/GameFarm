@@ -1,27 +1,45 @@
 class_name ShopPanel
 extends Sheet
-## Магазин (порт ShopView): одно главное предложение крупно, остальные наборы плитками, билеты и бесплатная удача.
-## Подробности о наборе открываются по нажатию на плитку поверх магазина, чтобы экран не был перегружен текстом.
+## Магазин по вкладкам: акции (срочные наборы, предложение дня, наборы навсегда), MAX и Pro, кристаллы,
+## лавка за кристаллы и бесплатное. В шапке - кристаллы. Подробности о наборе открываются поверх магазина.
 ## Здесь же общие части магазина: картинка набора (OfferArt), преимущества (Offers), кнопка покупки (BuyButton),
 ## карточка с лентой (ShopCard).
 
+## Вкладки: [id, иконка, ключ подписи].
+const TABS := [
+	["offers", "tag", "shop.tab.offers"],
+	["vip", "crown", "shop.tab.vip"],
+	["crystals", "gem", "shop.tab.crystals"],
+	["market", "basket", "shop.tab.market"],
+	["free", "chest", "shop.tab.free"],
+]
+
+var tab := "offers"
 ## Открытые подробности набора ("" - закрыты).
 var detail := ""
 var _detail_node: Control
 var _detail_fresh := false
 
 
-func _init() -> void:
+func _init(start_tab := "") -> void:
 	title_key = "shop.title"
+	header_currency = "crystals"
+	if start_tab != "":
+		tab = start_tab
 
 
-## Что показать крупно: стартовый набор, пока действует, потом пропуск ивента, Pro и сад.
+## Открыть магазин (на вкладке).
+static func open(start_tab := "") -> void:
+	if Hud.current != null:
+		Hud.current.open_window(ShopPanel.new(start_tab))
+
+
+## Что показать крупно в окне предложения: стартовый набор, набор по уровню, пропуск ивента, потом Pro и сад.
 static func featured() -> String:
+	var offers := Game.shop.current_offers()
+	if not offers.is_empty():
+		return offers[0]["product"]
 	var p := Game.premium
-	if p.starter_available() and not p.owns("starter"):
-		return "starter"
-	if Game.events.events_open() and not Game.events.has_vip():
-		return "eventPass"
 	if not p.owns("pro"):
 		return "pro"
 	if not p.owns("garden"):
@@ -29,48 +47,98 @@ static func featured() -> String:
 	return ""
 
 
+## Наборы навсегда (плитки во вкладке акций): купленные в конце.
 static func bundles() -> Array:
-	var p := Game.premium
-	var list: Array = ["pro", "garden", "skins"]
-	if p.starter_available() or p.owns("starter"):
-		list.insert(0, "starter")
-	if Game.events.events_open():
-		list.append("eventPass")
-	var top := featured()
-	var rest := list.filter(func(x: String) -> bool: return x != top)
-	# купленное уходит в конец
-	return rest.filter(func(x: String) -> bool: return not owned(x)) + rest.filter(func(x: String) -> bool: return owned(x))
+	var list: Array = ["garden", "skins"]
+	if Game.premium.owns("starter"):
+		list.append("starter")
+	return list.filter(func(x: String) -> bool: return not owned(x)) + list.filter(func(x: String) -> bool: return owned(x))
 
 
 static func owned(product: String) -> bool:
 	return Game.events.has_vip() if product == "eventPass" else Game.premium.owns(product)
 
 
+func _set_tab(id: String) -> void:
+	if tab == id:
+		return
+	tab = id
+	detail = ""
+	Sound.play("tap")
+	scroll_to_top()
+
+
+# MARK: Вкладки
+
+func build_top() -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 4)
+	top_bar.add_child(row)
+	for t in TABS:
+		row.add_child(_tab_button(t))
+
+
+func _tab_button(t: Array) -> Button:
+	var id: String = t[0]
+	var on := id == tab
+	var tone: Array = UiKit.TONES["orange" if on else "wood"]
+	var b := Button.new()
+	var s := UiKit.box(tone[1], UiKit.OUTLINE, 12, 2, false)
+	s.set_content_margin_all(2)
+	s.shadow_color = tone[2]
+	s.shadow_offset = Vector2(0, 3)
+	s.shadow_size = 1
+	var down := s.duplicate() as StyleBoxFlat
+	down.bg_color = tone[2].lerp(tone[1], 0.5)
+	down.shadow_offset = Vector2(0, 1)
+	for st in ["normal", "hover", "disabled"]:
+		b.add_theme_stylebox_override(st, s)
+	b.add_theme_stylebox_override("pressed", down)
+	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	b.focus_mode = Control.FOCUS_NONE
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.custom_minimum_size = Vector2(0, 52)
+	var col := VBoxContainer.new()
+	col.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_theme_constant_override("separation", 1)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(col)
+	var ic := UiKit.icon(t[1], 24)
+	ic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	col.add_child(ic)
+	var l := UiKit.title(L.t(t[2]), 10)
+	l.label_settings.outline_size = 4
+	l.label_settings.outline_color = tone[2] if on else UiKit.OUTLINE
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.clip_text = true
+	col.add_child(l)
+	if _tab_news(id):
+		var dot := UiKit.count_badge(0)
+		(dot.get_child(0) as Label).text = "!"
+		dot.position = Vector2(-4, -6)
+		b.add_child(dot)
+	b.pressed.connect(func() -> void: _set_tab(id))
+	return b
+
+
+## Точка на вкладке: там есть что-то новое или бесплатное.
+func _tab_news(id: String) -> bool:
+	var shop := Game.shop
+	match id:
+		"offers": return not shop.new_offers().is_empty()
+		"vip": return shop.max_daily_ready()
+		"free": return shop.ad_crystals_left() > 0 or Game.premium.luck_ready() or Game.house.can_claim_login()
+	return false
+
+
 func build() -> void:
-	var top := featured()
-	if top != "":
-		content.add_child(_featured(top))
-	content.add_child(EventsPanel.section(L.t("shop.section.bundles")))
-	var grid := GridContainer.new()
-	grid.columns = 2
-	grid.add_theme_constant_override("h_separation", 10)
-	grid.add_theme_constant_override("v_separation", 10)
-	content.add_child(grid)
-	for product in bundles():
-		grid.add_child(_tile(product))
-	content.add_child(EventsPanel.section(L.t("shop.section.tickets")))
-	content.add_child(_tickets_row())
-	content.add_child(EventsPanel.section(L.t("free.title")))
-	content.add_child(_wrap(L.t("free.subtitle.pro") if Game.premium.has_pro() else L.t("free.subtitle"), 12,
-		UiKit.INK_SOFT))
-	content.add_child(LuckButton.new("wide"))
-	var restore := UiKit.button(L.t("shop.restore"), "wood", 14, true)
-	restore.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	restore.pressed.connect(func() -> void: Store.restore())
-	content.add_child(restore)
-	var footer := _wrap(L.t("shop.footer"), 11, UiKit.INK_SOFT)
-	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	content.add_child(footer)
+	match tab:
+		"offers": _build_offers()
+		"vip": _build_vip()
+		"crystals": _build_crystals()
+		"market": _build_market()
+		"free": _build_free()
 	_build_detail()
 
 
@@ -83,6 +151,540 @@ func _open_detail(product: String) -> void:
 func _close_detail() -> void:
 	detail = ""
 	_dirty = true
+
+
+# MARK: Акции
+
+func _build_offers() -> void:
+	var offers := Game.shop.current_offers()
+	for o in offers:
+		content.add_child(_featured(o["product"]))
+	if offers.is_empty():
+		content.add_child(_note_card("px:tag", L.t("shop.noOffers")))
+	content.add_child(EventsPanel.section(L.t("shop.section.deal")))
+	content.add_child(_deal_card())
+	content.add_child(EventsPanel.section(L.t("shop.section.forever")))
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 10)
+	content.add_child(grid)
+	for product in bundles():
+		grid.add_child(_tile(product))
+	content.add_child(EventsPanel.section(L.t("shop.section.tickets")))
+	content.add_child(_tickets_row())
+	# Всё, что сейчас на витрине, игрок увидел
+	Game.shop.mark_all_seen()
+
+
+## Карточка с иконкой и текстом (когда показывать нечего).
+func _note_card(icon: String, text: String) -> PanelContainer:
+	var p := PanelContainer.new()
+	var s := UiKit.box(Color(UiKit.PARCHMENT_DEEP, 0.6), Color(UiKit.WOOD_DARK, 0.35), 14, 2, false)
+	s.set_content_margin_all(12)
+	p.add_theme_stylebox_override("panel", s)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	p.add_child(row)
+	var ic := UiKit.icon_any(icon, 30)
+	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(ic)
+	var l := _wrap(text, 13, UiKit.INK_SOFT)
+	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(l)
+	return p
+
+
+# MARK: Предложение дня
+
+func _deal_card() -> Control:
+	var shop := Game.shop
+	var item := shop.daily_deal()
+	if item == "":
+		return _note_card("px:gem", L.t("shop.deal.none"))
+	var parts := shop_card(L.t("shop.deal.title"), "red")
+	var v: VBoxContainer = parts[1]
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	v.add_child(row)
+	var pic := PanelContainer.new()
+	var ps := UiKit.box(Color(UiKit.PARCHMENT_DEEP, 0.7), Color(UiKit.WOOD_DARK, 0.35), 14, 2, false)
+	ps.set_content_margin_all(8)
+	pic.add_theme_stylebox_override("panel", ps)
+	pic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	pic.add_child(market_icon(item, 48))
+	row.add_child(pic)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 3)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_child(col)
+	col.add_child(_wrap(market_name(item), 15))
+	var prices := HBoxContainer.new()
+	prices.add_theme_constant_override("separation", 6)
+	col.add_child(prices)
+	prices.add_child(_crossed_price(ShopSystem.base_price(item)))
+	var off := _chip("-%d%%" % int(round(ShopSystem.DEAL_DISCOUNT * 100.0)), "red")
+	prices.add_child(off)
+	var left := func() -> String:
+		return L.t("shop.deal.next", [House.countdown(House.start_of_day() + 86400.0 - Time.get_unix_time_from_system())])
+	col.add_child(CombatCards.LiveLabel.new(left, 11, UiKit.INK_SOFT))
+	if shop.deal_bought():
+		var done := UiKit.label(L.t("shop.deal.bought"), 14, UiKit.GOOD)
+		done.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		v.add_child(done)
+	else:
+		var price := shop.deal_price(item)
+		var b := crystal_button(price, "red")
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.pressed.connect(func() -> void:
+			if not Game.shop.buy_market(item, true):
+				_not_enough(price))
+		v.add_child(b)
+	return parts[0]
+
+
+## Старая цена, зачёркнутая.
+func _crossed_price(n: int) -> Control:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 2)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(UiKit.icon("gem", 14))
+	var l := UiKit.label(Fmt.n(n), 13, UiKit.INK_SOFT)
+	row.add_child(l)
+	row.draw.connect(func() -> void:
+		row.draw_line(Vector2(0, row.size.y * 0.55), Vector2(row.size.x, row.size.y * 0.45), UiKit.BAD, 2.0, true))
+	return row
+
+
+static func _chip(text: String, tone: String) -> PanelContainer:
+	var c: Array = UiKit.TONES[tone]
+	var p := PanelContainer.new()
+	var s := UiKit.box(c[1], UiKit.OUTLINE, 8, 2, false)
+	s.content_margin_left = 6
+	s.content_margin_right = 6
+	s.content_margin_top = 1
+	s.content_margin_bottom = 1
+	p.add_theme_stylebox_override("panel", s)
+	p.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var l := UiKit.title(text, 11)
+	l.label_settings.outline_size = 3
+	l.label_settings.outline_color = c[2]
+	p.add_child(l)
+	return p
+
+
+## Не хватает кристаллов: тост и переход на вкладку кристаллов.
+func _not_enough(price: int) -> void:
+	Game.show_toast("px:gem", L.t("crystals.notEnough", [Fmt.n(price - Game.shop.crystals())]))
+	Sound.play("error")
+	_set_tab("crystals")
+
+
+# MARK: MAX и Pro
+
+func _build_vip() -> void:
+	content.add_child(_max_card())
+	content.add_child(EventsPanel.section(L.t("shop.section.pro")))
+	content.add_child(_featured("pro"))
+	var note := _wrap(L.t("max.note"), 11, UiKit.INK_SOFT)
+	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	content.add_child(note)
+
+
+func _max_card() -> Control:
+	var shop := Game.shop
+	var tone: Array = UiKit.TONES["gold"]
+	var p := PanelContainer.new()
+	var s := UiKit.box(Color("fff3c4"), UiKit.OUTLINE, 20, 3, false)
+	s.set_content_margin_all(16)
+	s.shadow_color = tone[2]
+	s.shadow_offset = Vector2(0, 5)
+	s.shadow_size = 1
+	p.add_theme_stylebox_override("panel", s)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 12)
+	p.add_child(v)
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 14)
+	v.add_child(head)
+	var circle := PanelContainer.new()
+	var cs := UiKit.box(tone[1], UiKit.OUTLINE, 44, 3, false)
+	cs.set_content_margin_all(10)
+	circle.add_theme_stylebox_override("panel", cs)
+	circle.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	circle.add_child(art("max", 64.0))
+	head.add_child(circle)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 3)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	head.add_child(col)
+	var title := UiKit.title(Products.title("max"), 24)
+	title.label_settings.outline_color = tone[2]
+	col.add_child(title)
+	var tag := _wrap(tagline("max"), 12, UiKit.INK_SOFT)
+	col.add_child(tag)
+	if shop.max_active():
+		col.add_child(_chip(L.t("max.daysLeft", [shop.max_days_left()]), "green"))
+
+	var box := PanelContainer.new()
+	var bs := UiKit.box(UiKit.PARCHMENT_LIGHT, Color(UiKit.OUTLINE, 0.5), 14, 2, false)
+	bs.set_content_margin_all(12)
+	box.add_theme_stylebox_override("panel", bs)
+	v.add_child(box)
+	var list := VBoxContainer.new()
+	list.add_theme_constant_override("separation", 8)
+	box.add_child(list)
+	for perk in perks("max"):
+		list.add_child(_perk_row(perk))
+
+	if shop.max_active():
+		if shop.max_daily_ready():
+			var claim := UiKit.button(L.t("max.claim", [ShopSystem.MAX_DAILY_CRYSTALS]), "green", 16)
+			claim.icon = Sprites.icon("gem")
+			claim.add_theme_constant_override("icon_max_width", 22)
+			claim.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			claim.pressed.connect(func() -> void: Game.shop.claim_max_daily())
+			v.add_child(claim)
+		else:
+			var next := func() -> String:
+				return L.t("max.nextDaily", [ShopSystem.MAX_DAILY_CRYSTALS,
+					House.countdown(House.start_of_day() + 86400.0 - Time.get_unix_time_from_system())])
+			var nl := CombatCards.LiveLabel.new(next, 12, UiKit.INK_SOFT)
+			nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			v.add_child(nl)
+	var buy := BuyButton.new("max", "orange", "max.extend" if shop.max_active() else "max.subscribe")
+	v.add_child(buy)
+	var terms := _wrap(L.t("max.terms", [Products.MAX_DAYS]), 10, UiKit.INK_SOFT)
+	terms.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(terms)
+	return p
+
+
+# MARK: Кристаллы
+
+func _build_crystals() -> void:
+	content.add_child(_balance_card())
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 10)
+	content.add_child(grid)
+	var i := 0
+	for key in Products.CRYSTAL_PACKS:
+		grid.add_child(_pack_tile(key, i))
+		i += 1
+	grid.add_child(_free_crystals_tile())
+	var hint := _wrap(L.t("crystals.hint"), 12, UiKit.INK_SOFT)
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	content.add_child(hint)
+
+
+func _balance_card() -> PanelContainer:
+	var p := PanelContainer.new()
+	var tone: Array = UiKit.TONES["purple"]
+	var s := UiKit.box(tone[1], UiKit.OUTLINE, 16, 3, false)
+	s.set_content_margin_all(12)
+	s.shadow_color = tone[2]
+	s.shadow_offset = Vector2(0, 4)
+	s.shadow_size = 1
+	p.add_theme_stylebox_override("panel", s)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	p.add_child(row)
+	row.add_child(UiKit.icon("gem", 34))
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 0)
+	row.add_child(col)
+	var l := UiKit.label(L.t("crystals.have"), 12, Color.WHITE, 3)
+	l.label_settings.outline_color = tone[2]
+	col.add_child(l)
+	var n := UiKit.title(Fmt.n(Game.shop.crystals()), 24)
+	n.label_settings.outline_color = tone[2]
+	col.add_child(n)
+	return p
+
+
+## Горка кристаллов: чем больше пачка, тем больше камней.
+static func gem_pile(count: int, side: float) -> Control:
+	var holder := Control.new()
+	holder.custom_minimum_size = Vector2(side, side)
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var spots: Array = [[0.5, 0.5, 0.8]]
+	match count:
+		2: spots = [[0.36, 0.55, 0.62], [0.64, 0.45, 0.62]]
+		3: spots = [[0.3, 0.6, 0.55], [0.7, 0.6, 0.55], [0.5, 0.36, 0.6]]
+		4: spots = [[0.28, 0.66, 0.5], [0.72, 0.66, 0.5], [0.36, 0.34, 0.5], [0.64, 0.38, 0.55]]
+		5, 6: spots = [[0.22, 0.7, 0.46], [0.5, 0.72, 0.5], [0.78, 0.7, 0.46], [0.36, 0.38, 0.5], [0.66, 0.36, 0.56]]
+	for sp in spots:
+		var k: float = sp[2]
+		var g := UiKit.icon("gem", side * k)
+		g.position = Vector2(sp[0] * side - side * k / 2.0, sp[1] * side - side * k / 2.0)
+		g.size = Vector2(side * k, side * k)
+		holder.add_child(g)
+	return holder
+
+
+func _pack_tile(key: String, index: int) -> PanelContainer:
+	var pack: Dictionary = Products.CRYSTAL_PACKS[key]
+	var first: bool = not key in Game.save.get("crystalFirst", [])
+	var tone: Array = UiKit.TONES["purple"]
+	var p := PanelContainer.new()
+	var s := UiKit.box(UiKit.PARCHMENT_LIGHT, tone[1], 16, 3, false)
+	s.set_content_margin_all(10)
+	s.shadow_color = Color(UiKit.WOOD_DARK, 0.3)
+	s.shadow_offset = Vector2(0, 3)
+	s.shadow_size = 1
+	p.add_theme_stylebox_override("panel", s)
+	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 6)
+	p.add_child(v)
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 4)
+	top.custom_minimum_size = Vector2(0, 20)
+	v.add_child(top)
+	if int(pack["bonus"]) > 0:
+		top.add_child(_chip("+%d%%" % int(pack["bonus"]), "green"))
+	var gap := Control.new()
+	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	top.add_child(gap)
+	if first:
+		top.add_child(_chip("x2", "red"))
+	var pile := gem_pile(index + 1, 64.0)
+	pile.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	v.add_child(pile)
+	var amount := UiKit.title(Fmt.n(int(pack["n"]) * (2 if first else 1)), 20)
+	amount.label_settings.outline_color = tone[2]
+	amount.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(amount)
+	if first:
+		var was := UiKit.label(L.t("crystals.firstX2", [Fmt.n(int(pack["n"]))]), 10, UiKit.INK_SOFT)
+		was.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		v.add_child(was)
+	var b := BuyButton.new(key, "purple", "", true)
+	v.add_child(b)
+	return p
+
+
+func _free_crystals_tile() -> Button:
+	var tone: Array = UiKit.TONES["green"]
+	var b := Button.new()
+	var s := UiKit.box(Color(tone[0], 0.35), tone[1], 16, 3, false)
+	s.set_content_margin_all(10)
+	var down := s.duplicate() as StyleBoxFlat
+	down.bg_color = s.bg_color.darkened(0.1)
+	for st in ["normal", "hover", "disabled"]:
+		b.add_theme_stylebox_override(st, s)
+	b.add_theme_stylebox_override("pressed", down)
+	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	b.focus_mode = Control.FOCUS_NONE
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.pressed.connect(func() -> void: _set_tab("free"))
+	var v := VBoxContainer.new()
+	v.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	v.alignment = BoxContainer.ALIGNMENT_CENTER
+	v.add_theme_constant_override("separation", 6)
+	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(v)
+	var pic := UiKit.icon("chest", 48)
+	pic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	v.add_child(pic)
+	var l := _wrap(L.t("crystals.free"), 13)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(l)
+	return b
+
+
+# MARK: Лавка
+
+func _build_market() -> void:
+	content.add_child(_hint_row(L.t("market.hint")))
+	content.add_child(_deal_card())
+	content.add_child(EventsPanel.section(L.t("market.section.goods")))
+	for item in ShopSystem.MARKET:
+		content.add_child(_market_row(item))
+	var skins: Array = Skins.collection().filter(func(sk: String) -> bool: return not Skins.is_unlocked(sk))
+	content.add_child(EventsPanel.section(L.t("market.section.skins")))
+	if skins.is_empty():
+		content.add_child(_note_card("px:wardrobe", L.t("market.skins.all")))
+		return
+	var grid := GridContainer.new()
+	grid.columns = 3
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+	content.add_child(grid)
+	for skin in skins:
+		grid.add_child(_skin_cell(skin))
+
+
+func _hint_row(text: String) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	var ic := UiKit.icon("gem", 20)
+	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(ic)
+	row.add_child(_wrap(text, 12, UiKit.INK_SOFT))
+	return row
+
+
+## Иконка товара лавки.
+static func market_icon(item: String, side: float) -> Control:
+	if item.begins_with("skin:"):
+		return WardrobePanel.skin_icon(item.substr(5), side)
+	if item == "ticket5":
+		var holder := Control.new()
+		holder.custom_minimum_size = Vector2(side, side)
+		holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		for i in 3:
+			var t := UiKit.icon("ticket", side * 0.7)
+			t.position = Vector2(side * 0.15 * i, side * 0.3 - side * 0.12 * i)
+			t.size = Vector2(side * 0.7, side * 0.7)
+			holder.add_child(t)
+		return holder
+	return UiKit.icon(str(ShopSystem.MARKET.get(item, {}).get("icon", "gem")), side)
+
+
+static func market_name(item: String) -> String:
+	if item.begins_with("skin:"):
+		return L.t("market.item.skin", [Skins.name_of(item.substr(5))])
+	if item == "coins":
+		return L.t("market.item.coins", [Fmt.n(Game.shop.market_coins())])
+	return L.t("market.item." + item)
+
+
+func _market_row(item: String) -> PanelContainer:
+	var p := PanelContainer.new()
+	var s := UiKit.box(UiKit.PARCHMENT_LIGHT, Color(UiKit.WOOD_DARK, 0.45), 14, 2, false)
+	s.set_content_margin_all(10)
+	p.add_theme_stylebox_override("panel", s)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	p.add_child(row)
+	var ic := market_icon(item, 40)
+	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(ic)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 2)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_child(col)
+	col.add_child(_wrap(market_name(item), 14))
+	col.add_child(_wrap(L.t("market.desc." + item), 11, UiKit.INK_SOFT))
+	var price := ShopSystem.base_price(item)
+	var b := crystal_button(price, "purple", true)
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.pressed.connect(func() -> void:
+		if not Game.shop.buy_market(item):
+			_not_enough(price))
+	row.add_child(b)
+	return p
+
+
+func _skin_cell(skin: String) -> PanelContainer:
+	var p := PanelContainer.new()
+	var s := UiKit.box(UiKit.PARCHMENT_LIGHT, Color(UiKit.WOOD_DARK, 0.45), 14, 2, false)
+	s.set_content_margin_all(8)
+	p.add_theme_stylebox_override("panel", s)
+	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 4)
+	p.add_child(v)
+	var face := WardrobePanel.skin_icon(skin, 52)
+	face.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	v.add_child(face)
+	var name_l := UiKit.label(Skins.name_of(skin), 11)
+	name_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_l.clip_text = true
+	v.add_child(name_l)
+	var item := "skin:" + skin
+	var b := crystal_button(ShopSystem.SKIN_PRICE, "purple", true)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.pressed.connect(func() -> void:
+		if not Game.shop.buy_market(item):
+			_not_enough(ShopSystem.SKIN_PRICE))
+	v.add_child(b)
+	return p
+
+
+## Кнопка с ценой в кристаллах. Не хватает - кнопка нажимается (подскажет, сколько не хватает), но серее.
+static func crystal_button(price: int, tone := "purple", small := false) -> Button:
+	var enough := Game.shop.crystals() >= price
+	var b := MapPanel.icon_button([["i", "gem"], ["t", Fmt.n(price)]], tone if enough else "gray", 15 if not small else 13)
+	if not small:
+		b.custom_minimum_size.y = 44
+	return b
+
+
+# MARK: Бесплатно
+
+func _build_free() -> void:
+	var shop := Game.shop
+	if shop.max_active() and shop.max_daily_ready():
+		var claim := UiKit.button(L.t("max.claim", [ShopSystem.MAX_DAILY_CRYSTALS]), "gold", 16)
+		claim.icon = Sprites.icon("crown")
+		claim.add_theme_constant_override("icon_max_width", 22)
+		claim.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		claim.pressed.connect(func() -> void: Game.shop.claim_max_daily())
+		content.add_child(claim)
+	# Кристаллы за ролик
+	var parts := shop_card(L.t("free.crystals.title"), "purple")
+	var v: VBoxContainer = parts[1]
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	v.add_child(row)
+	var pile := gem_pile(2, 48.0)
+	pile.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(pile)
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_child(col)
+	col.add_child(_wrap(L.t("free.crystals.text", [ShopSystem.AD_CRYSTALS]), 13))
+	col.add_child(UiKit.label(L.t("free.crystals.left", [shop.ad_crystals_left(), ShopSystem.AD_CRYSTALS_PER_DAY]),
+		11, UiKit.INK_SOFT))
+	if shop.ad_crystals_left() > 0:
+		var b := Ads.reward_button(L.t("free.crystals.watch", [ShopSystem.AD_CRYSTALS]), "purple", 15)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.pressed.connect(func() -> void:
+			Ads.show_rewarded(func() -> void: Game.shop.claim_ad_crystals()))
+		v.add_child(b)
+	else:
+		var next := func() -> String:
+			return L.t("free.crystals.tomorrow", [House.countdown(House.start_of_day() + 86400.0 - Time.get_unix_time_from_system())])
+		var nl := CombatCards.LiveLabel.new(next, 12, UiKit.INK_SOFT)
+		nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		v.add_child(nl)
+	content.add_child(parts[0])
+
+	# Удача
+	content.add_child(EventsPanel.section(L.t("free.title")))
+	content.add_child(_wrap(L.t("free.subtitle.pro") if Game.premium.has_pro() else L.t("free.subtitle"), 12,
+		UiKit.INK_SOFT))
+	content.add_child(LuckButton.new("wide"))
+
+	# Награды за вход
+	content.add_child(EventsPanel.section(L.t("house.calendar")))
+	var cal := UiKit.button(L.t("free.calendar"), "orange" if Game.house.can_claim_login() else "wood", 15)
+	cal.icon = Sprites.icon("calendar")
+	cal.add_theme_constant_override("icon_max_width", 22)
+	cal.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	cal.pressed.connect(func() -> void:
+		if Hud.current != null:
+			Hud.current.open_window(CalendarPanel.new()))
+	content.add_child(cal)
+
+	var restore := UiKit.button(L.t("shop.restore"), "wood", 14, true)
+	restore.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	restore.pressed.connect(func() -> void: Store.restore())
+	content.add_child(restore)
+	var footer := _wrap(L.t("shop.footer"), 11, UiKit.INK_SOFT)
+	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	content.add_child(footer)
 
 
 # MARK: Описание наборов (Offers)
@@ -110,6 +712,13 @@ static func perks(product: String) -> Array:
 				["px:chest", L.t("pro.treasure")],
 				["px:ticket", L.t("pro.tickets")],
 				["skin:genie", L.t("pro.skin")]]
+		"max":
+			return [["px:crown", L.t("max.perk.pro")],
+				["px:gem", L.t("max.perk.daily", [ShopSystem.MAX_DAILY_CRYSTALS])],
+				["px:star", L.t("max.perk.vip")],
+				["px:wardrobe", L.t("max.perk.skin")],
+				["px:bag", L.t("max.perk.backpack", [ShopSystem.MAX_BACKPACK])],
+				["px:clover", L.t("max.perk.luck")]]
 		"garden":
 			return [["px:apples", L.t("garden.trees")],
 				["px:honey", L.t("garden.bees")],
@@ -123,6 +732,16 @@ static func perks(product: String) -> Array:
 		"eventPass":
 			var skin := Events.skin_of(Events.current()["event"])
 			return [["skin:" + skin, L.t("event.vip.desc", [Skins.name_of(skin)])]]
+	if Products.is_level_bundle(product):
+		var b: Dictionary = Products.LEVEL_BUNDLES[product]
+		var out: Array = [["px:gem", L.t("bundle.crystals", [Fmt.n(int(b["crystals"]))])],
+			["px:coins", L.t("starter.coins", [Fmt.n(int(b["coins"]))])],
+			["px:ticket", L.t("bundle.tickets", [int(b["tickets"])])]]
+		if int(b["maps"]) > 0:
+			out.append(["px:tmap", L.t("bundle.maps", [int(b["maps"])])])
+		if bool(b["skin"]):
+			out.append(["px:wardrobe", L.t("bundle.skin")])
+		return out
 	return []
 
 
@@ -146,6 +765,11 @@ static func art(product: String, side: float) -> Control:
 		"pro":
 			main = "skin:genie"
 			badge = "px:crown"
+		"max":
+			main = "px:crown"
+			main_k = 0.85
+			badge = "px:gem"
+			badge_k = 0.45
 		"garden":
 			main = "skin:knight"
 			badge = "px:goldenApple"
@@ -158,6 +782,20 @@ static func art(product: String, side: float) -> Control:
 		"eventPass":
 			main = "skin:" + Events.skin_of(Events.current()["event"])
 			badge = "px:star"
+		"traveler":
+			main = "px:compass"
+			main_k = 0.85
+			badge = "px:gem"
+		"explorer":
+			main = "px:telescope"
+			main_k = 0.85
+			badge = "px:gem"
+		"master":
+			main = "px:trophy"
+			main_k = 0.85
+			badge = "px:gem"
+	if main == "":
+		return holder
 	var m := UiKit.icon_any(main, side * main_k)
 	m.position = Vector2.ONE * side * (1.0 - main_k)
 	holder.add_child(m)
@@ -192,11 +830,16 @@ static func buy_button(product: String, tone := "orange") -> Button:
 class BuyButton extends Button:
 	var product := ""
 	var tone := "orange"
+	## Ключ подписи с ценой {0} ("" - "Купить за {0}" или просто цена у маленькой кнопки).
+	var label_key := ""
+	var small := false
 	var _state := ""
 
-	func _init(p: String, t: String) -> void:
+	func _init(p: String, t: String, key := "", is_small := false) -> void:
 		product = p
 		tone = t
+		label_key = key
+		small = is_small
 		focus_mode = Control.FOCUS_NONE
 		size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		add_theme_constant_override("icon_max_width", 22)
@@ -209,19 +852,20 @@ class BuyButton extends Button:
 		Game.changed.connect(refresh)
 
 	func refresh() -> void:
-		var own := Game.premium.owns(product)
-		var busy := Store.busy == product
+		var own := Game.premium.owns(product) and not Products.consumable(product)
+		var busy := Store.busy == Products.key(product)
 		var state := "busy" if busy else ("own" if own else "buy")
 		if state + Store.busy == _state:
 			return
 		_state = state + Store.busy
-		var proto := UiKit.button("", "green" if own else tone, 15)
+		var fs := 14 if small else 15
+		var proto := UiKit.button("", "green" if own else tone, fs, small)
 		for s in ["normal", "hover", "pressed", "disabled", "focus"]:
 			add_theme_stylebox_override(s, proto.get_theme_stylebox(s))
 		if own:
 			add_theme_stylebox_override("disabled", proto.get_theme_stylebox("normal"))
 		add_theme_font_override("font", UiKit.font())
-		add_theme_font_size_override("font_size", 15)
+		add_theme_font_size_override("font_size", fs)
 		for c in ["font_color", "font_hover_color", "font_pressed_color", "font_outline_color"]:
 			add_theme_color_override(c, proto.get_theme_color(c))
 		add_theme_color_override("font_disabled_color", Color.WHITE if own else Color(1, 1, 1, 0.7))
@@ -233,8 +877,11 @@ class BuyButton extends Button:
 		elif own:
 			text = L.t("shop.owned")
 			icon = null
+		elif small and label_key == "":
+			text = Store.price(product)
+			icon = null
 		else:
-			text = L.t("shop.buyFor", [Store.price(product)])
+			text = L.t(label_key if label_key != "" else "shop.buyFor", [Store.price(product)])
 			icon = null
 		disabled = own or Store.busy != ""
 
@@ -309,7 +956,7 @@ func _featured(product: String) -> Control:
 	return p
 
 
-## Значок над названием: сколько осталось у стартового набора и пропуска, иначе "Выгодно".
+## Значок над названием: сколько осталось у срочного набора и пропуска, иначе "Выгодно".
 func _badge(product: String) -> Control:
 	var chip := PanelContainer.new()
 	var s := UiKit.box(UiKit.GOLD, UiKit.OUTLINE, 10, 2, false)
@@ -324,23 +971,28 @@ func _badge(product: String) -> Control:
 	row.add_theme_constant_override("separation", 4)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	chip.add_child(row)
-	var until = Game.save.get("starterOfferUntil")
-	if product == "starter" and (until is float or until is int):
+	var ends := offer_ends(product)
+	if ends > 0.0:
 		row.add_child(UiKit.icon("stopwatch", 12))
-		var at := float(until)
 		var left := func() -> String:
-			return L.t("shop.endsIn", [House.countdown(at - Time.get_unix_time_from_system())])
-		row.add_child(CombatCards.LiveLabel.new(left, 11, UiKit.INK))
-	elif product == "eventPass":
-		row.add_child(UiKit.icon("stopwatch", 12))
-		var ends := float(Events.current()["end"])
-		var left_long := func() -> String:
 			return L.t("shop.endsIn", [EventsPanel.long_countdown(ends - Time.get_unix_time_from_system())])
-		row.add_child(CombatCards.LiveLabel.new(left_long, 11, UiKit.INK))
+		row.add_child(CombatCards.LiveLabel.new(left, 11, UiKit.INK))
 	else:
 		row.add_child(UiKit.icon("star", 12))
 		row.add_child(UiKit.label(L.t("shop.bestValue"), 11))
 	return chip
+
+
+## Когда кончается срочное предложение (unix) или 0.
+static func offer_ends(product: String) -> float:
+	if product == "starter":
+		var until = Game.save.get("starterOfferUntil")
+		return float(until) if (until is float or until is int) else 0.0
+	if product == "eventPass":
+		return float(Events.current()["end"])
+	if Products.is_level_bundle(product):
+		return Game.shop.bundle_until(product)
+	return 0.0
 
 
 func _perk_row(perk: Array) -> HBoxContainer:

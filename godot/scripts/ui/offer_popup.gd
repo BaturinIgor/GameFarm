@@ -1,25 +1,35 @@
 class_name OfferPopup
 extends Control
-## Всплывающее предложение стартового набора (порт OfferPopup): на 5 уровне и ещё раз на 15, на 48 часов.
-## Показ: OfferPopup.check() - проверяет, не пора ли открыть предложение, и показывает окно, когда на экране
-## нет заставки нового уровня (как offerPopup в iOS). Закрывается само, когда набор куплен.
+## Окно нового предложения поверх игры: стартовый набор, набор по уровню, пропуск нового ивента.
+## Показывается только для предложения, которого игрок ещё не видел, не чаще раза в день, не в начале игры
+## и не поверх других заставок (ShopSystem.popup_due). Остальное время о новом говорит точка на кнопке магазина.
+## Показ: OfferPopup.check() - раз в полсекунды из ShopPill. Закрывается само, когда набор куплен или кончился.
 
 static var current: OfferPopup
 
+var product := ""
 var _closing := false
 var _tick := 0.0
 
 
 static func check() -> void:
-	var p := Game.premium
-	p.check_starter_offer()
-	if not p.offer_popup or not p.starter_available() or Hud.current == null:
+	Game.premium.check_starter_offer()
+	Game.shop.check_level_bundles()
+	if Hud.current == null:
 		return
 	if current != null and is_instance_valid(current):
 		return
 	if LevelUpOverlay.current != null and is_instance_valid(LevelUpOverlay.current):
 		return
+	# Открыто окно (магазин, склад...) - не мешаем, покажем позже
+	if Hud.current.has_method("has_window") and Hud.current.call("has_window"):
+		return
+	if not Game.shop.popup_due():
+		return
+	var offer: Dictionary = Game.shop.new_offers()[0]
+	Game.shop.note_popup_shown(offer["id"])
 	var popup := OfferPopup.new()
+	popup.product = offer["product"]
 	current = popup
 	Hud.current.show_overlay(popup)
 	# Под другими заставками (итоги, календарь), как в iOS
@@ -42,12 +52,13 @@ func _ready() -> void:
 			close())
 	add_child(dim)
 
+	var tone := Products.tone(product)
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(center)
 	var panel := PanelContainer.new()
-	var style := UiKit.panel_style(22)
+	var style := UiKit.box(UiKit.PARCHMENT, UiKit.TONES[tone][1], 22, 4)
 	style.set_content_margin_all(22)
 	panel.add_theme_stylebox_override("panel", style)
 	panel.custom_minimum_size = Vector2(minf(360.0, get_viewport_rect().size.x - 48.0), 0)
@@ -57,29 +68,46 @@ func _ready() -> void:
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	panel.add_child(col)
 
-	col.add_child(ShopPanel.ribbon(Products.title("starter"), "red", 20))
-	var art := ShopPanel.art("starter", 70.0)
+	col.add_child(ShopPanel.ribbon(Products.title(product), tone, 20))
+	var ends := ShopPanel.offer_ends(product)
+	if ends > 0.0:
+		var timer := HBoxContainer.new()
+		timer.alignment = BoxContainer.ALIGNMENT_CENTER
+		timer.add_theme_constant_override("separation", 4)
+		timer.add_child(UiKit.icon("stopwatch", 14))
+		var left := func() -> String:
+			return L.t("shop.endsIn", [EventsPanel.long_countdown(ends - Time.get_unix_time_from_system())])
+		timer.add_child(CombatCards.LiveLabel.new(left, 13, UiKit.TONES["red"][2]))
+		col.add_child(timer)
+	var art := ShopPanel.art(product, 70.0)
 	art.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	col.add_child(art)
-	var text := UiKit.label(L.t("offer.text"), 14, UiKit.INK_SOFT)
+	var text := UiKit.label(L.t("offer.text") if product == "starter" else ShopPanel.tagline(product), 14, UiKit.INK_SOFT)
 	text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col.add_child(text)
+	# Что внутри - значками в ряд
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 14)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(row)
-	row.add_child(UiKit.icon_any("an:duckHat", 34))
-	row.add_child(UiKit.icon("coins", 34))
-	row.add_child(UiKit.icon("bag", 32))
-	row.add_child(UiKit.icon_any("skin:robot", 34))
-	col.add_child(ShopPanel.buy_button("starter", "red"))
+	for perk in ShopPanel.perks(product).slice(0, 5):
+		row.add_child(UiKit.icon_any(perk[0], 34))
+	col.add_child(ShopPanel.buy_button(product, tone))
+	var buttons := HBoxContainer.new()
+	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
+	buttons.add_theme_constant_override("separation", 10)
+	col.add_child(buttons)
+	var more := UiKit.button(L.t("offer.toShop"), "wood", 14, true)
+	more.pressed.connect(func() -> void:
+		close()
+		ShopPanel.open("offers"))
+	buttons.add_child(more)
 	var later := UiKit.button(L.t("offer.later"), "wood", 14, true)
-	later.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	later.pressed.connect(close)
-	col.add_child(later)
+	buttons.add_child(later)
 
 	# Появление с лёгким подпрыгиванием
 	panel.resized.connect(func() -> void: panel.pivot_offset = panel.size / 2.0)
@@ -96,15 +124,18 @@ func _process(delta: float) -> void:
 		return
 	_tick = 0.3
 	# Набор куплен или время предложения вышло
-	if Game.premium.owns("starter") or not Game.premium.starter_available():
+	if not _still_offered():
 		close()
+
+
+func _still_offered() -> bool:
+	return Game.shop.current_offers().any(func(o: Dictionary) -> bool: return o["product"] == product)
 
 
 func close() -> void:
 	if _closing:
 		return
 	_closing = true
-	Game.premium.offer_popup = false
 	var tw := create_tween()
 	tw.tween_property(self, "modulate:a", 0.0, 0.15)
 	tw.tween_callback(queue_free)

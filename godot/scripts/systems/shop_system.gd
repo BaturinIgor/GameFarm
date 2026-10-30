@@ -185,7 +185,8 @@ func claim_max_daily() -> void:
 
 ## Пропуск ивента с MAX: каждый ивент, пока подписка действует.
 func sync_max() -> void:
-	if max_active() and not Game.events.has_vip() and Game.events.events_open():
+	# Ключ ивента записываем, чтобы пропуск остался и после конца подписки
+	if max_active() and Game.events.events_open() and not Events.current()["key"] in Game.save.get("vipKeys", []):
 		Game.events.activate_vip()
 	if max_active():
 		_max_month_skin()

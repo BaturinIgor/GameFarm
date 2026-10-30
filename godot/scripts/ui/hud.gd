@@ -43,6 +43,7 @@ var _level_label: Label
 var _level_name: Label
 var _xp_bar: ProgressBar
 var _coins_label: Label
+var _crystals_label: Label
 var _pack_bar: ProgressBar
 var _toasts := VBoxContainer.new()
 var _banner := VBoxContainer.new()
@@ -156,6 +157,28 @@ func _build_top() -> void:
 	var crow := HBoxContainer.new()
 	crow.add_theme_constant_override("separation", 6)
 	coin_box.add_child(crow)
+	# Кристаллы: нажатие открывает магазин на вкладке кристаллов
+	var gem_button := Button.new()
+	gem_button.flat = true
+	gem_button.focus_mode = Control.FOCUS_NONE
+	for st in ["normal", "hover", "pressed", "focus", "disabled"]:
+		gem_button.add_theme_stylebox_override(st, StyleBoxEmpty.new())
+	gem_button.pressed.connect(func() -> void: ShopPanel.open("crystals"))
+	crow.add_child(gem_button)
+	var grow := HBoxContainer.new()
+	grow.add_theme_constant_override("separation", 3)
+	grow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	gem_button.add_child(grow)
+	grow.add_child(UiKit.icon("gem", 20))
+	_crystals_label = UiKit.title("0", 15)
+	grow.add_child(_crystals_label)
+	grow.resized.connect(func() -> void: gem_button.custom_minimum_size = grow.size)
+	var sep := ColorRect.new()
+	sep.color = Color(UiKit.OUTLINE, 0.35)
+	sep.custom_minimum_size = Vector2(2, 18)
+	sep.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	sep.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	crow.add_child(sep)
 	crow.add_child(UiKit.icon("coins", 22))
 	_coins_label = UiKit.title("0", 16)
 	crow.add_child(_coins_label)
@@ -385,6 +408,7 @@ func _refresh_values() -> void:
 	(_xp_bar.get_child(0) as Label).text = L.t("level.max") if Game.level >= Game.MAX_LEVEL \
 		else "%s/%s" % [Fmt.n(int(Game.save["xp"])), Fmt.n(Game.xp_needed)]
 	_coins_label.text = Fmt.n(int(Game.save["coins"]))
+	_crystals_label.text = Fmt.n(Game.shop.crystals())
 	var cap := Game.stats.capacity
 	var fraction := minf(1.0, float(Game.backpack_count) / float(maxi(1, cap)))
 	_pack_bar.value = fraction
@@ -437,6 +461,11 @@ func open_window(w: Control) -> void:
 	_window = w
 	root.add_child(w)
 	Sound.set_window_open(true)
+
+
+## Открыто ли сейчас окно (магазин, склад...).
+func has_window() -> bool:
+	return _window != null and is_instance_valid(_window)
 
 
 func close_window() -> void:

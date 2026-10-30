@@ -19,8 +19,6 @@ const GARDEN_CHEST_EVERY := 22.0 * 3600.0
 
 ## Итог последней экспедиции для окна после возвращения: {location, items: [[вид, n], ...], coins} или null.
 var expedition_report = null
-## Показать окно стартового набора (offerPopup в iOS).
-var offer_popup := false
 ## Что выпало из королевского сундука: {coins, items: [[вид, n], ...]} или null.
 var garden_chest_found = null
 
@@ -167,7 +165,6 @@ func grant(product: String, transaction := "") -> void:
 					Game.shop.grant(key)
 		Game.show_toast("px:chest_gold", L.t("toast.purchased", [Products.title(key)]))
 		Sound.play("purchase")
-	offer_popup = false
 	Game.recalc()
 	Game.quests.ensure_quests()
 	Game.mark_dirty()
@@ -219,7 +216,6 @@ func check_starter_offer() -> void:
 		return
 	Game.save["starterOffers"] = offers + 1
 	Game.save["starterOfferUntil"] = _now() + STARTER_WINDOW
-	offer_popup = true
 	Game.mark_dirty()
 
 

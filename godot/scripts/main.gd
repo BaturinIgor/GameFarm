@@ -25,6 +25,9 @@ func _ready() -> void:
 
 	hud = Hud.new()
 	add_child(hud)
+	# Подписка MAX: пропуск текущего ивента и образ месяца
+	Game.shop.sync_max()
+	Game.recalc()
 	# Звери-производители работали, пока игры не было
 	OfflineOverlay.check()
 	CalendarPanel.check()
@@ -54,4 +57,6 @@ func _notification(what: int) -> void:
 		OfflineOverlay.check()
 		CalendarPanel.check()
 		Game.premium.repair_timers()
+		Game.shop.sync_max()
+		Game.recalc()
 		OfferPopup.check()
