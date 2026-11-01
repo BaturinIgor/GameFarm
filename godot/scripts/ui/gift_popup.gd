@@ -100,7 +100,12 @@ func _fill(v: VBoxContainer) -> void:
 		row.add_theme_constant_override("separation", 8)
 		v.add_child(row)
 		row.add_child(UiKit.icon(g, 26))
-		var title := UiKit.label(("★ " if g in liked else "") + Res.name_of(g) + " · " + Fmt.n(Game.storage_of(g)), 13)
+		# Любимый подарок жителя - звёздочка иконкой (символа ★ нет в шрифте)
+		if g in liked:
+			var star := UiKit.icon("star", 14)
+			star.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			row.add_child(star)
+		var title := UiKit.label(Res.name_of(g) + " · " + Fmt.n(Game.storage_of(g)), 13)
 		title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		title.clip_text = true
 		row.add_child(title)

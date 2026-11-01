@@ -222,7 +222,10 @@ func _animal_chip(sector_id: String, animal: String, on: bool) -> Control:
 	row.add_theme_constant_override("separation", 2)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(UiKit.icon_any("an:" + animal, 26))
-	row.add_child(UiKit.label("%d★" % Game.animals.stars(animal), 12))
+	row.add_child(UiKit.label(str(Game.animals.stars(animal)), 12))
+	var star := UiKit.icon("star", 12)
+	star.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(star)
 	b.add_child(row)
 	b.custom_minimum_size = Vector2(62, 36)
 	row.set_anchors_and_offsets_preset(Control.PRESET_CENTER)

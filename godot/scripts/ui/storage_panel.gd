@@ -28,7 +28,7 @@ func build() -> void:
 		for v in Game.save["storage"].values():
 			total += int(v)
 		c.add_child(UiKit.label(L.t("storage.empty") if total == 0 else L.t("storage.tabEmpty"), 16))
-		var hint := UiKit.label(L.t("storage.empty.hint"), 13, UiKit.INK_SOFT)
+		var hint := UiKit.label(UiKit.plain(L.t("storage.empty.hint")), 13, UiKit.INK_SOFT)
 		hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		c.add_child(hint)
 	else:
@@ -75,7 +75,11 @@ func _backpack_card() -> void:
 	var c := card(Color("fbe3c2"))
 	var head := HBoxContainer.new()
 	c.add_child(head)
-	var t := UiKit.label(L.t("storage.inBackpack"), 16)
+	head.add_theme_constant_override("separation", 6)
+	var bag := UiKit.icon("bag", 20)
+	bag.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(bag)
+	var t := UiKit.label(UiKit.plain(L.t("storage.inBackpack")), 16)
 	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(t)
 	head.add_child(UiKit.label("%d/%d" % [Game.backpack_count, Game.stats.capacity], 14))
@@ -92,7 +96,7 @@ func _backpack_card() -> void:
 		chip.add_child(UiKit.icon(kind, 18))
 		chip.add_child(UiKit.label(Fmt.n(n), 13))
 		flow.add_child(chip)
-	var hint := UiKit.label(L.t("storage.backpackHint"), 12, UiKit.INK_SOFT)
+	var hint := UiKit.label(UiKit.plain(L.t("storage.backpackHint")), 12, UiKit.INK_SOFT)
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	c.add_child(hint)
 
@@ -112,12 +116,22 @@ func _row(parent: Control, kind: String) -> void:
 	name_l.clip_text = true
 	name_l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	col.add_child(name_l)
-	# Всегда одна строка: сколько есть и цена за штуку ("300 шт  ·  4 🪙"), длинное обрезается многоточием,
-	# чтобы строки склада не растягивались
-	var info := UiKit.label(L.t("storage.count", [Fmt.n(have)]) + "  ·  %s 🪙" % Fmt.n(price), 12, UiKit.INK_SOFT)
-	info.clip_text = true
-	info.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	col.add_child(info)
+	# Всегда одна строка: сколько есть и цена за штуку с пиксельной монетой ("300 шт · 4 (монета)").
+	# Строка лежит в простом Control с обрезкой: длинное не растягивает и не переносит строку склада
+	var line := Control.new()
+	line.custom_minimum_size = Vector2(0, 17)
+	line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	line.clip_contents = true
+	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(line)
+	var info := HBoxContainer.new()
+	info.add_theme_constant_override("separation", 3)
+	info.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	line.add_child(info)
+	info.add_child(UiKit.label(L.t("storage.count", [Fmt.n(have)]) + "  ·  " + Fmt.n(price), 12, UiKit.INK_SOFT))
+	var coin := UiKit.icon("coin", 13)
+	coin.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	info.add_child(coin)
 	# Продать 1, 10, 100 или всё; лишние кнопки не показываются
 	var buttons := HBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 2)

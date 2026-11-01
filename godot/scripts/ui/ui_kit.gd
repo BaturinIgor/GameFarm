@@ -274,6 +274,20 @@ static func icon(name: String, size := 24.0) -> TextureRect:
 	return t
 
 
+## Текст без эмодзи и значков вроде ★: в шрифтах игры их нет, а системные эмодзи Godot на телефоне
+## не рисует (было пустое место). Где значок важен, рядом ставится пиксельная иконка.
+static var _emoji: RegEx
+
+
+static func plain(text: String) -> String:
+	if _emoji == null:
+		_emoji = RegEx.create_from_string("[\\x{1F000}-\\x{1FAFF}\\x{2600}-\\x{27BF}\\x{2B00}-\\x{2BFF}\\x{FE0F}]")
+	var out := _emoji.sub(text, "", true)
+	while "  " in out:
+		out = out.replace("  ", " ")
+	return out.replace(" ,", ",").replace(" .", ".").strip_edges()
+
+
 ## Ровные пиксели у картинки в любом размере (см. PIXEL_SHADER).
 static func pixel_art(c: CanvasItem) -> void:
 	if _pixel_mat == null:

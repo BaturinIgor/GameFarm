@@ -312,7 +312,7 @@ func _tutorial_card() -> Control:
 		var h := HBoxContainer.new()
 		h.add_theme_constant_override("separation", 8)
 		h.add_child(UiKit.icon(row[0], 20))
-		var l := UiKit.label(L.t(row[1]), 13)
+		var l := UiKit.label(UiKit.plain(L.t(row[1])), 13)
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		h.add_child(l)
