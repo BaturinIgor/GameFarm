@@ -260,7 +260,7 @@ SKINS = {
     "blossom": dict(hair=(4, "Pink"), chest="Farmer_Shirt/Farmer_Shirt_1_Pink", legs="Farmer_Pants/Farmer_Pants_1_Green",
                     feet="Green", hat="#f2a8c8"),
     "pirate": dict(hair=(2, "Black"), chest="Lumberjack_Shirt/Lumberjack_Shirt_1_Red", legs="OG_Pants/Pants_1_Black",
-                   feet="Black", hat="#1b1a20", tone="tan"),
+                   feet="Black", hat="#c42430", tone="tan"),
     "starCatcher": dict(hair=(6, "White"), chest="Royal_Shirt/Royal_Shirt_1_Blue", legs="Royal_Pants/Royal_Pants_1_Purple",
                         feet="Purple", crown=True, tone="pale"),
     # Торговцы и стражник (не образы игрока)
@@ -725,6 +725,7 @@ save("beehive", crop_opaque(load("Animals", "Bee", "Bee_Nest.png").crop((0, 24, 
 save("beehive_full", crop_opaque(load("Animals", "Bee", "Bee_Nest.png").crop((16, 24, 32, 48))))
 save("hay", crop_opaque(load("Outdoor decoration", "Hay_Bales.png").crop((16, 0, 48, 16))))
 save("barrel", crop_opaque(load("Outdoor decoration", "barrels.png").crop((0, 0, 16, 32))))
+save("barrel_closed", crop_opaque(load("Outdoor decoration", "barrels.png").crop((64, 0, 80, 32))))
 save("scarecrow", crop_opaque(load("Outdoor decoration", "Scarecrows.png").crop((0, 0, 32, 32))))
 save("basket", crop_opaque(load("Outdoor decoration", "Picnic_Basket.png").crop((0, 0, 16, 16))))
 save("boat", crop_opaque(load("Outdoor decoration", "Boat.png")))

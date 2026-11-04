@@ -159,7 +159,7 @@ const DECOR := [
 const DECOR_SPRITE := {
 	"potGreen": "pot_green", "potRed": "pot_red", "potBlue": "pot_blue", "table": "table_small",
 	"barrel": "barrel_berries", "hay": "hay_big", "jackLantern": "jack_lantern", "slimeLamp": "slime_lamp",
-	"streetLamp": "lantern_post", "flowerTub": "flowers_purple", "pirateBarrel": "barrel", "starStone": "ore_star",
+	"streetLamp": "lantern_post", "flowerTub": "flowers_purple", "pirateBarrel": "barrel_closed", "starStone": "ore_star",
 	"plantPink": "hm_plant_pink", "plantFern": "hm_plant_fern", "plantLush": "hm_plant_big", "redStool": "hm_stool_red",
 	"roundTable": "hm_table_round", "greenRug": "hm_rug_green", "sofa": "hm_sofa", "displayCase": "hm_display",
 	"cupboard": "hm_cupboard", "bathtub": "hm_bath",

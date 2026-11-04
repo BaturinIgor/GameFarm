@@ -13,7 +13,7 @@ const NODE := {"harvestFest": "pumpkinPatch", "slimeNight": "slimeCrystal", "win
 	"lanternNight": "lanternPost", "springGarden": "flowerBed", "pirateCove": "pirateCargo", "starfall": "fallenStar"}
 ## Спрайт-превью особой точки.
 const PREVIEW := {"harvestFest": "crop_pumpkin_3", "slimeNight": "crystal_slime", "winterTale": "gift_red", "beachParty": "sandcastle",
-	"lanternNight": "lantern_post", "springGarden": "flowers_red", "pirateCove": "barrel", "starfall": "ore_star"}
+	"lanternNight": "lantern_post", "springGarden": "flowers_red", "pirateCove": "barrel_closed", "starfall": "ore_star"}
 ## Семена и блюдо в наградах пропуска.
 const CROP := {"harvestFest": "pumpkin", "slimeNight": "grapes", "winterTale": "cabbage", "beachParty": "strawberry",
 	"lanternNight": "sunflower", "springGarden": "tomato", "pirateCove": "corn", "starfall": "eggplant"}

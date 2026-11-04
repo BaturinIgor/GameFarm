@@ -323,8 +323,8 @@ func _build_art() -> void:
 			_add(_alive_art, "flowers_purple", 8, -3)
 			_add(_dead_art, "tuft1")
 		"pirateCargo":
-			_add(_alive_art, "barrel", -7)
-			_add(_alive_art, "barrel", 8, -4)
+			_add(_alive_art, "barrel_closed", -7)
+			_add(_alive_art, "barrel_closed", 8, -4)
 			_add(_dead_art, "rubble")
 		"fallenStar":
 			_alive_art.add_child(Fx.glow(Color(1, 0.95, 0.55), 80, 14, 0.5))
