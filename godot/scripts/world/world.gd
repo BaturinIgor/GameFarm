@@ -57,6 +57,8 @@ var _save_timer := 0.0
 var _dust_timer := 0.0
 var _loot: Array = []           ## {node, velocity, age}
 var _transitioning := false
+## Пауза: пока открыто окно или заставка, мир стоит (Hud.set_world_paused).
+var paused := false
 var _fader: ColorRect
 var features: Array[WorldFeature] = []
 var _titan_hits := 0
@@ -279,6 +281,16 @@ func _process(delta: float) -> void:
 	var dt := minf(delta, 1.0 / 20.0)
 	if not _transitioning and loaded != Game.current:
 		_transition(Game.current)
+	if paused:
+		# В меню мир стоит: монстры, босс, набег и герой. Идут только звери-производители и сохранение
+		if not _transitioning:
+			for f in features:
+				f.background(self, dt)
+		_save_timer += dt
+		if _save_timer > 5.0:
+			_save_timer = 0.0
+			Game.save_if_needed()
+		return
 	var stats := Game.stats
 	_sync_skin()
 	if not _transitioning:
@@ -297,6 +309,21 @@ func _process(delta: float) -> void:
 	if _save_timer > 5.0:
 		_save_timer = 0.0
 		Game.save_if_needed()
+
+
+## Поставить мир на паузу или снять с неё. Узлы карты (монстры, звери, эффекты) замирают вместе с миром.
+func set_paused(on: bool) -> void:
+	if paused == on:
+		return
+	paused = on
+	var mode := Node.PROCESS_MODE_DISABLED if on else Node.PROCESS_MODE_INHERIT
+	for n: Node in [flat, entities, fx]:
+		n.process_mode = mode
+	if on:
+		velocity = Vector2.ZERO
+		player.animate(Vector2.ZERO, 0.0, 0.0)
+		if joystick:
+			joystick.end()
 
 
 ## Образ героя сменили (гардероб, перерождение): искры и новый лист.

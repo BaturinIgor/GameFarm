@@ -40,6 +40,10 @@ func _process(delta: float) -> void:
 		0:
 			if _time > 1.5:
 				_shot("1_start")
+				# Заставки при входе (календарь, доход без игры) ставят мир на паузу: закрываем, чтобы герой пошёл
+				for _i in 6:
+					if not main.hud.is_blocking() or not main.hud.back():
+						break
 				_touch(ORIGIN, true)
 				_step = 1
 		1:
@@ -360,8 +364,25 @@ func _extra(k: int) -> void:
 		12:
 			_shot("6_storage_full")
 			_check_layout("storage_full")
-			main.hud.close_window()
+			main.hud.open_window(QuestsPanel.new())
 		13:
+			_scroll_window(100000)
+		14:
+			_shot("6_quests_board")
+			main.hud.close_window()
+			# Окно наград: как после "Забрать всё" в ивенте
+			RewardsPopup.track(func() -> void:
+				Game.add_coins(1500)
+				Game.shop.add_crystals(12)
+				Game.save["tickets"] = int(Game.save.get("tickets", 0)) + 2
+				for res in ["wood", "stone", "berries", "fish", "apples"]:
+					Game.save["storage"][res] = int(Game.save["storage"].get(res, 0)) + 25)
+		15:
+			_shot("6_rewards")
+			for n in main.hud.find_children("*", "", true, false):
+				if n is RewardsPopup:
+					n.queue_free()
+		16:
 			_step = 5
 			_time = 300.0
 			_sub = 0

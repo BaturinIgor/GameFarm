@@ -121,7 +121,7 @@ func _goals_bonus(week: bool) -> Control:
 		var b := UiKit.button(L.t("goals.open"), "orange" if daily.bonus_ready(week) else "gray", 13, true)
 		b.disabled = not daily.bonus_ready(week)
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		b.pressed.connect(func() -> void: Game.daily.take_bonus(week))
+		b.pressed.connect(func() -> void: RewardsPopup.track(func() -> void: Game.daily.take_bonus(week)))
 		row.add_child(b)
 	return p
 
@@ -188,15 +188,24 @@ func _quest_card(q: Dictionary) -> void:
 	var bar := UiKit.bar(Quests.fraction(q), "green" if done else "orange", 0.0, 16.0,
 		"%s / %s" % [Fmt.n(int(q["progress"])), Fmt.n(int(q["target"]))])
 	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	v.add_child(bar)
+	var bar_row := HBoxContainer.new()
+	bar_row.add_theme_constant_override("separation", 8)
+	bar_row.add_child(bar)
+	v.add_child(bar_row)
 
 	if done:
 		var claim := UiKit.button(L.t("quests.claim"), "green", 15)
 		claim.pressed.connect(func() -> void:
-			Game.quests.claim_quest(id)
+			RewardsPopup.track(func() -> void: Game.quests.claim_quest(id))
 			Input.vibrate_handheld(20))
 		v.add_child(claim)
 		return
+	# "Перейти" справа от полоски: туда, где задание делается (локация с ресурсом, склад, мир со стрелками)
+	var go := UiKit.button(L.t("where.go"), "blue", 13, true)
+	go.custom_minimum_size = Vector2(92, 32)
+	go.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	go.pressed.connect(func() -> void: QuestsPanel.go(q))
+	bar_row.add_child(go)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	v.add_child(row)
@@ -212,6 +221,47 @@ func _quest_card(q: Dictionary) -> void:
 	free_btn.pressed.connect(func() -> void:
 		Ads.show_rewarded(func() -> void: Game.quests.reroll_quest(id, true)))
 	row.add_child(free_btn)
+
+
+## Кнопка "Перейти" у задания доски. Сбор - в открытую локацию с этим ресурсом (стрелка к ближайшей точке,
+## как "Где взять"), продажа - склад; остальное делается в мире (стрелки к складу, кладу, дикому зверю).
+static func go(q: Dictionary) -> void:
+	if Hud.current == null:
+		return
+	match str(q["type"]):
+		"gather":
+			var k := Quests.kind(q)
+			if k == "":
+				Hud.current.close_window()
+				return
+			var target := best_location(k)
+			if target == "":
+				WherePopup.open(k)
+				return
+			if target == Game.current or Game.world_map.travel(target):
+				Game.nav_target = k
+				Hud.current.close_window()
+			else:
+				WherePopup.open(k)
+		"sell":
+			Hud.current.open_named("storage")
+		_:
+			Hud.current.close_window()
+
+
+## Открытая локация, где есть ресурс: текущая, иначе с самым высоким уровнем (там точек больше).
+static func best_location(kind: String) -> String:
+	var best := ""
+	var best_level := -1
+	for s in WherePopup.sources(kind):
+		if s["kind"] != "location" or not s["open"]:
+			continue
+		if s["id"] == Game.current:
+			return Game.current
+		if int(s["level"]) > best_level:
+			best_level = int(s["level"])
+			best = s["id"]
+	return best
 
 
 # MARK: Жители
@@ -377,7 +427,7 @@ func _achievement_row(a: Dictionary) -> void:
 	elif can:
 		var b := UiKit.button(L.t("achievements.claim"), "orange", 13, true)
 		b.pressed.connect(func() -> void:
-			Game.quests.claim(a)
+			RewardsPopup.track(func() -> void: Game.quests.claim(a))
 			Input.vibrate_handheld(20))
 		col.add_child(b)
 	else:
@@ -393,7 +443,7 @@ func _achievement_row(a: Dictionary) -> void:
 func _claim_all(count: int, action: Callable) -> Button:
 	var b := UiKit.button(L.t("common.claimAll", [count]), "green", 15)
 	b.pressed.connect(func() -> void:
-		action.call()
+		RewardsPopup.track(action)
 		Input.vibrate_handheld(20))
 	return b
 

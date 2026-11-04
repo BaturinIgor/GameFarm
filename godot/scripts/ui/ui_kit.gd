@@ -415,6 +415,7 @@ static func count_badge(n: int) -> PanelContainer:
 	p.add_theme_stylebox_override("panel", s)
 	p.custom_minimum_size = Vector2(20, 20)
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.set_meta("count_badge", true)
 	var l := label(str(n), 11, Color.WHITE, 3)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER

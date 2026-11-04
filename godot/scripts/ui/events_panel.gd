@@ -400,7 +400,7 @@ func _progress_card(event: String) -> Control:
 	var claimable := Game.events.event_claimable()
 	if claimable > 0:
 		var b := UiKit.button(L.t("event.claimAll", [claimable]), "green")
-		b.pressed.connect(func() -> void: Game.events.claim_all_event())
+		b.pressed.connect(func() -> void: RewardsPopup.track(Game.events.claim_all_event))
 		v.add_child(b)
 	return c
 
@@ -503,7 +503,7 @@ static func _reward_cell(reward: Dictionary, event: String, tier_n: int, vip: bo
 		tag.grow_horizontal = Control.GROW_DIRECTION_BOTH
 		tag.grow_vertical = Control.GROW_DIRECTION_BEGIN
 		b.add_child(tag)
-	b.pressed.connect(func() -> void: Game.events.claim_event(tier_n, vip))
+	b.pressed.connect(func() -> void: RewardsPopup.track(func() -> void: Game.events.claim_event(tier_n, vip)))
 	return b
 
 
@@ -577,7 +577,7 @@ static func _bonus_row() -> Control:
 	if ready > 0:
 		var b := UiKit.button(L.t("event.bonus.claim", [ready]), "green", 13, true)
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		b.pressed.connect(func() -> void: Game.events.claim_event_bonus())
+		b.pressed.connect(func() -> void: RewardsPopup.track(Game.events.claim_event_bonus))
 		row.add_child(b)
 	return p
 

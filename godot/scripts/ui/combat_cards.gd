@@ -175,7 +175,7 @@ static func _hunt_card(h: Dictionary) -> Control:
 	if done:
 		var b := UiKit.button(L.t("quests.claim"), "green", 15)
 		b.pressed.connect(func() -> void:
-			Game.combat.claim_hunt(id)
+			RewardsPopup.track(func() -> void: Game.combat.claim_hunt(id))
 			Input.vibrate_handheld(20))
 		v.add_child(b)
 	return p
@@ -325,7 +325,7 @@ static func reward_tag(icon_name: String, text: String) -> HBoxContainer:
 static func claim_all_button(count: int, action: Callable) -> Button:
 	var b := UiKit.button(L.t("common.claimAll", [count]), "green", 15)
 	b.pressed.connect(func() -> void:
-		action.call()
+		RewardsPopup.track(action)
 		Input.vibrate_handheld(20))
 	return b
 
