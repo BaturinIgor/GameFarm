@@ -8,7 +8,8 @@ extends Sheet
 const PLANET_LEVELS := {"ember": 45, "azure": 54}
 const SHOP_ANIMALS := {"chicken": 2, "cow": 5, "horse": 8, "sheep": 11, "bee": 14, "rooster": 18, "pig": 26, "unicorn": 40}
 const ANIMAL_IDS := ["chicken", "cow", "horse", "sheep", "bee", "rooster", "pig", "unicorn",
-	"mouse", "goose", "duck", "frog", "butterfly", "swan", "goldenGoose", "duckHat"]
+	"mouse", "goose", "duck", "frog", "butterfly", "swan", "goldenGoose",
+	"jerboa", "crystalMouse", "salamander", "amberButterfly", "starButterfly", "duckHat"]
 const HOUSE_FLOORS := {"greenhouse": 30, "attic": 22, "upper": 8, "ground": 1, "basement": 14}
 ## Семена: [id, уровень, что растёт].
 const CROPS := [

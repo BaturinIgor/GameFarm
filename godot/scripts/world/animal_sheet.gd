@@ -40,8 +40,12 @@ static func _make(sheet_name: String, sheet_cell: float, idle_rows: Array, walk_
 ## Лист зверя или null, если спрайта нет.
 static func of(id: String) -> AnimalSheet:
 	var n := "an_" + id
+	# Перекрашенный зверь: лист другого зверя в своих цветах
+	var base := Animals.base_sheet(id)
+	if base != id and not Sprites.recolor(n, "an_" + base, Animals.recolor(id)):
+		return null
 	var sheet: AnimalSheet
-	match id:
+	match base:
 		"cow", "horse", "pig", "sheep", "unicorn":
 			sheet = _make(n, 32, [[0, 2], [1, 2], [2, 2]], [[3, 8], [4, 8], [5, 8]], 10)
 		"chicken", "rooster", "goose", "goldenGoose":
