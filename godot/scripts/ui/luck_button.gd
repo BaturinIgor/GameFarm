@@ -90,12 +90,12 @@ func _refresh() -> void:
 	var can := p.luck_ready()
 	var until := float(Game.save.get("luckUntil", now))
 	var ready_at := float(Game.save.get("luckReadyAt", now))
-	_ad.visible = can and not p.has_pro()
+	_ad.visible = can and not p.has_pro() and Ads.LIVE
 	if kind == "wide":
 		if active:
 			_text.text = L.t("luck.active", [House.countdown(until - now)])
 		elif can:
-			_text.text = L.t("luck.ready.pro") if p.has_pro() else L.t("luck.ready")
+			_text.text = L.t("luck.ready.pro") if p.has_pro() or not Ads.LIVE else L.t("luck.ready")
 		else:
 			_text.text = L.t("luck.cooldown", [House.countdown(ready_at - now)])
 		disabled = not can

@@ -76,11 +76,11 @@ func _process(delta: float) -> void:
 
 ## Самое срочное предложение: [вид, иконка, до какого времени] или [] - нечего показать.
 static func current() -> Array:
-	var until := ShopPill.urgent_until()
+	var until := ShopPill.urgent_until() if Store.LIVE else 0.0
 	if until > Time.get_unix_time_from_system():
 		return ["bundle", "flame", until]
 	var shop := Game.shop
-	if not shop.flash_bought():
+	if Store.LIVE and not shop.flash_bought():
 		return ["flash", "gem", Time.get_unix_time_from_system() + ShopSystem.next_day_in()]
 	if shop.daily_deal() != "" and not shop.deal_bought():
 		return ["deal", "tag", Time.get_unix_time_from_system() + ShopSystem.next_day_in()]

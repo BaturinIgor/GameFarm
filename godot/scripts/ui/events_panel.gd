@@ -58,7 +58,7 @@ func build() -> void:
 		content.add_child(_run_card())
 		content.add_child(_progress_card(event))
 		content.add_child(RatingCard.build(str(run["key"])))
-		if not Game.events.has_vip():
+		if not Game.events.has_vip() and Store.LIVE:
 			content.add_child(_vip_card(event))
 		_tier_list(event)
 	else:
@@ -317,9 +317,10 @@ static func banner(run: Dictionary, on_travel: Callable) -> Control:
 	tiles.add_child(_preview_tile(L.t("event.preview.node"), HousePanel.sprite_rect(Events.PREVIEW[event], 2.0, Vector2(70, 50))))
 	tiles.add_child(_preview_tile(L.t("event.preview.decor"),
 		HousePanel.sprite_rect(House.decor_sprite(Events.decor_of(event)), 2.0, Vector2(70, 50))))
-	var skin := EventsPanel.skin_icon(Events.skin_of(event), 46)
-	skin.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	tiles.add_child(_preview_tile(L.t("event.preview.skin"), skin))
+	if Store.LIVE:
+		var skin := EventsPanel.skin_icon(Events.skin_of(event), 46)
+		skin.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		tiles.add_child(_preview_tile(L.t("event.preview.skin"), skin))
 
 	if Game.events.events_open():
 		if Game.current == Events.location(event):
@@ -452,7 +453,11 @@ func _tier_list(event: String) -> void:
 	var gap := Control.new()
 	gap.custom_minimum_size = Vector2(34, 1)
 	head.add_child(gap)
-	for track in [["event.track.free", UiKit.INK_SOFT], ["event.track.vip", UiKit.TONES["gold"][2]]]:
+	# Без покупок за деньги дорожки VIP-пропуска нет: её нельзя открыть
+	var tracks: Array = [["event.track.free", UiKit.INK_SOFT]]
+	if Store.LIVE or Game.events.has_vip():
+		tracks.append(["event.track.vip", UiKit.TONES["gold"][2]])
+	for track in tracks:
 		var l := UiKit.label(L.t(track[0]), 12, track[1])
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -464,7 +469,8 @@ func _tier_list(event: String) -> void:
 		list.add_child(row)
 		row.add_child(_tier_badge(t, t <= reached))
 		row.add_child(_reward_cell(Events.free_reward(t), event, t, false))
-		row.add_child(_reward_cell(Events.vip_reward(t), event, t, true))
+		if tracks.size() > 1:
+			row.add_child(_reward_cell(Events.vip_reward(t), event, t, true))
 	list.add_child(_bonus_row())
 
 

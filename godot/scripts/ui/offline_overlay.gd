@@ -91,7 +91,7 @@ func _ready() -> void:
 		col.add_child(srow)
 	if not bool(report.get("doubled", false)):
 		var pro := Game.premium.has_pro()
-		var twice := Ads.reward_button(L.t("offline.double.pro") if pro else L.t("offline.double"), "green", 15)
+		var twice := Ads.reward_button(L.t("offline.double.pro") if pro or not Ads.LIVE else L.t("offline.double"), "green", 15)
 		twice.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		twice.pressed.connect(_double)
 		col.add_child(twice)

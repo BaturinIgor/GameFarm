@@ -4,13 +4,23 @@ class_name Ads
 ## Владельцы Pro получают награду сразу, без рекламы.
 
 
+## Настоящая реклама подключена. Пока false: кнопки "за ролик" без значка ролика, награда сразу.
+const LIVE := false
+
+
 ## Показать ролик и вызвать on_reward, если его досмотрели.
 static func show_rewarded(on_reward: Callable) -> void:
-	if Game.premium.has_pro():
+	# Рекламы пока нет: кнопка - просто бесплатный бонус с дневным лимитом, без тоста "Тест"
+	if Game.premium.has_pro() or not LIVE:
 		on_reward.call()
 		return
 	Game.show_toast("px:potion", L.t("ads.testSkipped"))
 	on_reward.call()
+
+
+## Ключ подписи: без рекламы - вариант "...Free" (без слова "ролик").
+static func k(key: String) -> String:
+	return key if LIVE else key + "Free"
 
 
 ## Ролик загружен и его можно показать.
@@ -27,7 +37,9 @@ static func reward_button(text: String, tone := "green", font_size := 15, small 
 	inner.add_theme_constant_override("separation", 6)
 	inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.add_child(inner)
-	if Game.premium.has_pro():
+	if not LIVE:
+		pass
+	elif Game.premium.has_pro():
 		var crown := UiKit.icon("crown", font_size + 3.0)
 		crown.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		inner.add_child(crown)

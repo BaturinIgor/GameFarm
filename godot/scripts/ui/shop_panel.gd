@@ -26,6 +26,8 @@ func _init(start_tab := "") -> void:
 	header_currency = "crystals"
 	if start_tab != "":
 		tab = start_tab
+	if not Store.LIVE and tab in ["vip", "crystals"]:
+		tab = "free"
 
 
 ## Открыть магазин (на вкладке).
@@ -69,9 +71,14 @@ func _set_tab(id: String) -> void:
 
 # MARK: Вкладки
 
+## Вкладки, что есть в этой сборке: без покупок за деньги нет "MAX и Pro" и пачек кристаллов.
+static func tabs_shown() -> Array:
+	return TABS.filter(func(t: Array) -> bool: return Store.LIVE or not t[0] in ["vip", "crystals"])
+
+
 func build_top() -> void:
 	var items: Array = []
-	for t in TABS:
+	for t in tabs_shown():
 		items.append([t[0], L.t(t[2]), 1 if _tab_news(t[0]) else 0, t[1]])
 	top_bar.add_child(UiKit.tabs(items, tab, func(id: String) -> void: _set_tab(id)))
 
@@ -80,7 +87,7 @@ func build_top() -> void:
 func _tab_news(id: String) -> bool:
 	var shop := Game.shop
 	match id:
-		"offers": return not shop.new_offers().is_empty() or shop.gift_ready() or not shop.flash_bought()
+		"offers": return shop.gift_ready() if not Store.LIVE else (not shop.new_offers().is_empty() or shop.gift_ready() or not shop.flash_bought())
 		"market": return Freebies.ready("market")
 		"vip": return shop.max_daily_ready()
 		"free": return shop.ad_crystals_left() > 0 or Game.premium.luck_ready() or Game.house.can_claim_login()
@@ -112,6 +119,11 @@ func _close_detail() -> void:
 
 func _build_offers() -> void:
 	content.add_child(_gift_card())
+	if not Store.LIVE:
+		# Без покупок за деньги: подарок дня и скидка дня за кристаллы
+		content.add_child(EventsPanel.section(L.t("shop.section.deal")))
+		content.add_child(_deal_card())
+		return
 	content.add_child(_flash_card())
 	content.add_child(_steps_card())
 	var offers := Game.shop.current_offers()
@@ -435,7 +447,7 @@ static func _chip(text: String, tone: String) -> PanelContainer:
 func _not_enough(price: int) -> void:
 	Game.show_toast("px:gem", L.t("crystals.notEnough", [Fmt.n(price - Game.shop.crystals())]))
 	Sound.play("error")
-	_set_tab("crystals")
+	_set_tab("crystals" if Store.LIVE else "free")
 
 
 # MARK: MAX и Pro
@@ -887,7 +899,7 @@ func _build_free() -> void:
 		claim.pressed.connect(func() -> void: Game.shop.claim_max_daily())
 		content.add_child(claim)
 	# Кристаллы за ролик
-	var parts := shop_card(L.t("free.crystals.title"), "purple")
+	var parts := shop_card(L.t(Ads.k("free.crystals.title")), "purple")
 	var v: VBoxContainer = parts[1]
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
@@ -899,18 +911,18 @@ func _build_free() -> void:
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_child(col)
-	col.add_child(_wrap(L.t("free.crystals.text", [ShopSystem.AD_CRYSTALS]), 13))
+	col.add_child(_wrap(L.t(Ads.k("free.crystals.text"), [ShopSystem.AD_CRYSTALS]), 13))
 	col.add_child(UiKit.label(L.t("free.crystals.left", [shop.ad_crystals_left(), ShopSystem.AD_CRYSTALS_PER_DAY]),
 		11, UiKit.INK_SOFT))
 	if shop.ad_crystals_left() > 0:
-		var b := Ads.reward_button(L.t("free.crystals.watch", [ShopSystem.AD_CRYSTALS]), "purple", 15)
+		var b := Ads.reward_button(L.t("free.crystals.watch" if Ads.LIVE else "free.crystals.claimFree", [ShopSystem.AD_CRYSTALS]), "purple", 15)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(func() -> void:
 			Ads.show_rewarded(func() -> void: Game.shop.claim_ad_crystals()))
 		v.add_child(b)
 	else:
 		var next := func() -> String:
-			return L.t("free.crystals.tomorrow", [House.countdown(House.start_of_day() + 86400.0 - Time.get_unix_time_from_system())])
+			return L.t(Ads.k("free.crystals.tomorrow"), [House.countdown(House.start_of_day() + 86400.0 - Time.get_unix_time_from_system())])
 		var nl := CombatCards.LiveLabel.new(next, 12, UiKit.INK_SOFT)
 		nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		v.add_child(nl)
@@ -918,7 +930,7 @@ func _build_free() -> void:
 
 	# Удача
 	content.add_child(EventsPanel.section(L.t("free.title")))
-	content.add_child(_wrap(L.t("free.subtitle.pro") if Game.premium.has_pro() else L.t("free.subtitle"), 12,
+	content.add_child(_wrap(L.t("free.subtitle.pro") if Game.premium.has_pro() else L.t(Ads.k("free.subtitle")), 12,
 		UiKit.INK_SOFT))
 	content.add_child(LuckButton.new("wide"))
 
@@ -933,6 +945,8 @@ func _build_free() -> void:
 			Hud.current.open_window(CalendarPanel.new()))
 	content.add_child(cal)
 
+	if not Store.LIVE:
+		return
 	var restore := UiKit.button(L.t("shop.restore"), "wood", 14, true)
 	restore.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	restore.pressed.connect(func() -> void: Store.restore())

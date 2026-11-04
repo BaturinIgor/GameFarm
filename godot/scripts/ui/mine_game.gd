@@ -330,7 +330,7 @@ func _show_end(kind: String) -> void:
 				Game.show_toast("px:gem", L.t("chest.noCrystals")))
 		v.add_child(buy)
 		if not _ad_used and Ads.ready():
-			var ad := Ads.reward_button(L.t("mine.adMoves", [Mine.EXTRA_MOVES]), "orange", 15)
+			var ad := Ads.reward_button(L.t(Ads.k("mine.adMoves"), [Mine.EXTRA_MOVES]), "orange", 15)
 			ad.pressed.connect(func() -> void:
 				Ads.show_rewarded(func() -> void:
 					_ad_used = true
