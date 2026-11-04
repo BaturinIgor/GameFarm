@@ -43,8 +43,8 @@ func _process(delta: float) -> void:
 		return
 	var run := Events.current()
 	_time.text = EventsPanel.short_countdown(float(run["end"]) - Time.get_unix_time_from_system())
-	var claimable := Game.events.event_claimable()
-	var fresh := Game.events.event_is_new()
+	var claimable := Game.events.event_claimable() + Game.farm.claimable()
+	var fresh := Game.events.event_is_new() or Game.farm.is_new()
 	var key := "%s|%d|%s" % [run["key"], claimable, fresh]
 	if key != _shown:
 		_shown = key

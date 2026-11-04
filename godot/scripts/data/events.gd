@@ -173,14 +173,16 @@ static func monsters(event: String) -> Array:
 
 # MARK: Пропуск
 
-const TIERS := 20
+## Пропуск рассчитан примерно на 6 часов игры за неделю ивента (раньше 20 ступеней на 3300 очков
+## проходились за полчаса): 30 ступеней, всего 24 600 очков.
+const TIERS := 30
 ## После последней ступени каждые столько очков дают бонусный сундук.
-const BONUS_EVERY := 300
+const BONUS_EVERY := 1500
 
 
-## Сколько очков нужно на ступень (с единицы).
+## Сколько очков нужно на ступень (с единицы): 240 на первую, 1400 на последнюю.
 static func cost(tier_n: int) -> int:
-	return 60 + 10 * tier_n
+	return 200 + 40 * tier_n
 
 
 ## Сколько всего очков нужно, чтобы открыть ступень.
@@ -269,7 +271,9 @@ static func bonus_coins(level: int) -> int:
 const BOONS := ["points", "damage", "vitality", "swift", "harvest", "hunter", "regen", "lucky", "regrowth"]
 const BOON_MAX_RANK := 3
 const BOON_PER_RANK := {
-	"points": 0.2, "damage": 0.15, "vitality": 0.15, "swift": 0.08, "harvest": 1.0, "hunter": 2.0,
+	## Усиления очков урезаны вдвое: "Очки" +10% за ранг, "Охотник" +1/+2/+3 за монстра,
+## "Урожай" +0.5 за особую точку (дробные очки копятся, см. EventSystem.add_event_points).
+	"points": 0.1, "damage": 0.15, "vitality": 0.15, "swift": 0.08, "harvest": 0.5, "hunter": 1.0,
 	"regen": 0.01, "lucky": 0.06, "regrowth": 0.2,
 }
 const BOON_ICON := {
@@ -294,5 +298,5 @@ static func boon_icon(boon: String) -> String:
 static func boon_text(boon: String, rank: int) -> String:
 	var value := boon_per_rank(boon) * float(maxi(1, rank))
 	if boon == "harvest" or boon == "hunter":
-		return L.t("boon." + boon + ".text", [int(value)])
+		return L.t("boon." + boon + ".text", [Fmt.n(int(value)) if is_equal_approx(value, roundf(value)) else str(value)])
 	return L.t("boon." + boon + ".text", [Fmt.pct(value)])
