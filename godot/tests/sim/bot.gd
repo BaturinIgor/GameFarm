@@ -1,0 +1,466 @@
+extends RefCounted
+## Бот-игрок: играет сессиями по правилам игры (системы Game) в ускоренном времени (Clock.offset).
+## Мир заменён моделью: точки добычи из раскладок карт, удары по прочности и энергии, восстановление точек.
+## Бои, подземелья, ивенты, огород и мини-игры бот не трогает: их доход в расчёт не входит.
+
+const WALK := 2.5          # секунд дойти до следующей точки
+const DEPOSIT_WALK := 10.0 # секунд сходить к складу
+const DAY := 86400.0
+
+var profile: Dictionary
+var t0 := 0.0
+var played := 0.0          # секунд в игре всего
+var log_days: Array = []   # снимок в конце каждого дня
+var milestones := {}       # уровень -> [день, часы игры]
+var energy_outs := 0       # сессий, кончившихся из-за энергии
+var waiting_goods := {}    # товар -> сколько раз стройка ждала его
+var built := {}            # здание -> сколько уровней построено
+var spent_goods := {}      # товар -> сколько ушло на стройку и инструменты
+var sold_coins := 0
+var sold_by := {}          # ресурс -> монет за продажу
+var coins_by := {}         # источник -> монет
+var crystals_spent := 0
+var events_hit := {}
+var _spots := {}           # "loc|type" -> [время готовности точек]
+var _layouts := {}
+
+
+func _init(p: Dictionary) -> void:
+	profile = p
+
+
+func now() -> float:
+	return Clock.now()
+
+
+func advance(sec: float) -> void:
+	Clock.offset += sec
+
+
+func day() -> int:
+	return int((now() - t0) / DAY)
+
+
+# MARK: Прогон
+
+func run() -> Dictionary:
+	Clock.offset = 0.0
+	Game.save = Game.default_save()
+	for sys in Game.systems:
+		sys.defaults(Game.save)
+	Game.world_map.refresh_reachable()
+	Game.recalc()
+	t0 = now()
+	for key in profile.get("buy_at_start", []):
+		Game.premium.grant(key)
+	var days := int(profile["days"])
+	var sessions := int(profile["sessions"])
+	var minutes := float(profile["minutes"])
+	for d in days:
+		var day_start := t0 + d * DAY
+		# Сессии равномерно в окне 08:00-23:00
+		for s in sessions:
+			var at := day_start + 8.0 * 3600.0 + (15.0 * 3600.0) * float(s) / float(maxi(1, sessions))
+			if now() < at:
+				_away(at - now())
+			_session(minutes * 60.0)
+		for key in profile.get("buy_daily", []):
+			Game.premium.grant(key)
+		_snapshot(d + 1)
+		if Game.level >= Game.MAX_LEVEL and not milestones.has("done"):
+			milestones["done"] = [d + 1, played / 3600.0]
+	return report()
+
+
+func _away(sec: float) -> void:
+	Game.save["lastSeen"] = now()
+	advance(sec)
+	Game.animals.apply_offline()
+	Game.estate.tick()
+
+
+func _session(budget: float) -> void:
+	var end := now() + budget
+	_daily_chores()
+	_spend()
+	var idle_checks := 0
+	while now() < end:
+		var did := _gather_step()
+		if did < 0.0:
+			# Энергия кончилась
+			if not _refill_energy():
+				energy_outs += 1
+				break
+			continue
+		if did == 0.0:
+			idle_checks += 1
+			advance(30.0)
+			played += 30.0
+			if idle_checks > 6:
+				break
+			continue
+		played += did
+		if Game.backpack_free <= 0:
+			_deposit()
+	_deposit()
+	_spend()
+
+
+# MARK: Добыча
+
+func _layout(loc: String) -> Dictionary:
+	if not _layouts.has(loc):
+		var path := "res://data/layouts/layout_%s.json" % loc
+		var data = JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else null
+		var counts := {}
+		if data is Dictionary:
+			for s in data.get("spots", []):
+				counts[str(s[0])] = int(counts.get(str(s[0]), 0)) + 1
+		_layouts[loc] = counts
+	return _layouts[loc]
+
+
+## Точки, которые бот может бить: [локация, тип, количество].
+func _options() -> Array:
+	var out: Array = []
+	for loc in Locations.world():
+		if not Game.world_map.is_unlocked(loc):
+			continue
+		var counts: Dictionary = _layout(loc)
+		for type in counts:
+			var spec := Nodes.spec(type)
+			if spec.is_empty() or not Game.can_harvest(spec):
+				continue
+			out.append([loc, type, int(counts[type])])
+	return out
+
+
+func _hits_for(spec: Dictionary) -> int:
+	var s := Game.stats
+	var dmg := Game.damage_against(spec) * (1.0 + s.crit_chance * (s.crit_mult - 1.0)) * (1.0 + s.double_strike_chance)
+	return maxi(1, int(ceil(float(spec["hp"]) / maxf(0.01, dmg))))
+
+
+## Что сейчас нужно: ресурс -> недостача для ближайших целей.
+func _needs() -> Dictionary:
+	var need := {}
+	var add := func(cost: Dictionary) -> void:
+		for it in cost.get("items", []):
+			var k := str(it[0])
+			var miss := int(it[1]) - Game.amount(k)
+			if miss > 0 and not Estate.is_good(k):
+				need[k] = maxi(int(need.get(k, 0)), miss)
+	for tool in Tools.GATHERING:
+		if Game.workshop.upgrade_block(tool) in ["", "cost"]:
+			add.call(Game.workshop.next_cost(tool))
+	for g in WorldGraph.GATES:
+		if (g["a"] in Game.world_map.reachable or g["b"] in Game.world_map.reachable) and not g["royal"] \
+				and not Game.world_map.is_gate_open(g["id"]) and Game.level >= WorldGraph.level(g):
+			add.call(Game.world_map.gate_cost(g))
+	for id in Estate.IDS:
+		var b: Array = Game.estate.upgrade_block(id)
+		if b.is_empty() or str(b[0]) == "estate.block.builders":
+			add.call(Estate.build_cost(id, Game.estate.level(id) + 1))
+	for good in _active_recipes():
+		for it in Estate.RECIPES[good]:
+			var want := int(it[1]) * 40
+			if Game.amount(it[0]) < want and not Estate.is_good(it[0]):
+				need[it[0]] = maxi(int(need.get(it[0], 0)), want - Game.amount(it[0]))
+	return need
+
+
+func _active_recipes() -> Array:
+	var out: Array = []
+	for id in Estate.IDS:
+		if Estate.produces(id) and Game.estate.level(id) > 0:
+			out.append(Game.estate.recipe(id))
+	return out
+
+
+## Одна точка: секунды игры, 0 - нечего делать, -1 - нет энергии.
+func _gather_step() -> float:
+	var need := _needs()
+	var best: Array = []
+	var best_score := -1.0
+	for o in _options():
+		var spec := Nodes.spec(o[1])
+		var hits := _hits_for(spec)
+		var key := "%s|%s" % [o[0], o[1]]
+		var ready := _ready_at(key, int(o[2]))
+		var wait := maxf(0.0, ready - now())
+		var sec := hits * Game.stats.hit_interval + WALK + wait
+		var value := 0.0
+		for y in spec["yields"]:
+			var n := (float(y[1]) + float(y[2])) * 0.5 * float(y[3]) * Game.stats.yield_multiplier(y[0])
+			if need.has(y[0]):
+				# Нужное на цели важнее опыта: вес растёт с уровнем, как растёт опыт с точки
+				value += minf(n, float(need[y[0]])) * (6.0 + 2.0 * float(Game.level))
+			value += n * Game.sell_price(y[0]) * 0.05
+		value += float(spec["xp"]) * 1.0
+		# Энергия дороже времени: очки за единицу энергии и за секунду
+		var score := value / (float(hits) * 4.0 + sec)
+		if score > best_score:
+			best_score = score
+			best = [o, spec, hits, key, sec]
+	if best.is_empty():
+		return 0.0
+	var spec: Dictionary = best[1]
+	var hits: int = best[2]
+	for i in hits:
+		if not Game.energy.try_spend():
+			return -1.0
+	advance(best[4])
+	_take_spot(best[3], int(best[0][2]), float(spec["respawn"]) * Game.stats.respawn_mult)
+	var stats := Game.stats
+	var roll := randf()
+	var mult := 3 if roll < stats.triple_chance else (2 if roll < stats.triple_chance + stats.double_chance else 1)
+	for y in spec["yields"]:
+		if randf() >= float(y[3]):
+			continue
+		var raw := float(randi_range(int(y[1]), int(y[2]))) * stats.yield_multiplier(y[0])
+		var n := int(raw)
+		if randf() < raw - n:
+			n += 1
+		n *= mult
+		if n > 0:
+			if Game.add_to_backpack(y[0], n) < n:
+				_deposit()
+				Game.add_to_backpack(y[0], n)
+	Game.register_harvest(int(spec["xp"]))
+	return best[4]
+
+
+func _ready_at(key: String, count: int) -> float:
+	var list: Array = _spots.get(key, [])
+	if list.size() < count:
+		return now()
+	return list.min()
+
+
+func _take_spot(key: String, count: int, respawn: float) -> void:
+	var list: Array = _spots.get(key, [])
+	if list.size() < count:
+		list.append(now() + respawn)
+	else:
+		var i := list.find(list.min())
+		list[i] = maxf(now(), float(list[i])) + respawn
+	_spots[key] = list
+
+
+func _deposit() -> void:
+	if Game.backpack_count <= 0:
+		return
+	advance(DEPOSIT_WALK)
+	played += DEPOSIT_WALK
+	Game.deposit_backpack()
+	_sell_surplus()
+	# Что не влезло на склад - продаём из рюкзака не получится: продаём со склада и сдаём ещё раз
+	if Game.backpack_count > 0:
+		_sell_surplus(true)
+		Game.deposit_backpack()
+		if Game.backpack_count > 0:
+			Game.save["backpack"] = {}
+
+
+## Продать лишнее: всё сверх нужного на цели, когда хранилище заполнено больше чем на 70%.
+func _sell_surplus(force := false) -> void:
+	var need := {}
+	for k in _reserve():
+		need[k] = _reserve()[k]
+	for store in ["storage", "barn"]:
+		var cap := Game.estate.capacity(store)
+		if not force and Game.estate.stored(store) < cap * 0.7:
+			continue
+		var kinds: Array = Game.save["storage"].keys()
+		for kind in kinds:
+			if Estate.store_of(kind) != store:
+				continue
+			var keep := int(need.get(kind, 0)) + 30
+			var extra := Game.storage_of(kind) - keep
+			if extra > 0:
+				var c := Game.sell(kind, extra)
+				sold_coins += c
+				sold_by[kind] = int(sold_by.get(kind, 0)) + c
+
+
+## Сколько держать на складе: полные цены ближайших целей и сырьё цехов.
+func _reserve() -> Dictionary:
+	var r := {}
+	var add := func(cost: Dictionary) -> void:
+		for it in cost.get("items", []):
+			r[it[0]] = maxi(int(r.get(it[0], 0)), int(it[1]))
+	for tool in Tools.GATHERING:
+		add.call(Game.workshop.next_cost(tool))
+	for id in Estate.IDS:
+		if Game.estate.level(id) < Estate.max_level(id):
+			add.call(Estate.build_cost(id, Game.estate.level(id) + 1))
+	for good in _active_recipes():
+		for it in Estate.RECIPES[good]:
+			r[it[0]] = maxi(int(r.get(it[0], 0)), int(it[1]) * 60)
+	return r
+
+
+func _refill_energy() -> bool:
+	if Game.energy.ads_left() > 0 and profile.get("ads", true):
+		Game.energy.ad_reward()
+		return true
+	if profile.get("spend_crystals", false) and Game.shop.crystals() >= Game.energy.buy_price() + 20 \
+			and int(Game.save["energy"]["bought"]) < int(profile.get("energy_buys", 2)):
+		crystals_spent += Game.energy.buy_price()
+		return Game.energy.buy()
+	return false
+
+
+# MARK: Траты
+
+func _daily_chores() -> void:
+	Game.estate.tick()
+	Game.estate.collect_all()
+	if Game.shop.gift_ready():
+		Game.shop.claim_gift()
+	Game.quests.ensure_quests()
+	Game.quests.claim_all_quests()
+	for a in Quests.achievements():
+		if Game.quests.can_claim(a):
+			Game.quests.claim(a)
+	for i in Game.daily.goals().size():
+		Game.daily.claim(i)
+	for i in Game.daily.week_goals().size():
+		Game.daily.claim(i, true)
+	if Game.daily.bonus_ready():
+		Game.daily.take_bonus()
+	if Game.daily.bonus_ready(true):
+		Game.daily.take_bonus(true)
+
+
+func _spend() -> void:
+	Game.estate.tick()
+	Game.estate.collect_all()
+	for i in 200:
+		if Game.talents.points_free() <= 0:
+			break
+		var learned := false
+		for id in _talent_order():
+			if Game.talents.learn(id):
+				learned = true
+				break
+		if not learned:
+			break
+	for tool in Tools.UPGRADABLE:
+		var cost := Game.workshop.next_cost(tool)
+		if Game.workshop.upgrade(tool):
+			_count_goods(cost)
+	for g in WorldGraph.GATES:
+		Game.world_map.open_gate(g["id"])
+	_build()
+	_orders()
+	_animals()
+	if profile.get("spend_crystals", false):
+		_crystals()
+
+
+func _talent_order() -> Array:
+	var ids := Talents.ids()
+	var pref: Array = profile.get("branches", ["gathering", "mining", "beasts", "travel", "farming", "combat"])
+	ids.sort_custom(func(a: String, b: String) -> bool:
+		var ta := Talents.tier(a)
+		var tb := Talents.tier(b)
+		if ta != tb:
+			return ta < tb
+		return pref.find(Talents.branch(a)) < pref.find(Talents.branch(b)))
+	return ids
+
+
+func _build() -> void:
+	# Главный дом, склад, амбар, лесопилка - в первую очередь, потом остальные по возрастанию уровня
+	var order: Array = Estate.IDS.duplicate()
+	order.sort_custom(func(a: String, b: String) -> bool:
+		var pa := 0 if a in ["main", "storage", "barn", "sawmill"] else 1
+		var pb := 0 if b in ["main", "storage", "barn", "sawmill"] else 1
+		if pa != pb:
+			return pa < pb
+		return Game.estate.level(a) < Game.estate.level(b))
+	for id in order:
+		var block: Array = Game.estate.upgrade_block(id)
+		if not block.is_empty():
+			continue
+		var cost := Estate.build_cost(id, Game.estate.level(id) + 1)
+		if not Game.can_afford(cost):
+			for it in cost.get("items", []):
+				if Estate.is_good(it[0]) and Game.amount(it[0]) < int(it[1]):
+					waiting_goods[it[0]] = int(waiting_goods.get(it[0], 0)) + 1
+			continue
+		if Game.estate.start_upgrade(id):
+			built[id] = int(built.get(id, 0)) + 1
+			_count_goods(cost)
+	# Цеха: первый рецепт, лесопилка - доски
+	if Game.estate.level("sawmill") > 0:
+		Game.estate.set_recipe("sawmill", "planks")
+
+
+func _count_goods(cost: Dictionary) -> void:
+	for it in cost.get("items", []):
+		if Estate.is_good(it[0]):
+			spent_goods[it[0]] = int(spent_goods.get(it[0], 0)) + int(it[1])
+
+
+func _orders() -> void:
+	if not Game.estate.orders_open():
+		return
+	for o in Game.estate.orders().duplicate():
+		if o is Dictionary and o.has("id") and Game.estate.can_complete(o):
+			Game.estate.complete_order(str(o["id"]))
+
+
+func _animals() -> void:
+	for id in Animals.IDS:
+		var price := Game.animals.shop_price(id)
+		if price > 0 and int(Game.save["coins"]) > price * int(profile.get("animal_margin", 3)):
+			Game.animals.buy(id)
+
+
+func _crystals() -> void:
+	# Доски из лавки и ускорение стройки
+	while Game.shop.planks_left() > 0 and Game.shop.crystals() > 200:
+		var c := Game.shop.crystals()
+		if not Game.shop.buy_market("planks"):
+			break
+		crystals_spent += c - Game.shop.crystals()
+	# Цеха за кристаллы: окно производства заполняется сразу (сырьё всё равно нужно)
+	for id in Estate.IDS:
+		if Game.estate.can_boost(id) and Game.estate.boost_cost(id) <= int(profile.get("boost_max", 0)) \
+				and Game.estate.affordable(id) > Game.estate.capacity_of(id):
+			var c := Game.shop.crystals()
+			Game.estate.collect(id)
+			if Game.estate.boost(id):
+				crystals_spent += c - Game.shop.crystals()
+				Game.estate.collect(id)
+	for id in Estate.IDS:
+		if Game.estate.building(id) and Game.estate.speedup_cost(id) <= int(profile.get("speedup_max", 0)):
+			var c := Game.shop.crystals()
+			if Game.estate.speed_up(id):
+				crystals_spent += c - Game.shop.crystals()
+
+
+# MARK: Отчёт
+
+func _snapshot(d: int) -> void:
+	for lvl in [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]:
+		if Game.level >= lvl and not milestones.has(lvl):
+			milestones[lvl] = [d, snappedf(played / 3600.0, 0.1)]
+	var levels := {}
+	for id in Estate.IDS:
+		levels[id] = Game.estate.level(id)
+	var tools := {}
+	for tool in Tools.GATHERING:
+		tools[tool] = Game.tier(tool)
+	log_days.append({"day": d, "level": Game.level, "hours": snappedf(played / 3600.0, 0.1), "coins": int(Game.save["coins"]),
+		"crystals": Game.shop.crystals(), "estate": levels, "tools": tools, "planks": Game.storage_of("planks"),
+		"talents_spent": Game.talents.points_spent(), "talents_total": Game.talents.points_total(),
+		"locations": Game.world_map.reachable.size(), "animals": Game.animals.owned().size()})
+
+
+func report() -> Dictionary:
+	return {"profile": profile["name"], "milestones": milestones, "days": log_days, "energy_outs": energy_outs,
+		"waiting_goods": waiting_goods, "built": built, "spent_goods": spent_goods, "sold_coins": sold_coins, "sold_by": sold_by, "coins_by": coins_by,
+		"crystals_spent": crystals_spent, "gathered": Game.save["gathered"], "storage": Game.save["storage"], "played_hours": snappedf(played / 3600.0, 0.1)}

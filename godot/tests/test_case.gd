@@ -11,6 +11,7 @@ var engine_errors_ok := false
 
 ## Новое сохранение с нужными полями поверх (например {"level": 20, "coins": 5000}).
 func fresh(overrides := {}) -> void:
+	Clock.offset = 0.0
 	var save := Game.default_save()
 	for k in overrides:
 		save[k] = overrides[k]

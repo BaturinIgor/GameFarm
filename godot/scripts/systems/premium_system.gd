@@ -96,7 +96,7 @@ static func _is_number(v) -> bool:
 
 
 static func _now() -> float:
-	return Time.get_unix_time_from_system()
+	return Clock.now()
 
 
 # MARK: Покупки

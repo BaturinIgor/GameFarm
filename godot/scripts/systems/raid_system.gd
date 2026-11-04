@@ -22,7 +22,7 @@ func _r() -> Dictionary:
 
 
 static func _now() -> float:
-	return Time.get_unix_time_from_system()
+	return Clock.now()
 
 
 ## Набеги вообще идут: главный дом 4 и не выключены в настройках.

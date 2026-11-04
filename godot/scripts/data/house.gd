@@ -379,6 +379,6 @@ static func countdown(seconds: float) -> String:
 
 ## Начало сегодняшнего дня по местному времени (unix-секунды).
 static func start_of_day() -> float:
-	var now := floorf(Time.get_unix_time_from_system())
+	var now := floorf(Clock.now())
 	var t := Time.get_time_dict_from_system()
 	return now - float(int(t["hour"]) * 3600 + int(t["minute"]) * 60 + int(t["second"]))

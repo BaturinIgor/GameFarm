@@ -25,7 +25,7 @@ func _m() -> Dictionary:
 
 
 static func _now() -> float:
-	return Time.get_unix_time_from_system()
+	return Clock.now()
 
 
 func open() -> bool:
