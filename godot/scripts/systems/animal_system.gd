@@ -234,7 +234,7 @@ func awaken(id: String) -> void:
 	Game.save["awaken"][id] = awaken_level(id) + 1
 	Game.recalc()
 	Sound.play("levelUp")
-	Game.show_toast("px:star", L.t("toast.awaken", [Animals.name_of(id), Animals.awaken_title(awaken_level(id))]))
+	Game.show_toast("px:star", L.t("toast.awaken", [Animals.name_of(id), "%d/%d" % [awaken_level(id), Animals.AWAKEN_MAX]]))
 	Game.save_now()
 
 

@@ -343,12 +343,13 @@ func _expeditions_card() -> Control:
 	var parts := _ribbon_card(L.t("exp.title"), "blue")
 	var v: VBoxContainer = parts[1]
 	var p := Game.premium
-	var top := HBoxContainer.new()
-	top.add_theme_constant_override("separation", 8)
-	v.add_child(top)
+	# Описание во всю ширину, под ним кошелёк (билеты и карты) и время до бесплатного билета в одну строку
+	# (или кнопка бесплатного билета ниже): раньше кошелёк стоял справа от описания, и под ним было пусто
 	var sub := _wrap(L.t("exp.subtitle2"), 12, UiKit.INK_SOFT)
-	sub.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	top.add_child(sub)
+	v.add_child(sub)
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 10)
+	v.add_child(top)
 	var wallet := PanelContainer.new()
 	var ws := UiKit.box(UiKit.PARCHMENT_DEEP, Color(UiKit.WOOD_DARK, 0.5), 14, 2, false)
 	ws.content_margin_left = 10
@@ -356,7 +357,7 @@ func _expeditions_card() -> Control:
 	ws.content_margin_top = 4
 	ws.content_margin_bottom = 4
 	wallet.add_theme_stylebox_override("panel", ws)
-	wallet.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	wallet.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	top.add_child(wallet)
 	var wrow := HBoxContainer.new()
 	wrow.add_theme_constant_override("separation", 4)
@@ -378,13 +379,18 @@ func _expeditions_card() -> Control:
 		var next := float(p.next_free_ticket())
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 5)
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		var clock := UiKit.icon("stopwatch", 14)
 		clock.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(clock)
 		var left := func() -> String:
 			return L.t("exp.nextTicket", [TraderPanel.countdown(next - Time.get_unix_time_from_system())])
-		row.add_child(CombatCards.LiveLabel.new(left, 12, UiKit.INK_SOFT))
-		v.add_child(row)
+		var live := CombatCards.LiveLabel.new(left, 12, UiKit.INK_SOFT)
+		live.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		live.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		row.add_child(live)
+		top.add_child(row)
 
 	var busy := p.expedition() != null or Game.dungeons.run != null
 	for id in Expeditions.ids():
@@ -492,7 +498,8 @@ func _garden_card() -> Control:
 ## Карточка с цветной рамкой и лентой с названием (ShopCard): [вся карточка, столбец для содержимого].
 static func _ribbon_card(title: String, tone: String) -> Array:
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_top", 14)
+	# Лента выступает над рамкой на 15 точек: запас, чтобы её верх с контуром не обрезала прокрутка
+	margin.add_theme_constant_override("margin_top", 18)
 	var panel := PanelContainer.new()
 	var s := UiKit.box(UiKit.PARCHMENT_LIGHT, UiKit.TONES[tone][1], 18, 4, false)
 	s.content_margin_left = 16

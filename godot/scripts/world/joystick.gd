@@ -72,8 +72,19 @@ func end() -> void:
 
 
 func _process(_delta: float) -> void:
+	# Палец отпустили, а событие не пришло (свернули игру жестом снизу вверх): иначе герой
+	# так и бежит в последнюю сторону, после возврата - вверх
+	if _touch != -1 and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		end()
 	if _alpha > 0.0:
 		queue_redraw()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_APPLICATION_PAUSED \
+			or what == NOTIFICATION_APPLICATION_RESUMED or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		if _touch != -1 or vector != Vector2.ZERO:
+			end()
 
 
 func _draw() -> void:

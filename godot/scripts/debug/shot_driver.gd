@@ -103,6 +103,14 @@ func _process(delta: float) -> void:
 				Game.save["animals"]["chicken"] = 3
 				Game.save["animals"]["cow"] = 2
 				Game.save["animals"]["sheep"] = 1
+				# Пробуждённая курица (рамка цвета ступени) и корова с героем (синяя рамка в диких землях)
+				Game.save["awaken"] = {"chicken": 2}
+				Game.save["active"] = ["cow"]
+				# Добыча с монстров в профиле: клык и эссенция со своими иконками
+				var gathered: Dictionary = Game.save.get("gathered", {})
+				for k in ["wood", "stone", "slime", "bone", "tusk", "essence"]:
+					gathered[k] = int(gathered.get(k, 0)) + 40
+				Game.save["gathered"] = gathered
 				var dep: Array = Wild.sectors(0).filter(func(sc: Dictionary) -> bool: return sc["kind"] == "deposit")
 				print("wild sent: ", Game.wild.send(dep[0]["id"], ["sheep"]), " sectors: ", Wild.sectors(0))
 				Game.estate.tick()

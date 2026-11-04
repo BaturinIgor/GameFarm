@@ -188,17 +188,27 @@ func _deposit_body(c: VBoxContainer, sec: Dictionary, squad: Dictionary, done: b
 	for k in preview:
 		loot.append([k, preview[k]])
 	c.add_child(_reward_row(loot))
-	var pool := w.free_animals()
-	if pool.is_empty():
+	# Все прирученные звери: занятые в другом отряде видны, но выбрать их нельзя
+	var pool := Game.animals.owned()
+	if pool.is_empty() or w.free_animals().is_empty():
 		c.add_child(UiKit.label(L.t("wild.noAnimals"), 12, UiKit.INK_SOFT))
+	if pool.is_empty():
 		return
 	c.add_child(UiKit.label(L.t("wild.pick", [Wild.SQUAD_SIZE]), 12, UiKit.INK_SOFT))
 	var flow := HFlowContainer.new()
 	flow.add_theme_constant_override("h_separation", 6)
 	flow.add_theme_constant_override("v_separation", 6)
 	c.add_child(flow)
+	var any_busy := false
+	var any_hero := false
 	for a in pool:
-		flow.add_child(_animal_chip(id, a, a in picked))
+		var busy := w.on_squad(a)
+		var hero := not busy and Game.animals.is_active(a)
+		any_busy = any_busy or busy
+		any_hero = any_hero or hero
+		flow.add_child(_animal_chip(id, a, a in picked, busy, hero))
+	if any_busy or any_hero:
+		c.add_child(_chip_legend(any_hero, any_busy))
 	var send := UiKit.button(L.t("wild.send"), "green", 14)
 	send.disabled = picked.is_empty() or w.squads_free() <= 0
 	send.pressed.connect(func() -> void:
@@ -208,27 +218,40 @@ func _deposit_body(c: VBoxContainer, sec: Dictionary, squad: Dictionary, done: b
 	c.add_child(send)
 
 
-func _animal_chip(sector_id: String, animal: String, on: bool) -> Control:
+## Зверь в выборе отряда. busy - уже в другом отряде (серый, с часами), hero - сейчас ходит с героем
+## (синяя рамка и портрет героя в углу: после отправки зверь уйдёт от героя).
+func _animal_chip(sector_id: String, animal: String, on: bool, busy := false, hero := false) -> Control:
 	var b := Button.new()
 	b.focus_mode = Control.FOCUS_NONE
 	b.toggle_mode = true
 	b.button_pressed = on
-	var st := UiKit.box(Color("ddefc8") if on else UiKit.PARCHMENT_LIGHT,
-		UiKit.TONES["green"][1] if on else Color(UiKit.WOOD_DARK, 0.4), 12, 2, false)
+	var fill := Color("ddefc8") if on else (Color(UiKit.PARCHMENT_DEEP, 0.6) if busy else UiKit.PARCHMENT_LIGHT)
+	var edge := UiKit.TONES["green"][1] if on else (UiKit.TONES["blue"][1] if hero else Color(UiKit.WOOD_DARK, 0.4))
+	var st := UiKit.box(fill, edge, 12, 2, false)
 	st.set_content_margin_all(4)
-	for state in ["normal", "hover", "pressed", "hover_pressed", "focus"]:
+	for state in ["normal", "hover", "pressed", "hover_pressed", "focus", "disabled"]:
 		b.add_theme_stylebox_override(state, st)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 2)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(UiKit.icon_any("an:" + animal, 26))
-	row.add_child(UiKit.label(str(Game.animals.stars(animal)), 12))
-	var star := UiKit.icon("star", 12)
-	star.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	row.add_child(star)
+	var face := UiKit.icon_any("an:" + animal, 26)
+	row.add_child(face)
+	if busy:
+		b.disabled = true
+		face.modulate = Color(1, 1, 1, 0.45)
+		var clock := UiKit.icon("hourglass", 14)
+		clock.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(clock)
+	else:
+		row.add_child(UiKit.label(str(Game.animals.stars(animal)), 12))
+		var star := UiKit.icon("star", 12)
+		star.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(star)
 	b.add_child(row)
 	b.custom_minimum_size = Vector2(62, 36)
 	row.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	if hero:
+		b.add_child(_hero_badge())
 	b.pressed.connect(func() -> void:
 		var list: Array = _pick.get(sector_id, []).duplicate()
 		if animal in list:
@@ -238,6 +261,42 @@ func _animal_chip(sector_id: String, animal: String, on: bool) -> Control:
 		_pick[sector_id] = list
 		_dirty = true)
 	return b
+
+
+## Маленький портрет героя в правом верхнем углу кнопки.
+func _hero_badge() -> Control:
+	var p := PanelContainer.new()
+	var ps := UiKit.box(UiKit.TONES["blue"][0], UiKit.OUTLINE, 8, 1, false)
+	ps.set_content_margin_all(1)
+	p.add_theme_stylebox_override("panel", ps)
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.add_child(WardrobePanel.skin_icon(Skins.current(), 12))
+	p.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	p.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	p.offset_left = 6
+	p.offset_right = 6
+	p.offset_top = -7
+	return p
+
+
+## Подсказка под зверями: что значат синяя рамка и часы.
+func _chip_legend(hero: bool, busy: bool) -> HFlowContainer:
+	var flow := HFlowContainer.new()
+	flow.add_theme_constant_override("h_separation", 12)
+	flow.add_theme_constant_override("v_separation", 4)
+	if hero:
+		var h := HBoxContainer.new()
+		h.add_theme_constant_override("separation", 4)
+		h.add_child(WardrobePanel.skin_icon(Skins.current(), 14))
+		h.add_child(UiKit.label(L.t("wild.legend.hero"), 11, UiKit.INK_SOFT))
+		flow.add_child(h)
+	if busy:
+		var h := HBoxContainer.new()
+		h.add_theme_constant_override("separation", 4)
+		h.add_child(UiKit.icon("hourglass", 14))
+		h.add_child(UiKit.label(L.t("wild.legend.squad"), 11, UiKit.INK_SOFT))
+		flow.add_child(h)
+	return flow
 
 
 func _reward_row(parts: Array) -> HFlowContainer:

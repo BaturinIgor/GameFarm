@@ -361,7 +361,7 @@ class LiveLabel:
 		text = _text_of.call()
 
 
-## Здоровье героя под опытом в шапке: видно в бою или если здоровье не полное.
+## Здоровье героя под энергией в шапке.
 class HpStrip:
 	extends HBoxContainer
 
@@ -379,15 +379,14 @@ class HpStrip:
 		_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		add_child(_bar)
 		_label = _bar.get_child(0) as Label
-		visible = false
+
+	var bar: ProgressBar:
+		get: return _bar
 
 	func _process(delta: float) -> void:
 		var c := Game.combat
 		var fraction := c.hp_fraction()
-		visible = c.in_combat or fraction < 0.999
-		if not visible:
-			_shown = -1.0
-			return
+		# Полоска видна всегда: если прятать её вне боя, блок уровня меняет высоту и всё под ним прыгает.
 		# Полоска плавно догоняет здоровье
 		_shown = fraction if _shown < 0.0 else lerpf(_shown, fraction, minf(1.0, delta * 10.0))
 		_bar.value = _shown

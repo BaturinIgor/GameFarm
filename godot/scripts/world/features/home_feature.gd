@@ -96,15 +96,49 @@ func _sync_decor(world: World) -> void:
 	for slot in world.layout.slots:
 		var pos: Vector2 = slot["pos"]
 		var decor := Game.house.decor_at(slot["id"])
-		var node: Node2D = Sprites.make(House.decor_sprite(decor), pos) if decor != "" else null
+		var node: Sprite2D = Sprites.make(House.decor_sprite(decor), pos) if decor != "" else null
 		if node != null:
 			var flat := "rug" in House.decor_sprite(decor)
+			_fit_to_slot(world, node, pos, flat)
 			(world.flat if flat else world.entities).add_child(node)
 			_slot_nodes.append(node)
 			if not flat:
 				_obstacles.append({"center": pos + Vector2(0, -6), "radius": 13.0})
 		else:
 			_slot_nodes.append(_slot_mark(world, pos))
+
+
+## Украшение не больше своего места: не заходит в стену и не налезает на украшение соседнего места
+## (раньше большие диван, шкаф или ванна ставились в полный рост и перекрывали соседей).
+## Уменьшенный рисунок - с шейдером ровных пикселей, чтобы пиксели остались одного размера.
+func _fit_to_slot(world: World, node: Sprite2D, pos: Vector2, flat: bool) -> void:
+	var cell := world.layout.cell
+	var room := world.layout.size
+	# Поперёк: до стены слева и справа (стены - крайние клетки) с небольшим запасом
+	var half := minf(pos.x - cell, room.x - cell - pos.x) + 6.0
+	var max_h := cell * 2.0
+	for other in world.layout.slots:
+		var o: Vector2 = other["pos"]
+		if o == pos:
+			continue
+		var dx := absf(o.x - pos.x)
+		var dy := pos.y - o.y
+		# Сосед в том же ряду: делим промежуток пополам
+		if absf(dy) < cell * 0.75:
+			half = minf(half, dx / 2.0 - 2.0)
+		# Сосед прямо за этим местом (выше на экране): не закрываем его основание
+		elif dy > 0.0 and dx < cell * 1.25:
+			max_h = minf(max_h, dy + 4.0)
+	var frame := node.get_rect().size * Sprites.SCALE
+	if frame.x <= 0.0 or frame.y <= 0.0:
+		return
+	var k := minf(1.0, (half * 2.0) / frame.x)
+	if not flat:
+		k = minf(k, max_h / frame.y)
+	k = maxf(k, 0.4)
+	if k < 0.999:
+		node.scale *= k
+		UiKit.pixel_art(node)
 
 
 ## Мерцающий кружок на пустом месте.

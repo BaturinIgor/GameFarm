@@ -45,6 +45,21 @@ static func animal_icon(id: String, size := 32.0) -> TextureRect:
 	return t
 
 
+## Рамка портрета зверя: у пробуждённого - цвет ступени (бронза, серебро, золото) и мягкое сияние.
+static func awaken_frame(level: int, radius := 14) -> StyleBoxFlat:
+	if level <= 0:
+		var plain := UiKit.box(Color(UiKit.PARCHMENT_DEEP, 0.7), Color(UiKit.WOOD_DARK, 0.4), radius, 2, false)
+		plain.set_content_margin_all(6)
+		return plain
+	var c := Animals.awaken_color(level)
+	var s := UiKit.box(c.lerp(UiKit.PARCHMENT_LIGHT, 0.65), c.darkened(0.25), radius, 3, false)
+	s.set_content_margin_all(5)
+	s.shadow_color = Color(c, 0.55)
+	s.shadow_size = 2 + level * 2
+	s.shadow_offset = Vector2.ZERO
+	return s
+
+
 ## Подпись в "таблетке" (роль зверя, ступень пробуждения, редкий).
 static func pill(text: String, fill: Color, color := UiKit.INK, size := 10,
 		border := Color(UiKit.WOOD_DARK, 0.35)) -> PanelContainer:
@@ -186,9 +201,7 @@ func _row(id: String, mode: String) -> void:
 	top.add_theme_constant_override("separation", 12)
 	c.add_child(top)
 	var frame := PanelContainer.new()
-	var fs := UiKit.box(Color(UiKit.PARCHMENT_DEEP, 0.7), Color(UiKit.WOOD_DARK, 0.4), 14, 2, false)
-	fs.set_content_margin_all(6)
-	frame.add_theme_stylebox_override("panel", fs)
+	frame.add_theme_stylebox_override("panel", awaken_frame(a.awaken_level(id) if stars > 0 else 0))
 	frame.custom_minimum_size = Vector2(58, 58)
 	frame.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -216,9 +229,6 @@ func _row(id: String, mode: String) -> void:
 		srow.add_theme_constant_override("separation", 6)
 		col.add_child(srow)
 		srow.add_child(UiKit.stars(stars, Animals.MAX_STARS, 12))
-		var lvl := a.awaken_level(id)
-		if lvl > 0:
-			srow.add_child(pill(Animals.awaken_title(lvl), Animals.awaken_color(lvl), UiKit.INK, 10, UiKit.OUTLINE))
 	for e in Animals.effects(id):
 		col.add_child(effect_line(e, m))
 	var where := Animals.wild_location(id)
@@ -241,8 +251,21 @@ func _mine_actions(c: VBoxContainer, id: String) -> void:
 		var box := VBoxContainer.new()
 		box.add_theme_constant_override("separation", 6)
 		c.add_child(box)
-		box.add_child(UiKit.label(L.t("awaken.next", [Animals.awaken_title(a.awaken_level(id) + 1)]), 12,
-			UiKit.TONES["purple"][2]))
+		# Следующая ступень: рамка её цвета и номер ступени вместо названия
+		var next := a.awaken_level(id) + 1
+		var nrow := HBoxContainer.new()
+		nrow.add_theme_constant_override("separation", 6)
+		box.add_child(nrow)
+		var swatch := Panel.new()
+		swatch.add_theme_stylebox_override("panel", awaken_frame(next, 5))
+		swatch.custom_minimum_size = Vector2(16, 16)
+		swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		swatch.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		nrow.add_child(swatch)
+		var nl := UiKit.label(L.t("awaken.next", ["%d/%d" % [next, Animals.AWAKEN_MAX]]), 12, UiKit.TONES["purple"][2])
+		nl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		nl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		nrow.add_child(nl)
 		box.add_child(UiKit.cost_view(cost))
 		var ab := UiKit.button(L.t("awaken.action"), "purple", 15, true)
 		ab.disabled = not a.can_awaken(id)

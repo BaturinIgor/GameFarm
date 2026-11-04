@@ -233,20 +233,34 @@ func _production(id: String) -> VBoxContainer:
 	v.add_child(row)
 	for g in Estate.recipes(id):
 		row.add_child(_recipe_chip(id, g))
-	# Ход работы: полоска до следующей штуки, сколько накоплено из окна и когда здание заполнится
+	# Ход работы. Полоска - сколько товара накопилось в здании из того, что влезает за окно (8 или 12 ч);
+	# под ней - через сколько будет следующая штука и когда здание заполнится. Всё обновляется на глазах.
 	if e.rate(id) > 0.0:
-		var p := e.pending(id)
-		var cap := e.capacity_of(id)
-		var frac: float = 1.0 if e.full(id) else p - floorf(p)
-		var bar := UiKit.bar(frac, "orange" if not e.full(id) else "gold", 0.0, 14.0,
-			L.t("estate.accum", [mini(int(floor(p)), cap), cap]))
-		bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		v.add_child(bar)
 		var bid := id
+		var bar := UiKit.bar(0.0, "orange", 0.0, 14.0, " ")
+		bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var fill := func() -> void:
+			var es := Game.estate
+			var p := es.pending(bid)
+			var cap := maxi(1, es.capacity_of(bid))
+			var made := mini(int(floor(p)), cap)
+			bar.value = float(made) / float(cap) if not es.full(bid) else 1.0
+			(bar as GameBar).tone = "gold" if es.full(bid) else "orange"
+			(bar.get_child(0) as Label).text = L.t("estate.accum", [made, cap])
+		fill.call()
+		bar.add_child(_Ticker.new(fill))
+		v.add_child(bar)
 		var left := func() -> String:
-			var t := Game.estate.until_full(bid)
-			return L.t("estate.capped") if t <= 0.0 else L.t("estate.fullIn", [House.countdown(t)])
-		v.add_child(CombatCards.LiveLabel.new(left, 12, UiKit.INK_SOFT))
+			var es := Game.estate
+			var t := es.until_full(bid)
+			if t <= 0.0:
+				return L.t("estate.capped")
+			var p := es.pending(bid)
+			var next := (1.0 - (p - floorf(p))) / es.rate(bid) * 3600.0
+			return L.t("estate.nextIn", [House.countdown(next)]) + "  ·  " + L.t("estate.fullIn", [House.countdown(t)])
+		var live := CombatCards.LiveLabel.new(left, 12, UiKit.INK_SOFT)
+		live.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		v.add_child(live)
 	# Накоплено и кнопка "Забрать"
 	var good := e.recipe(id)
 	var line := HBoxContainer.new()
@@ -476,14 +490,14 @@ func _order_card(o: Dictionary) -> PanelContainer:
 		var face := TraderPanel.portrait(Residents.sheet(from), 30)
 		face.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		head.add_child(face)
-	var title := UiKit.label(L.t("orders.cart") if cart else (Residents.name_of(from) if from != "" else L.t("orders.order")), 15)
+	var title := UiKit.label(L.t("orders.cart") if cart else (Residents.name_of(from) if from != "" else order_client(o)), 15)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	title.clip_text = true
 	head.add_child(title)
 	# Награда
 	head.add_child(_reward("coin", Fmt.n(int(o["coins"]))))
-	head.add_child(_reward("star", Fmt.n(int(o["xp"]))))
+	head.add_child(_reward("book", Fmt.n(int(o["xp"]))))
 	if int(o["crystals"]) > 0:
 		head.add_child(_reward("gem", str(o["crystals"])))
 	var flow := HFlowContainer.new()
@@ -550,3 +564,32 @@ func _build_academy() -> void:
 	content.add_child(AcademyTree.new(_academy_pick, func(id: String) -> void:
 		_academy_pick = id
 		_dirty = true))
+
+
+## Кто заказал: по тому, чего в заказе больше всего (доски - плотник, руда - кузнец, урожай - пекарня...).
+static func order_client(o: Dictionary) -> String:
+	var score := {}
+	var best := ""
+	for it in o.get("items", []):
+		var cat := Res.category(str(it[0]))
+		score[cat] = int(score.get(cat, 0)) + 1
+		if best == "" or int(score[cat]) > int(score[best]):
+			best = cat
+	var key := "orders.client." + best
+	return L.t(key) if best != "" and L.has(key) else L.t("orders.order")
+
+
+## Вызывает fn дважды в секунду, пока узел на экране (живые полоски).
+class _Ticker extends Node:
+	var _fn: Callable
+	var _t := 0.0
+
+	func _init(fn: Callable) -> void:
+		_fn = fn
+
+	func _process(delta: float) -> void:
+		_t -= delta
+		if _t > 0.0:
+			return
+		_t = 0.5
+		_fn.call()
