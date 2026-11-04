@@ -130,16 +130,7 @@ func leave_house() -> void:
 	Game.mark_dirty()
 
 
-## Подняться или спуститься по лестнице (via - "up" или "down").
-func go_floor(id: String, via: String) -> void:
-	if not is_built(id):
-		return
-	Game.arrival_station = "down" if via == "up" else "up"
-	Game.save["current"] = House.floor_location(id)
-	Game.mark_dirty()
-
-
-## Перейти на другой этаж кнопкой: появляемся в середине комнаты.
+## Перейти на другой этаж кнопкой: герой переходит в середину этажа (World._switch_floor).
 func switch_floor(id: String) -> void:
 	if not is_built(id) or current_floor() == id:
 		return
