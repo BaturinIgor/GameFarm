@@ -15,6 +15,8 @@ const KEEP := [
 	"crystals", "crystalFirst", "maxUntil", "maxDailyDay", "maxSkinMonth", "ownedSkins", "bundleUntil", "offersSeen",
 	"offerPopupDay", "dealDay", "adCrystalsDay", "adCrystals", "estate", "residents", "raid", "wild", "academy", "energy", "builder3", "speedAds", "killsBy", "bestiary",
 	"bossKills", "economy", "daily", "weekly", "settings",
+	# Места для зверей и улучшения алхимии куплены за кристаллы и монеты - остаются
+	"animalSlots", "alchemy", "marketDay", "marketBought",
 ]
 
 
@@ -123,6 +125,12 @@ func rebirth() -> void:
 	if Game.premium.owns("starter"):
 		s["animals"]["duckHat"] = 1
 		s["active"] = ["duckHat"]
+	# Звери за кристаллы куплены за кристаллы: остаются со своими звёздами
+	var paid = old.get("animals", {})
+	if paid is Dictionary:
+		for id in paid:
+			if Animals.is_crystal(str(id)) and int(paid[id]) > 0:
+				s["animals"][str(id)] = int(paid[id])
 	# Верные звери (наследие): лучшие звери остаются с одной звездой
 	var keep := rank("companions")
 	if keep > 0:

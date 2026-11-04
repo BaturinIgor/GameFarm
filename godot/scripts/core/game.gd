@@ -69,8 +69,8 @@ func _ready() -> void:
 			if sys.has_method("on_event"):
 				sys.on_event(name, data))
 	recalc()
-	# Новый уровень - полная энергия
-	level_up.connect(func(_from: int, _to: int) -> void: energy.refill())
+	# Новый уровень - половина запаса энергии (не выше полного)
+	level_up.connect(func(_from: int, _to: int) -> void: energy.level_up_bonus())
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
 
@@ -118,7 +118,7 @@ func _load_save() -> Dictionary:
 			# Файл испорчен: сначала копия, чтобы прогресс можно было достать, потом игра с нуля
 			DirAccess.copy_absolute(SAVE_PATH, "user://save.broken-%d.json" % int(Time.get_unix_time_from_system()))
 	# Числа из JSON приходят дробными: приводим счётчики к целым
-	for key in ["level", "xp", "coins", "harvests", "coinsEarned", "tickets", "bestLevel"]:
+	for key in ["level", "xp", "coins", "harvests", "coinsEarned", "tickets", "bestLevel", "masteryPoints"]:
 		data[key] = int(data.get(key, 0))
 	for dict_key in ["storage", "backpack", "tools", "talents", "animals", "gathered"]:
 		var d: Dictionary = data.get(dict_key, {})
@@ -188,14 +188,43 @@ var xp_needed: int:
 var level_progress: float:
 	get:
 		if level >= MAX_LEVEL:
-			return 1.0
+			return minf(1.0, float(save["xp"]) / float(maxi(1, mastery_xp())))
 		return minf(1.0, float(save["xp"]) / float(maxi(1, xp_needed)))
 
 
+## Мастерство: после последнего уровня опыт копится дальше, каждые MASTERY_XP - очко талантов.
+const MASTERY_SHARE := 0.5
+
+
+static func mastery_xp() -> int:
+	return int(round(float(xp_to_next(MAX_LEVEL)) * MASTERY_SHARE))
+
+
+func mastery_points() -> int:
+	return int(save.get("masteryPoints", 0))
+
+
+func _gain_mastery(amount: int) -> void:
+	save["xp"] = int(save["xp"]) + amount
+	var got := 0
+	while int(save["xp"]) >= mastery_xp():
+		save["xp"] = int(save["xp"]) - mastery_xp()
+		save["masteryPoints"] = mastery_points() + 1
+		got += 1
+	if got > 0:
+		show_toast("px:star", L.t("toast.mastery", [got]))
+		Sound.play("levelUp")
+		emit_event("mastery", {"points": got})
+	mark_dirty()
+
+
 func gain_xp(base: int) -> void:
-	if level >= MAX_LEVEL or base <= 0:
+	if base <= 0:
 		return
 	var amount := maxi(1, int(round(base * stats.xp_mult)))
+	if level >= MAX_LEVEL:
+		_gain_mastery(amount)
+		return
 	save["xp"] = int(save["xp"]) + amount
 	var from := level
 	while level < MAX_LEVEL and int(save["xp"]) >= xp_to_next(level):
@@ -441,9 +470,10 @@ func recalc() -> void:
 	s.shatter_chance = 0.04 * r.call("shatter")
 	s.double_strike_chance = 0.05 * r.call("doubleStrike")
 	s.execute_threshold = 0.06 * r.call("execute")
+	# Сотрясение: каждый 3-й удар, до 2 соседних точек; волна - сильнее и на 3 ранге ещё одна цель
 	s.quake = r.call("quake") > 0
-	s.quake_power = 0.4 * (1.0 + 0.25 * r.call("shockwave"))
-	s.quake_radius = 110.0 * (1.0 + 0.25 * r.call("shockwave"))
+	s.quake_power = 0.35 * (1.0 + 0.15 * r.call("shockwave"))
+	s.quake_targets = 3 if r.call("shockwave") >= 3 else 2
 	s.tool_bonus = 1 if r.call("toolMaster") > 0 else 0
 	# Суперталант "Титан" и ряд за ним
 	s.titan = r.call("titan") > 0
@@ -491,12 +521,14 @@ func recalc() -> void:
 	# Сила зверей складывается, а не перемножается
 	s.animal_mult = 1.0 + 0.12 * r.call("beastBond") + 0.05 * r.call("animalFriend") + (0.3 if r.call("soul") > 0 else 0.0) \
 		+ 0.05 * r.call("kinship")
-	s.helper_mult = (1.0 + 0.25 * r.call("packLeader")) * (1.0 + 0.1 * r.call("alpha")) * (1.0 + 0.1 * r.call("packHunt"))
+	s.helper_mult = minf(Stats.MAX_HELPER,
+		(1.0 + 0.25 * r.call("packLeader")) * (1.0 + 0.1 * r.call("alpha")) * (1.0 + 0.1 * r.call("packHunt")))
 	s.helper_speed = 1.0 + 0.08 * r.call("training")
 	s.helper_range = 260.0 * (1.0 + 0.2 * r.call("keenEye"))
 	s.helper_tier_bonus = int(r.call("packTier"))
 	s.helper_yield = 1.0 + 0.15 * r.call("beastLoot")
-	s.producer_mult = (1.0 + 0.2 * r.call("nightShift")) * (1.0 + 0.1 * r.call("herdsman")) * (1.0 + 0.1 * r.call("herd"))
+	s.producer_mult = minf(Stats.MAX_PRODUCER,
+		(1.0 + 0.2 * r.call("nightShift")) * (1.0 + 0.1 * r.call("herdsman")) * (1.0 + 0.1 * r.call("herd")))
 	s.double_product_chance = 0.08 * r.call("rancher")
 	s.offline_hours = (PremiumSystem.PRO_OFFLINE_HOURS if premium.has_pro() else Estate.CAP_HOURS) + 2.0 * r.call("pasture")
 	s.star_step = 0.25 + 0.05 * r.call("starFood")
@@ -578,7 +610,7 @@ func recalc() -> void:
 	s.animal_mult += collection.constellation_bonus("beasts")
 	s.grow_mult /= 1.0 + collection.constellation_bonus("garden")
 	s.weapon_mult *= 1.0 + collection.constellation_bonus("dungeon")
-	s.producer_mult *= 1.0 + collection.constellation_bonus("birds")
+	s.producer_mult = minf(Stats.MAX_PRODUCER, s.producer_mult * (1.0 + collection.constellation_bonus("birds")))
 	if house.is_built("upper"):
 		s.offline_hours += 2.0
 

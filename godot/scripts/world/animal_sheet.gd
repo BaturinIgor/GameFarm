@@ -39,9 +39,11 @@ static func _make(sheet_name: String, sheet_cell: float, idle_rows: Array, walk_
 
 ## Лист зверя или null, если спрайта нет.
 static func of(id: String) -> AnimalSheet:
-	var n := "an_" + id
+	# Звери за кристаллы - перекрашенные звери пака
+	var base := Animals.sheet_of(id)
+	var n := "an_" + base
 	var sheet: AnimalSheet
-	match id:
+	match base:
 		"cow", "horse", "pig", "sheep", "unicorn":
 			sheet = _make(n, 32, [[0, 2], [1, 2], [2, 2]], [[3, 8], [4, 8], [5, 8]], 10)
 		"chicken", "rooster", "goose", "goldenGoose":
@@ -86,6 +88,13 @@ static func icon(id: String) -> Texture2D:
 		a.atlas = base
 		a.region = rect
 		out = a
+		var tint := Animals.tint(id)
+		if tint != Color.WHITE and img != null:
+			var part := img.get_region(Rect2i(rect))
+			for y in part.get_height():
+				for x in part.get_width():
+					part.set_pixel(x, y, part.get_pixel(x, y) * tint)
+			out = ImageTexture.create_from_image(part)
 	_icons[id] = out
 	return out
 

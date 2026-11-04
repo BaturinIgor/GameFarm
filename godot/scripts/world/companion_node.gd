@@ -40,6 +40,8 @@ func _init(id: String) -> void:
 		_body.scale = Vector2.ONE * Sprites.SCALE
 		if _body.texture != null:
 			_body.offset = Sprites.anchor_offset(Vector2(0.5, 0.1), _body.texture.get_size())
+	# Звери за кристаллы - перекрашенные звери пака
+	_body.self_modulate = Animals.tint(id)
 	add_child(_art)
 	_art.add_child(_body)
 

@@ -60,7 +60,7 @@ const SPECS := {
 	"portal": ["travel", "portal", 1, 5, 1, ["tamer"], 1.0, "flag"],
 	# Добыча, поздние ряды
 	"doubleStrike": ["mining", "swords", 4, 6, 0, ["critPower"], 0.05, "percent"],
-	"shockwave": ["mining", "wave", 3, 6, 1, ["quake"], 0.25, "percent"],
+	"shockwave": ["mining", "wave", 3, 6, 1, ["quake"], 0.15, "percent"],
 	"oreHunter": ["mining", "gold", 4, 6, 2, ["strongHands"], 0.1, "percent"],
 	"execute": ["mining", "skull", 3, 7, 0, ["doubleStrike"], 0.06, "percent"],
 	"crusher": ["mining", "tool_hammer", 3, 7, 1, ["shockwave"], 0.15, "percent"],

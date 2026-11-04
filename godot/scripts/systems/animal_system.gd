@@ -3,8 +3,16 @@ extends RefCounted
 ## Звери (порт части GameState): звёзды, лавка, приручение, спутники, пробуждение, редкие окраски
 ## и добыча производителей за время без игры.
 
-## Итог последнего подсчёта времени без игры: {duration, items: [[kind, n], ...], doubled}. Не сохраняется.
+## Итог последнего подсчёта времени без игры: {duration, items: [[kind, n], ...], sold: [[kind, n], ...],
+## sold_coins, doubled}. Не сохраняется.
 var offline_report: Dictionary = {}
+
+## Места рядом с героем сверх пяти: цена в кристаллах по порядку.
+const SLOT_PRICES := [300, 800]
+## Без игры звери работают вполсилы.
+const OFFLINE_RATE := 0.5
+## Что не влезло на склад без игры, само продаётся скупщику за такую долю цены.
+const OVERFLOW_PRICE := 0.5
 
 
 ## Звери из старых версий переходят в новых, числа из JSON - в целые (как SaveData.swift).
@@ -24,7 +32,9 @@ func defaults(save: Dictionary) -> void:
 		var id := Animals.from(str(raw_id))
 		if id != "" and not id in team and animals.has(id):
 			team.append(id)
-	var cap := Game.MAX_ACTIVE_ANIMALS + (1 if int(save.get("talents", {}).get("beastLord", 0)) > 0 else 0)
+	save["animalSlots"] = clampi(int(save.get("animalSlots", 0)), 0, SLOT_PRICES.size())
+	var cap := Game.MAX_ACTIVE_ANIMALS + (1 if int(save.get("talents", {}).get("beastLord", 0)) > 0 else 0) \
+		+ int(save["animalSlots"])
 	if team.size() > cap:
 		team = team.slice(0, cap)
 	save["active"] = team
@@ -61,9 +71,33 @@ func is_active(id: String) -> bool:
 	return id in active()
 
 
-## Сколько зверей можно взять с собой: суперталант "Повелитель зверей" даёт ещё одно место.
+## Сколько зверей можно взять с собой: суперталант "Повелитель зверей" и места за кристаллы.
 func max_active() -> int:
-	return Game.MAX_ACTIVE_ANIMALS + (1 if Game.talents.rank("beastLord") > 0 else 0)
+	return Game.MAX_ACTIVE_ANIMALS + (1 if Game.talents.rank("beastLord") > 0 else 0) + bought_slots()
+
+
+## Сколько мест куплено за кристаллы.
+func bought_slots() -> int:
+	return int(Game.save.get("animalSlots", 0))
+
+
+## Цена следующего места (-1 - больше не купить).
+func slot_price() -> int:
+	var n := bought_slots()
+	return int(SLOT_PRICES[n]) if n < SLOT_PRICES.size() else -1
+
+
+func buy_slot() -> bool:
+	var price := slot_price()
+	if price < 0 or not Game.shop.spend_crystals(price):
+		return false
+	Game.save["animalSlots"] = bought_slots() + 1
+	Sound.play("purchase")
+	Game.show_toast("px:paw", L.t("animals.slotBought", [max_active()]))
+	Game.recalc()
+	Game.mark_dirty()
+	Game.save_now()
+	return true
 
 
 ## Сила зверя для текстов в окнах: звёзды и общий бонус к зверям.
@@ -126,6 +160,25 @@ func tab_counts() -> Dictionary:
 				mine += 1
 				break
 	return {"mine": mine, "shop": shop, "wild": Game.wild.ready_count() if Game.wild.open() else 0}
+
+
+## Цена звезды зверя за кристаллы (-1 - зверь не за кристаллы).
+func crystal_price(id: String) -> int:
+	if not Animals.is_crystal(id):
+		return -1
+	return int(round(float(Animals.spec(id)["price"]) * pow(Animals.CRYSTAL_GROWTH, float(stars(id)))))
+
+
+func buy_crystal(id: String) -> bool:
+	var level := Animals.crystal_level(id)
+	if level < 0 or Game.level < level or stars(id) >= Animals.MAX_STARS:
+		return false
+	if not Game.shop.spend_crystals(crystal_price(id)):
+		return false
+	add_star(id, 1)
+	Sound.play("purchase")
+	Game.save_now()
+	return true
 
 
 func buy(id: String) -> bool:
@@ -263,27 +316,46 @@ func apply_offline() -> Dictionary:
 	var s := Game.stats
 	var totals := {}
 	for p in s.producers:
-		var n := int(elapsed * s.producer_mult / float(p["interval"]) * (1.0 + s.double_product_chance))
+		var n := int(elapsed * OFFLINE_RATE * s.producer_mult / float(p["interval"]) * (1.0 + s.double_product_chance))
 		if n > 0:
 			totals[p["kind"]] = int(totals.get(p["kind"], 0)) + n
 	if totals.is_empty():
 		return {}
 	var items: Array = []
+	var sold: Array = []
+	var coins := 0
 	for kind in Res.KINDS:
 		if totals.has(kind):
-			Game.add_to_storage(kind, totals[kind])
-			items.append([kind, totals[kind]])
-	offline_report = {"duration": elapsed, "items": items, "doubled": false}
+			var put := Game.add_to_storage(kind, totals[kind])
+			if put > 0:
+				items.append([kind, put])
+			# Не влезло на склад: не сгорает, а уходит скупщику за полцены
+			var rest := int(totals[kind]) - put
+			if rest > 0:
+				sold.append([kind, rest])
+				coins += overflow_coins(kind, rest)
+	Game.add_coins(coins)
+	offline_report = {"duration": elapsed, "items": items, "sold": sold, "sold_coins": coins, "doubled": false}
 	Game.save_now()
 	return offline_report
+
+
+## Монеты за то, что не влезло на склад.
+static func overflow_coins(kind: String, n: int) -> int:
+	if n <= 0:
+		return 0
+	return maxi(1, int(round(float(n) * float(Estate.price(kind)) * OVERFLOW_PRICE)))
 
 
 ## Удваивает добычу зверей за время отсутствия (кнопка за рекламу или с Pro).
 func double_offline(from_ad: bool) -> void:
 	if offline_report.is_empty() or offline_report["doubled"]:
 		return
+	var coins := 0
 	for it in offline_report["items"]:
-		Game.add_to_storage(it[0], it[1])
+		var put := Game.add_to_storage(it[0], it[1])
+		coins += overflow_coins(it[0], int(it[1]) - put)
+	Game.add_coins(coins)
 	if from_ad:
 		Game.save["adsWatched"] = int(Game.save.get("adsWatched", 0)) + 1
 	offline_report = {}

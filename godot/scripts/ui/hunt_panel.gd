@@ -23,6 +23,7 @@ func build_top() -> void:
 		match t[0]:
 			"hunts": n = Game.combat.claimable_hunts()
 			"bestiary": n = Game.combat.bestiary_ready_count()
+			"alchemy": n = Game.combat.alchemy_ready()
 		items.append([t[0], L.t(t[2]), n, t[1]])
 	top_bar.add_child(UiKit.tabs(items, tab, func(id: String) -> void:
 		tab = id
@@ -96,6 +97,10 @@ func _build_alchemy() -> void:
 	hello.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(TraderPanel.hello_row("guard", [hello]))
 	content.add_child(CombatCards.potion_shop_card())
+	# Улучшения: зелье, эликсиры, бомба, свиток
+	content.add_child(CombatCards.section_title(L.t("alchemy.upgrades")))
+	for id in Consumables.UPGRADES:
+		content.add_child(_upgrade_row(id))
 	content.add_child(CombatCards.section_title(L.t("alchemy.section")))
 	var shown_locked := false
 	for id in Consumables.IDS:
@@ -145,6 +150,50 @@ func _item_row(id: String) -> PanelContainer:
 		b.disabled = int(Game.save["coins"]) < price
 		b.pressed.connect(func() -> void: Game.combat.buy_consumable(id, n))
 		row.add_child(b)
+	return p
+
+
+## Строка улучшения алхимии: уровень, что даёт сейчас и на следующем уровне, цена.
+func _upgrade_row(id: String) -> PanelContainer:
+	var c := Game.combat
+	var lvl := c.alchemy_level(id)
+	var p := PanelContainer.new()
+	var s := UiKit.box(UiKit.PARCHMENT_LIGHT, Color(UiKit.TONES["purple"][1], 0.7), 16, 2, false)
+	s.set_content_margin_all(12)
+	p.add_theme_stylebox_override("panel", s)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 8)
+	p.add_child(v)
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 12)
+	v.add_child(head)
+	var ic := UiKit.icon(str(Consumables.UPGRADE_ICON.get(id, "potion")), 36)
+	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(ic)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 2)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(col)
+	col.add_child(UiKit.label(L.t("alchemy.up.level", [Consumables.upgrade_name(id), lvl, Consumables.UPGRADE_MAX]), 14))
+	var now := UiKit.label(Consumables.upgrade_text(id, lvl) if lvl > 0 else L.t("alchemy.up.none"), 11, UiKit.INK_SOFT)
+	now.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(now)
+	if not c.alchemy_open(id):
+		col.add_child(UiKit.label(L.t("common.needLevel", [int(Consumables.UPGRADE_LEVEL.get(id, 1))]), 12,
+			UiKit.TONES["orange"][2]))
+		return p
+	var cost := c.alchemy_cost(id)
+	if cost.is_empty():
+		col.add_child(UiKit.label(L.t("alchemy.up.max"), 12, UiKit.GOOD))
+		return p
+	var next := UiKit.label(L.t("alchemy.up.next", [Consumables.upgrade_text(id, lvl + 1)]), 11, UiKit.TONES["purple"][2])
+	next.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	v.add_child(next)
+	v.add_child(UiKit.cost_view(cost))
+	var b := UiKit.button(L.t("alchemy.up.action"), "purple", 14, true)
+	b.disabled = not c.can_upgrade_alchemy(id)
+	b.pressed.connect(func() -> void: Game.combat.upgrade_alchemy(id))
+	v.add_child(b)
 	return p
 
 
