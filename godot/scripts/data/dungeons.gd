@@ -172,6 +172,6 @@ static func weapon_chance(floor_n: int, first: bool) -> float:
 	return 0.15 if floor_n == 5 else 0.0
 
 
-## Цена зелья (Potion.price).
+## Цена зелья: растёт быстрее уровня, вместе с монетами за монстров (25 уровень - около 360, 50 - около 830).
 static func potion_price(hero_level: int) -> int:
-	return 40 + hero_level * 6
+	return int(round(30.0 + 5.0 * pow(float(maxi(1, hero_level)), 1.3)))

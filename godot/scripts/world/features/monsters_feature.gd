@@ -38,7 +38,7 @@ func _init() -> void:
 static func hero_speed_mult() -> float:
 	var m := 0.65 if hero_slow_left > 0.0 else 1.0
 	if Game.combat.buff_active("swift"):
-		m *= 1.0 + float(Consumables.spec("swift")["power"])
+		m *= 1.0 + Game.combat.elixir_power("swift")
 	return m
 
 
@@ -57,7 +57,7 @@ func throw_bomb() -> bool:
 	if targets.is_empty():
 		Game.show_toast("px:flame", L.t("toast.bombNoTarget"))
 		return false
-	var power := float(Consumables.spec("bomb")["power"])
+	var power := Game.combat.bomb_power()
 	for m in targets:
 		var foe: MonsterNode = m
 		damage_monster(foe, Game.combat.weapon_damage(foe.boss) * power * Game.combat.bestiary_mult(foe.kind), hero, true)
@@ -91,7 +91,7 @@ func build(world: World) -> void:
 	# Логова монстров в дальних частях локации. В подземелье монстры приходят волнами.
 	if kind != "world":
 		return
-	var level := Monsters.level_in(world.loaded)
+	var level := Monsters.level_for(world.loaded, Game.level)
 	for e in Monsters.in_location(world.loaded):
 		for _i in int(e[1]):
 			var p = _far_point(world)

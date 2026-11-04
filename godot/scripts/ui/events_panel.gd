@@ -565,6 +565,9 @@ static func reward_icon(reward: Dictionary, event: String) -> Control:
 			row.add_child(UiKit.icon("spark", 26))
 		"maps":
 			row.add_child(UiKit.icon("tmap", 26))
+		"goods":
+			row.add_child(UiKit.icon(str(reward.get("kind", "planks")), 26))
+			amount = Fmt.n(Game.events.reward_goods(reward))
 		"decor":
 			row.add_child(HousePanel.sprite_rect(House.decor_sprite(Events.decor_of(event)), 1.4, Vector2(56, 44)))
 			return row
@@ -608,6 +611,8 @@ static func _bonus_row() -> Control:
 	line.add_child(coins)
 	coins.add_child(UiKit.icon("coin", 13))
 	coins.add_child(UiKit.label(Fmt.n(Events.bonus_coins(Game.level)), 11))
+	coins.add_child(UiKit.icon("planks", 13))
+	coins.add_child(UiKit.label(Fmt.n(Estate.reward_goods("planks", Events.BONUS_PLANKS_HOURS)), 11))
 	if ready > 0:
 		var b := UiKit.button(L.t("event.bonus.claim", [ready]), "green", 13, true)
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER

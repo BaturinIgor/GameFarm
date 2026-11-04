@@ -12,6 +12,9 @@
 - Полная проверка - CI `.github/workflows/android.yml`: импорт, загрузка всех скриптов (`-- --check-scripts`,
   `scripts/debug/check_scripts.gd`), прогон без экрана, снимки экрана
   (`scripts/debug/shot_driver.gd`), сборка APK. Логи и снимки CI кладёт в ветку `ci-logs-android`.
+- Автотесты - `godot/tests/` (свой маленький раннер, без плагинов): `godot --headless --path godot -- --run-tests [фильтр]`.
+  Фильтр - часть имени файла или теста (`energy`, `test_sell`). CI `.github/workflows/tests.yml` гоняет их на каждый
+  push и PR, а сборки APK и IPA - шагом перед экспортом: с упавшим тестом сборка не выходит. Подробнее - `tests/README.md`.
 - iOS - `.github/workflows/ios-godot.yml` (macOS): импорт, `--check-scripts`, экспорт пресета "iOS" в проект Xcode
   (без подписи), `xcodebuild archive`, `HarvestHollow.ipa` для SideStore. Bundle id `com.personal.gamefarm`, как у
   Swift-версии, поэтому ставится поверх. Иконку 1024 (`assets/app_icon.png`) копирует `godot_sync.sh` из
@@ -101,6 +104,7 @@
 - Связь между системами - через `Game.<система>` или событие `Game.emit_event("gather", {...})`;
   задания слушают события (`gather`, `harvest`, `deposit`, `sell`, `tame`, `kill`, `craft`, ...).
 - После изменения `save`: `Game.mark_dirty()`; если менялось что-то, влияющее на характеристики: `Game.recalc()`.
+- Новая механика или исправленный баг - вместе с тестом в `godot/tests/` (правила, лимиты, цены, сохранение).
 
 ## Сцена
 
