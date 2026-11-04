@@ -73,7 +73,7 @@ func _chest_card(chest: String) -> void:
 	open_b.pressed.connect(func() -> void: _open(chest, 1))
 	buttons.add_child(open_b)
 	var many := mini(ChestSystem.MULTI, have)
-	var multi_b := UiKit.button(L.t("chest.openN", [maxi(2, many)]), "orange" if many >= 2 else "gray", 14, true)
+	var multi_b := UiKit.button(L.t("chest.openN", [many if many >= 2 else ChestSystem.MULTI]), "orange" if many >= 2 else "gray", 14, true)
 	multi_b.disabled = many < 2
 	multi_b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	multi_b.pressed.connect(func() -> void: _open(chest, ChestSystem.MULTI))

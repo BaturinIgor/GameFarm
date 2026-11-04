@@ -29,7 +29,7 @@ const SPECS := {
 		"odds": {"gray": 0.0, "green": 20.0, "blue": 35.0, "purple": 25.0, "gold": 14.0, "red": 5.0, "rainbow": 1.0}},
 }
 ## Оттенок сундука и ключа на иконке (деревянный - без оттенка).
-const TINT := {"wood": Color.WHITE, "silver": Color(0.82, 0.88, 1.0), "ancient": Color.WHITE}
+const TINT := {"wood": Color.WHITE, "silver": Color(0.72, 0.8, 1.0), "ancient": Color.WHITE}
 const KEY_TINT := {"copper": Color(1.0, 0.72, 0.5), "silver": Color(0.85, 0.9, 1.0), "star": Color(1.0, 0.95, 0.55)}
 const KEYS := ["copper", "silver", "star"]
 

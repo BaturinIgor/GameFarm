@@ -32,7 +32,7 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	var dim := ColorRect.new()
-	dim.color = Color(0.04, 0.02, 0.06, 0.82)
+	dim.color = Color(0.04, 0.02, 0.06, 0.9)
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(dim)
@@ -138,6 +138,7 @@ func _play(icon: Control) -> void:
 func _burst() -> void:
 	_chest_box.visible = false
 	_rays.color = Chests.color(_best)
+	_rays.rainbow = _best == "rainbow"
 	_rays.boost = 1.6
 	_flash.color = Color(1, 1, 1, 0.9)
 	var tw := create_tween()
@@ -241,6 +242,8 @@ class Rays:
 
 	var color := Color.WHITE
 	var boost := 1.0
+	## Радужная находка: каждый луч своего цвета, цвета бегут по кругу.
+	var rainbow := false
 	var _a := 0.0
 
 	func _process(delta: float) -> void:
@@ -253,6 +256,8 @@ class Rays:
 		for i in n:
 			var a := _a + TAU * float(i) / float(n)
 			var pts := PackedVector2Array([Vector2.ZERO, Vector2.from_angle(a - 0.12) * r, Vector2.from_angle(a + 0.12) * r])
-			draw_colored_polygon(pts, Color(color, 0.22))
-		draw_circle(Vector2.ZERO, 70.0 * boost, Color(color, 0.25))
-		draw_circle(Vector2.ZERO, 40.0 * boost, Color(color, 0.35))
+			var c := Chests.rainbow_color(_a + float(i) / float(n) * 2.8) if rainbow else color
+			draw_colored_polygon(pts, Color(c, 0.18))
+		var mid := Chests.rainbow_color(_a) if rainbow else color
+		draw_circle(Vector2.ZERO, 70.0 * boost, Color(mid, 0.22))
+		draw_circle(Vector2.ZERO, 40.0 * boost, Color(mid, 0.32))
