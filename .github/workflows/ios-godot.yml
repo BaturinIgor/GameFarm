@@ -122,6 +122,18 @@ jobs:
             exit 1
           fi
 
+      - name: Run tests
+        timeout-minutes: 5
+        run: |
+          set +e
+          "$GODOT" --headless --path godot -- --run-tests > tests.log 2>&1
+          code=$?
+          grep -vE "^ok " tests.log | tail -60
+          if [ $code -ne 0 ]; then
+            echo "::error::Tests failed (godot/tests, see tests.log)"
+            exit 1
+          fi
+
       # Только проект Xcode (application/export_project_only), подписи нет.
       # Team ID в пресете - заглушка: Godot без него не экспортирует, при сборке он сбрасывается.
       - name: Export Xcode project
@@ -210,7 +222,7 @@ jobs:
         run: |
           L="$RUNNER_TEMP/ci-logs"
           rm -rf "$L" && mkdir -p "$L"
-          cp prepare.log import.log check.log export.log errors.txt app.txt "$L/" 2>/dev/null || true
+          cp prepare.log import.log check.log tests.log export.log errors.txt app.txt "$L/" 2>/dev/null || true
           if [ -f build.log ]; then
             tail -400 build.log > "$L/build_tail.txt"
             [ "$(wc -c < build.log)" -lt 20000000 ] && cp build.log "$L/"
