@@ -15,6 +15,8 @@ const IDS := [
 	"duckHat",
 	# За кристаллы: перекрашенные звери пака
 	"draftHorse", "emberRooster", "moonUnicorn",
+	# Гибриды из Гнезда (Incubator.RECIPES): только скрещиванием
+	"goldenHen", "pegasus", "honeyToad", "cloudSheep",
 ]
 
 ## Старые звери из прошлых версий: во что они превращаются в сохранении.
@@ -114,6 +116,22 @@ const SPECS := {
 			{"type": "yield", "v": 0.08}]},
 }
 
+# Гибриды: появляются только из яйца Гнезда (пара родителей по рецепту), перекраска листа родителя
+const HYBRID_SPECS := {
+	"goldenHen": {"emoji": "🐔", "source": "hybrid", "base": "chicken",
+		"recolor": [Color("8a5a10"), Color("e8b020"), Color("fff1a0")],
+		"effects": [{"type": "produce", "kind": "gold", "interval": 50.0}, {"type": "yield", "cat": "food", "v": 0.1}]},
+	"pegasus": {"emoji": "🐎", "source": "hybrid", "base": "horse",
+		"recolor": [Color("5a6f9e"), Color("cfe0ff"), Color("ffffff")],
+		"effects": [{"type": "speed", "v": 0.18}, {"type": "backpack", "v": 40}]},
+	"honeyToad": {"emoji": "🐸", "source": "hybrid", "base": "frog",
+		"recolor": [Color("7a4a08"), Color("e8a820"), Color("ffe680")],
+		"effects": [{"type": "produce", "kind": "honey", "interval": 35.0}, {"type": "respawn", "v": 0.1}]},
+	"cloudSheep": {"emoji": "🐑", "source": "hybrid", "base": "sheep",
+		"recolor": [Color("8a7aa8"), Color("f0eaff"), Color("ffffff")],
+		"effects": [{"type": "produce", "kind": "cloud", "interval": 60.0}, {"type": "xp", "v": 0.12}]},
+}
+
 ## Звезда зверя за кристаллы дороже предыдущей во столько раз.
 const CRYSTAL_GROWTH := 1.4
 
@@ -135,7 +153,11 @@ const SHINY_TINT := Color(0.75, 0.45, 1.0)
 
 
 static func spec(id: String) -> Dictionary:
-	return SPECS.get(id, {})
+	return SPECS.get(id, HYBRID_SPECS.get(id, {}))
+
+
+static func is_hybrid(id: String) -> bool:
+	return HYBRID_SPECS.has(id)
 
 
 static func name_of(id: String) -> String:
