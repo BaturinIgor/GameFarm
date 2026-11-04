@@ -24,6 +24,9 @@ var pen := Rect2()         ## загон (пустой, если нет)
 var board = null           ## Vector2 или null
 var stations: Array = []   ## {kind, pos}
 var slots: Array = []      ## {id, pos}
+## Только у дома (MapLayout.house): прямоугольник и точка появления каждого этажа.
+var floor_rects: Dictionary = {}
+var floor_bases: Dictionary = {}
 
 static var _cache: Dictionary = {}
 
@@ -42,6 +45,63 @@ static func load_layout(location: String, variant := "") -> MapLayout:
 	layout.id = location
 	_cache[name] = layout
 	return layout
+
+
+## Весь дом одной картой: этажи друг над другом, сверху вниз как House.FLOORS. Непостроенный этаж -
+## пустая полоса без мебели и станций. Между двумя построенными этажами лестница - сквозной пролёт:
+## клетки задней стены нижнего этажа и нижней стены верхнего в столбцах House.STAIRS становятся полом.
+## base - точка появления на этаже here.
+static func house(built: Array, here: String) -> MapLayout:
+	var out := MapLayout.new()
+	out.id = House.floor_location(here)
+	out.edge = "void"
+	out.rows = 0
+	var parts: Array[MapLayout] = []
+	for f in House.FLOORS:
+		var part := load_layout(House.floor_location(f))
+		parts.append(part)
+		out.rows += part.rows
+	out.cols = parts[0].cols
+	out.cell = parts[0].cell
+	out.cells = PackedByteArray()
+	out.cells.resize(out.cols * out.rows)
+	out.cells.fill(Cell.VOID)
+	var row0 := 0
+	for i in House.FLOORS.size():
+		var f: String = House.FLOORS[i]
+		var part := parts[i]
+		var off := Vector2(0, row0 * out.cell)
+		out.floor_rects[f] = Rect2(off, part.size)
+		out.floor_bases[f] = part.base + off
+		if f in built:
+			for r in part.rows:
+				for c in mini(part.cols, out.cols):
+					out.cells[(row0 + r) * out.cols + c] = part.at(c, r)
+			for e in part.props:
+				out.props.append({"name": e["name"], "pos": e["pos"] + off, "fixed": e["fixed"]})
+			for e in part.stations:
+				out.stations.append({"kind": e["kind"], "pos": e["pos"] + off, "floor": f})
+			for e in part.slots:
+				out.slots.append({"id": e["id"], "pos": e["pos"] + off})
+		row0 += part.rows
+	for f in House.STAIRS:
+		if not (f in built and House.floor_up(f) in built):
+			continue
+		var top := int(out.floor_rects[f].position.y / out.cell)
+		for c in House.STAIRS[f]:
+			for r in range(top - 1, top + House.WALL_ROWS):
+				out.cells[r * out.cols + int(c)] = Cell.LAND
+	out.base = out.floor_bases.get(here, out.floor_bases["ground"])
+	return out
+
+
+## Этаж дома под точкой ("" - не дом или мимо этажей).
+func floor_at(p: Vector2) -> String:
+	for f in floor_rects:
+		var r: Rect2 = floor_rects[f]
+		if p.y >= r.position.y and p.y < r.end.y:
+			return f
+	return ""
 
 
 func _read(name: String) -> bool:
