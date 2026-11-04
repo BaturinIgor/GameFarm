@@ -93,7 +93,8 @@ func test_tnt_clears_area_and_hits_rocks() -> void:
 	var mid := 4 * Mine.W + 3
 	cells[mid] = {"k": "tnt", "c": -1, "hp": 0}
 	cells[mid + 1] = {"k": "rock", "c": -1, "hp": 1}
-	cells[mid + 2] = {"k": "rock", "c": -1, "hp": 1}
+	# Камень на две клетки ниже: соседний с клеткой под взрывом
+	cells[mid + Mine.W * 2] = {"k": "rock", "c": -1, "hp": 1}
 	var b := _board(cells)
 	var res := b.tap(mid)
 	check(not res.is_empty(), "динамит срабатывает от касания")
