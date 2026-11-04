@@ -3,6 +3,11 @@ extends Node2D
 ## Игровая сцена: карта локации, герой, точки добычи, склад и камера (порт GameScene).
 
 const PLAYER_RADIUS := 11.0
+## В доме камера чуть дальше: видно соседние этажи. 5/6 - ровно 5 пикселей экрана на пиксель рисунка
+## на iPhone (3x), картинка не мылится.
+const HOME_ZOOM := 5.0 / 6.0
+
+static var current: World
 
 ## Части сцены из других систем (звери, монстры, огород, дом...). Порядок важен: так их вызывает World.
 const FEATURES: Array[String] = [
@@ -61,9 +66,13 @@ var _fader: ColorRect
 var features: Array[WorldFeature] = []
 var _titan_hits := 0
 var _cornucopia_count := 0
+## Обзор всего дома (кнопка в плашке этажа): камера отъезжает, пока герой стоит.
+var overview := false
+var _zoom_target := Vector2.ONE
 
 
 func _ready() -> void:
+	current = self
 	ground.centered = false
 	ground.z_index = -20
 	add_child(ground)
@@ -99,7 +108,12 @@ func set_fader(rect: ColorRect) -> void:
 func build(id: String) -> void:
 	loaded = id
 	spec = Locations.spec(id)
-	layout = MapLayout.load_layout(id, Game.events.resource_name(id))
+	if spec["kind"] == "home":
+		# Все этажи сразу, одной картой (пол и стены этажей кладёт HomeFeature)
+		layout = MapLayout.house(Game.save.get("houseFloors", ["ground"]), House.floor_of(id))
+	else:
+		layout = MapLayout.load_layout(id, Game.events.resource_name(id))
+	overview = false
 	for f in features:
 		f.clear(self)
 	# Героя сначала снимаем с карты, иначе он уйдёт вместе со старыми узлами
@@ -128,7 +142,7 @@ func build(id: String) -> void:
 	RenderingServer.set_default_clear_color(bg)
 
 	var tex := Sprites.ground(Game.events.resource_name(id))
-	if tex == null:
+	if tex == null and spec["kind"] != "home":
 		tex = Sprites.ground(id)
 	ground.texture = tex
 	if tex != null:
@@ -151,7 +165,7 @@ func build(id: String) -> void:
 
 	player.position = layout.base + Vector2(0, 56)
 	if spec["kind"] == "home":
-		# С улицы - у двери, чуть внутри комнаты; при смене этажа - у лестницы или в середине
+		# С улицы - у двери, чуть внутри комнаты; иначе в середине текущего этажа
 		player.position = layout.base
 		for st in layout.stations:
 			if st["kind"] == Game.arrival_station:
@@ -171,8 +185,47 @@ func build(id: String) -> void:
 	entities.add_child(player)
 	for f in features:
 		f.build(self)
+	_zoom_target = Vector2.ONE * (HOME_ZOOM if spec["kind"] == "home" else 1.0)
+	camera.zoom = _zoom_target
 	camera.position = _clamped_camera(player.position)
 	camera.reset_smoothing()
+
+
+## Построили этаж, пока герой в доме: карта дома заново, герой и камера на месте.
+func rebuild_here() -> void:
+	var p := player.position
+	var cam := camera.position
+	build(loaded)
+	player.position = _resolve(p, PLAYER_RADIUS)
+	camera.position = cam
+
+
+## Другой этаж того же дома: карта уже вся на экране, перестраивать нечего. Если этаж выбрали в
+## меню, а герой на другом этаже - он переходит на середину выбранного.
+func _switch_floor(id: String) -> void:
+	loaded = id
+	spec = Locations.spec(id)
+	var f := House.floor_of(id)
+	var rect: Rect2 = layout.floor_rects.get(f, Rect2())
+	if rect.has_area() and layout.floor_at(player.position) != f:
+		Fx.puff(flat, player.position, Color(1, 1, 1, 0.8), 30.0, 6)
+		player.position = layout.floor_bases[f]
+		velocity = Vector2.ZERO
+		if joystick:
+			joystick.end()
+		Fx.scatter(fx, player.position - Vector2(0, 24), 8, Color.WHITE, Sprites.icon("spark"), 12.0, 36.0, 20.0)
+		Sound.play("whoosh")
+
+
+## Обзор всего дома: камера показывает все этажи, первое движение героя возвращает её.
+func set_overview(on: bool) -> void:
+	overview = on and spec.get("kind", "") == "home"
+	if not overview:
+		_zoom_target = Vector2.ONE * (HOME_ZOOM if spec.get("kind", "") == "home" else 1.0)
+		return
+	var view := get_viewport_rect().size
+	var k := minf(view.y / (layout.size.y + 60.0), view.x / (layout.size.x + 24.0))
+	_zoom_target = Vector2.ONE * minf(HOME_ZOOM, k)
 
 
 func _build_border() -> void:
@@ -278,7 +331,10 @@ func _gate_open(id: String) -> bool:
 func _process(delta: float) -> void:
 	var dt := minf(delta, 1.0 / 20.0)
 	if not _transitioning and loaded != Game.current:
-		_transition(Game.current)
+		if spec.get("kind", "") == "home" and Locations.kind(Game.current) == "home":
+			_switch_floor(Game.current)
+		else:
+			_transition(Game.current)
 	var stats := Game.stats
 	_sync_skin()
 	if not _transitioning:
@@ -422,7 +478,7 @@ func _resolve(point: Vector2, radius: float) -> Vector2:
 
 
 func _clamped_camera(target: Vector2) -> Vector2:
-	var view := get_viewport_rect().size
+	var view := get_viewport_rect().size / camera.zoom
 	var half := view / 2.0
 	var world := layout.size
 	var p := target
@@ -432,7 +488,14 @@ func _clamped_camera(target: Vector2) -> Vector2:
 
 
 func _update_camera(dt: float) -> void:
-	var target := _clamped_camera(player.position + velocity * 0.25)
+	if overview and joystick and joystick.vector.length() > 0.1:
+		set_overview(false)
+	if not camera.zoom.is_equal_approx(_zoom_target):
+		var z := camera.zoom.x + (_zoom_target.x - camera.zoom.x) * (1.0 - exp(-dt * 6.0))
+		if absf(z - _zoom_target.x) < 0.002:
+			z = _zoom_target.x
+		camera.zoom = Vector2(z, z)
+	var target := layout.size / 2.0 if overview else _clamped_camera(player.position + velocity * 0.25)
 	var k := 1.0 - exp(-dt * 5.5)
 	var p := camera.position + (target - camera.position) * k
 	if shake > 0.1:

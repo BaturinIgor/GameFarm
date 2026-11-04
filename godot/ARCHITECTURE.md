@@ -18,7 +18,9 @@
   `GameFarm/Resources/Assets.xcassets`, остальные размеры Godot делает сам. Логи - в ветке `ci-logs-ios`.
 - Заставка: `tools/make_splash.py` (Pillow) рисует `assets/splash.png` - иконка и название. Это boot splash движка
   и экран запуска iOS. Потом главная сцена `scenes/splash.tscn` (`scripts/splash.gd`) показывает ту же картинку с
-  полоской загрузки, в фоне грузит `scenes/main.tscn` и плавно переходит в игру. При `--check-scripts`, `--shots`
+  полоской загрузки, в фоне грузит `scenes/main.tscn` и плавно переходит в игру. За картинкой живой фон
+  (`Backdrop` в `splash.gd`, всё рисуется кодом): закатное небо, лучи за иконкой, облака, холмы с домиком,
+  светлячки и лепестки; он проявляется из `boot_splash/bg_color`. При `--check-scripts`, `--shots`
   и запуске без экрана сразу открывает `main.tscn`. Снимки заставки в CI: `-- --splash-shot <папка>`.
 
 ## Координаты и масштаб
@@ -107,6 +109,12 @@
   `scripts/world/features/`: класс `extends WorldFeature` с `build(world)`, `process(world, dt)`, `clear()`.
   Список фич - в `World.FEATURES`.
 - Эффекты - `Fx` (`scripts/world/fx.gd`).
+- Дом: все пять этажей - одна карта друг над другом (`MapLayout.house`, сверху вниз как `House.FLOORS`).
+  Раскладки этажей те же (`tools/house.py --layouts` пересобирает их без пака), лестница с этажа на этаж
+  выше - сквозной пролёт в столбцах `House.STAIRS`, рисунок пролёта `assets/art/hm_stair_flight.png`
+  (`tools/make_stairs.py`). Текущий этаж (`Game.current` = `home<Этаж>`) меняет `HomeFeature` по высоте героя,
+  `World` при смене этажа внутри дома карту не перестраивает. Непостроенный этаж затемнён, лестница к нему
+  заколочена. Камера в доме `World.HOME_ZOOM`, обзор всего дома - `World.set_overview(true)`.
 
 ## Интерфейс
 

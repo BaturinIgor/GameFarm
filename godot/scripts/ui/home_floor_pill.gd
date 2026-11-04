@@ -1,7 +1,7 @@
 class_name HomeFloorPill
 extends VBoxContainer
 ## В доме: плашка с текущим этажом (порт HomeFloorPill). По нажатию раскрывается список:
-## переход на другой этаж, план дома и выход на поляну. Вне дома прячется.
+## переход на другой этаж, обзор всего дома, план дома и выход на поляну. Вне дома прячется.
 
 var _head := PanelContainer.new()
 var _title: Label
@@ -96,6 +96,10 @@ func _build_menu() -> void:
 	line.custom_minimum_size = Vector2(0, 2)
 	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_list.add_child(line)
+	_item(L.t("home.overview"), "purple", "telescope").pressed.connect(func() -> void:
+		_menu.visible = false
+		if World.current != null:
+			World.current.set_overview(not World.current.overview))
 	_item(L.t("home.plan"), "green", "plan").pressed.connect(_open_plan)
 	_item(L.t("home.goOut"), "blue", "door").pressed.connect(func() -> void:
 		_menu.visible = false
