@@ -314,6 +314,22 @@ func _build_art() -> void:
 		"sandCastle":
 			_add(_alive_art, "sandcastle")
 			_add(_dead_art, "sand_pile")
+		"lanternPost":
+			_alive_art.add_child(Fx.glow(Color(1, 0.75, 0.3), 70, 26, 0.45))
+			_add(_alive_art, "lantern_post")
+			_add(_dead_art, "lantern_post_off")
+		"flowerBed":
+			_add(_alive_art, "flowers_red", -8)
+			_add(_alive_art, "flowers_purple", 8, -3)
+			_add(_dead_art, "tuft1")
+		"pirateCargo":
+			_add(_alive_art, "barrel_closed", -7)
+			_add(_alive_art, "barrel_closed", 8, -4)
+			_add(_dead_art, "rubble")
+		"fallenStar":
+			_alive_art.add_child(Fx.glow(Color(1, 0.95, 0.55), 80, 14, 0.5))
+			_add(_alive_art, "ore_star")
+			_add(_dead_art, "chunk_star")
 		"slimeCrystal":
 			_alive_art.add_child(Fx.glow(Color(0.45, 1, 0.4), 84, 16, 0.5))
 			_add(_alive_art, "crystal_slime", -4)

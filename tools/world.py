@@ -214,6 +214,10 @@ BIOMES = {
     "garden": dict(grass=2, path=["#a89a8a", "#c8bcae", "#e0d6ca"]),
     "autumn": dict(grass=3, recolor_grass=["#3e3218", "#6e6024", "#857228", "#9e8636"],
                    path=["#7a4a2a", "#9a6238", "#b87c48"]),
+    "dusk": dict(grass=2, recolor_grass=["#0e1e2a", "#18323e", "#22464e", "#2e5a5c"],
+                 water=["#0a1a3a", "#16305e", "#2a4c8a"], bank=["#08121a", "#10202a", "#1a2e3a"],
+                 path=["#4a4258", "#5c5470", "#6e6688"]),
+    "spring": dict(grass=2, path=["#c89aa8", "#dcb4c0", "#f0d0d8"]),
     "slimecave": dict(grass=4, recolor_grass=["#0c1a12", "#14281c", "#1c3826", "#264a32"],
                       water=["#1e5a1e", "#3aa83a", "#8af06a"], bank=["#08120c", "#122218", "#1c3222"],
                       path=["#2c4434", "#3a5844", "#4a6c54"], void="#030805"),
@@ -396,6 +400,7 @@ NODE_RADIUS = {
     "lavaFish": 14, "cloudBush": 16, "goldenTree": 20, "skyTree": 20, "starRock": 20, "starPond": 14,
     "beehive": 14, "grapeVine": 20, "treasureChest": 16,
     "pumpkinPatch": 16, "giftBox": 14, "sandCastle": 16, "slimeCrystal": 18,
+    "lanternPost": 14, "flowerBed": 16, "pirateCargo": 16, "fallenStar": 18,
 }
 WATER_NODES = {"fishSpot", "oasisFish", "iceHole", "swampFish", "oyster", "lavaFish", "starPond"}
 TALL = {"tree", "pine", "palm", "snowPine", "glowTree", "appleTree", "willow", "bananaPalm", "ashTree", "goldenTree",
@@ -703,6 +708,51 @@ LOCATIONS = {
                   C("palm", 6, 0.5, 0.62, 5), C("pineapple", 4, 0.36, 0.56, 3), C("fishSpot", 3, 0.66, 0.42, 0)],
         decor=dict(flowers=0.02, tufts=0.03, props=0.008), props=["rock1", "stone_small1"],
         fixed_props=[("bunting", 0.5, 0.29, 0)],
+    ),
+    "lanternNight": dict(
+        size=(42, 52), biome="dusk", seed=317, edge="forest", trees=["tree_oak_big", "tree_birch_big", "tree_oak_big"],
+        land=[("ellipse", 0.5, 0.5, 0.42, 0.42), ("ellipse", 0.26, 0.7, 0.16, 0.14)],
+        water=[("ellipse", 0.7, 0.66, 0.08, 0.06)],
+        base=(0.5, 0.2), bare=[("ellipse", 0.5, 0.5, 0.07, 0.05)],
+        clusters=[C("lanternPost", 6, 0.5, 0.54, 8), C("lanternPost", 4, 0.26, 0.7, 4), C("lanternPost", 3, 0.76, 0.4, 3),
+                  C("tree", 6, 0.22, 0.42, 4), C("bush", 5, 0.66, 0.28, 3), C("mushroom", 5, 0.3, 0.3, 3),
+                  C("herbPatch", 4, 0.8, 0.78, 3), C("fishSpot", 2, 0.7, 0.66, 0)],
+        decor=dict(flowers=0.01, tufts=0.03, props=0.01), props=["log", "stump_mossy", "bush_leafy2"],
+        fixed_props=[("bunting", 0.5, 0.27, 0)],
+    ),
+    "springGarden": dict(
+        size=(42, 52), biome="spring", seed=331, edge="forest", trees=["tree_fruit_big", "tree_birch_big", "tree_fruit_big"],
+        land=[("ellipse", 0.5, 0.5, 0.42, 0.42), ("ellipse", 0.74, 0.72, 0.16, 0.13)],
+        water=[("ellipse", 0.3, 0.68, 0.08, 0.06)],
+        base=(0.5, 0.2), bare=[],
+        clusters=[C("flowerBed", 7, 0.5, 0.52, 8), C("flowerBed", 4, 0.74, 0.72, 4), C("flowerBed", 3, 0.24, 0.42, 3),
+                  C("appleTree", 4, 0.78, 0.42, 3), C("bush", 6, 0.3, 0.3, 4), C("beehive", 3, 0.66, 0.28, 2),
+                  C("carrot", 4, 0.22, 0.56, 3), C("fishSpot", 2, 0.3, 0.68, 0)],
+        decor=dict(flowers=0.09, tufts=0.02, props=0.006), props=["bush_leafy2", "stone_small1"],
+        fixed_props=[("bunting", 0.5, 0.27, 0)],
+    ),
+    "pirateCove": dict(
+        size=(44, 52), biome="island", seed=337, edge="sea", trees=[],
+        land=[("ellipse", 0.5, 0.48, 0.38, 0.36), ("ellipse", 0.72, 0.74, 0.16, 0.12), ("ellipse", 0.26, 0.7, 0.14, 0.1)],
+        grass=[("ellipse", 0.48, 0.56, 0.18, 0.14)],
+        water=[("ellipse", 0.36, 0.42, 0.07, 0.05)],
+        base=(0.5, 0.22), bare=[],
+        clusters=[C("pirateCargo", 7, 0.52, 0.5, 8), C("pirateCargo", 4, 0.72, 0.74, 4), C("pirateCargo", 3, 0.26, 0.7, 3),
+                  C("palm", 6, 0.5, 0.64, 5), C("shells", 6, 0.64, 0.34, 6), C("pineapple", 3, 0.34, 0.56, 3),
+                  C("fishSpot", 3, 0.36, 0.42, 0)],
+        decor=dict(flowers=0.01, tufts=0.03, props=0.01), props=["rock1", "stone_small1", "barrel"],
+        fixed_props=[("bunting", 0.5, 0.29, 0)],
+    ),
+    "starfall": dict(
+        size=(42, 52), biome="starfield", seed=347, edge="void", trees=[],
+        land=[("ellipse", 0.5, 0.4, 0.4, 0.3), ("ellipse", 0.44, 0.72, 0.3, 0.22), ("ellipse", 0.76, 0.66, 0.16, 0.14)],
+        water=[("ellipse", 0.6, 0.52, 0.08, 0.05)],
+        base=(0.5, 0.16), bare=[],
+        clusters=[C("fallenStar", 7, 0.46, 0.56, 8), C("fallenStar", 4, 0.76, 0.66, 4), C("fallenStar", 3, 0.3, 0.36, 3),
+                  C("glowShroom", 6, 0.34, 0.74, 4), C("bush", 5, 0.68, 0.3, 3), C("rock", 4, 0.22, 0.6, 3),
+                  C("fishSpot", 2, 0.6, 0.52, 0)],
+        decor=dict(flowers=0.0, tufts=0.02, props=0.012), props=["bush_cloud_star", "rock3"],
+        fixed_props=[("bunting", 0.5, 0.23, 0)],
     ),
 }
 
@@ -1357,9 +1407,10 @@ def export(lid, spec, gen, name=None):
 
 # ================================================================ этапы ивентов
 
-EVENT_IDS = ["harvestFest", "slimeNight", "winterTale", "beachParty"]
+EVENT_IDS = ["harvestFest", "slimeNight", "winterTale", "beachParty", "lanternNight", "springGarden", "pirateCove", "starfall"]
 STAGE_VARIANTS = 4   # кроме основной карты; этапы ивента идут по кругу через все варианты
-SPECIAL = {"harvestFest": "pumpkinPatch", "slimeNight": "slimeCrystal", "winterTale": "giftBox", "beachParty": "sandCastle"}
+SPECIAL = {"harvestFest": "pumpkinPatch", "slimeNight": "slimeCrystal", "winterTale": "giftBox", "beachParty": "sandCastle",
+           "lanternNight": "lanternPost", "springGarden": "flowerBed", "pirateCove": "pirateCargo", "starfall": "fallenStar"}
 
 
 def stage_variant(lid, v):

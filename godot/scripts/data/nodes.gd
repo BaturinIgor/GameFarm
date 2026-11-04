@@ -52,13 +52,18 @@ const SPECS := {
 	"pumpkinPatch": {"tool": "hand", "tier": 1, "hp": 8.0, "xp": 10, "respawn": 40.0, "yields": [["wheat", 2, 3, 1.0], ["pumpkin", 1, 1, 0.12]], "radius": 16, "blocking": false, "keeps_body": false, "bar": 44, "chip": Color(1, 0.55, 0.1)},
 	"giftBox": {"tool": "hand", "tier": 1, "hp": 8.0, "xp": 10, "respawn": 40.0, "yields": [["apples", 2, 3, 1.0], ["gold", 1, 1, 0.2]], "radius": 14, "blocking": false, "keeps_body": false, "bar": 40, "chip": Color(0.9, 0.25, 0.3)},
 	"sandCastle": {"tool": "hand", "tier": 1, "hp": 8.0, "xp": 10, "respawn": 40.0, "yields": [["shell", 1, 2, 1.0], ["pearl", 1, 1, 0.06]], "radius": 16, "blocking": false, "keeps_body": false, "bar": 46, "chip": Color(0.95, 0.8, 0.55)},
+	"lanternPost": {"tool": "hand", "tier": 1, "hp": 8.0, "xp": 10, "respawn": 40.0, "yields": [["honey", 1, 2, 1.0], ["gold", 1, 1, 0.15]], "radius": 14, "blocking": false, "keeps_body": false, "bar": 64, "chip": Color(1, 0.75, 0.3)},
+	"flowerBed": {"tool": "hand", "tier": 1, "hp": 8.0, "xp": 10, "respawn": 40.0, "yields": [["herbs", 2, 3, 1.0], ["honey", 1, 1, 0.2]], "radius": 16, "blocking": false, "keeps_body": false, "bar": 40, "chip": Color(1, 0.5, 0.7)},
+	"pirateCargo": {"tool": "hand", "tier": 1, "hp": 8.0, "xp": 10, "respawn": 40.0, "yields": [["coconut", 1, 2, 1.0], ["gold", 1, 1, 0.2], ["pearl", 1, 1, 0.05]], "radius": 16, "blocking": false, "keeps_body": false, "bar": 50, "chip": Color(0.65, 0.42, 0.22)},
+	"fallenStar": {"tool": "pickaxe", "tier": 1, "hp": 9.0, "xp": 12, "respawn": 40.0, "yields": [["stone", 2, 3, 1.0], ["stardust", 1, 1, 0.08]], "radius": 18, "blocking": true, "keeps_body": false, "bar": 50, "chip": Color(1, 0.95, 0.6)},
 	"slimeCrystal": {"tool": "pickaxe", "tier": 1, "hp": 9.0, "xp": 12, "respawn": 40.0, "yields": [["slime", 2, 3, 1.0], ["crystal", 1, 1, 0.05]], "radius": 18, "blocking": true, "keeps_body": false, "bar": 58, "chip": Color(0.45, 0.95, 0.4)},
 }
 
 ## Как точка исчезает после добычи.
 const STYLE_FALL := ["tree", "pine", "palm", "snowPine", "glowTree", "willow", "bananaPalm", "ashTree", "skyTree", "bamboo", "cactus"]
 const STYLE_CRUMBLE := ["rock", "boulder", "coalOre", "ironOre", "goldOre", "iceBlock", "diamondOre", "crystalOre",
-	"coral", "sulfurVent", "obsidianOre", "rubyOre", "starRock", "clayPit", "slimeCrystal", "sandCastle"]
+	"coral", "sulfurVent", "obsidianOre", "rubyOre", "starRock", "clayPit", "slimeCrystal", "sandCastle",
+	"fallenStar", "pirateCargo"]
 const STYLE_SPLASH := ["fishSpot", "oasisFish", "iceHole", "swampFish", "oyster", "lavaFish", "starPond"]
 const STYLE_FADE := ["appleTree", "goldenTree", "beehive", "grapeVine"]
 

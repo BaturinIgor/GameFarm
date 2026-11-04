@@ -773,9 +773,15 @@ func _harvest(spot: ResourceSpot, by_helper := false) -> void:
 	var top := spot.position - Vector2(0, minf(70.0, float(spot.spec["bar"])))
 	if spec["kind"] == "event":
 		var pts := Game.events.points_for_node(spot.type)
-		if pts > 0:
+		if pts > 0.0:
 			var added_pts := Game.events.add_points(pts * multiplier)
-			Fx.text(fx, "+%d" % added_pts, top + Vector2(-30, -26), Color(1, 0.95, 0.6), 13 if by_helper else 16, 0.1)
+			if added_pts > 0:
+				Fx.text(fx, "+%d" % added_pts, top + Vector2(-30, -26), Color(1, 0.95, 0.6), 13 if by_helper else 16, 0.1)
+	elif spec["kind"] == "world" and not by_helper and not direct:
+		# Фарм-ивент "сбор": очко за каждую точку нужного инструмента
+		var farm_pts := Game.farm.on_spot(str(spot.spec["tool"]))
+		if farm_pts > 0:
+			Fx.text(fx, "+%d" % farm_pts, top + Vector2(-30, -26), Color(1, 0.95, 0.6), 15, 0.1)
 	if spot.type == "treasureChest":
 		var chest_coins := 40 + Game.level * 12
 		Game.add_coins(chest_coins)

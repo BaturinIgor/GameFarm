@@ -98,6 +98,16 @@ func build(world: World) -> void:
 			if p == null:
 				continue
 			slots.append({"kind": e[0], "level": level, "point": p, "node": null, "respawn": randf_range(0.5, 4.0)})
+	# Фарм-ивент "охота": ивентовые монстры своего цвета на каждой основной локации
+	var hunt := Game.farm.hunt_monster()
+	if hunt != "":
+		var event := Game.farm.event_id()
+		for _i in FarmEvents.DENS:
+			var p = _far_point(world)
+			if p == null:
+				continue
+			slots.append({"kind": hunt, "level": level + FarmEvents.LEVEL_BONUS, "point": p, "node": null,
+				"respawn": randf_range(0.5, 4.0), "farm": event, "tint": FarmEvents.TINT[event]})
 
 
 func clear(_w: World) -> void:
@@ -287,6 +297,10 @@ func damage_monster(foe: MonsterNode, damage: float, from: Vector2, strong: bool
 		return result
 	# Событие kill для заданий и коллекции шлёт note_kill
 	var reward: Dictionary = Game.combat.note_kill(foe.kind, foe.level, foe.boss)
+	if foe.has_meta("farm"):
+		var pts := Game.farm.on_farm_kill()
+		if pts > 0:
+			Fx.text(w.fx, "+%d" % pts, foe.position - Vector2(0, 80), Color(1, 0.95, 0.6), 16, 0.2)
 	coins_fx(w.fx, int(reward.get("coins", 0)), foe.position - Vector2(0, 58), 15.0)
 	var loot := int(reward.get("loot", 0))
 	if loot > 0:
@@ -320,7 +334,13 @@ func _update_monsters(world: World, dt: float, stats: Stats) -> void:
 			s["respawn"] = float(s["respawn"]) - dt
 			var point: Vector2 = s["point"]
 			if float(s["respawn"]) <= 0.0 and point.distance_to(hero) > 260.0:
-				m = MonsterNode.new(s["kind"], int(s["level"]), point, Monsters.roll_traits(int(s["level"])))
+				# Фарм-ивент кончился: его монстры больше не появляются
+				if s.has("farm") and s["farm"] != Game.farm.hunt_monster_event():
+					s["respawn"] = INF
+					continue
+				m = MonsterNode.new(s["kind"], int(s["level"]), point, Monsters.roll_traits(int(s["level"])), false, s.get("tint"))
+				if s.has("farm"):
+					m.set_meta("farm", true)
 				world.entities.add_child(m)
 				s["node"] = m
 			continue

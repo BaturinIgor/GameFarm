@@ -7,23 +7,57 @@ extends Sheet
 ## Пока пропуска нет - предложение купить его (EventVipCard).
 
 
-func _init() -> void:
+## Вкладки: праздник на своей карте и фарм-ивент на основных локациях (идут одновременно).
+var tab := "holiday"
+
+
+func _init(start_tab := "") -> void:
 	title_key = "event.title"
+	if start_tab != "":
+		tab = start_tab
 
 
 func _ready() -> void:
 	super._ready()
 	Game.events.sync_event()
-	Game.events.mark_event_seen()
+	Game.farm.sync()
+	_mark_seen()
+
+
+func _mark_seen() -> void:
+	if tab == "farm":
+		Game.farm.mark_seen()
+	else:
+		Game.events.mark_event_seen()
+
+
+func build_top() -> void:
+	if not Game.events.events_open():
+		return
+	var holiday: String = Events.current()["event"]
+	var farm: String = FarmEvents.current()["event"]
+	var items := [
+		["holiday", Events.name_of(holiday), Game.events.event_claimable() + (1 if Game.events.event_is_new() else 0),
+			Events.ICON[holiday]],
+		["farm", FarmEvents.name_of(farm), Game.farm.claimable() + (1 if Game.farm.is_new() else 0), FarmEvents.icon(farm)],
+	]
+	top_bar.add_child(UiKit.tabs(items, tab, func(id: String) -> void:
+		tab = id
+		_mark_seen()
+		scroll_to_top()))
 
 
 func build() -> void:
+	if tab == "farm" and Game.events.events_open():
+		FarmEventCards.build(content)
+		return
 	var run := Events.current()
 	var event: String = run["event"]
 	content.add_child(EventsPanel.banner(run, close))
 	if Game.events.events_open():
 		content.add_child(_run_card())
 		content.add_child(_progress_card(event))
+		content.add_child(RatingCard.build(str(run["key"])))
 		if not Game.events.has_vip():
 			content.add_child(_vip_card(event))
 		_tier_list(event)
@@ -731,9 +765,9 @@ static func schedule(on_open: Callable) -> Control:
 
 
 ## Открыть окно ивентов в шапке.
-static func open() -> void:
+static func open(start_tab := "") -> void:
 	if Hud.current != null:
-		Hud.current.open_window(EventsPanel.new())
+		Hud.current.open_window(EventsPanel.new(start_tab))
 
 
 # MARK: Выбор усиления
