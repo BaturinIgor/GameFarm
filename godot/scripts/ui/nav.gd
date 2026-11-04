@@ -11,7 +11,7 @@ const GROUPS := [
 	["animals", "paw", "hud.animals", ["animals", "wild"]],
 	["quests", "scroll", "hud.quests", ["quests"]],
 	["hero", "star", "nav.hero", ["talents", "hunt", "collection", "wardrobe"]],
-	["world", "map", "nav.world", ["map", "events"]],
+	["world", "map", "nav.world", ["map", "mine", "events"]],
 ]
 ## Вкладка в центре: крупнее остальных.
 const CENTER := "quests"
@@ -29,6 +29,7 @@ const SUBS := {
 	"collection": ["nav.collection", "res://scripts/ui/collection_panel.gd"],
 	"wardrobe": ["wardrobe.title", "res://scripts/ui/wardrobe_panel.gd"],
 	"map": ["hud.map", "res://scripts/ui/map_panel.gd"],
+	"mine": ["mine.title", "res://scripts/ui/mine_panel.gd"],
 	"events": ["event.title", "res://scripts/ui/events_panel.gd"],
 }
 
@@ -48,6 +49,7 @@ static func level_of(sub: String) -> int:
 	match sub:
 		"wild": return int(Wild.RINGS[0]["level"])
 		"events": return Events.MIN_LEVEL
+		"mine": return Mine.MIN_LEVEL
 	return 0
 
 
@@ -78,6 +80,8 @@ static func count(sub: String) -> int:
 		"map":
 			return Game.world_map.openable_gates() + (1 if Game.premium.free_ticket_ready() else 0) \
 				+ (1 if MapPanel.garden_chest_ready() else 0)
+		"mine":
+			return Game.mine.ready_count()
 		"events":
 			return Game.events.event_claimable()
 	return 0

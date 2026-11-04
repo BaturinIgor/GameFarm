@@ -16,6 +16,7 @@ var _trace := 0.0
 var _opened := ""
 var _shot_done := ""
 var _sub := 0
+var _mine: MineGame
 var _lang := ""
 
 
@@ -451,7 +452,43 @@ func _extra(k: int) -> void:
 				if n is ChestOverlay:
 					n.queue_free()
 			main.hud.close_window()
+			# Шахта Глубин: окно, поле, ход, победа, окно наград, глубокий этаж
+			if Game.level < Mine.MIN_LEVEL:
+				Game.save["level"] = Mine.MIN_LEVEL
+				Game.recalc()
+			main.hud.open_window(MinePanel.new())
 		33:
+			_shot("7_mine_panel")
+			_check_layout("mine")
+			Game.mine.start()
+			_mine = MineGame.launch(Game.mine.floor_n(), 3)
+		36:
+			_shot("7_mine_board")
+			for i in _mine.board.cells.size():
+				if _mine.board.group(i).size() >= 3:
+					_mine.tap_cell(i)
+					break
+		37:
+			_shot("7_mine_after_tap")
+			_mine._show_end("moves")
+		38:
+			_shot("7_mine_no_moves")
+			_mine._clear_end()
+			_mine._show_end("win")
+		39:
+			_shot("7_mine_win")
+			_mine._finish(true)
+		40:
+			_shot("7_mine_rewards")
+			for n in main.hud.find_children("*", "", true, false):
+				if n is RewardsPopup:
+					n.queue_free()
+			_mine = MineGame.launch(35, 5)
+		42:
+			_shot("7_mine_crystal")
+			_mine.queue_free()
+			main.hud.close_window()
+		43:
 			_step = 5
 			_time = 300.0
 			_sub = 0
