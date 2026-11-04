@@ -209,13 +209,33 @@ func _process(delta: float) -> void:
 				_shot("8_level_up")
 				if LevelUpOverlay.current != null and is_instance_valid(LevelUpOverlay.current):
 					LevelUpOverlay.current.queue_free()
+				# Дом: построены подвал и спальня, чердак и оранжерея ещё закрыты
+				for f in ["upper", "basement"]:
+					if not f in Game.save["houseFloors"]:
+						Game.save["houseFloors"].append(f)
 				if Game.house.has_method("enter_house"):
 					Game.house.call("enter_house")
 				_step = 7
 				_time = 500.0
+				_sub = 0
 		7:
-			if _time > 503.0:
+			var w: World = main.world
+			if _sub == 0 and _time > 503.0:
+				_sub = 1
 				_shot("9_home")
+				# Герой на лестнице из гостиной в спальню
+				var cols: Array = House.STAIRS["ground"]
+				var top: float = w.layout.floor_rects["ground"].position.y
+				w.player.position = Vector2((float(cols[0]) + 1.0) * w.layout.cell, top - 10.0)
+			elif _sub == 1 and _time > 505.0:
+				_sub = 2
+				print("home floor at stairs: ", Game.current, " walkable: ", w.layout.walkable(w.player.position + Vector2(0, -80)))
+				_shot("9_home_stairs")
+				w.set_overview(true)
+			elif _sub == 2 and _time > 507.5:
+				_sub = 3
+				_shot("9_home_overview")
+				w.set_overview(false)
 				if Game.house.has_method("leave_house"):
 					Game.house.call("leave_house")
 				_step = 8
