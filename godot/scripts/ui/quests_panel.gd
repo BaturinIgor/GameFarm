@@ -8,6 +8,8 @@ const OPEN_FILL := Color("fbe3c2")
 const EMOJI_ICONS := {"🪙": "coins", "🌟": "stardust", "🎁": "chest_gold"}
 
 static var _gray: Shader
+## Какие цели раскрыты над доской заданий: "day", "week" или "" (обе свёрнуты). Помнится, пока игра открыта.
+static var _goals_open := ""
 
 var tab := "quests"
 
@@ -15,6 +17,22 @@ var tab := "quests"
 func _init(start_tab := "quests") -> void:
 	title_key = "hud.quests"
 	tab = start_tab
+
+
+## Открыли из нижней панели: вкладка, где горит отметка (задания, охота, жители, достижения).
+func focus_attention() -> void:
+	var counts := [["quests", Game.quests.claimable_quests()], ["hunts", Game.combat.claimable_hunts()],
+		["story", Game.residents.attention_count()], ["achievements", Game.quests.claimable_achievements()]]
+	for c in counts:
+		if int(c[1]) > 0:
+			tab = c[0]
+			break
+	# Горит цель дня или недели - раскрываем её, иначе доска заданий сразу видна
+	if tab == "quests":
+		if _goals_ready(false) > 0:
+			_goals_open = "day"
+		elif _goals_ready(true) > 0:
+			_goals_open = "week"
 
 
 func build() -> void:
@@ -79,11 +97,84 @@ func _goals_card(week: bool) -> Control:
 			var idx := i
 			var b := MapPanel.icon_button([["i", "gem"], ["t", str(g["crystals"])]], "green" if daily.done(g) else "gray", 13)
 			b.disabled = not daily.done(g)
+			if not b.disabled:
+				UiKit.attention(b)
 			b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			b.pressed.connect(func() -> void: Game.daily.claim(idx, week))
 			row.add_child(b)
 	v.add_child(_goals_bonus(week))
 	return parts[0]
+
+
+## Сколько целей (и сундук) можно забрать прямо сейчас.
+static func _goals_ready(week: bool) -> int:
+	var d := Game.daily
+	var n := 0
+	for g in (d.week_goals() if week else d.goals()):
+		if d.done(g) and not g["claimed"]:
+			n += 1
+	return n + (1 if d.bonus_ready(week) else 0)
+
+
+## Плитка целей: название, сколько выполнено, полоска, время до новых и счётчик готовых наград.
+func _goals_tile(week: bool) -> Control:
+	var d := Game.daily
+	var list: Array = d.week_goals() if week else d.goals()
+	var done := 0
+	for g in list:
+		if d.done(g):
+			done += 1
+	var key := "week" if week else "day"
+	var opened := _goals_open == key
+	var tone := "blue" if week else "purple"
+	var b := Button.new()
+	b.focus_mode = Control.FOCUS_NONE
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.custom_minimum_size = Vector2(0, 84)
+	var st := UiKit.box(UiKit.PARCHMENT_LIGHT, UiKit.TONES[tone][1], 14, 3 if opened else 2, false)
+	st.set_content_margin_all(8)
+	for k in ["normal", "hover", "pressed", "hover_pressed", "focus"]:
+		b.add_theme_stylebox_override(k, st)
+	var col := VBoxContainer.new()
+	col.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	col.offset_left = 8
+	col.offset_right = -8
+	col.offset_top = 6
+	col.offset_bottom = -6
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_theme_constant_override("separation", 3)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(col)
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 6)
+	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(head)
+	var ic := UiKit.icon("chest_gold" if week else "chest", 22)
+	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(ic)
+	var t := UiKit.label(L.t("weekly.title" if week else "daily.title"), 14)
+	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	t.clip_text = true
+	t.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	head.add_child(t)
+	var bar := UiKit.bar(float(done) / float(maxi(1, list.size())), tone, 0.0, 14.0, "%d / %d" % [done, list.size()])
+	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_child(bar)
+	var left := func() -> String:
+		return EventsPanel.long_countdown(DailySystem.week_left() if week else ShopSystem.next_day_in())
+	var timer := CombatCards.LiveLabel.new(left, 11, UiKit.INK_SOFT)
+	timer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(timer)
+	var ready := _goals_ready(week)
+	if ready > 0:
+		var badge := UiKit.count_badge(ready)
+		badge.position = Vector2(-6, -7)
+		b.add_child(badge)
+	b.pressed.connect(func() -> void:
+		Sound.play("tap")
+		_goals_open = "" if opened else key
+		_dirty = true)
+	return b
 
 
 ## Сундук за все цели: что внутри и кнопка (серая, пока не все цели забраны).
@@ -124,15 +215,23 @@ func _goals_bonus(week: bool) -> Control:
 	else:
 		var b := UiKit.button(L.t("goals.open"), "orange" if daily.bonus_ready(week) else "gray", 13, true)
 		b.disabled = not daily.bonus_ready(week)
+		if not b.disabled:
+			UiKit.attention(b)
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		b.pressed.connect(func() -> void: Game.daily.take_bonus(week))
+		b.pressed.connect(func() -> void: RewardsPopup.track(func() -> void: Game.daily.take_bonus(week)))
 		row.add_child(b)
 	return p
 
 
 func _quests_list() -> void:
-	content.add_child(_goals_card(false))
-	content.add_child(_goals_card(true))
+	# Цели дня и недели - две плитки в ряд, нажатие раскрывает список; доска заданий сразу под ними
+	var tiles := HBoxContainer.new()
+	tiles.add_theme_constant_override("separation", 10)
+	content.add_child(tiles)
+	tiles.add_child(_goals_tile(false))
+	tiles.add_child(_goals_tile(true))
+	if _goals_open != "":
+		content.add_child(_goals_card(_goals_open == "week"))
 	var list := Game.quests.current_quests()
 	content.add_child(UiKit.label(L.t("quests.done", [int(Game.save.get("questsDone", 0))]), 14))
 	var claimable := Game.quests.claimable_quests()
@@ -192,15 +291,25 @@ func _quest_card(q: Dictionary) -> void:
 	var bar := UiKit.bar(Quests.fraction(q), "green" if done else "orange", 0.0, 16.0,
 		"%s / %s" % [Fmt.n(int(q["progress"])), Fmt.n(int(q["target"]))])
 	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	v.add_child(bar)
+	var bar_row := HBoxContainer.new()
+	bar_row.add_theme_constant_override("separation", 8)
+	bar_row.add_child(bar)
+	v.add_child(bar_row)
 
 	if done:
 		var claim := UiKit.button(L.t("quests.claim"), "green", 15)
+		UiKit.attention(claim)
 		claim.pressed.connect(func() -> void:
-			Game.quests.claim_quest(id)
+			RewardsPopup.track(func() -> void: Game.quests.claim_quest(id))
 			Input.vibrate_handheld(20))
 		v.add_child(claim)
 		return
+	# "Перейти" справа от полоски: туда, где задание делается (локация с ресурсом, склад, мир со стрелками)
+	var go := UiKit.button(L.t("where.go"), "blue", 13, true)
+	go.custom_minimum_size = Vector2(92, 32)
+	go.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	go.pressed.connect(func() -> void: QuestsPanel.go(q))
+	bar_row.add_child(go)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	v.add_child(row)
@@ -216,6 +325,47 @@ func _quest_card(q: Dictionary) -> void:
 	free_btn.pressed.connect(func() -> void:
 		Ads.show_rewarded(func() -> void: Game.quests.reroll_quest(id, true)))
 	row.add_child(free_btn)
+
+
+## Кнопка "Перейти" у задания доски. Сбор - в открытую локацию с этим ресурсом (стрелка к ближайшей точке,
+## как "Где взять"), продажа - склад; остальное делается в мире (стрелки к складу, кладу, дикому зверю).
+static func go(q: Dictionary) -> void:
+	if Hud.current == null:
+		return
+	match str(q["type"]):
+		"gather":
+			var k := Quests.kind(q)
+			if k == "":
+				Hud.current.close_window()
+				return
+			var target := best_location(k)
+			if target == "":
+				WherePopup.open(k)
+				return
+			if target == Game.current or Game.world_map.travel(target):
+				Game.nav_target = k
+				Hud.current.close_window()
+			else:
+				WherePopup.open(k)
+		"sell":
+			Hud.current.open_named("storage")
+		_:
+			Hud.current.close_window()
+
+
+## Открытая локация, где есть ресурс: текущая, иначе с самым высоким уровнем (там точек больше).
+static func best_location(kind: String) -> String:
+	var best := ""
+	var best_level := -1
+	for s in WherePopup.sources(kind):
+		if s["kind"] != "location" or not s["open"]:
+			continue
+		if s["id"] == Game.current:
+			return Game.current
+		if int(s["level"]) > best_level:
+			best_level = int(s["level"])
+			best = s["id"]
+	return best
 
 
 # MARK: Жители
@@ -295,6 +445,7 @@ func _resident_card(id: String) -> void:
 		frow.add_child(gift)
 	if wants:
 		var b := UiKit.button(L.t("story.talk") if s == "new" else L.t("story.handIn"), "green", 15)
+		UiKit.attention(b)
 		b.pressed.connect(func() -> void:
 			DialogPopup.talk(id)
 			Input.vibrate_handheld(20))
@@ -380,8 +531,9 @@ func _achievement_row(a: Dictionary) -> void:
 		col.add_child(UiKit.label(L.t("achievements.earned"), 12, UiKit.GOOD))
 	elif can:
 		var b := UiKit.button(L.t("achievements.claim"), "orange", 13, true)
+		UiKit.attention(b)
 		b.pressed.connect(func() -> void:
-			Game.quests.claim(a)
+			RewardsPopup.track(func() -> void: Game.quests.claim(a))
 			Input.vibrate_handheld(20))
 		col.add_child(b)
 	else:
@@ -397,7 +549,7 @@ func _achievement_row(a: Dictionary) -> void:
 func _claim_all(count: int, action: Callable) -> Button:
 	var b := UiKit.button(L.t("common.claimAll", [count]), "green", 15)
 	b.pressed.connect(func() -> void:
-		action.call()
+		RewardsPopup.track(action)
 		Input.vibrate_handheld(20))
 	return b
 

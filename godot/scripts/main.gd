@@ -24,6 +24,7 @@ func _ready() -> void:
 	add_child(joy_layer)
 
 	hud = Hud.new()
+	hud.world = world
 	add_child(hud)
 	# Подписка MAX: пропуск текущего ивента и образ месяца
 	Game.shop.sync_max()

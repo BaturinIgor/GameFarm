@@ -75,6 +75,11 @@ func process(world: World, dt: float) -> void:
 		_arrow.track(world, target)
 
 
+## Пауза в меню: продукты зверей копятся дальше, остальное стоит.
+func background(world: World, dt: float) -> void:
+	_update_producers(world, dt, Game.stats)
+
+
 ## Герой не заходит в загон.
 func resolve(_w: World, p: Vector2, radius: float) -> Vector2:
 	if _pen_rect.size == Vector2.ZERO:

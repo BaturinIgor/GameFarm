@@ -2,27 +2,17 @@ class_name Hud
 extends CanvasLayer
 ## Шапка игры: уровень и опыт, монеты, рюкзак, кнопки окон, всплывающие сообщения и название локации.
 
-## Окна нижней панели: id, иконка, ключ подписи, скрипт окна. Кнопка есть, только если окно уже сделано.
-const WINDOWS := [
-	["storage", "chest", "hud.storage", "res://scripts/ui/storage_panel.gd"],
-	["workshop", "tool_hammer", "hud.workshop", "res://scripts/ui/workshop_panel.gd"],
-	["talents", "stardust", "hud.talents", "res://scripts/ui/talents_panel.gd"],
-	["animals", "paw", "hud.animals", "res://scripts/ui/animals_panel.gd"],
-	["quests", "scroll", "hud.quests", "res://scripts/ui/quests_panel.gd"],
-	["collection", "cards", "hud.collection", "res://scripts/ui/collection_panel.gd"],
-	["map", "map", "hud.map", "res://scripts/ui/map_panel.gd"],
-]
 const LEVEL_PANEL := "res://scripts/ui/level_panel.gd"
 ## Плашки справа под монетами (блюдо, этаж дома, ивент...): Control, сам прячется, когда не нужен.
 const PILLS := [
 	"res://scripts/ui/shop_pill.gd",
 	"res://scripts/ui/chest_pill.gd",
+	"res://scripts/ui/hot_offer_pill.gd",
 	"res://scripts/ui/home_floor_pill.gd",
 	"res://scripts/ui/dungeon_pill.gd",
 ]
 ## Маленькие плашки (таймеры): в один ряд с переносом, чтобы столбец справа не рос вниз.
 const MINI_PILLS := [
-	"res://scripts/ui/estate_pill.gd",
 	"res://scripts/ui/raid_pill.gd",
 	"res://scripts/ui/event_pill.gd",
 	"res://scripts/ui/meal_pill.gd",
@@ -30,8 +20,16 @@ const MINI_PILLS := [
 	"res://scripts/ui/event_map_pill.gd",
 ]
 
+## Карточки у NPC с одной главной кнопкой: вместо карточки внизу (там палец ведёт героя) над головой героя
+## кнопка-пузырь со значком и подписью главной кнопки. Карточка живёт скрытой, пузырь нажимает её кнопку.
+const BUBBLES := {"trader": "bag", "hunter": "sword", "pen": "paw", "house": "stairs", "resident": "scroll"}
+## Пузыри выше точки опоры героя на столько точек.
+const BUBBLE_LIFT := 112.0
+
 ## Текущая шапка: фичи сцены показывают через неё карточки и окна.
 static var current: Hud
+## Мир под шапкой: пока открыто окно или заставка, он на паузе (main.gd задаёт до add_child).
+var world: World
 
 var root := Control.new()
 var _prompts := VBoxContainer.new()
@@ -49,13 +47,18 @@ var _badge_box: PanelContainer
 var _portrait: TextureRect
 var _portrait_skin := ""
 var _prompt_cards: Dictionary = {}
+## Пузыри над героем: ключ карточки -> кнопка-пузырь.
+var _bubbles: Dictionary = {}
+var _bubble_row := HBoxContainer.new()
+## Скрытые карточки пузырей: живут здесь, чтобы их кнопки работали.
+var _bubble_cards := Control.new()
 var _overlay_layer := CanvasLayer.new()
 var _badges: Dictionary = {}
 var _level_label: Label
 var _level_name: Label
 var _xp_bar: ProgressBar
-## Ширина подписи нижней кнопки: 7 кнопок в ряд на узком экране.
-const TAB_LABEL_WIDTH := 44.0
+## Ширина подписи нижней кнопки: 5 кнопок в ряд на узком экране.
+const TAB_LABEL_WIDTH := 62.0
 
 var _coins_label: Label
 var _crystals_label: Label
@@ -271,10 +274,9 @@ func _build_bottom() -> void:
 	bar.offset_bottom = -6 - bottom
 	bar.add_theme_constant_override("separation", 5)
 	root.add_child(bar)
-	for w in WINDOWS:
-		if not ResourceLoader.exists(w[3]):
-			continue
-		bar.add_child(_hud_button(w))
+	# 5 вкладок (Nav.GROUPS): каждая открывает раздел, где что-то горит
+	for g in Nav.GROUPS:
+		bar.add_child(_hud_button(g))
 
 	# Карточки-подсказки над кнопками (приручить зверя, проход, дом...)
 	_prompts.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
@@ -287,6 +289,13 @@ func _build_bottom() -> void:
 	_prompts.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_prompts.add_theme_constant_override("separation", 8)
 	root.add_child(_prompts)
+	_bubble_cards.visible = false
+	_bubble_cards.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(_bubble_cards)
+	_bubble_row.add_theme_constant_override("separation", 8)
+	_bubble_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bubble_row.visible = false
+	root.add_child(_bubble_row)
 	# Зелье и расходники справа над нижней панелью, под карточками
 	_combat_row.size_flags_horizontal = Control.SIZE_SHRINK_END
 	_combat_row.add_theme_constant_override("separation", 8)
@@ -324,8 +333,9 @@ func _tutorial_card() -> Control:
 	return p
 
 
-## Кнопка нижней панели (HUDButton): иконка, подпись и счётчик.
+## Кнопка нижней панели (HUDButton): иконка, подпись и счётчик. w - вкладка из Nav.GROUPS.
 func _hud_button(w: Array) -> Control:
+	var center: bool = w[0] == Nav.CENTER
 	var b := Button.new()
 	var style := UiKit.pill_style()
 	style.set_corner_radius_all(14)
@@ -338,38 +348,39 @@ func _hud_button(w: Array) -> Control:
 	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	b.focus_mode = Control.FOCUS_NONE
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	b.custom_minimum_size = Vector2(0, 58)
+	b.size_flags_stretch_ratio = 1.25 if center else 1.0
+	b.size_flags_vertical = Control.SIZE_SHRINK_END
+	b.custom_minimum_size = Vector2(0, 66 if center else 58)
 	var col := VBoxContainer.new()
 	col.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 1)
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.add_child(col)
-	var ic := UiKit.icon(w[1], 30)
+	var ic := UiKit.icon(w[1], 36 if center else 30)
 	ic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	col.add_child(ic)
-	var t := UiKit.title(L.t(w[2]), 10)
+	var t := UiKit.title(L.t(w[2]), 11)
 	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	t.clip_text = true
 	t.set_meta("key", w[2])
-	t.set_meta("fit", 10)
-	UiKit.fit_label(t, TAB_LABEL_WIDTH, 10)
+	t.set_meta("fit", 11)
+	UiKit.fit_label(t, TAB_LABEL_WIDTH, 11)
 	col.add_child(t)
 	var badge := UiKit.count_badge(0)
 	badge.position = Vector2(0, -7)
 	badge.visible = false
 	b.add_child(badge)
 	_badges[w[0]] = badge
-	b.pressed.connect(func() -> void: open_named(w[0]))
+	b.pressed.connect(func() -> void:
+		Sound.play("tap")
+		Nav.open_group(w[0]))
 	return b
 
 
-## Открыть окно по имени из WINDOWS (storage, workshop, talents, ...).
+## Открыть раздел по имени (storage, workshop, talents, ... - см. Nav.SUBS).
 func open_named(id: String) -> void:
-	for w in WINDOWS:
-		if w[0] == id and ResourceLoader.exists(w[3]):
-			open_window(load(w[3]).new())
-			return
+	Nav.open_sub(id)
 
 
 ## Полноэкранная заставка поверх окон (новый уровень, доход за время без игры, клад).
@@ -405,36 +416,109 @@ func set_prompt(key: String, card: Control) -> void:
 		if is_instance_valid(old) and old != card:
 			old.queue_free()
 		_prompt_cards.erase(key)
+	if _bubbles.has(key):
+		var b: Control = _bubbles[key]
+		if is_instance_valid(b):
+			b.queue_free()
+		_bubbles.erase(key)
 	if card != null:
 		_prompt_cards[key] = card
-		if card.get_parent() == null:
+		if BUBBLES.has(key):
+			if card.get_parent() == null:
+				_bubble_cards.add_child(card)
+			var bubble := _make_bubble(key, card)
+			_bubbles[key] = bubble
+			_bubble_row.add_child(bubble)
+			_update_bubbles()
+		elif card.get_parent() == null:
 			_prompts.add_child(card)
 			if _potion != null:
 				_prompts.move_child(_combat_row, -1)
 
 
-func _update_badges() -> void:
-	for id in _badges:
+## Главная кнопка карточки (первая видимая кнопка) или null.
+static func _main_button(card: Control) -> Button:
+	for b in card.find_children("*", "Button", true, false):
+		if (b as Button).visible:
+			return b
+	return null
+
+
+## Пузырь: значок места и подпись главной кнопки карточки, счётчик, если он есть на карточке.
+func _make_bubble(key: String, card: Control) -> Button:
+	var b := UiKit.button("", "orange", 13, true)
+	b.custom_minimum_size = Vector2(0, 38)
+	b.icon = Sprites.icon(BUBBLES[key])
+	b.expand_icon = false
+	b.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	b.add_theme_constant_override("icon_max_width", 22)
+	b.set_meta("card", card)
+	b.pressed.connect(func() -> void:
+		var main := Hud._main_button(card)
+		if main != null and not main.disabled:
+			Sound.play("tap")
+			main.pressed.emit())
+	var badge := UiKit.count_badge(0)
+	badge.visible = false
+	b.add_child(badge)
+	b.set_meta("badge", badge)
+	b.resized.connect(func() -> void: badge.position = Vector2(b.size.x - 14.0, -8.0))
+	b.modulate.a = 0.0
+	b.create_tween().tween_property(b, "modulate:a", 1.0, 0.15)
+	return b
+
+
+## Подписи, доступность и счётчики пузырей - как на их карточках (карточки сами перестраиваются).
+func _update_bubbles() -> void:
+	for key in _bubbles.keys():
+		var b: Button = _bubbles[key]
+		if not is_instance_valid(b):
+			_bubbles.erase(key)
+			continue
+		var card: Control = b.get_meta("card")
+		if not is_instance_valid(card):
+			continue
+		var main := _main_button(card)
+		b.visible = main != null
+		if main == null:
+			continue
+		if b.text != main.text:
+			b.text = main.text
+		b.disabled = main.disabled
 		var n := 0
-		match id:
-			"map":
-				n = Game.world_map.openable_gates() + (1 if Game.premium.free_ticket_ready() else 0)
-			"workshop":
-				if Game.workshop.has_method("upgradable_count"):
-					n = Game.workshop.upgradable_count()
-			"talents":
-				if Game.talents.has_method("points_free"):
-					n = Game.talents.points_free()
-			"animals":
-				n = Game.animals.upgradable_count()
-			"quests":
-				if Game.quests.has_method("claimable_count"):
-					n = Game.quests.claimable_count()
-				n += Game.residents.attention_count()
-		var badge: PanelContainer = _badges[id]
+		for c in card.find_children("*", "PanelContainer", true, false):
+			if c.has_meta("count_badge") and (c as Control).visible:
+				var t := ((c as PanelContainer).get_child(0) as Label).text
+				n = int(t) if t.is_valid_int() else 1
+		var badge: PanelContainer = b.get_meta("badge")
 		badge.visible = n > 0
 		if n > 0:
 			(badge.get_child(0) as Label).text = str(n)
+
+
+## Пузыри держатся над головой героя и не выходят за края экрана.
+func _place_bubbles() -> void:
+	var any := false
+	for b in _bubble_row.get_children():
+		if (b as Control).visible and not b.is_queued_for_deletion():
+			any = true
+	_bubble_row.visible = any and world != null and not is_blocking()
+	if not _bubble_row.visible:
+		return
+	var head := world.get_viewport().get_canvas_transform() * (world.player.position - Vector2(0, BUBBLE_LIFT))
+	var size := _bubble_row.get_combined_minimum_size()
+	_bubble_row.size = size
+	var vw := get_viewport().get_visible_rect().size.x
+	_bubble_row.position = Vector2(clampf(head.x - size.x / 2.0, 8.0, vw - size.x - 8.0), head.y - size.y)
+
+
+func _update_badges() -> void:
+	for id in _badges:
+		var n := Nav.group_count(id)
+		var badge: PanelContainer = _badges[id]
+		badge.visible = n > 0
+		if n > 0:
+			(badge.get_child(0) as Label).text = str(mini(n, 99))
 			badge.position.x = badge.get_parent().size.x - 16
 
 
@@ -469,6 +553,12 @@ func _show_banner(id: String) -> void:
 
 
 func _process(delta: float) -> void:
+	if world != null:
+		world.set_paused(is_blocking())
+	if not _bubbles.is_empty():
+		_place_bubbles()
+	elif _bubble_row.visible:
+		_bubble_row.visible = false
 	_refresh -= delta
 	if _refresh <= 0.0:
 		_refresh = 0.2
@@ -508,6 +598,7 @@ func _refresh_values() -> void:
 	var tone := "red" if fraction >= 1.0 else ("orange" if fraction > 0.8 else "green")
 	(_pack_bar as GameBar).tone = tone
 	_update_badges()
+	_update_bubbles()
 	if _prompt_cards.has("tutorial") and bool(Game.save.get("tutorialDone", false)):
 		set_prompt("tutorial", null)
 
@@ -578,9 +669,26 @@ func _on_level_up(from: int, to: int) -> void:
 
 func open_window(w: Control) -> void:
 	close_window()
+	if w is Sheet and (w as Sheet).nav_group == "":
+		var where := Nav.locate(w)
+		if not where.is_empty():
+			(w as Sheet).nav_group = where[0]
+			(w as Sheet).nav_sub = where[1]
 	_window = w
 	root.add_child(w)
 	Sound.set_window_open(true)
+
+
+## Открыто окно или заставка поверх игры: мир в это время стоит, чтобы в меню не убили.
+func is_blocking() -> bool:
+	if has_window():
+		return true
+	if _overlay_layer.get_parent() == null:
+		return false
+	for c in _overlay_layer.get_children():
+		if not c.is_queued_for_deletion():
+			return true
+	return false
 
 
 ## Открыто ли сейчас окно (магазин, склад...).

@@ -40,6 +40,10 @@ func _process(delta: float) -> void:
 		0:
 			if _time > 1.5:
 				_shot("1_start")
+				# Заставки при входе (календарь, доход без игры) ставят мир на паузу: закрываем, чтобы герой пошёл
+				for _i in 6:
+					if not main.hud.is_blocking() or not main.hud.back():
+						break
 				_touch(ORIGIN, true)
 				_step = 1
 		1:
@@ -349,9 +353,9 @@ func _extra(k: int) -> void:
 			main.hud.open_window(ShopPanel.new("crystals"))
 		5:
 			_shot("6_shop_crystals_bought")
-			main.hud.open_window(MapPanel.new())
+			main.hud.open_window(MapPanel.new("expeditions"))
 		6:
-			_scroll_window(100000)
+			_scroll_window(0)
 		7:
 			_shot("6_map_expeditions")
 			main.hud.close_window()
@@ -380,20 +384,38 @@ func _extra(k: int) -> void:
 		12:
 			_shot("6_storage_full")
 			_check_layout("storage_full")
+			main.hud.open_window(QuestsPanel.new())
+		13:
+			_scroll_window(100000)
+		14:
+			_shot("6_quests_board")
+			main.hud.close_window()
+			# Окно наград: как после "Забрать всё" в ивенте
+			RewardsPopup.track(func() -> void:
+				Game.add_coins(1500)
+				Game.shop.add_crystals(12)
+				Game.save["tickets"] = int(Game.save.get("tickets", 0)) + 2
+				for res in ["wood", "stone", "berries", "fish", "apples"]:
+					Game.save["storage"][res] = int(Game.save["storage"].get(res, 0)) + 25)
+		15:
+			_shot("6_rewards")
+			for n in main.hud.find_children("*", "", true, false):
+				if n is RewardsPopup:
+					n.queue_free()
 			# Дикие звери дальних биомов внизу списка (перекрашенные листы)
 			main.hud.open_window(load("res://scripts/ui/animals_panel.gd").new("wild"))
-		13:
+		16:
 			_scroll_window(900)
-		14:
+		17:
 			_shot("6_animals_wild_mid")
 			_scroll_window(100000)
-		15:
+		18:
 			_shot("6_animals_wild_end")
 			# Сундуки: ключи, окно, открытие десяти сундуков с наградами всех цветов
 			Game.chests.add_keys("copper", 12, false)
 			Game.chests.add_keys("silver", 1, false)
 			main.hud.open_window(ChestsPanel.new())
-		16:
+		19:
 			_shot("6_chests")
 			_check_layout("chests")
 			var list: Array = []
@@ -405,9 +427,9 @@ func _extra(k: int) -> void:
 			for r in list:
 				Game.chests.give(r)
 			ChestOverlay.show_rewards("wood", list)
-		17:
+		20:
 			_shot("6_chest_shake")
-		23:
+		26:
 			_shot("6_chest_open10")
 			for n in main.hud.find_children("*", "", true, false):
 				if n is ChestOverlay:
@@ -415,13 +437,13 @@ func _extra(k: int) -> void:
 			var top := ChestSystem.make_reward("rainbow", 3, Game.level)
 			Game.chests.give(top)
 			ChestOverlay.show_rewards("ancient", [top])
-		29:
+		32:
 			_shot("6_chest_open1")
 			for n in main.hud.find_children("*", "", true, false):
 				if n is ChestOverlay:
 					n.queue_free()
 			main.hud.close_window()
-		30:
+		33:
 			_step = 5
 			_time = 300.0
 			_sub = 0

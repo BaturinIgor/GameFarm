@@ -1,7 +1,7 @@
 class_name ShopPill
 extends HBoxContainer
 ## Плашки справа под монетами: удача и магазин (порт LuckButton(.pill) и shopPill из HUDView).
-## Пока действует срочный набор (стартовый или по уровню), на плашке магазина золотой сундук и таймер.
+## Срочный набор и предложения дня показывает отдельная плашка под магазином (HotOfferPill).
 ## Новое предложение или кристаллы MAX - красная точка. Здесь же раз в полсекунды проверяется,
 ## не пора ли показать окно нового предложения (OfferPopup.check).
 
@@ -68,8 +68,9 @@ static func urgent_until() -> float:
 
 
 func _refresh() -> void:
-	var until := urgent_until()
-	var offer := until > 0.0
+	# Срочный набор теперь показывает горячее предложение (HotOfferPill) под магазином
+	var until := 0.0
+	var offer := false
 	_dot.visible = Game.shop.has_news()
 	if offer != _offer or not _built:
 		_offer = offer

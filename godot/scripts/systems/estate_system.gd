@@ -131,6 +131,15 @@ func upgrade_block(id: String) -> Array:
 	return []
 
 
+## Сколько зданий можно строить или улучшать прямо сейчас (хватает ресурсов и строителей).
+func upgradable_count() -> int:
+	var n := 0
+	for id in Estate.IDS:
+		if upgrade_block(id).is_empty() and can_afford(id):
+			n += 1
+	return n
+
+
 func can_afford(id: String) -> bool:
 	return Game.can_afford(Estate.build_cost(id, level(id) + 1))
 
