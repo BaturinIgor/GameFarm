@@ -37,6 +37,7 @@ var _pills := VBoxContainer.new()
 var _level_box: PanelContainer
 var _coin_box: PanelContainer
 var _energy: EnergyRow
+var _hp: CombatCards.HpStrip
 var _pack_box: PanelContainer
 var _potion: PotionButton
 ## Ряд справа над нижней панелью: расходники и зелье.
@@ -165,8 +166,9 @@ func _build_top() -> void:
 	# Энергия - под опытом, рядом со здоровьем
 	_energy = EnergyRow.new()
 	col.add_child(_energy)
-	# Здоровье: видно в бою или если ранен
-	col.add_child(CombatCards.HpStrip.new())
+	# Здоровье
+	_hp = CombatCards.HpStrip.new()
+	col.add_child(_hp)
 	_level_box = level_box
 
 	# Рюкзак справа под монетами (как в iOS), первой плашкой в столбце справа
@@ -590,6 +592,8 @@ func _refresh_values() -> void:
 		Fmt.compact(Game.mastery_xp() if Game.level >= Game.MAX_LEVEL else Game.xp_needed)]
 	_coins_label.text = Fmt.compact(int(Game.save["coins"]))
 	_crystals_label.text = Fmt.compact(Game.shop.crystals())
+	_hold_width(_coins_label)
+	_hold_width(_crystals_label)
 	_fit_top()
 	var cap := Game.stats.capacity
 	var fraction := minf(1.0, float(Game.backpack_count) / float(maxi(1, cap)))
@@ -601,6 +605,15 @@ func _refresh_values() -> void:
 	_update_bubbles()
 	if _prompt_cards.has("tutorial") and bool(Game.save.get("tutorialDone", false)):
 		set_prompt("tutorial", null)
+
+
+## Число в шапке не сужается обратно: иначе при каждой смене монет (бой, продажа) плашка справа и блок
+## уровня слева меняли ширину и прыгали. Ширина растёт до самого длинного числа за игру.
+func _hold_width(l: Label) -> void:
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	var w := ceilf(l.get_minimum_size().x)
+	if w > l.custom_minimum_size.x:
+		l.custom_minimum_size.x = w
 
 
 ## Блок уровня слева не заходит под монеты справа: название локации и полоска опыта сужаются.
@@ -617,6 +630,8 @@ func _fit_top() -> void:
 	_xp_bar.custom_minimum_size.x = w
 	if _energy != null:
 		_energy.bar.custom_minimum_size.x = maxf(40.0, w - 36.0)
+	if _hp != null:
+		_hp.bar.custom_minimum_size.x = maxf(40.0, w - 17.0)
 	_level_box.reset_size()
 
 
