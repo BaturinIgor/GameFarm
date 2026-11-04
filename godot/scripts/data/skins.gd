@@ -9,7 +9,7 @@ const IDS := [
 	"knight",
 	"harvester", "ranger", "miner", "sailor", "shepherd", "hunter", "stargazer",
 	"cultivator", "duelist", "falconer",
-	"autumn", "slimeKing", "frost", "surfer",
+	"autumn", "slimeKing", "frost", "surfer", "lamplighter", "blossom", "pirate", "starCatcher",
 ]
 
 ## Как открывается образ: [вид, значение]. Вид: free, level, product, constellation, event.
@@ -25,7 +25,8 @@ const UNLOCK := {
 	"stargazer": ["constellation", "sky"], "cultivator": ["constellation", "garden"],
 	"duelist": ["constellation", "dungeon"], "falconer": ["constellation", "birds"],
 	"autumn": ["event", "harvestFest"], "slimeKing": ["event", "slimeNight"], "frost": ["event", "winterTale"],
-	"surfer": ["event", "beachParty"],
+	"surfer": ["event", "beachParty"], "lamplighter": ["event", "lanternNight"], "blossom": ["event", "springGarden"],
+	"pirate": ["event", "pirateCove"], "starCatcher": ["event", "starfall"],
 }
 
 

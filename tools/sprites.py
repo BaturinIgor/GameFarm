@@ -255,6 +255,14 @@ SKINS = {
                   feet="Blue", crown=True, tone="pale"),
     "surfer": dict(hair=(1, "Blonde"), chest="OG_Shirt/Shirt_1_Orange", legs="Farmer_Pants/Farmer_Pants_1_Blue",
                    feet="Orange", tone="tan"),
+    "lamplighter": dict(hair=(3, "Black"), chest="Royal_Shirt/Royal_Shirt_1_Black", legs="OG_Pants/Pants_1_Brown",
+                        feet="Brown", hat="#2e2c34", tone="tan"),
+    "blossom": dict(hair=(4, "Pink"), chest="Farmer_Shirt/Farmer_Shirt_1_Pink", legs="Farmer_Pants/Farmer_Pants_1_Green",
+                    feet="Green", hat="#f2a8c8"),
+    "pirate": dict(hair=(2, "Black"), chest="Lumberjack_Shirt/Lumberjack_Shirt_1_Red", legs="OG_Pants/Pants_1_Black",
+                   feet="Black", hat="#1b1a20", tone="tan"),
+    "starCatcher": dict(hair=(6, "White"), chest="Royal_Shirt/Royal_Shirt_1_Blue", legs="Royal_Pants/Royal_Pants_1_Purple",
+                        feet="Purple", crown=True, tone="pale"),
     # Торговцы и стражник (не образы игрока)
     "guard": dict(helmet="Plate_Helmet_1/Plate_Helmet_1_Iron", chest="Plate_Chest/Plate_Chest_Iron",
                   legs="Plate_Legs/Plate_Legs_Iron", feet="Brown"),
@@ -601,6 +609,11 @@ save("ore_sulfur", lum_map(ore(0, "amber"), ["#3d3a12", "#9a9a1a", "#cfd23a", "#
 save("ore_star", lum_map(ore(4, "gold"), ["#4a3a20", "#c9a640", "#f2d872", "#fff2b0", "#ffffff"]))
 save("ice_block", lum_map(ore(1, "diamond"), ["#2a4660", "#5f93b8", "#a8d4f0", "#d8f0ff", "#ffffff"]))
 save("rubble", ore(5, "stone"))
+# Особые точки новых праздников
+_posts = load("Outdoor decoration", "Lanter_Posts.png")
+save("lantern_post", crop_opaque(_posts.crop((0, 144, 16, 192))))
+save("lantern_post_off", lum_map(crop_opaque(_posts.crop((0, 144, 16, 192))), ["#1b1a20", "#3a3644", "#5a5666", "#7a7686"],
+                                  mask=lambda p: hsv(p)[1] > 0.5 and hsv(p)[0] < 0.17))
 for _mat in ORE_ROWS:
     save(f"chunk_{_mat}", ore(3, _mat))
 save("chunk_coal", lum_map(ore(3, "stone"), ["#050408", "#1b1a20", "#2e2c34", "#45424e"], mask=lambda p: p[:3] != hexc(OUTLINE)))
