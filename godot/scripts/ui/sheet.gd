@@ -20,6 +20,10 @@ var _scroll := ScrollContainer.new()
 var _dirty := true
 var _to_top := false
 var _rebuild_cd := 0.0
+## Плавное появление снизу. Выключается, когда окно сменяет другое окно (переход между разделами):
+## иначе при каждом переключении окно гасло и выезжало заново - мигало.
+var animate_in := true
+var _nav_sig := ""
 
 ## Поля содержимого слева и справа.
 const BODY_MARGIN := 14.0
@@ -90,6 +94,10 @@ func _ready() -> void:
 		_title.text = L.t(title_key)
 		_fit_title()
 		_dirty = true)
+	# Первое заполнение ещё до отрисовки кадра: окно не показывается пустым
+	_refresh.call_deferred()
+	if not animate_in:
+		return
 	# Появление снизу
 	_panel.modulate.a = 0.0
 	_panel.position.y += 40
@@ -103,29 +111,38 @@ func _process(delta: float) -> void:
 	# Не перестраиваем окно под пальцем (нажатие потерялось бы) и не чаще 4 раз в секунду:
 	# звери и плита меняют игру постоянно
 	if _dirty and (_to_top or (_rebuild_cd <= 0.0 and not UiKit.touch_held(_panel))):
-		_dirty = false
-		_rebuild_cd = 0.25
-		_coins.text = Fmt.n(Game.shop.crystals() if header_currency == "crystals" else int(Game.save["coins"]))
-		var keep := 0 if _to_top else _scroll.scroll_vertical
-		_to_top = false
-		_build_nav()
-		for c in top_bar.get_children():
-			c.queue_free()
-		build_top()
-		top_bar.visible = top_bar.get_child_count() > 0
-		for c in content.get_children():
-			c.queue_free()
-		build()
-		touch_scroll(content)
-		_scroll.set_deferred("scroll_vertical", keep)
+		_refresh()
+
+
+func _refresh() -> void:
+	if not _dirty or not is_inside_tree():
+		return
+	_dirty = false
+	_rebuild_cd = 0.25
+	_coins.text = Fmt.n(Game.shop.crystals() if header_currency == "crystals" else int(Game.save["coins"]))
+	var keep := 0 if _to_top else _scroll.scroll_vertical
+	_to_top = false
+	_build_nav()
+	UiKit.clear(top_bar)
+	build_top()
+	top_bar.visible = top_bar.get_child_count() > 0
+	UiKit.clear(content)
+	build()
+	touch_scroll(content)
+	_scroll.set_deferred("scroll_vertical", keep)
 
 
 ## Полоса разделов вкладки (счётчики меняются вместе с игрой).
 func _build_nav() -> void:
 	if nav_group == "":
 		return
-	for c in _nav_holder.get_children():
-		c.queue_free()
+	# Полоса не изменилась (те же счётчики и язык) - не пересобираем: окно обновляется
+	# по 4 раза в секунду, и пересборка заставляла вкладки мигать
+	var sig := Nav.signature(nav_group, nav_sub)
+	if sig == _nav_sig and _nav_holder.get_child_count() > 0:
+		return
+	_nav_sig = sig
+	UiKit.clear(_nav_holder)
 	var b := Nav.bar(nav_group, nav_sub)
 	_nav_holder.visible = b != null
 	if b != null:
@@ -219,7 +236,7 @@ func _fit_title() -> void:
 	if room <= 0.0:
 		room = get_viewport_rect().size.x - 28.0 - 208.0
 	var fs := 20
-	while fs > 14 and UiKit.font().get_string_size(_title.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 12.0 > room:
+	while fs > 12 and UiKit.font().get_string_size(_title.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 12.0 > room:
 		fs -= 1
 	if _title.label_settings.font_size != fs:
 		_title.label_settings.font_size = fs

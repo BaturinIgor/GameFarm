@@ -37,8 +37,7 @@ func _process(_delta: float) -> void:
 
 
 func _build() -> void:
-	for c in _row.get_children():
-		c.queue_free()
+	UiKit.clear(_row)
 	var ic := UiKit.icon("compass", 20)
 	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_row.add_child(ic)

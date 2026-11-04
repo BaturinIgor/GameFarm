@@ -5,6 +5,10 @@ extends HBoxContainer
 ## Новое предложение или кристаллы MAX - красная точка. Здесь же раз в полсекунды проверяется,
 ## не пора ли показать окно нового предложения (OfferPopup.check).
 
+## Общий размер плашек столбца справа: магазин, сундуки, горячее предложение.
+const WIDTH := 112.0
+const HEIGHT := 34.0
+
 var _shop := Button.new()
 var _row := HBoxContainer.new()
 var _icon: TextureRect
@@ -40,9 +44,8 @@ func _init() -> void:
 	_row.add_child(_text)
 	_dot = UiKit.count_badge(0)
 	(_dot.get_child(0) as Label).text = "!"
-	_dot.position = Vector2(-6, -7)
 	_dot.visible = false
-	_shop.add_child(_dot)
+	UiKit.pin_badge(_dot, _shop)
 	_refresh()
 
 
@@ -91,4 +94,5 @@ func _refresh() -> void:
 		_text.text = House.countdown(until - Time.get_unix_time_from_system())
 	else:
 		_text.text = L.t("shop.short")
-	_shop.custom_minimum_size = _row.get_combined_minimum_size() + Vector2(16, 10)
+	# Магазин, сундуки и горячее предложение - одной ширины, правые края в линию
+	_shop.custom_minimum_size = Vector2(maxf(ShopPill.WIDTH, _row.get_combined_minimum_size().x + 16.0), ShopPill.HEIGHT)

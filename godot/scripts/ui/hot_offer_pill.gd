@@ -35,7 +35,7 @@ func _init() -> void:
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(row)
-	_icon = UiKit.icon("chest_gold", 24)
+	_icon = UiKit.icon("flame", 24)
 	_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(_icon)
 	var col := VBoxContainer.new()
@@ -53,7 +53,7 @@ func _init() -> void:
 	_timer.label_settings.outline_color = Color("7a1a0e")
 	col.add_child(_timer)
 	# Постоянная ширина под таймер "00:00:00": плашка не прыгает каждую секунду
-	custom_minimum_size = Vector2(104, 40)
+	custom_minimum_size = Vector2(ShopPill.WIDTH, 40)
 	resized.connect(func() -> void: pivot_offset = size / 2.0)
 	pressed.connect(func() -> void:
 		Sound.play("tap")
@@ -78,7 +78,7 @@ func _process(delta: float) -> void:
 static func current() -> Array:
 	var until := ShopPill.urgent_until()
 	if until > Time.get_unix_time_from_system():
-		return ["bundle", "chest_gold", until]
+		return ["bundle", "flame", until]
 	var shop := Game.shop
 	if not shop.flash_bought():
 		return ["flash", "gem", Time.get_unix_time_from_system() + ShopSystem.next_day_in()]

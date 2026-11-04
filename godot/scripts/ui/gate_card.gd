@@ -39,8 +39,7 @@ func _process(delta: float) -> void:
 
 
 func _build() -> void:
-	for c in _row.get_children():
-		c.queue_free()
+	UiKit.clear(_row)
 	var gate := WorldGraph.gate(gate_id)
 	if gate.is_empty():
 		return
