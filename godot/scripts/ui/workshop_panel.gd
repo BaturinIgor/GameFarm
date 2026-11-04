@@ -27,6 +27,14 @@ func build() -> void:
 			content.add_child(c)
 
 
+## Открыли из нижней панели: вкладка, где есть что улучшить.
+func focus_attention() -> void:
+	for t in TABS:
+		if Game.workshop.upgradable_among(TABS[t]) > 0:
+			tab = t
+			return
+
+
 ## Вкладки закреплены под шапкой: прокручивается только содержимое.
 func build_top() -> void:
 	_tabs()
@@ -99,6 +107,8 @@ func _tool_card(tool: String) -> void:
 		c.add_child(UiKit.cost_view(cost))
 		var b := UiKit.button(L.t("workshop.upgrade") if level_ok else L.t("common.needLevel", [need]), "green")
 		b.disabled = not level_ok or not Game.can_afford(cost)
+		if not b.disabled:
+			UiKit.attention(b)
 		b.pressed.connect(func() -> void: Game.workshop.upgrade(tool))
 		c.add_child(b)
 	else:

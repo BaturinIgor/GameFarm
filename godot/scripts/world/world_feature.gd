@@ -13,6 +13,12 @@ func process(_world: World, _dt: float) -> void:
 	pass
 
 
+## Каждый кадр, пока мир на паузе (открыто окно): только то, что должно идти и в меню
+## (звери-производители). Монстры, бой и герой в это время стоят.
+func background(_world: World, _dt: float) -> void:
+	pass
+
+
 ## Перед перестройкой карты: забыть ссылки на узлы.
 func clear(_world: World) -> void:
 	pass
