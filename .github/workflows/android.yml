@@ -113,6 +113,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run tests
+        run: |
+          set +e
+          timeout 300 ~/godot-bin/godot --headless --path godot -- --run-tests > tests.log 2>&1
+          code=$?
+          grep -vE "^ok " tests.log | tail -60
+          if [ $code -ne 0 ]; then
+            echo "::error::Tests failed (godot/tests, see tests.log)"
+            exit 1
+          fi
+
       - name: Smoke run (scripts load, first frames)
         run: |
           set +e
@@ -163,7 +174,7 @@ jobs:
         if: always()
         run: |
           mkdir -p /tmp/logs
-          cp import.log check.log run.log export.log shots.log splash.log /tmp/logs/ 2>/dev/null || true
+          cp import.log check.log tests.log run.log export.log shots.log splash.log /tmp/logs/ 2>/dev/null || true
           cp -r shots /tmp/logs/ 2>/dev/null || true
           grep -hE "ERROR|SCRIPT ERROR|error" /tmp/logs/*.log 2>/dev/null | head -30 | sed 's/^/::warning::/' || true
           git config user.name "ci"
@@ -184,6 +195,7 @@ jobs:
           name: godot-logs
           path: |
             import.log
+            tests.log
             run.log
             export.log
           if-no-files-found: ignore

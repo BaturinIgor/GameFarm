@@ -21,7 +21,7 @@ func rank(id: String) -> int:
 
 func points_total() -> int:
 	return Game.talent_points_at(Game.level) + int(Game.save.get("bonusTalentPoints", 0)) \
-		+ int(Game.legacy.value("talent")) + dungeon_points()
+		+ int(Game.legacy.value("talent")) + dungeon_points() + Game.mastery_points()
 
 
 ## Очко таланта за первую победу над каждым боссом подземелий (этажи 5 и 10).

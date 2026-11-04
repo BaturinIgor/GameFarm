@@ -1,7 +1,8 @@
 class_name Events
 ## Ивенты (порт Events.swift): каждую неделю новый праздник со своей картой, очками и пропуском наград.
 ## Проход ивента (EventRun) - словарь {event, index, start, end, key}, даты - unix-секунды.
-## Награда пропуска - словарь {type, n}: coins, tickets, seeds, dish, cards, sparks, maps, decor, skin.
+## Награда пропуска - словарь {type, n}: coins, tickets, seeds, dish, cards, sparks, maps, decor, skin,
+## или товар {type: "goods", kind, hours}.
 
 const IDS := ["harvestFest", "slimeNight", "winterTale", "beachParty"]
 
@@ -128,29 +129,32 @@ static func clear_coins(stage: int, level: int) -> int:
 	return coins(60 + 15 * stage, level)
 
 
-## Монстры становятся сильнее с каждым этапом.
+## Монстры ивента - на уровне героя и сильнее с каждым этапом: 1 этап - уровень героя - 1,
+## 10 этап - +2, 20 этап - +6, 30 этап - +10. Раньше считалось от половины уровня героя, и бой был слишком лёгким.
 static func monster_level(player_level: int, stage: int) -> int:
-	return maxi(2, player_level / 2 + 1) + (stage - 1) * 2 / 3
+	return maxi(2, player_level - 1) + (stage - 1) * 2 / 5
 
 
 static func monster_count(base: int, stage: int) -> int:
-	return base + (stage - 1) / 3
+	return base + (stage - 1) / 2
 
 
 ## Сколько особых свойств у монстра на этапе.
 static func traits(stage: int) -> int:
 	var r := randf()
-	if stage < 4:
+	if stage < 2:
 		return 0
-	if stage < 8:
+	if stage < 5:
 		return 1 if r < 0.35 else 0
-	if stage < 13:
-		return 2 if r < 0.25 else 1
-	return 2 if r < 0.5 else 1
+	if stage < 10:
+		return 2 if r < 0.3 else 1
+	if stage < 15:
+		return 2 if r < 0.6 else 1
+	return 3 if r < 0.3 else 2
 
 
 static func boss_traits(stage: int) -> int:
-	return mini(4, 1 + stage / 5)
+	return mini(5, 2 + stage / 5)
 
 
 ## Босс этапа у каждого праздника.
@@ -203,53 +207,52 @@ static func tier(points: int) -> int:
 	return t
 
 
+## Награды пропуска идут по кругу из 10 ступеней и растут к концу пропуска, поэтому подходят
+## под любую длину (TIERS). Половина монетных ступеней - товары для стройки: доски, кирпич, слитки
+## (goods: столько, сколько здание делает за hours часов на уровне героя, см. Estate.reward_goods).
 static func free_reward(tier_n: int) -> Dictionary:
-	match tier_n:
-		1: return {"type": "coins", "n": 200}
-		2: return {"type": "seeds", "n": 4}
-		3: return {"type": "cards", "n": 1}
-		4: return {"type": "coins", "n": 350}
-		5: return {"type": "tickets", "n": 1}
+	var k := _growth(tier_n)
+	if tier_n >= TIERS:
+		return {"type": "goods", "kind": "planks", "hours": 6.0}
+	match (tier_n - 1) % 10:
+		0: return {"type": "goods", "kind": "planks", "hours": _hours(2.0, k)}
+		1: return {"type": "seeds", "n": int(round(4.0 * k))}
+		2: return {"type": "cards", "n": 1}
+		3: return {"type": "coins", "n": int(round(350.0 * k))}
+		4: return {"type": "tickets", "n": 1}
+		5: return {"type": "goods", "kind": "brick", "hours": _hours(3.0, k)}
 		6: return {"type": "dish", "n": 1}
-		7: return {"type": "coins", "n": 500}
-		8: return {"type": "cards", "n": 1}
-		9: return {"type": "seeds", "n": 6}
-		10: return {"type": "decor", "n": 1}
-		11: return {"type": "coins", "n": 700}
-		12: return {"type": "maps", "n": 1}
-		13: return {"type": "tickets", "n": 1}
-		14: return {"type": "cards", "n": 2}
-		15: return {"type": "sparks", "n": 1}
-		16: return {"type": "coins", "n": 1000}
-		17: return {"type": "tickets", "n": 2}
-		18: return {"type": "dish", "n": 2}
-		19: return {"type": "cards", "n": 2}
-		_: return {"type": "coins", "n": 2000}
+		7: return {"type": "goods", "kind": "planks", "hours": _hours(3.0, k)}
+		8: return {"type": "maps", "n": 1}
+	# Каждая десятая: украшение праздника, дальше - искры
+	return {"type": "decor", "n": 1} if tier_n == 10 else {"type": "sparks", "n": 1}
 
 
 static func vip_reward(tier_n: int) -> Dictionary:
-	match tier_n:
-		1: return {"type": "coins", "n": 500}
-		2: return {"type": "tickets", "n": 1}
-		3: return {"type": "cards", "n": 2}
-		4: return {"type": "dish", "n": 2}
-		5: return {"type": "sparks", "n": 1}
-		6: return {"type": "coins", "n": 900}
-		7: return {"type": "tickets", "n": 2}
-		8: return {"type": "seeds", "n": 10}
-		9: return {"type": "maps", "n": 1}
-		10: return {"type": "sparks", "n": 2}
-		11: return {"type": "coins", "n": 1500}
-		12: return {"type": "dish", "n": 3}
-		13: return {"type": "tickets", "n": 2}
-		14: return {"type": "cards", "n": 3}
-		15: return {"type": "sparks", "n": 2}
-		16: return {"type": "coins", "n": 2500}
-		17: return {"type": "tickets", "n": 3}
-		18: return {"type": "maps", "n": 2}
-		19: return {"type": "sparks", "n": 3}
+	var k := _growth(tier_n)
+	if tier_n >= TIERS:
 		# Последняя платная ступень: образ и час бесконечной энергии
-		_: return {"type": "skin", "n": 1, "energy": 60}
+		return {"type": "skin", "n": 1, "energy": 60}
+	match (tier_n - 1) % 10:
+		0: return {"type": "goods", "kind": "planks", "hours": _hours(4.0, k)}
+		1: return {"type": "tickets", "n": int(round(1.0 * k))}
+		2: return {"type": "cards", "n": 2}
+		3: return {"type": "dish", "n": 2}
+		4: return {"type": "goods", "kind": "iron_bar", "hours": _hours(4.0, k)}
+		5: return {"type": "coins", "n": int(round(900.0 * k))}
+		6: return {"type": "goods", "kind": "planks", "hours": _hours(5.0, k)}
+		7: return {"type": "seeds", "n": int(round(8.0 * k))}
+		8: return {"type": "maps", "n": 1}
+	return {"type": "sparks", "n": 2}
+
+
+## Награды к концу пропуска больше: от x1 на первой ступени до x2 на последней.
+static func _growth(tier_n: int) -> float:
+	return 1.0 + float(clampi(tier_n, 1, TIERS) - 1) / float(maxi(1, TIERS - 1))
+
+
+static func _hours(base: float, k: float) -> float:
+	return snappedf(base * k, 0.5)
 
 
 ## Монеты в наградах растут с уровнем.
@@ -260,6 +263,10 @@ static func coins(base: int, level: int) -> int:
 ## Бонусный сундук после всех ступеней.
 static func bonus_coins(level: int) -> int:
 	return coins(600, level)
+
+
+## Доски в бонусном сундуке: 2 часа работы лесопилки.
+const BONUS_PLANKS_HOURS := 2.0
 
 
 # MARK: Усиления этапов

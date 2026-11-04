@@ -40,10 +40,15 @@ static func _make(sheet_name: String, sheet_cell: float, idle_rows: Array, walk_
 ## Лист зверя или null, если спрайта нет.
 static func of(id: String) -> AnimalSheet:
 	var n := "an_" + id
-	# Перекрашенный зверь: лист другого зверя в своих цветах
+	# Перекрашенный зверь: лист другого зверя в своих цветах (по яркости)
 	var base := Animals.base_sheet(id)
-	if base != id and not Sprites.recolor(n, "an_" + base, Animals.recolor(id)):
-		return null
+	if base != id:
+		if not Sprites.recolor(n, "an_" + base, Animals.recolor(id)):
+			return null
+	else:
+		# Звери за кристаллы - лист зверя пака, цвет умножается (tint)
+		base = Animals.sheet_of(id)
+		n = "an_" + base
 	var sheet: AnimalSheet
 	match base:
 		"cow", "horse", "pig", "sheep", "unicorn":
@@ -90,6 +95,13 @@ static func icon(id: String) -> Texture2D:
 		a.atlas = base
 		a.region = rect
 		out = a
+		var tint := Animals.tint(id)
+		if tint != Color.WHITE and img != null:
+			var part := img.get_region(Rect2i(rect))
+			for y in part.get_height():
+				for x in part.get_width():
+					part.set_pixel(x, y, part.get_pixel(x, y) * tint)
+			out = ImageTexture.create_from_image(part)
 	_icons[id] = out
 	return out
 

@@ -13,6 +13,8 @@ const IDS := [
 	"jerboa", "crystalMouse", "salamander", "amberButterfly", "starButterfly",
 	# Из стартового набора
 	"duckHat",
+	# За кристаллы: перекрашенные звери пака
+	"draftHorse", "emberRooster", "moonUnicorn",
 ]
 
 ## Старые звери из прошлых версий: во что они превращаются в сохранении.
@@ -24,7 +26,8 @@ const MIGRATION := {
 	"crab": "duck", "phoenix": "goldenGoose", "lavasaur": "unicorn", "eagle": "swan", "dove": "goldenGoose", "lion": "duckHat",
 }
 
-## source: "shop" (price, level), "wild" (location, cost, weight) или "premium" (только из платного набора).
+## source: "shop" (price, level), "wild" (location, cost, weight), "premium" (только из платного набора)
+## или "crystal" (price в кристаллах, level). sheet - чей лист спрайтов взять, tint - во что перекрасить.
 const SPECS := {
 	"chicken": {"emoji": "🐔", "source": "shop", "price": 200, "level": 2,
 		"effects": [{"type": "produce", "kind": "egg", "interval": 25.0}]},
@@ -97,7 +100,22 @@ const SPECS := {
 
 	"duckHat": {"emoji": "🦆", "source": "premium",
 		"effects": [{"type": "yield", "v": 0.08}, {"type": "xp", "v": 0.1}, {"type": "sell", "v": 0.1}]},
+
+	# За кристаллы: покупка и каждая звезда - в кристаллах
+	"draftHorse": {"emoji": "🐎", "source": "crystal", "price": 150, "level": 8, "sheet": "horse",
+		"tint": Color(0.68, 0.5, 0.36),
+		"effects": [{"type": "produce", "kind": "planks", "interval": 120.0}, {"type": "speed", "v": 0.06}]},
+	"emberRooster": {"emoji": "🐓", "source": "crystal", "price": 120, "level": 12, "sheet": "rooster",
+		"tint": Color(1.0, 0.62, 0.42),
+		"effects": [{"type": "xp", "v": 0.12}, {"type": "respawn", "v": 0.1}]},
+	"moonUnicorn": {"emoji": "🦄", "source": "crystal", "price": 300, "level": 20, "sheet": "unicorn",
+		"tint": Color(0.66, 0.74, 1.0),
+		"effects": [{"type": "helper", "spec": {"damage": 20.0, "interval": 1.0, "tools": ["hand", "axe", "pickaxe"], "max_tier": 7}},
+			{"type": "yield", "v": 0.08}]},
 }
+
+## Звезда зверя за кристаллы дороже предыдущей во столько раз.
+const CRYSTAL_GROWTH := 1.4
 
 # Пробуждение зверей
 const AWAKEN_MAX := 3
@@ -181,6 +199,26 @@ static func is_premium(id: String) -> bool:
 static func shop_level(id: String) -> int:
 	var s := spec(id)
 	return int(s["level"]) if s.get("source", "") == "shop" else -1
+
+
+## Зверь за кристаллы.
+static func is_crystal(id: String) -> bool:
+	return spec(id).get("source", "") == "crystal"
+
+
+## С какого уровня продаётся за кристаллы (-1 - не продаётся).
+static func crystal_level(id: String) -> int:
+	return int(spec(id)["level"]) if is_crystal(id) else -1
+
+
+## Чей лист спрайтов (у перекрашенных зверей - чужой).
+static func sheet_of(id: String) -> String:
+	return str(spec(id).get("sheet", id))
+
+
+## Перекраска (умножение цвета) или белый, если зверь свой.
+static func tint(id: String) -> Color:
+	return spec(id).get("tint", Color.WHITE)
 
 
 static func shop_base_price(id: String) -> int:

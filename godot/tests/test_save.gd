@@ -1,0 +1,70 @@
+extends "res://tests/test_case.gd"
+## Сохранение: запись и чтение, старые и испорченные файлы.
+
+
+func _write(text: String) -> void:
+	var f := FileAccess.open(Game.save_path, FileAccess.WRITE)
+	f.store_string(text)
+	f.close()
+
+
+func test_tests_do_not_touch_real_save() -> void:
+	check(Game.save_path != Game.SAVE_PATH, "автотесты пишут в отдельный файл")
+
+
+func test_roundtrip_keeps_progress() -> void:
+	set_level(17)
+	Game.save["coins"] = 12345
+	Game.save["storage"]["wood"] = 77
+	Game.save["talents"]["power"] = 3
+	Game.shop.add_crystals(42)
+	Game.save_now()
+	var loaded: Dictionary = Game._load_save()
+	eq(loaded["level"], 17)
+	eq(loaded["coins"], 12345)
+	eq(loaded["storage"]["wood"], 77)
+	eq(loaded["talents"]["power"], 3)
+	eq(int(loaded["crystals"]), 42)
+	eq(typeof(loaded["coins"]), TYPE_INT, "числа после JSON целые")
+
+
+func test_full_roundtrip_through_defaults() -> void:
+	# Сохранение после игры загружается всеми системами без ошибок
+	set_level(30)
+	Game.save_now()
+	var loaded: Dictionary = Game._load_save()
+	for sys in Game.systems:
+		sys.defaults(loaded)
+	Game.save = loaded
+	Game.recalc()
+	eq(Game.level, 30)
+
+
+func test_broken_file_starts_fresh() -> void:
+	expect_engine_errors()
+	_write("{not json")
+	var loaded: Dictionary = Game._load_save()
+	eq(loaded["level"], 1, "испорченный файл - игра с нуля")
+
+
+func test_unknown_location_falls_back() -> void:
+	_write(JSON.stringify({"economy": Game.ECONOMY, "current": "nowhere", "unlocked": []}))
+	var loaded: Dictionary = Game._load_save()
+	eq(loaded["current"], "meadow")
+	check("meadow" in loaded["unlocked"], "луг всегда открыт")
+
+
+func test_old_economy_keeps_purchases() -> void:
+	_write(JSON.stringify({"economy": 1, "level": 40, "coins": 99999, "crystals": 250, "purchases": ["starter"]}))
+	var loaded: Dictionary = Game._load_save()
+	Game.economy_reset = false
+	eq(loaded["level"], 1, "прогресс старой экономики сброшен")
+	eq(int(loaded["crystals"]), 250, "кристаллы сохранены")
+	eq(loaded["purchases"], ["starter"], "покупки сохранены")
+
+
+func test_float_numbers_become_int() -> void:
+	_write('{"economy": %d, "level": 5.0, "coins": 100.0, "storage": {"wood": 3.0}}' % Game.ECONOMY)
+	var loaded: Dictionary = Game._load_save()
+	eq(typeof(loaded["level"]), TYPE_INT)
+	eq(typeof(loaded["storage"]["wood"]), TYPE_INT)

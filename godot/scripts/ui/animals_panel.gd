@@ -28,6 +28,12 @@ func build() -> void:
 			for id in Animals.IDS:
 				if Animals.shop_level(id) >= 0:
 					_row(id, "shop")
+			# Звери за кристаллы: покупка и каждая звезда - кристаллами
+			content.add_child(CombatCards.section_title(L.t("animals.crystal.section")))
+			content.add_child(_wrap(UiKit.label(L.t("animals.crystal.hint"), 12, UiKit.INK_SOFT)))
+			for id in Animals.IDS:
+				if Animals.is_crystal(id):
+					_row(id, "shop")
 		"wild":
 			content.add_child(_wrap(UiKit.label(L.t("animals.wild.hint"), 14, UiKit.INK_SOFT)))
 			for id in Animals.IDS:
@@ -95,6 +101,14 @@ func _slots() -> void:
 		var id: String = team[i] if i < team.size() else ""
 		row.add_child(_slot(id))
 	box.add_child(_wrap(UiKit.label(L.t("animals.slots.hint"), 12, UiKit.INK_SOFT)))
+	# Ещё место рядом с героем за кристаллы
+	var price := a.slot_price()
+	if price > 0:
+		var buy := MapPanel.icon_button([["t", L.t("animals.slot.buy")], ["i", "gem"], ["t", Fmt.n(price)]], "purple", 13)
+		buy.pressed.connect(func() -> void:
+			if not Game.animals.buy_slot():
+				Game.show_toast("px:gem", L.t("crystals.notEnough", [Fmt.n(price - Game.shop.crystals())])))
+		box.add_child(buy)
 
 
 func _slot(id: String) -> Button:
@@ -258,7 +272,33 @@ func _mine_actions(c: VBoxContainer, id: String) -> void:
 	c.add_child(b)
 
 
+## Покупка звезды за кристаллы.
+func _crystal_actions(c: VBoxContainer, id: String, stars: int) -> void:
+	if stars >= Animals.MAX_STARS:
+		c.add_child(UiKit.label(L.t("animals.maxStars"), 14, UiKit.GOOD))
+		return
+	var level := Animals.crystal_level(id)
+	var price := Game.animals.crystal_price(id)
+	if Game.level < level:
+		var lb := UiKit.button(L.t("common.needLevel", [level]), "gray", 15, true)
+		lb.disabled = true
+		c.add_child(lb)
+		return
+	var text := L.t("animals.moreStar") if stars > 0 else L.t("common.buy")
+	var b := MapPanel.icon_button([["t", text], ["i", "gem"], ["t", Fmt.n(price)]], "purple", 15)
+	b.custom_minimum_size = Vector2(0, 46)
+	b.pressed.connect(func() -> void:
+		if Game.animals.buy_crystal(id):
+			Input.vibrate_handheld(20)
+		else:
+			Game.show_toast("px:gem", L.t("crystals.notEnough", [Fmt.n(price - Game.shop.crystals())])))
+	c.add_child(b)
+
+
 func _shop_actions(c: VBoxContainer, id: String, stars: int) -> void:
+	if Animals.is_crystal(id):
+		_crystal_actions(c, id, stars)
+		return
 	var level := Animals.shop_level(id)
 	if level < 0:
 		return

@@ -43,6 +43,8 @@ const RECIPES := {
 	"cut_gem": [["diamond", 2]],
 	"jewel": [["gold_bar", 1], ["amber", 1]],
 }
+## Доски и рейки нужны почти на каждую стройку: лесопилка делает их быстрее остальных цехов.
+const GOOD_RATE := {"planks": 1.5, "slats": 1.5}
 const GOODS := ["planks", "slats", "brick", "lime", "iron_bar", "gold_bar", "flour", "oil", "cloth", "silk", "cut_gem", "jewel"]
 const MARKUP := 1.25
 ## С какого уровня стройки нужны редкие материалы диких земель.
@@ -55,9 +57,9 @@ const BUILD_GROWTH := 1.48
 const PROD_BASE := 25.0
 const PROD_GROWTH := 1.17
 ## Как в Hay Day: два хранилища с общей вместимостью. Амбар - урожай, еда и продукты ферм, склад - всё остальное.
-## Вместимость 1000 * 1.3^(n-1) у склада и 600 * 1.3^(n-1) у амбара.
+## Вместимость 1000 * 1.3^(n-1) у склада и 800 * 1.3^(n-1) у амбара.
 const STORAGE_BASE := 1000.0
-const BARN_BASE := 600.0
+const BARN_BASE := 800.0
 const STORAGE_GROWTH := 1.3
 const BARN_CATEGORIES := ["crop", "food", "farm"]
 ## Сколько часов копит здание (Pro - больше).
@@ -157,7 +159,7 @@ static func price(kind: String) -> int:
 static func per_hour(good: String, n: int) -> float:
 	if n <= 0:
 		return 0.0
-	return PROD_BASE * pow(PROD_GROWTH, float(n - 1)) / float(price(good))
+	return PROD_BASE * pow(PROD_GROWTH, float(n - 1)) / float(price(good)) * float(GOOD_RATE.get(good, 1.0))
 
 
 ## Вместимость хранилища ("storage" или "barn") на уровне n.
@@ -176,6 +178,24 @@ static func speedup_crystals(seconds: float) -> int:
 	if seconds <= 0.0:
 		return 0
 	return int(ceil(2.0 * pow(seconds / 3600.0, 0.8))) + 1
+
+
+## Здание, которое делает товар ("" - это не товар).
+static func maker_of(good: String) -> String:
+	for id in IDS:
+		if good in recipes(id):
+			return id
+	return ""
+
+
+## Награда товаром: столько штук, сколько здание делает за hours часов на рабочем уровне героя
+## (не ниже 1 уровня, даже если здание ещё не построено). Так награда растёт вместе с прогрессом.
+static func reward_goods(good: String, hours: float) -> int:
+	var b := maker_of(good)
+	var n := Game.level / 3 + 1
+	if b != "":
+		n = clampi(maxi(Game.estate.level(b), n), 1, max_level(b))
+	return maxi(1, int(round(per_hour(good, n) * hours)))
 
 
 static func is_good(kind: String) -> bool:

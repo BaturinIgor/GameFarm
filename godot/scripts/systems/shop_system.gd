@@ -27,10 +27,14 @@ const MARKET := {
 	"map1": {"price": 60, "icon": "tmap"},
 	"luck30": {"price": 25, "icon": "clover"},
 	"coins": {"price": 30, "icon": "moneybag"},
+	"planks": {"price": 30, "icon": "planks"},
 }
+## Связка досок: столько часов работы лесопилки и сколько раз в день.
+const PLANKS_HOURS := 4.0
+const PLANKS_PER_DAY := 3
 const SKIN_PRICE := 300
 ## Из чего выбирается предложение дня.
-const DEAL_POOL := ["ticket5", "map1", "luck30", "coins", "skin"]
+const DEAL_POOL := ["ticket5", "map1", "luck30", "coins", "planks", "skin"]
 
 
 func defaults(save: Dictionary) -> void:
@@ -169,6 +173,9 @@ func _give_pack(p: Dictionary) -> void:
 		Game.energy.add_infinite(float(p["infinite_hours"]) * 3600.0)
 	if p.has("attempts"):
 		Game.dungeons.add_tokens(int(p["attempts"]))
+	if p.has("planks_hours"):
+		# Покупка: доски на склад даже сверх лимита
+		Game.save["storage"]["planks"] = Game.storage_of("planks") + Estate.reward_goods("planks", float(p["planks_hours"]))
 	if p.has("cosmetic"):
 		var purchases: Array = Game.save.get("purchases", [])
 		var id := Products.id(str(p["cosmetic"]))
@@ -463,6 +470,8 @@ func buy_market(item: String, deal := false) -> bool:
 		return false
 	if item.begins_with("skin:") and Skins.is_unlocked(item.substr(5)):
 		return false
+	if item == "planks" and planks_left() <= 0:
+		return false
 	var price := deal_price(item) if deal else base_price(item)
 	if price <= 0 or not spend_crystals(price):
 		return false
@@ -496,11 +505,32 @@ func _give_market(item: String) -> void:
 			var n := market_coins()
 			Game.add_coins(n)
 			Game.show_toast("px:coins", L.t("market.got.coins", [Fmt.n(n)]))
+		"planks":
+			var today := day_index()
+			var used := int(Game.save.get("marketBought", 0)) if int(Game.save.get("marketDay", -1)) == today else 0
+			Game.save["marketDay"] = today
+			Game.save["marketBought"] = used + 1
+			var n := market_planks()
+			# Покупка: кладём на склад даже сверх лимита, иначе кристаллы пропадут
+			Game.save["storage"]["planks"] = Game.storage_of("planks") + n
+			Game.show_toast("res:planks", "+%d %s" % [n, Res.name_of("planks")])
 
 
 ## Сколько монет в мешке: растёт с уровнем.
 func market_coins() -> int:
 	return 300 + Game.level * 150
+
+
+## Сколько досок в связке: 4 часа работы лесопилки на уровне героя.
+func market_planks() -> int:
+	return Estate.reward_goods("planks", PLANKS_HOURS)
+
+
+## Сколько связок досок ещё можно купить сегодня.
+func planks_left() -> int:
+	if int(Game.save.get("marketDay", -1)) != day_index():
+		return PLANKS_PER_DAY
+	return maxi(0, PLANKS_PER_DAY - int(Game.save.get("marketBought", 0)))
 
 
 # MARK: Кристаллы за ролик
