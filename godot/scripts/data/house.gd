@@ -26,6 +26,13 @@ const FLOOR_LOCATION := {
 const FLOOR_UP := {"basement": "ground", "ground": "upper", "upper": "attic", "attic": "greenhouse"}
 const FLOOR_DOWN := {"ground": "basement", "upper": "ground", "attic": "upper", "greenhouse": "attic"}
 
+## Все этажи стоят одной картой друг над другом (MapLayout.house). Лестница с этажа на этаж выше -
+## сквозной пролёт в этих столбцах: через заднюю стену этажа и нижнюю стену этажа выше
+## (как STAIRS в tools/house.py).
+const STAIRS := {"basement": [1, 2], "ground": [4, 5], "upper": [8, 9], "attic": [1, 2]}
+## Рядов задней стены на этаже (WALL_ROWS в tools/house.py).
+const WALL_ROWS := 4
+
 
 static func floor_title(f: String) -> String:
 	return L.t("house.floor." + f)

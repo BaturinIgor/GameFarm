@@ -7,6 +7,12 @@
 где станции (плита, кровать, лестницы) и места для украшений.
 
     python3 tools/house.py <папка с паками> <папка спрайтов> <папка раскладок>
+    python3 tools/house.py --layouts <папка раскладок>   (только раскладки, пак не нужен)
+
+В игре все этажи стоят одной картой друг над другом (godot MapLayout.house). Лестница наверх -
+сквозной пролёт через заднюю стену в нижний край этажа выше: столбцы пролёта для каждого этажа
+в STAIRS (те же, что House.STAIRS в godot/scripts/data/house.gd). Станция "up" стоит у нижней
+ступени, "down" - у верхней на этаже выше, обе на этих столбцах.
 """
 import json
 import os
@@ -25,6 +31,9 @@ W, H = 12, 14   # одна комната на этаж: ширина ровно
 WALL_ROWS = 4   # задняя стена: на неё помещается высокая мебель
 DOOR = (5, 6)   # проём входной двери внизу первого этажа
 OUTLINE = (14, 7, 27, 255)
+# Этажи сверху вниз и столбцы лестницы с этажа на этаж выше (менять вместе с House.STAIRS в Godot)
+ORDER = ["homeGreenhouse", "homeAttic", "homeUpper", "homeGround", "homeBasement"]
+STAIRS = {"homeBasement": (1, 2), "homeGround": (4, 5), "homeUpper": (8, 9), "homeAttic": (1, 2)}
 
 PC = ("Pixel Crawler - Free Pack 2", "Pixel Crawler - Free Pack")
 
@@ -508,7 +517,6 @@ FLOORS = {
         floor="ground", theme="living", floor_style=("plank", "honey"),
         furniture=[
             ("hm_range", (1, 4, 3, 4)),
-            ("hm_stairs_up", (4, 4, 5, 4)),
             ("hm_plant_big", (10, 4, 10, 4)),
             ("hm_table_round", (2, 9, 3, 9)),
             ("hm_stool_red", (1, 9, 1, 9)),
@@ -517,9 +525,9 @@ FLOORS = {
             ("hm_easel", (10, 6, 10, 6)),
         ],
         wall=[("hm_calendar_wall", 6.5, 2.9), ("hm_trophy_board", 8.9, 3.7)],
-        flat=[("hm_rug_red", 6.0, 9.0), ("hm_doormat", 6.0, 13.0), ("hm_stairs_down", 2.2, 12.95)],
-        stations=[("stove", 2.5, 5.6), ("up", 5.0, 5.35), ("calendar", 6.5, 4.6), ("trophies", 8.6, 4.6),
-                  ("plan", 9.3, 6.6), ("down", 2.2, 11.9), ("exit", 6.0, 13.5)],
+        flat=[("hm_rug_red", 6.0, 9.0), ("hm_doormat", 6.0, 13.0)],
+        stations=[("stove", 2.5, 5.6), ("up", 5.0, 4.6), ("calendar", 6.5, 5.0), ("trophies", 8.6, 4.6),
+                  ("plan", 9.3, 6.6), ("down", 2.0, 12.4), ("exit", 6.0, 13.5)],
         slots=[(1.5, 6.5), (1.5, 7.5), (4.5, 12.5), (8.5, 12.5), (10.5, 12.5), (10.5, 8.5)],
         door=True,
     ),
@@ -528,7 +536,6 @@ FLOORS = {
         furniture=[
             ("hm_bed", (1, 4, 3, 6)),
             ("hm_wardrobe", (4, 4, 5, 4)),
-            ("hm_stairs_up", (8, 4, 9, 4)),
             ("hm_plant", (10, 4, 10, 4)),
             ("hm_chair_back", (9, 7, 9, 7)),
             ("hm_table_big", (8, 8, 10, 8)),
@@ -536,34 +543,32 @@ FLOORS = {
             ("bookshelf", (10, 12, 10, 12)),
         ],
         wall=[("hm_window", 6.9, 3.4), ("painting", 2.4, 2.6), ("hm_sconce", 10.5, 2.7)],
-        flat=[("hm_rug_blue", 5.0, 10.0), ("hm_stairs_down", 8.0, 12.95)],
-        stations=[("bed", 2.5, 7.6), ("wardrobe", 5.0, 5.6), ("up", 9.0, 5.35), ("desk", 9.5, 9.6),
-                  ("lectern", 2.4, 10.6), ("down", 8.0, 11.9)],
-        slots=[(6.5, 4.6), (1.5, 8.5), (1.5, 12.5), (4.5, 12.5), (10.5, 6.0), (10.5, 10.5)],
+        flat=[("hm_rug_blue", 6.5, 10.5)],
+        stations=[("bed", 2.5, 7.6), ("wardrobe", 5.0, 5.6), ("up", 9.0, 4.6), ("desk", 9.5, 9.6),
+                  ("lectern", 2.4, 10.6), ("down", 5.0, 12.4)],
+        slots=[(6.5, 4.6), (1.5, 8.5), (1.5, 12.5), (7.5, 12.5), (10.5, 6.0), (10.5, 10.5)],
     ),
     "homeBasement": dict(
         floor="basement", theme="cellar", floor_style=("tile", 0.82),
         furniture=[
-            ("barrel_berries", (1, 4, 1, 4)),
-            ("barrel_water", (2, 4, 2, 4)),
             ("barrel_berries", (3, 4, 3, 4)),
-            ("hm_stairs_up", (4, 4, 5, 4)),
-            ("hm_crate", (1, 6, 1, 6)),
+            ("barrel_water", (4, 4, 4, 4)),
+            ("barrel_berries", (5, 4, 5, 4)),
+            ("hm_crate", (3, 7, 3, 7)),
             ("hm_workbench", (6, 4, 8, 4)),
             ("hm_stove", (10, 4, 10, 4)),
             ("anvil", (8, 8, 8, 8)),
             ("hm_pot", (1, 12, 1, 12)),
             ("hm_bucket", (10, 12, 10, 12)),
         ],
-        wall=[("hm_shelf", 2.5, 2.8), ("hm_sconce", 9.2, 2.6)],
+        wall=[("hm_shelf", 4.4, 2.8), ("hm_sconce", 9.2, 2.6)],
         flat=[],
-        stations=[("pantry", 2.5, 5.6), ("up", 5.0, 5.35), ("workbench", 7.5, 5.6), ("anvil", 8.5, 9.6)],
+        stations=[("pantry", 4.4, 5.6), ("up", 2.0, 4.6), ("workbench", 7.5, 5.6), ("anvil", 8.5, 9.6)],
         slots=[(9.5, 4.6), (1.5, 9.0), (4.5, 12.5), (6.5, 12.5), (10.5, 7.0), (10.5, 10.0)],
     ),
     "homeAttic": dict(
         floor="attic", theme="attic", floor_style=("plank", "oak"),
         furniture=[
-            ("hm_stairs_up", (1, 4, 2, 4)),
             ("hm_telescope", (3, 5, 4, 5)),
             ("hm_display", (5, 4, 7, 4)),
             ("chest_anim", (9, 4, 9, 4)),
@@ -573,10 +578,10 @@ FLOORS = {
             ("hm_crate", (10, 8, 10, 8)),
         ],
         wall=[("hm_window_stone", 4.0, 3.5), ("hm_sconce", 8.0, 2.6)],
-        flat=[("hm_rug_yellow", 2.6, 9.6), ("hm_stairs_down", 2.5, 12.95)],
-        stations=[("up", 2.0, 5.35), ("telescope", 3.5, 6.6), ("chest", 9.5, 5.6), ("map", 6.0, 10.6),
-                  ("down", 2.5, 11.9)],
-        slots=[(8.0, 4.6), (1.5, 8.5), (4.5, 12.5), (8.5, 12.5), (10.5, 12.5), (10.5, 10.5)],
+        flat=[("hm_rug_yellow", 2.6, 9.6)],
+        stations=[("up", 2.0, 4.6), ("telescope", 3.5, 6.6), ("chest", 9.5, 5.6), ("map", 6.0, 10.6),
+                  ("down", 9.0, 12.4)],
+        slots=[(8.0, 4.6), (1.5, 8.5), (2.5, 12.5), (6.5, 12.5), (10.5, 12.5), (10.5, 10.5)],
     ),
     "homeGreenhouse": dict(
         floor="greenhouse", theme="greenhouse", floor_style=("tile", 1.0, (190, 230, 190)),
@@ -591,14 +596,38 @@ FLOORS = {
             ("hm_bucket", (10, 12, 10, 12)),
         ],
         wall=[("hm_sconce", 4.0, 2.6), ("hm_sconce", 7.9, 2.6)],
-        flat=[("hm_stairs_down", 2.5, 12.95)],
-        stations=[("compost", 5.5, 5.6), ("seedlings", 6.0, 10.6), ("down", 2.5, 11.9)],
+        flat=[],
+        stations=[("compost", 5.5, 5.6), ("seedlings", 6.0, 10.6), ("down", 2.0, 12.4)],
         slots=[(1.5, 9.5), (10.5, 10.0), (4.5, 12.5), (8.5, 12.5), (10.5, 5.6), (1.5, 5.6)],
     ),
 }
 
 
-def build_floor(src, fid, spec):
+def check_stairs(fid, spec, grid):
+    """Пролёт лестницы свободен: наверх - ряд у задней стены, снизу - ряд у нижней стены."""
+    kinds = {k: (x, y) for k, x, y in spec["stations"]}
+    i = ORDER.index(fid)
+    if fid in STAIRS:
+        c0, c1 = STAIRS[fid]
+        assert "up" in kinds and c0 <= kinds["up"][0] <= c1 + 1, f"{fid}: станция up не у лестницы"
+        for c in (c0, c1):
+            assert grid[WALL_ROWS][c] == "L", f"{fid}: лестница наверх закрыта в ({c},{WALL_ROWS})"
+    below = ORDER[i + 1] if i + 1 < len(ORDER) else None
+    if below in STAIRS:
+        c0, c1 = STAIRS[below]
+        assert "down" in kinds and c0 <= kinds["down"][0] <= c1 + 1, f"{fid}: станция down не у лестницы"
+        for c in (c0, c1):
+            assert grid[H - 2][c] == "L", f"{fid}: лестница снизу закрыта в ({c},{H - 2})"
+        for x, y in spec["slots"]:
+            assert not (c0 <= int(x) <= c1 and int(y) >= H - 3), f"{fid}: место у лестницы снизу"
+    for name, x, _y in spec["wall"]:
+        if fid in STAIRS:
+            c0, c1 = STAIRS[fid]
+            assert not (c0 <= x < c1 + 1), f"{fid}: {name} висит над лестницей"
+
+
+def build_image(src, spec):
+    """Стены и пол этажа (нужен пак: плитка Cute Fantasy)."""
     img = Image.new("RGBA", (W * T, H * T))
     fx0, fx1, fy0, fy1 = T, (W - 1) * T, WALL_ROWS * T, (H - 1) * T
     style = spec["floor_style"]
@@ -626,7 +655,12 @@ def build_floor(src, fid, spec):
             for dx in (0, 1):
                 px[DOOR[0] * T + dx, y] = OUTLINE if dx == 0 else hexc("#91533b")
                 px[(DOOR[-1] + 1) * T - 1 - dx, y] = OUTLINE if dx == 0 else hexc("#91533b")
+    return img
 
+
+def build_layout(fid, spec):
+    """Раскладка этажа: клетки, мебель, станции и места для украшений."""
+    door = spec.get("door", False)
     grid = [["L"] * W for _ in range(H)]
     for r in range(H):
         for c in range(W):
@@ -680,6 +714,8 @@ def build_floor(src, fid, spec):
     for kind, x, y in spec["stations"]:
         assert (int(x), int(min(y, H - 0.01))) in seen, f"{fid}: к станции {kind} не пройти"
 
+    check_stairs(fid, spec, grid)
+
     data = dict(
         id=fid, w=W, h=H, cell=PT, edge="void",
         rows=["".join(row) for row in grid],
@@ -687,14 +723,24 @@ def build_floor(src, fid, spec):
         gates=[], spots=[], props=props, border=[], farm=[],
         stations=stations, slots=slots,
     )
-    return img, data
+    return data
 
 
 def main():
+    if len(sys.argv) == 3 and sys.argv[1] == "--layouts":
+        layouts_dir = sys.argv[2]
+        for fid, spec in FLOORS.items():
+            data = build_layout(fid, spec)
+            with open(os.path.join(layouts_dir, f"layout_{fid}.json"), "w") as f:
+                json.dump(data, f, separators=(",", ":"))
+            print(f"{fid}: {len(data['props'])} props, {len(data['stations'])} stations")
+        return
+    if len(sys.argv) != 4:
+        sys.exit(__doc__)
     src, sprites_dir, layouts_dir = sys.argv[1], sys.argv[2], sys.argv[3]
     for fid, spec in FLOORS.items():
-        img, data = build_floor(src, fid, spec)
-        img.save(os.path.join(sprites_dir, f"sp_ground_{fid}.png"))
+        data = build_layout(fid, spec)
+        build_image(src, spec).save(os.path.join(sprites_dir, f"sp_ground_{fid}.png"))
         with open(os.path.join(layouts_dir, f"layout_{fid}.json"), "w") as f:
             json.dump(data, f, separators=(",", ":"))
         print(f"{fid}: {len(data['props'])} props, {len(data['stations'])} stations")
