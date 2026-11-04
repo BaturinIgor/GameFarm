@@ -4,25 +4,36 @@ class_name Events
 ## Награда пропуска - словарь {type, n}: coins, tickets, seeds, dish, cards, sparks, maps, decor, skin,
 ## или товар {type: "goods", kind, hours}.
 
-const IDS := ["harvestFest", "slimeNight", "winterTale", "beachParty"]
+const IDS := ["harvestFest", "slimeNight", "winterTale", "beachParty", "lanternNight", "springGarden", "pirateCove", "starfall"]
 
 ## Пиксельная иконка ивента.
-const ICON := {"harvestFest": "pumpkin", "slimeNight": "slime", "winterTale": "chest_gold", "beachParty": "shell"}
+const ICON := {"harvestFest": "pumpkin", "slimeNight": "slime", "winterTale": "chest_gold", "beachParty": "shell",
+	"lanternNight": "spark", "springGarden": "sprout", "pirateCove": "chest", "starfall": "star"}
 ## Особая точка добычи на карте ивента.
-const NODE := {"harvestFest": "pumpkinPatch", "slimeNight": "slimeCrystal", "winterTale": "giftBox", "beachParty": "sandCastle"}
+const NODE := {"harvestFest": "pumpkinPatch", "slimeNight": "slimeCrystal", "winterTale": "giftBox", "beachParty": "sandCastle",
+	"lanternNight": "lanternPost", "springGarden": "flowerBed", "pirateCove": "pirateCargo", "starfall": "fallenStar"}
 ## Спрайт-превью особой точки.
-const PREVIEW := {"harvestFest": "crop_pumpkin_3", "slimeNight": "crystal_slime", "winterTale": "gift_red", "beachParty": "sandcastle"}
+const PREVIEW := {"harvestFest": "crop_pumpkin_3", "slimeNight": "crystal_slime", "winterTale": "gift_red", "beachParty": "sandcastle",
+	"lanternNight": "lantern_post", "springGarden": "flowers_red", "pirateCove": "barrel_closed", "starfall": "ore_star"}
 ## Семена и блюдо в наградах пропуска.
-const CROP := {"harvestFest": "pumpkin", "slimeNight": "grapes", "winterTale": "cabbage", "beachParty": "strawberry"}
-const DISH := {"harvestFest": "pumpkinSoup", "slimeNight": "popcorn", "winterTale": "stew", "beachParty": "juice"}
-const DECOR := {"harvestFest": "jackLantern", "slimeNight": "slimeLamp", "winterTale": "snowman", "beachParty": "sandcastle"}
-const SKIN := {"harvestFest": "autumn", "slimeNight": "slimeKing", "winterTale": "frost", "beachParty": "surfer"}
+const CROP := {"harvestFest": "pumpkin", "slimeNight": "grapes", "winterTale": "cabbage", "beachParty": "strawberry",
+	"lanternNight": "sunflower", "springGarden": "tomato", "pirateCove": "corn", "starfall": "eggplant"}
+const DISH := {"harvestFest": "pumpkinSoup", "slimeNight": "popcorn", "winterTale": "stew", "beachParty": "juice",
+	"lanternNight": "pancakes", "springGarden": "salad", "pirateCove": "soup", "starfall": "pie"}
+const DECOR := {"harvestFest": "jackLantern", "slimeNight": "slimeLamp", "winterTale": "snowman", "beachParty": "sandcastle",
+	"lanternNight": "streetLamp", "springGarden": "flowerTub", "pirateCove": "pirateBarrel", "starfall": "starStone"}
+const SKIN := {"harvestFest": "autumn", "slimeNight": "slimeKing", "winterTale": "frost", "beachParty": "surfer",
+	"lanternNight": "lamplighter", "springGarden": "blossom", "pirateCove": "pirate", "starfall": "starCatcher"}
 ## Цвета баннера: верх и низ.
 const COLORS := {
 	"harvestFest": [Color("ffb04a"), Color("b8531a")],
 	"slimeNight": [Color("8be36a"), Color("2e6b3a")],
 	"winterTale": [Color("9fd8ff"), Color("3f72c8")],
 	"beachParty": [Color("ffe08a"), Color("2fa8c8")],
+	"lanternNight": [Color("ffc46a"), Color("2a3a5e")],
+	"springGarden": [Color("ffc0d8"), Color("4f9a4a")],
+	"pirateCove": [Color("f0c070"), Color("1f5f8a")],
+	"starfall": [Color("c8b8ff"), Color("231a5a")],
 }
 
 ## С какого уровня открыты ивенты.
@@ -88,7 +99,7 @@ static func upcoming(count := 3) -> Array:
 
 ## Очки за добычу на карте ивента: их дают только особые точки праздника.
 static func points_for_node(type: String) -> int:
-	return 1 if type in ["pumpkinPatch", "giftBox", "sandCastle", "slimeCrystal"] else 0
+	return 1 if type in NODE.values() else 0
 
 
 static func points_for_monster(kind: String) -> int:
@@ -163,6 +174,10 @@ static func boss(event: String) -> String:
 		"harvestFest": return "skelKnight"
 		"slimeNight": return "slimeGold"
 		"winterTale": return "slimeIce"
+		"lanternNight": return "skelMage"
+		"springGarden": return "slimePurple"
+		"pirateCove": return "orcWarrior"
+		"starfall": return "skelKnight"
 		_: return "orcWarrior"
 
 
@@ -172,19 +187,25 @@ static func monsters(event: String) -> Array:
 		"harvestFest": return [["slimeGreen", 3], ["skeleton", 2]]
 		"slimeNight": return [["slimeGreen", 4], ["slimeBlue", 2], ["slimePurple", 2], ["slimeGold", 1]]
 		"winterTale": return [["slimeIce", 4]]
+		"lanternNight": return [["skeleton", 3], ["skelRogue", 1], ["skelMage", 1]]
+		"springGarden": return [["slimeGreen", 3], ["slimePurple", 2], ["slimeGold", 1]]
+		"pirateCove": return [["orcRogue", 3], ["orc", 2], ["slimeGold", 1]]
+		"starfall": return [["slimePurple", 3], ["skelMage", 2], ["slimeGold", 1]]
 		_: return [["slimeBlue", 3], ["slimeGold", 1]]
 
 
 # MARK: Пропуск
 
-const TIERS := 20
+## Пропуск рассчитан примерно на 6 часов игры за неделю ивента (раньше 20 ступеней на 3300 очков
+## проходились за полчаса): 30 ступеней, всего 24 600 очков.
+const TIERS := 30
 ## После последней ступени каждые столько очков дают бонусный сундук.
-const BONUS_EVERY := 300
+const BONUS_EVERY := 1500
 
 
-## Сколько очков нужно на ступень (с единицы).
+## Сколько очков нужно на ступень (с единицы): 240 на первую, 1400 на последнюю.
 static func cost(tier_n: int) -> int:
-	return 60 + 10 * tier_n
+	return 200 + 40 * tier_n
 
 
 ## Сколько всего очков нужно, чтобы открыть ступень.
@@ -276,7 +297,9 @@ const BONUS_PLANKS_HOURS := 2.0
 const BOONS := ["points", "damage", "vitality", "swift", "harvest", "hunter", "regen", "lucky", "regrowth"]
 const BOON_MAX_RANK := 3
 const BOON_PER_RANK := {
-	"points": 0.2, "damage": 0.15, "vitality": 0.15, "swift": 0.08, "harvest": 1.0, "hunter": 2.0,
+	## Усиления очков урезаны вдвое: "Очки" +10% за ранг, "Охотник" +1/+2/+3 за монстра,
+## "Урожай" +0.5 за особую точку (дробные очки копятся, см. EventSystem.add_event_points).
+	"points": 0.1, "damage": 0.15, "vitality": 0.15, "swift": 0.08, "harvest": 0.5, "hunter": 1.0,
 	"regen": 0.01, "lucky": 0.06, "regrowth": 0.2,
 }
 const BOON_ICON := {
@@ -301,5 +324,5 @@ static func boon_icon(boon: String) -> String:
 static func boon_text(boon: String, rank: int) -> String:
 	var value := boon_per_rank(boon) * float(maxi(1, rank))
 	if boon == "harvest" or boon == "hunter":
-		return L.t("boon." + boon + ".text", [int(value)])
+		return L.t("boon." + boon + ".text", [Fmt.n(int(value)) if is_equal_approx(value, roundf(value)) else str(value)])
 	return L.t("boon." + boon + ".text", [Fmt.pct(value)])

@@ -160,12 +160,13 @@ const DECOR := [
 	"barrel", "anvil", "hay", "plantPink", "plantFern", "plantLush", "redStool", "roundTable", "greenRug", "sofa",
 	"displayCase", "cupboard", "bathtub",
 	# Награды ивентов
-	"jackLantern", "slimeLamp", "snowman", "sandcastle",
+	"jackLantern", "slimeLamp", "snowman", "sandcastle", "streetLamp", "flowerTub", "pirateBarrel", "starStone",
 ]
 
 const DECOR_SPRITE := {
 	"potGreen": "pot_green", "potRed": "pot_red", "potBlue": "pot_blue", "table": "table_small",
 	"barrel": "barrel_berries", "hay": "hay_big", "jackLantern": "jack_lantern", "slimeLamp": "slime_lamp",
+	"streetLamp": "lantern_post", "flowerTub": "flowers_purple", "pirateBarrel": "barrel_closed", "starStone": "ore_star",
 	"plantPink": "hm_plant_pink", "plantFern": "hm_plant_fern", "plantLush": "hm_plant_big", "redStool": "hm_stool_red",
 	"roundTable": "hm_table_round", "greenRug": "hm_rug_green", "sofa": "hm_sofa", "displayCase": "hm_display",
 	"cupboard": "hm_cupboard", "bathtub": "hm_bath",
@@ -179,6 +180,7 @@ const DECOR_COMFORT := {
 	"sofa": 6, "displayCase": 6,
 	"bathtub": 8,
 	"jackLantern": 5, "slimeLamp": 5, "snowman": 5, "sandcastle": 5,
+	"streetLamp": 5, "flowerTub": 5, "pirateBarrel": 5, "starStone": 5,
 }
 
 const DECOR_COST := {
@@ -211,6 +213,7 @@ const DECOR_COST := {
 ## Ивент, за который выдаётся украшение (его нельзя купить).
 const DECOR_EVENT := {
 	"jackLantern": "harvestFest", "slimeLamp": "slimeNight", "snowman": "winterTale", "sandcastle": "beachParty",
+	"streetLamp": "lanternNight", "flowerTub": "springGarden", "pirateBarrel": "pirateCove", "starStone": "starfall",
 }
 
 

@@ -105,7 +105,7 @@ static func dot_color(type: String) -> Color:
 	var spec := Nodes.spec(type)
 	if type == "treasureChest":
 		return Color(1, 0.82, 0.2)
-	if Game.events.points_for_node(type) > 1:
+	if Events.points_for_node(type) > 0:
 		return Color(1, 0.55, 0.1)
 	match spec["tool"]:
 		"axe":

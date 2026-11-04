@@ -15,6 +15,7 @@ func defaults(save: Dictionary) -> void:
 	for key in ["eventPoints", "eventBonus", "eventProgress", "eventBest"]:
 		save[key] = int(save.get(key, 0))
 	save["eventStage"] = maxi(1, int(save.get("eventStage", 1)))
+	save["eventFrac"] = float(save.get("eventFrac", 0.0))
 	for key in ["eventFree", "eventVip"]:
 		var list: Array = []
 		for t in save.get(key, []):
@@ -109,6 +110,7 @@ func sync_event() -> void:
 	s["eventBest"] = 0
 	s["eventBoons"] = {}
 	s["eventChoice"] = []
+	s["eventFrac"] = 0.0
 	map_version += 1
 	if events_open() and not first:
 		Game.show_toast("px:star", L.t("toast.eventStarted", [Events.name_of(run["event"])]))
@@ -299,11 +301,17 @@ func _random_card() -> void:
 
 ## Очки ивента за добычу и монстров на карте ивента: идут и в пропуск, и в цель этапа.
 ## Возвращает, сколько очков начислено с учётом усилений.
-func add_event_points(base: int) -> int:
-	if base <= 0 or not in_event():
+## Дробная часть (усиления +10% и +0.5) копится в eventFrac, чтобы малые прибавки не терялись при округлении.
+func add_event_points(base: float) -> int:
+	if base <= 0.0 or not in_event():
 		return 0
 	sync_event()
-	var n := int(round(float(base) * (1.0 + boon_value("points"))))
+	var exact := base * (1.0 + boon_value("points")) + float(Game.save.get("eventFrac", 0.0))
+	var n := floori(exact + 0.0001)
+	Game.save["eventFrac"] = maxf(0.0, exact - float(n))
+	if n <= 0:
+		Game.mark_dirty()
+		return 0
 	_add_pass_points(n)
 	_add_stage_progress(n)
 	Game.mark_dirty()
@@ -311,7 +319,7 @@ func add_event_points(base: int) -> int:
 
 
 ## Начислить очки ивента; возвращает, сколько начислено (add_event_points).
-func add_points(n: int) -> int:
+func add_points(n: float) -> int:
 	return add_event_points(n)
 
 
@@ -351,14 +359,14 @@ func boon(id: String) -> float:
 
 
 ## Очки за особую точку с учётом усиления "Урожай" (0, если точка не ивентовая).
-func points_for_node(type: String) -> int:
+func points_for_node(type: String) -> float:
 	var base := Events.points_for_node(type)
-	return base + int(boon_value("harvest")) if base > 0 else 0
+	return float(base) + boon_value("harvest") if base > 0 else 0.0
 
 
 ## Очки за монстра с учётом усиления "Охотник".
 func event_points_for_monster(kind: String, boss_kill: bool) -> int:
-	return Events.BOSS_POINTS if boss_kill else Events.points_for_monster(kind) + int(boon_value("hunter"))
+	return Events.BOSS_POINTS if boss_kill else Events.points_for_monster(kind) + roundi(boon_value("hunter"))
 
 
 func event_stage() -> int:

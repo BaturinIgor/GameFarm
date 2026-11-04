@@ -47,11 +47,13 @@ var wild := WildSystem.new()
 var academy := AcademySystem.new()
 var energy := EnergySystem.new()
 var fair := FairSystem.new()
+var farm := FarmEventSystem.new()
+var rating := RatingSystem.new()
 
 ## Все системы по порядку: для значений по умолчанию и событий.
 var systems: Array:
 	get: return [talents, workshop, animals, quests, house, garden, combat, dungeons, events, collection, legacy, premium, shop,
-		world_map, estate, daily, residents, raids, wild, academy, energy, fair]
+		world_map, estate, daily, residents, raids, wild, academy, energy, fair, farm, rating]
 ## Где появиться после перехода через проход (id прохода).
 var arrival_gate := ""
 ## В доме: у какой станции появиться (exit, up, down); на лугу - у двери дома.
