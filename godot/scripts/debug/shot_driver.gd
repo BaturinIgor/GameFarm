@@ -369,8 +369,39 @@ func _extra(k: int) -> void:
 			_scroll_window(100000)
 		15:
 			_shot("6_animals_wild_end")
-			main.hud.close_window()
+			# Сундуки: ключи, окно, открытие десяти сундуков с наградами всех цветов
+			Game.chests.add_keys("copper", 12, false)
+			Game.chests.add_keys("silver", 1, false)
+			main.hud.open_window(ChestsPanel.new())
 		16:
+			_shot("6_chests")
+			_check_layout("chests")
+			var list: Array = []
+			for r in Chests.RARITIES:
+				list.append(ChestSystem.make_reward(r, 1 + list.size() % 3, Game.level))
+			list.append(ChestSystem.make_reward("gold", 3, Game.level))
+			list.append(ChestSystem.make_reward("blue", 2, Game.level))
+			list.append(ChestSystem.make_reward("green", 1, Game.level))
+			for r in list:
+				Game.chests.give(r)
+			ChestOverlay.show_rewards("wood", list)
+		17:
+			_shot("6_chest_shake")
+		23:
+			_shot("6_chest_open10")
+			for n in main.hud.find_children("*", "", true, false):
+				if n is ChestOverlay:
+					n.queue_free()
+			var top := ChestSystem.make_reward("rainbow", 3, Game.level)
+			Game.chests.give(top)
+			ChestOverlay.show_rewards("ancient", [top])
+		29:
+			_shot("6_chest_open1")
+			for n in main.hud.find_children("*", "", true, false):
+				if n is ChestOverlay:
+					n.queue_free()
+			main.hud.close_window()
+		30:
 			_step = 5
 			_time = 300.0
 			_sub = 0
