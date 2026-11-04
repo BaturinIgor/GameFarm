@@ -57,6 +57,7 @@ func build() -> void:
 	if Game.events.events_open():
 		content.add_child(_run_card())
 		content.add_child(_progress_card(event))
+		content.add_child(RatingCard.build(str(run["key"])))
 		if not Game.events.has_vip():
 			content.add_child(_vip_card(event))
 		_tier_list(event)

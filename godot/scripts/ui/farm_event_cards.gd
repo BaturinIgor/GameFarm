@@ -9,6 +9,7 @@ static func build(content: VBoxContainer) -> void:
 	var event: String = run["event"]
 	content.add_child(_banner(run))
 	content.add_child(_progress_card(event))
+	content.add_child(RatingCard.build(str(run["key"])))
 	content.add_child(_ladder(event))
 	content.add_child(EventsPanel.section(L.t("farm.upcoming")))
 	for r in FarmEvents.upcoming():
