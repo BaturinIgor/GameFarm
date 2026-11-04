@@ -110,7 +110,7 @@ func build() -> void:
 	line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	r.add_child(line)
 	for step in [5, 10, 25]:
-		var next := (floor_n + step - 1) / step * step
+		var next: int = (floor_n + int(step) - 1) / int(step) * int(step)
 		var key := Mine.key_for(next)
 		var kr := HBoxContainer.new()
 		kr.add_theme_constant_override("separation", 6)
