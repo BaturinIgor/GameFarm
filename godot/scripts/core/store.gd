@@ -2,6 +2,11 @@ class_name Store
 ## Покупки (порт Store.swift, ветка SIDELOAD). Сборка Android ставится не из магазина, поэтому покупки
 ## тестовые: выдаются сразу и бесплатно, тост говорит, что это тест.
 
+## Настоящие покупки за деньги подключены (StoreKit). Пока false: в сборке нет цен в долларах,
+## наборов, пропуска и восстановления покупок - магазин работает только за кристаллы, заработанные в игре.
+## Включить, когда покупки Apple будут встроены, и всё платное вернётся на места.
+const LIVE := false
+
 ## Что сейчас покупается ("" - ничего): кнопки показывают часы и не нажимаются.
 static var busy := ""
 
@@ -11,7 +16,7 @@ static func price(product: String) -> String:
 
 
 static func buy(product: String) -> void:
-	if busy != "" or Products.key(product) == "":
+	if not LIVE or busy != "" or Products.key(product) == "":
 		return
 	busy = Products.key(product)
 	Game.changed.emit()

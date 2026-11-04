@@ -38,8 +38,7 @@ func _process(delta: float) -> void:
 	var dishes: Array = meals.map(func(m: Dictionary) -> String: return m["dish"])
 	if dishes != _signature:
 		_signature = dishes
-		for c in _row.get_children():
-			c.queue_free()
+		UiKit.clear(_row)
 		for d in dishes:
 			_row.add_child(UiKit.icon(House.dish_icon(d), 18))
 		_time = UiKit.title("", 12)

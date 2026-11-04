@@ -194,9 +194,11 @@ static func button(text: String, tone := "green", size := 15, small := false) ->
 ## Деревянные вкладки (GameTabs): светлая дорожка, выбранная вкладка - деревянная плашка.
 ## items = [[id, подпись, счётчик, иконка], ...] (счётчик и иконка - по желанию); on_select(id).
 ## С иконками вкладки выше: иконка над подписью, счётчик - в углу.
-static func tabs(items: Array, selected: String, on_select: Callable) -> PanelContainer:
+## section = true - полоса разделов вкладки (Nav.bar) над вкладками окна: тёмная деревянная дорожка
+## и светлая выбранная плашка, чтобы два ряда вкладок подряд не выглядели одинаково.
+static func tabs(items: Array, selected: String, on_select: Callable, section := false) -> PanelContainer:
 	var track := PanelContainer.new()
-	var ts := box(PARCHMENT_DEEP, Color(WOOD_DARK, 0.5), 13, 2, false)
+	var ts := box(WOOD, OUTLINE, 13, 2, false) if section else box(PARCHMENT_DEEP, Color(WOOD_DARK, 0.5), 13, 2, false)
 	ts.set_content_margin_all(4)
 	track.add_theme_stylebox_override("panel", ts)
 	var row := HBoxContainer.new()
@@ -209,9 +211,13 @@ static func tabs(items: Array, selected: String, on_select: Callable) -> PanelCo
 		var b := Button.new()
 		b.focus_mode = Control.FOCUS_NONE
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.custom_minimum_size = Vector2(0, 50 if icon_name != "" else 34)
+		b.custom_minimum_size = Vector2(0, 50 if icon_name != "" else (30 if section else 34))
 		var st: StyleBox = StyleBoxEmpty.new()
-		if on:
+		if on and section:
+			var g := GameStyle.make(PARCHMENT_LIGHT, PARCHMENT_DEEP, 10.0)
+			g.outline_width = 1.5
+			st = g
+		elif on:
 			var g := GameStyle.make(WOOD_LIGHT, WOOD, 10.0)
 			g.outline_width = 1.5
 			st = g
@@ -229,12 +235,18 @@ static func tabs(items: Array, selected: String, on_select: Callable) -> PanelCo
 			if not on:
 				ic.modulate = Color(1, 1, 1, 0.8)
 			inner.add_child(ic)
-		var l := label(str(it[1]), 11 if icon_name != "" else 13, Color.WHITE if on else INK_SOFT, 4 if on else 0)
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		if on:
-			l.label_settings.outline_color = WOOD_DARK
+		var l: Label
+		if section:
+			l = label(str(it[1]), 13, INK if on else PARCHMENT, 0 if on else 3)
+			if not on:
+				l.label_settings.outline_color = WOOD_DARK
 		else:
-			l.label_settings.font = font()
+			l = label(str(it[1]), 11 if icon_name != "" else 13, Color.WHITE if on else INK_SOFT, 4 if on else 0)
+			if on:
+				l.label_settings.outline_color = WOOD_DARK
+			else:
+				l.label_settings.font = font()
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.clip_text = true
 		l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		# Обрезаемая подпись без растяжения получает нулевую ширину
@@ -242,22 +254,18 @@ static func tabs(items: Array, selected: String, on_select: Callable) -> PanelCo
 		inner.add_child(l)
 		var n := int(it[2]) if it.size() > 2 else 0
 		if n > 0:
-			var badge := count_badge(mini(n, 99))
-			if icon_name != "":
-				badge.position = Vector2(-4, -6)
-				b.add_child(badge)
-			else:
-				badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-				inner.add_child(badge)
+			pin_badge(count_badge(mini(n, 99)), b)
 		b.pressed.connect(func() -> void:
 			if id != selected:
 				Sound.play("tap")
 				on_select.call(id))
 		# Подпись уменьшается, если не влезает (minimumScaleFactor)
 		var base_size := 11 if icon_name != "" else 13
-		var badge_w := 24.0 if (n > 0 and icon_name == "") else 0.0
+		# Ширина по подписи: длинное название ("Достижения") получает больше места, а не мельчит до 7
+		b.size_flags_stretch_ratio = font().get_string_size(str(it[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, base_size).x + 18.0
+		var badge_w := 0.0
 		b.resized.connect(func() -> void:
-			fit_label(l, maxf(20.0, b.size.x - 8.0 - badge_w), base_size, 7))
+			fit_label(l, maxf(20.0, b.size.x - 8.0 - badge_w), base_size, 8))
 		row.add_child(b)
 	return track
 
@@ -286,6 +294,14 @@ static func plain(text: String) -> String:
 	while "  " in out:
 		out = out.replace("  ", " ")
 	return out.replace(" ,", ",").replace(" .", ".").strip_edges()
+
+
+## Убрать всех детей узла сразу. Просто queue_free оставляет старых детей в контейнере до конца кадра,
+## и один кадр старое и новое содержимое стоят рядом - вкладки и окна от этого мигали.
+static func clear(node: Node) -> void:
+	for c in node.get_children():
+		node.remove_child(c)
+		c.queue_free()
 
 
 ## Ровные пиксели у картинки в любом размере (см. PIXEL_SHADER).
@@ -411,8 +427,7 @@ static func attention(c: Control) -> void:
 	c.set_meta("attention", true)
 	var dot := count_badge(0)
 	(dot.get_child(0) as Label).text = "!"
-	dot.position = Vector2(-6, -7)
-	c.add_child(dot)
+	pin_badge(dot, c)
 	c.add_child(Pulse.new())
 
 
@@ -427,7 +442,19 @@ class Pulse extends Node:
 		p.scale = Vector2.ONE * (1.0 + 0.045 * maxf(0.0, sin(t * TAU / 1.4)))
 
 
-## Красный кружок со счётчиком (CountBadge).
+## Счётчик всегда в одном месте: правый верхний угол хозяина, чуть наружу. Так одинаково
+## на нижней панели, во вкладках, разделах, плашках и кнопках (раньше где слева, где справа, где в строке).
+static func pin_badge(badge: Control, owner: Control) -> void:
+	badge.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	badge.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	badge.offset_left = -14
+	badge.offset_right = 7
+	badge.offset_top = -7
+	badge.offset_bottom = 13
+	owner.add_child(badge)
+
+
+## Красный кружок со счётчиком (CountBadge). "!" - здесь можно что-то сделать, число - сколько.
 static func count_badge(n: int) -> PanelContainer:
 	var p := PanelContainer.new()
 	var s := box(TONES["red"][1], OUTLINE, 10, 2, false)

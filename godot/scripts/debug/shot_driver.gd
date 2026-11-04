@@ -389,6 +389,8 @@ func _extra(k: int) -> void:
 		11:
 			_shot("6_quests_th")
 			L.set_language(_lang)
+			# Все множители продажи на виду: x1000 и x100 должны читаться целиком
+			StoragePanel._mult = {"wood": 1000, "stone": 100, "clay": 10}
 			main.hud.open_window(StoragePanel.new())
 		12:
 			_shot("6_storage_full")

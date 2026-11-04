@@ -370,9 +370,8 @@ func _hud_button(w: Array) -> Control:
 	UiKit.fit_label(t, TAB_LABEL_WIDTH, 11)
 	col.add_child(t)
 	var badge := UiKit.count_badge(0)
-	badge.position = Vector2(0, -7)
 	badge.visible = false
-	b.add_child(badge)
+	UiKit.pin_badge(badge, b)
 	_badges[w[0]] = badge
 	b.pressed.connect(func() -> void:
 		Sound.play("tap")
@@ -462,9 +461,8 @@ func _make_bubble(key: String, card: Control) -> Button:
 			main.pressed.emit())
 	var badge := UiKit.count_badge(0)
 	badge.visible = false
-	b.add_child(badge)
+	UiKit.pin_badge(badge, b)
 	b.set_meta("badge", badge)
-	b.resized.connect(func() -> void: badge.position = Vector2(b.size.x - 14.0, -8.0))
 	b.modulate.a = 0.0
 	b.create_tween().tween_property(b, "modulate:a", 1.0, 0.15)
 	return b
@@ -521,7 +519,6 @@ func _update_badges() -> void:
 		badge.visible = n > 0
 		if n > 0:
 			(badge.get_child(0) as Label).text = str(mini(n, 99))
-			badge.position.x = badge.get_parent().size.x - 16
 
 
 func _build_banner() -> void:
@@ -536,8 +533,7 @@ func _build_banner() -> void:
 
 
 func _show_banner(id: String) -> void:
-	for c in _banner.get_children():
-		c.queue_free()
+	UiKit.clear(_banner)
 	var t := UiKit.title(Locations.name_of(id), 28)
 	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_banner.add_child(t)
@@ -683,6 +679,9 @@ func _on_level_up(from: int, to: int) -> void:
 # MARK: Окна
 
 func open_window(w: Control) -> void:
+	# Окно сменяет другое (переход по разделам вкладки): без повторной анимации появления
+	if has_window() and w is Sheet:
+		(w as Sheet).animate_in = false
 	close_window()
 	if w is Sheet and (w as Sheet).nav_group == "":
 		var where := Nav.locate(w)

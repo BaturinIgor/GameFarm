@@ -30,9 +30,8 @@ func _init() -> void:
 	_text.label_settings.outline_size = 4
 	_row.add_child(_text)
 	_dot = UiKit.count_badge(0)
-	_dot.position = Vector2(-6, -7)
 	_dot.visible = false
-	_button.add_child(_dot)
+	UiKit.pin_badge(_dot, _button)
 	L.language_changed.connect(func() -> void: _shown = -1)
 	_refresh()
 
@@ -64,4 +63,4 @@ func _refresh() -> void:
 		_button.add_theme_stylebox_override(state, s)
 	_button.add_theme_stylebox_override("pressed", down)
 	_button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	_button.custom_minimum_size = _row.get_combined_minimum_size() + Vector2(16, 10)
+	_button.custom_minimum_size = Vector2(maxf(ShopPill.WIDTH, _row.get_combined_minimum_size().x + 16.0), ShopPill.HEIGHT)

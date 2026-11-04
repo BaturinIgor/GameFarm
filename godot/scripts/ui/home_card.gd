@@ -46,8 +46,7 @@ func _on_changed() -> void:
 func _process(delta: float) -> void:
 	if _dirty and not UiKit.touch_held(self):
 		_dirty = false
-		for c in _row.get_children():
-			c.queue_free()
+		UiKit.clear(_row)
 		_badge = null
 		_bed_button = null
 		_ticket_label = null

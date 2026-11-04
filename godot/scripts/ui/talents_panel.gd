@@ -130,26 +130,27 @@ func _branch_picker() -> void:
 
 		var row := HBoxContainer.new()
 		row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		row.offset_left = 8
-		row.offset_right = -8
-		row.add_theme_constant_override("separation", 6)
+		row.offset_left = 5
+		row.offset_right = -5
+		row.add_theme_constant_override("separation", 4)
 		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		btn.add_child(row)
-		var ic := UiKit.icon(Talents.branch_icon(b), 22)
+		# Иконка и поля поменьше: "Странник" и другие длинные ветки читаются, а не мельчат до 8
+		var ic := UiKit.icon(Talents.branch_icon(b), 18)
 		ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(ic)
 		var spent := str(Game.talents.points_in(b))
 		var title := Talents.branch_title(b)
-		var room := cell_w - 16.0 - 22.0 - 12.0 - (14.0 + 7.0 * spent.length())
-		var t := UiKit.label(title, fit_size(title, room, 12, 8), Color.WHITE if active else UiKit.INK, 3 if active else 0)
+		var room := cell_w - 10.0 - 18.0 - 8.0 - (12.0 + 6.0 * spent.length())
+		var t := UiKit.label(title, fit_size(title, room, 12, 9), Color.WHITE if active else UiKit.INK, 3 if active else 0)
 		t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		t.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		t.clip_text = true
 		row.add_child(t)
 		var pill := PanelContainer.new()
 		var ps := UiKit.box(UiKit.WOOD_DARK if active else Color(UiKit.INK_SOFT, 0.6), Color(0, 0, 0, 0), 8, 0, false)
-		ps.content_margin_left = 6
-		ps.content_margin_right = 6
+		ps.content_margin_left = 5
+		ps.content_margin_right = 5
 		ps.content_margin_top = 1
 		ps.content_margin_bottom = 1
 		pill.add_theme_stylebox_override("panel", ps)

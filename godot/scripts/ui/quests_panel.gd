@@ -180,9 +180,7 @@ func _goals_tile(week: bool) -> Control:
 	col.add_child(timer)
 	var ready := _goals_ready(week)
 	if ready > 0:
-		var badge := UiKit.count_badge(ready)
-		badge.position = Vector2(-6, -7)
-		b.add_child(badge)
+		UiKit.pin_badge(UiKit.count_badge(ready), b)
 	b.pressed.connect(func() -> void:
 		Sound.play("tap")
 		_goals_open = "" if opened else key

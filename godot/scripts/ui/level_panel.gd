@@ -512,10 +512,11 @@ func _settings() -> void:
 			var key: String = "cos_" + cid
 			look.add_child(_switch_row(Products.title(cid), L.t("cosmetic.%s.hint" % cid), Settings._flag(key, true),
 				func(on: bool) -> void: Settings.set_value(key, on)))
-	# Покупки
-	section_title(L.t("settings.section.purchases"))
-	var buy := card()
-	_purchases_rows(buy)
+	# Покупки (пока покупок за деньги нет - раздела нет, и тестового сброса в релизе тоже)
+	if Store.LIVE:
+		section_title(L.t("settings.section.purchases"))
+		var buy := card()
+		_purchases_rows(buy)
 
 
 func _language_row(c: VBoxContainer) -> void:

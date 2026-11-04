@@ -53,8 +53,7 @@ func _ready() -> void:
 	_fill(v)
 	Game.changed.connect(func() -> void:
 		if not is_queued_for_deletion():
-			for c in v.get_children():
-				c.queue_free()
+			UiKit.clear(v)
 			_fill(v))
 
 
