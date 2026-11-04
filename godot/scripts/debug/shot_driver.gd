@@ -363,11 +363,14 @@ func _extra(k: int) -> void:
 			# Дикие звери дальних биомов внизу списка (перекрашенные листы)
 			main.hud.open_window(load("res://scripts/ui/animals_panel.gd").new("wild"))
 		13:
-			_scroll_window(100000)
+			_scroll_window(900)
 		14:
+			_shot("6_animals_wild_mid")
+			_scroll_window(100000)
+		15:
 			_shot("6_animals_wild_end")
 			main.hud.close_window()
-		15:
+		16:
 			_step = 5
 			_time = 300.0
 			_sub = 0
