@@ -47,8 +47,18 @@ func test_max_level_stops_xp() -> void:
 	set_level(Game.MAX_LEVEL)
 	Game.gain_xp(1_000_000)
 	eq(Game.level, Game.MAX_LEVEL, "уровень не выше максимума")
-	eq(Game.save["xp"], 0, "опыт на максимуме")
-	eq(Game.level_progress, 1.0, "полоска на максимуме")
+	check(int(Game.save["xp"]) < Game.mastery_xp(), "остаток опыта меньше очка мастерства")
+	check(Game.level_progress >= 0.0 and Game.level_progress < 1.0, "полоска показывает мастерство")
+
+
+## После последнего уровня опыт превращается в очки мастерства, а они - в очки талантов.
+func test_max_level_xp_gives_mastery() -> void:
+	set_level(Game.MAX_LEVEL)
+	var talents := Game.talents.points_total()
+	Game.gain_xp(Game.mastery_xp() * 3)
+	eq(Game.mastery_points(), 3, "очки мастерства")
+	eq(Game.save["xp"], 0, "остаток опыта")
+	eq(Game.talents.points_total(), talents + 3, "мастерство добавляет очки талантов")
 
 
 func test_zero_or_negative_xp_ignored() -> void:
@@ -58,7 +68,15 @@ func test_zero_or_negative_xp_ignored() -> void:
 	eq(Game.level, 1)
 
 
-func test_level_up_refills_energy() -> void:
+func test_level_up_restores_half_energy() -> void:
 	Game.save["energy"]["value"] = 10.0
 	Game.gain_xp(Game.xp_to_next(1))
-	check(Game.energy.value() >= Game.energy.max_value(), "после нового уровня энергия полная")
+	var mx := Game.energy.max_value()
+	check(absf(Game.energy.value() - minf(mx, 10.0 + mx * EnergySystem.LEVEL_UP_SHARE)) < 0.01, "после нового уровня - половина запаса сверху")
+
+
+func test_level_up_never_lowers_energy() -> void:
+	var mx := Game.energy.max_value()
+	Game.save["energy"]["value"] = mx * 1.5
+	Game.gain_xp(Game.xp_to_next(1))
+	check(Game.energy.value() >= mx * 1.5 - 0.01, "переполнение энергии не срезается")
