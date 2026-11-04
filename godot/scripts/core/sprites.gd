@@ -60,6 +60,54 @@ func texture(name: String) -> Texture2D:
 	return tex
 
 
+## Перекрашенная копия спрайта base под именем name (новые звери из листа другого зверя).
+## colors - [тень, середина, свет]: цвет пикселя заменяется по его яркости, контур и прозрачность остаются.
+## Описание из манифеста (якорь, кадры) копируется. Возвращает false, если исходного спрайта нет.
+func recolor(name: String, base: String, colors: Array) -> bool:
+	if _textures.get(name) != null:
+		return true
+	var src := texture(base)
+	if src == null or colors.size() < 3:
+		return false
+	var img: Image
+	if src is AtlasTexture:
+		var at := src as AtlasTexture
+		var full := at.atlas.get_image()
+		if full == null:
+			return false
+		if full.is_compressed():
+			full.decompress()
+		img = full.get_region(Rect2i(at.region))
+	else:
+		img = src.get_image()
+		if img == null:
+			return false
+		if img.is_compressed():
+			img.decompress()
+	img.convert(Image.FORMAT_RGBA8)
+	var dark: Color = colors[0]
+	var mid: Color = colors[1]
+	var light: Color = colors[2]
+	for y in img.get_height():
+		for x in img.get_width():
+			var c := img.get_pixel(x, y)
+			if c.a <= 0.0:
+				continue
+			var lum := c.get_luminance()
+			# Тёмный контур и глаза не трогаем
+			if lum < 0.16:
+				continue
+			var t := clampf((lum - 0.16) / 0.84, 0.0, 1.0)
+			var out := dark.lerp(mid, t * 2.0) if t < 0.5 else mid.lerp(light, (t - 0.5) * 2.0)
+			out.a = c.a
+			img.set_pixel(x, y, out)
+	var info_copy: Dictionary = info(base).duplicate(true)
+	info_copy.erase("atlas")
+	manifest[name] = info_copy
+	_textures[name] = ImageTexture.create_from_image(img)
+	return true
+
+
 ## Якорь: доля ширины слева и доля высоты снизу (как в SpriteKit).
 func anchor(name: String) -> Vector2:
 	var a = info(name).get("anchor", [0.5, 0.0])

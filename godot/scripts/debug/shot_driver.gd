@@ -410,7 +410,48 @@ func _extra(k: int) -> void:
 			for n in main.hud.find_children("*", "", true, false):
 				if n is RewardsPopup:
 					n.queue_free()
+			# Дикие звери дальних биомов внизу списка (перекрашенные листы)
+			main.hud.open_window(load("res://scripts/ui/animals_panel.gd").new("wild"))
 		16:
+			_scroll_window(900)
+		17:
+			_shot("6_animals_wild_mid")
+			_scroll_window(100000)
+		18:
+			_shot("6_animals_wild_end")
+			# Сундуки: ключи, окно, открытие десяти сундуков с наградами всех цветов
+			Game.chests.add_keys("copper", 12, false)
+			Game.chests.add_keys("silver", 1, false)
+			main.hud.open_window(ChestsPanel.new())
+		19:
+			_shot("6_chests")
+			_check_layout("chests")
+			var list: Array = []
+			for r in Chests.RARITIES:
+				list.append(ChestSystem.make_reward(r, 1 + list.size() % 3, Game.level))
+			list.append(ChestSystem.make_reward("gold", 3, Game.level))
+			list.append(ChestSystem.make_reward("blue", 2, Game.level))
+			list.append(ChestSystem.make_reward("green", 1, Game.level))
+			for r in list:
+				Game.chests.give(r)
+			ChestOverlay.show_rewards("wood", list)
+		20:
+			_shot("6_chest_shake")
+		26:
+			_shot("6_chest_open10")
+			for n in main.hud.find_children("*", "", true, false):
+				if n is ChestOverlay:
+					n.queue_free()
+			var top := ChestSystem.make_reward("rainbow", 3, Game.level)
+			Game.chests.give(top)
+			ChestOverlay.show_rewards("ancient", [top])
+		32:
+			_shot("6_chest_open1")
+			for n in main.hud.find_children("*", "", true, false):
+				if n is ChestOverlay:
+					n.queue_free()
+			main.hud.close_window()
+		33:
 			_step = 5
 			_time = 300.0
 			_sub = 0

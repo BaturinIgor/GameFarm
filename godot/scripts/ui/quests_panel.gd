@@ -217,6 +217,10 @@ func _goals_bonus(week: bool) -> Control:
 	what.add_child(UiKit.label(str(daily.bonus_crystals(week)), 12, UiKit.INK_SOFT))
 	what.add_child(UiKit.icon("coins", 14))
 	what.add_child(UiKit.label(Fmt.n(daily.bonus_coins(week)), 12, UiKit.INK_SOFT))
+	var key := UiKit.icon("key", 14)
+	key.modulate = Chests.KEY_TINT["silver" if week else "copper"]
+	what.add_child(key)
+	what.add_child(UiKit.label("1", 12, UiKit.INK_SOFT))
 	if daily.bonus_taken(week):
 		var ok := HousePanel.check_mark(22)
 		ok.size_flags_vertical = Control.SIZE_SHRINK_CENTER

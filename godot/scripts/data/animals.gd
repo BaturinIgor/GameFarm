@@ -9,6 +9,8 @@ const IDS := [
 	"chicken", "cow", "horse", "sheep", "bee", "rooster", "pig", "unicorn",
 	# Дикие
 	"mouse", "goose", "duck", "frog", "butterfly", "swan", "goldenGoose",
+	# Дикие жители дальних биомов (перекраска листа другого зверя, см. base и recolor)
+	"jerboa", "crystalMouse", "salamander", "amberButterfly", "starButterfly",
 	# Из стартового набора
 	"duckHat",
 	# За кристаллы: перекрашенные звери пака
@@ -62,15 +64,39 @@ const SPECS := {
 	"frog": {"emoji": "🐸", "source": "wild", "location": "swamp", "weight": 1.0,
 		"cost": {"coins": 0, "items": [["herbs", 30], ["mushrooms", 30]]},
 		"effects": [{"type": "respawn", "v": 0.12}, {"type": "yield", "cat": "food", "v": 0.12}]},
-	"butterfly": {"emoji": "🦋", "source": "wild", "location": "desert", "weight": 1.0,
-		"cost": {"coins": 0, "items": [["cactus", 30], ["coconut", 20]]},
+	"butterfly": {"emoji": "🦋", "source": "wild", "location": "island", "weight": 1.0,
+		"cost": {"coins": 0, "items": [["coconut", 30], ["banana", 15]]},
 		"effects": [{"type": "xp", "v": 0.2}, {"type": "sell", "v": 0.06}]},
 	"swan": {"emoji": "🦢", "source": "wild", "location": "snow", "weight": 1.0,
 		"cost": {"coins": 0, "items": [["fish", 80], ["ice", 30]]},
 		"effects": [{"type": "crit", "v": 0.05}, {"type": "backpack", "v": 40}]},
-	"goldenGoose": {"emoji": "🪿", "source": "wild", "location": "caves", "weight": 0.4,
-		"cost": {"coins": 0, "items": [["crystal", 10], ["diamond", 10], ["coconut", 50]]},
+	"goldenGoose": {"emoji": "🪿", "source": "wild", "location": "sky", "weight": 0.4,
+		"cost": {"coins": 0, "items": [["cloud", 30], ["diamond", 10], ["crystal", 10]]},
 		"effects": [{"type": "produce", "kind": "gold", "interval": 40.0}, {"type": "yield", "cat": "gem", "v": 0.12}]},
+
+	# base - чей лист перекрашивается, recolor - три цвета (тень, середина, свет) по яркости пикселя
+	"jerboa": {"emoji": "🐁", "source": "wild", "location": "desert", "weight": 1.0,
+		"base": "mouse", "recolor": [Color("8a5a2b"), Color("d9a45a"), Color("f6dfa8")],
+		"cost": {"coins": 0, "items": [["cactus", 30], ["carrots", 30]]},
+		"effects": [{"type": "speed", "v": 0.06}, {"type": "yield", "cat": "food", "v": 0.08}]},
+	"crystalMouse": {"emoji": "🐁", "source": "wild", "location": "caves", "weight": 0.8,
+		"base": "mouse", "recolor": [Color("3b2f8a"), Color("7f6ee8"), Color("bff3ff")],
+		"cost": {"coins": 0, "items": [["crystal", 8], ["mushrooms", 40]]},
+		"effects": [{"type": "helper", "spec": {"damage": 6.0, "interval": 1.1, "tools": ["hand", "pickaxe"], "max_tier": 6}},
+			{"type": "yield", "cat": "gem", "v": 0.06}]},
+	"salamander": {"emoji": "🦎", "source": "wild", "location": "volcano", "weight": 1.0,
+		"base": "frog", "recolor": [Color("6e1a12"), Color("e2501f"), Color("ffc24a")],
+		"cost": {"coins": 0, "items": [["obsidian", 15], ["sulfur", 15]]},
+		"effects": [{"type": "helper", "spec": {"damage": 10.0, "interval": 1.1, "tools": ["hand", "pickaxe"], "max_tier": 7}},
+			{"type": "crit", "v": 0.04}]},
+	"amberButterfly": {"emoji": "🦋", "source": "wild", "location": "amberWoods", "weight": 1.0,
+		"base": "butterfly", "recolor": [Color("7a3a0c"), Color("e8962a"), Color("ffe08a")],
+		"cost": {"coins": 0, "items": [["goldenApple", 10], ["honey", 20]]},
+		"effects": [{"type": "xp", "v": 0.15}, {"type": "yield", "cat": "wood", "v": 0.1}]},
+	"starButterfly": {"emoji": "🦋", "source": "wild", "location": "starMeadows", "weight": 0.8,
+		"base": "butterfly", "recolor": [Color("2a2a7a"), Color("7d7df0"), Color("f4f0ff")],
+		"cost": {"coins": 0, "items": [["stardust", 6], ["cloud", 20]]},
+		"effects": [{"type": "xp", "v": 0.25}, {"type": "sell", "v": 0.08}]},
 
 	"duckHat": {"emoji": "🦆", "source": "premium",
 		"effects": [{"type": "yield", "v": 0.08}, {"type": "xp", "v": 0.1}, {"type": "sell", "v": 0.1}]},
@@ -137,6 +163,16 @@ static func _has_effect(id: String, type: String) -> bool:
 		if e["type"] == type:
 			return true
 	return false
+
+
+## Чей лист рисует зверя (перекрашенные звери берут лист другого).
+static func base_sheet(id: String) -> String:
+	return str(spec(id).get("base", id))
+
+
+## Цвета перекраски [тень, середина, свет] или [] для зверя со своим листом.
+static func recolor(id: String) -> Array:
+	return spec(id).get("recolor", [])
 
 
 static func is_helper(id: String) -> bool:

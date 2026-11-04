@@ -10,8 +10,9 @@ var tab := "mine"
 var _took_hint := false
 
 
-func _init() -> void:
+func _init(start_tab := "mine") -> void:
 	title_key = "hud.animals"
+	tab = start_tab
 
 
 ## Открыли из нижней панели: вкладка, где горит отметка.

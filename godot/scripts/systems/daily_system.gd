@@ -2,7 +2,7 @@ class_name DailySystem
 extends RefCounted
 ## Цели дня и цели недели за кристаллы.
 ## День: до пяти целей (добыча и склад всегда, остальные - из того, что уже открыто), за каждую 1-4 кристалла,
-## за все цели дня - сундук: ещё кристаллы и монеты. Неделя (с понедельника): четыре большие цели и сундук недели.
+## за все цели дня - сундук: ещё кристаллы, монеты и медный ключ (за неделю - серебряный). Неделя (с понедельника): четыре большие цели и сундук недели.
 ## Цели растут с уровнем: на 18 уровне день - это около 370 ударов по ресурсам и 390 ресурсов на склад.
 ## В Game.save: daily = {day, v, goals: [{type, target, progress, crystals, claimed}], bonus},
 ## weekly = {week, v, goals, bonus}.
@@ -211,6 +211,8 @@ func take_bonus(week := false) -> void:
 	Game.save["weekly" if week else "daily"]["bonus"] = true
 	Game.shop.add_crystals(bonus_crystals(week), true)
 	Game.add_coins(bonus_coins(week))
+	# Ключ к сундукам: за день медный, за неделю серебряный
+	Game.chests.add_keys("silver" if week else "copper")
 	Sound.play("treasure")
 	Game.save_now()
 

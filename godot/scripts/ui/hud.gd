@@ -6,6 +6,7 @@ const LEVEL_PANEL := "res://scripts/ui/level_panel.gd"
 ## Плашки справа под монетами (блюдо, этаж дома, ивент...): Control, сам прячется, когда не нужен.
 const PILLS := [
 	"res://scripts/ui/shop_pill.gd",
+	"res://scripts/ui/chest_pill.gd",
 	"res://scripts/ui/hot_offer_pill.gd",
 	"res://scripts/ui/home_floor_pill.gd",
 	"res://scripts/ui/dungeon_pill.gd",
