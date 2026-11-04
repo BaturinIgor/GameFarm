@@ -2,16 +2,6 @@ class_name Hud
 extends CanvasLayer
 ## Шапка игры: уровень и опыт, монеты, рюкзак, кнопки окон, всплывающие сообщения и название локации.
 
-## Окна нижней панели: id, иконка, ключ подписи, скрипт окна. Кнопка есть, только если окно уже сделано.
-const WINDOWS := [
-	["storage", "chest", "hud.storage", "res://scripts/ui/storage_panel.gd"],
-	["workshop", "tool_hammer", "hud.workshop", "res://scripts/ui/workshop_panel.gd"],
-	["talents", "stardust", "hud.talents", "res://scripts/ui/talents_panel.gd"],
-	["animals", "paw", "hud.animals", "res://scripts/ui/animals_panel.gd"],
-	["quests", "scroll", "hud.quests", "res://scripts/ui/quests_panel.gd"],
-	["collection", "cards", "hud.collection", "res://scripts/ui/collection_panel.gd"],
-	["map", "map", "hud.map", "res://scripts/ui/map_panel.gd"],
-]
 const LEVEL_PANEL := "res://scripts/ui/level_panel.gd"
 ## Плашки справа под монетами (блюдо, этаж дома, ивент...): Control, сам прячется, когда не нужен.
 const PILLS := [
@@ -22,7 +12,6 @@ const PILLS := [
 ]
 ## Маленькие плашки (таймеры): в один ряд с переносом, чтобы столбец справа не рос вниз.
 const MINI_PILLS := [
-	"res://scripts/ui/estate_pill.gd",
 	"res://scripts/ui/raid_pill.gd",
 	"res://scripts/ui/event_pill.gd",
 	"res://scripts/ui/meal_pill.gd",
@@ -67,8 +56,8 @@ var _badges: Dictionary = {}
 var _level_label: Label
 var _level_name: Label
 var _xp_bar: ProgressBar
-## Ширина подписи нижней кнопки: 7 кнопок в ряд на узком экране.
-const TAB_LABEL_WIDTH := 44.0
+## Ширина подписи нижней кнопки: 5 кнопок в ряд на узком экране.
+const TAB_LABEL_WIDTH := 62.0
 
 var _coins_label: Label
 var _crystals_label: Label
@@ -284,10 +273,9 @@ func _build_bottom() -> void:
 	bar.offset_bottom = -6 - bottom
 	bar.add_theme_constant_override("separation", 5)
 	root.add_child(bar)
-	for w in WINDOWS:
-		if not ResourceLoader.exists(w[3]):
-			continue
-		bar.add_child(_hud_button(w))
+	# 5 вкладок (Nav.GROUPS): каждая открывает раздел, где что-то горит
+	for g in Nav.GROUPS:
+		bar.add_child(_hud_button(g))
 
 	# Карточки-подсказки над кнопками (приручить зверя, проход, дом...)
 	_prompts.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
@@ -344,8 +332,9 @@ func _tutorial_card() -> Control:
 	return p
 
 
-## Кнопка нижней панели (HUDButton): иконка, подпись и счётчик.
+## Кнопка нижней панели (HUDButton): иконка, подпись и счётчик. w - вкладка из Nav.GROUPS.
 func _hud_button(w: Array) -> Control:
+	var center: bool = w[0] == Nav.CENTER
 	var b := Button.new()
 	var style := UiKit.pill_style()
 	style.set_corner_radius_all(14)
@@ -358,38 +347,39 @@ func _hud_button(w: Array) -> Control:
 	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	b.focus_mode = Control.FOCUS_NONE
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	b.custom_minimum_size = Vector2(0, 58)
+	b.size_flags_stretch_ratio = 1.25 if center else 1.0
+	b.size_flags_vertical = Control.SIZE_SHRINK_END
+	b.custom_minimum_size = Vector2(0, 66 if center else 58)
 	var col := VBoxContainer.new()
 	col.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 1)
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.add_child(col)
-	var ic := UiKit.icon(w[1], 30)
+	var ic := UiKit.icon(w[1], 36 if center else 30)
 	ic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	col.add_child(ic)
-	var t := UiKit.title(L.t(w[2]), 10)
+	var t := UiKit.title(L.t(w[2]), 11)
 	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	t.clip_text = true
 	t.set_meta("key", w[2])
-	t.set_meta("fit", 10)
-	UiKit.fit_label(t, TAB_LABEL_WIDTH, 10)
+	t.set_meta("fit", 11)
+	UiKit.fit_label(t, TAB_LABEL_WIDTH, 11)
 	col.add_child(t)
 	var badge := UiKit.count_badge(0)
 	badge.position = Vector2(0, -7)
 	badge.visible = false
 	b.add_child(badge)
 	_badges[w[0]] = badge
-	b.pressed.connect(func() -> void: open_named(w[0]))
+	b.pressed.connect(func() -> void:
+		Sound.play("tap")
+		Nav.open_group(w[0]))
 	return b
 
 
-## Открыть окно по имени из WINDOWS (storage, workshop, talents, ...).
+## Открыть раздел по имени (storage, workshop, talents, ... - см. Nav.SUBS).
 func open_named(id: String) -> void:
-	for w in WINDOWS:
-		if w[0] == id and ResourceLoader.exists(w[3]):
-			open_window(load(w[3]).new())
-			return
+	Nav.open_sub(id)
 
 
 ## Полноэкранная заставка поверх окон (новый уровень, доход за время без игры, клад).
@@ -523,26 +513,11 @@ func _place_bubbles() -> void:
 
 func _update_badges() -> void:
 	for id in _badges:
-		var n := 0
-		match id:
-			"map":
-				n = Game.world_map.openable_gates() + (1 if Game.premium.free_ticket_ready() else 0)
-			"workshop":
-				if Game.workshop.has_method("upgradable_count"):
-					n = Game.workshop.upgradable_count()
-			"talents":
-				if Game.talents.has_method("points_free"):
-					n = Game.talents.points_free()
-			"animals":
-				n = Game.animals.upgradable_count()
-			"quests":
-				if Game.quests.has_method("claimable_count"):
-					n = Game.quests.claimable_count()
-				n += Game.residents.attention_count()
+		var n := Nav.group_count(id)
 		var badge: PanelContainer = _badges[id]
 		badge.visible = n > 0
 		if n > 0:
-			(badge.get_child(0) as Label).text = str(n)
+			(badge.get_child(0) as Label).text = str(mini(n, 99))
 			badge.position.x = badge.get_parent().size.x - 16
 
 
@@ -692,6 +667,11 @@ func _on_level_up(from: int, to: int) -> void:
 
 func open_window(w: Control) -> void:
 	close_window()
+	if w is Sheet and (w as Sheet).nav_group == "":
+		var where := Nav.locate(w)
+		if not where.is_empty():
+			(w as Sheet).nav_group = where[0]
+			(w as Sheet).nav_sub = where[1]
 	_window = w
 	root.add_child(w)
 	Sound.set_window_open(true)

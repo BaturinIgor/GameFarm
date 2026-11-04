@@ -29,6 +29,14 @@ func build_top() -> void:
 		scroll_to_top()))
 
 
+## Открыли из нижней панели: вкладка, где горит отметка.
+func focus_attention() -> void:
+	if Game.combat.claimable_hunts() > 0:
+		tab = "hunts"
+	elif Game.combat.bestiary_ready_count() > 0:
+		tab = "bestiary"
+
+
 func build() -> void:
 	Game.combat.ensure_hunts()
 	match tab:

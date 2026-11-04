@@ -174,6 +174,7 @@ static func _hunt_card(h: Dictionary) -> Control:
 	v.add_child(bar)
 	if done:
 		var b := UiKit.button(L.t("quests.claim"), "green", 15)
+		UiKit.attention(b)
 		b.pressed.connect(func() -> void:
 			RewardsPopup.track(func() -> void: Game.combat.claim_hunt(id))
 			Input.vibrate_handheld(20))

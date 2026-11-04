@@ -9,6 +9,10 @@ var header_currency := "coins"
 var content := VBoxContainer.new()
 ## Неподвижная полоса между шапкой и прокруткой (вкладки). Наследник заполняет её в build_top().
 var top_bar := VBoxContainer.new()
+## Вкладка нижней панели и раздел этого окна (Nav): под шапкой полоса соседних разделов. Задаёт Hud.open_window.
+var nav_group := ""
+var nav_sub := ""
+var _nav_holder := MarginContainer.new()
 var _panel := PanelContainer.new()
 var _title: Label
 var _coins: Label
@@ -52,6 +56,13 @@ func _ready() -> void:
 	col.add_theme_constant_override("separation", 0)
 	_panel.add_child(col)
 	col.add_child(_window_header())
+	if nav_group != "":
+		Nav.remember(nav_group, nav_sub)
+		_nav_holder.add_theme_constant_override("margin_left", int(BODY_MARGIN))
+		_nav_holder.add_theme_constant_override("margin_right", int(BODY_MARGIN))
+		_nav_holder.add_theme_constant_override("margin_top", 10)
+		_nav_holder.visible = false
+		col.add_child(_nav_holder)
 	var body := MarginContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("margin_left", int(BODY_MARGIN))
@@ -97,6 +108,7 @@ func _process(delta: float) -> void:
 		_coins.text = Fmt.n(Game.shop.crystals() if header_currency == "crystals" else int(Game.save["coins"]))
 		var keep := 0 if _to_top else _scroll.scroll_vertical
 		_to_top = false
+		_build_nav()
 		for c in top_bar.get_children():
 			c.queue_free()
 		build_top()
@@ -106,6 +118,18 @@ func _process(delta: float) -> void:
 		build()
 		touch_scroll(content)
 		_scroll.set_deferred("scroll_vertical", keep)
+
+
+## Полоса разделов вкладки (счётчики меняются вместе с игрой).
+func _build_nav() -> void:
+	if nav_group == "":
+		return
+	for c in _nav_holder.get_children():
+		c.queue_free()
+	var b := Nav.bar(nav_group, nav_sub)
+	_nav_holder.visible = b != null
+	if b != null:
+		_nav_holder.add_child(b)
 
 
 ## Шапка окна (WindowHeader): деревянная доска, монеты слева, название по центру, круглый крестик справа.

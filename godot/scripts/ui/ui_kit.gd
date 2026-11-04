@@ -404,6 +404,29 @@ static func stars(n: int, total := 5, size := 12.0) -> HBoxContainer:
 	return row
 
 
+## Кнопка, ради которой горит отметка на вкладке: мягко пульсирует и несёт "!" в углу (путь к уведомлению).
+static func attention(c: Control) -> void:
+	if c == null or c.has_meta("attention"):
+		return
+	c.set_meta("attention", true)
+	var dot := count_badge(0)
+	(dot.get_child(0) as Label).text = "!"
+	dot.position = Vector2(-6, -7)
+	c.add_child(dot)
+	c.add_child(Pulse.new())
+
+
+## Пульс по общим часам: окно перестраивается часто, а фаза от этого не сбивается.
+class Pulse extends Node:
+	func _process(_delta: float) -> void:
+		var p := get_parent() as Control
+		if p == null:
+			return
+		p.pivot_offset = p.size / 2.0
+		var t := Time.get_ticks_msec() / 1000.0
+		p.scale = Vector2.ONE * (1.0 + 0.045 * maxf(0.0, sin(t * TAU / 1.4)))
+
+
 ## Красный кружок со счётчиком (CountBadge).
 static func count_badge(n: int) -> PanelContainer:
 	var p := PanelContainer.new()
