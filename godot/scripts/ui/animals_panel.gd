@@ -8,8 +8,9 @@ const ACTIVE_FILL := Color("ddefc8")
 var tab := "mine"
 
 
-func _init() -> void:
+func _init(start_tab := "mine") -> void:
 	title_key = "hud.animals"
+	tab = start_tab
 
 
 func build() -> void:
