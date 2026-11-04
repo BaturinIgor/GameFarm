@@ -305,6 +305,26 @@ func until_full(id: String) -> float:
 	return maxf(0.0, cap_hours() * 3600.0 - (_now() - float(_b(id)["since"])))
 
 
+## Ускорить цех за кристаллы: окно сразу заполняется до конца (сырьё всё равно нужно).
+func boost_cost(id: String) -> int:
+	return Estate.speedup_crystals(until_full(id))
+
+
+func can_boost(id: String) -> bool:
+	return rate(id) > 0.0 and not full(id)
+
+
+func boost(id: String) -> bool:
+	if not can_boost(id) or not Game.shop.spend_crystals(boost_cost(id)):
+		return false
+	_b(id)["since"] = _now() - cap_hours() * 3600.0
+	Sound.play("luck")
+	Game.emit_event("boost", {"id": id})
+	Game.mark_dirty()
+	Game.save_now()
+	return true
+
+
 func full(id: String) -> bool:
 	return rate(id) > 0.0 and (_now() - float(_b(id)["since"])) / 3600.0 >= cap_hours()
 

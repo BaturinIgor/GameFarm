@@ -153,7 +153,7 @@ static func trait_icon(t: String) -> String:
 
 ## Сколько свойств у монстра такого уровня (обычные монстры в мире).
 static func roll_traits(level: int) -> Array:
-	var chance := 0.45 if level >= 30 else (0.3 if level >= 18 else (0.15 if level >= 10 else 0.0))
+	var chance := 0.5 if level >= 30 else (0.35 if level >= 18 else (0.2 if level >= 10 else 0.0))
 	if randf() >= chance:
 		return []
 	return [TRAITS.pick_random()]
@@ -175,6 +175,13 @@ static func in_location(id: String) -> Array:
 ## Уровень монстров локации.
 static func level_in(id: String) -> int:
 	return maxi(2, int(Locations.spec(id)["level"]) + 2)
+
+
+## Уровень монстров локации для героя: сильный герой на старой локации встречает монстров,
+## подтянутых на половину разницы (луг для героя 25 уровня - монстры 14 уровня).
+static func level_for(id: String, hero_level: int) -> int:
+	var base := level_in(id)
+	return base + maxi(0, hero_level - base) / 2
 
 
 ## Где водится монстр.

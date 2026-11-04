@@ -20,8 +20,11 @@ var shatter_chance := 0.0
 var double_strike_chance := 0.0
 var execute_threshold := 0.0
 var quake := false
-var quake_power := 0.4
+var quake_power := 0.35
 var quake_radius := 110.0
+## Сколько соседних точек задевает сотрясение и каждый какой удар оно срабатывает.
+var quake_targets := 2
+var quake_every := 3
 var tool_bonus := 0
 var yield_all := 0.0
 var yield_category: Dictionary = {}
@@ -99,6 +102,9 @@ const MAX_XP := 2.5
 const MAX_SELL := 2.0
 const MAX_ANIMAL := 3.0
 const MIN_RESPAWN := 0.4
+## Таланты зверей: сила помощников и скорость производителей не больше x2 (звёзды и пробуждение - отдельно).
+const MAX_HELPER := 2.0
+const MAX_PRODUCER := 2.0
 
 
 func yield_multiplier(kind: String) -> float:

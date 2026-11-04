@@ -180,6 +180,12 @@ func _progress_card() -> void:
 		col.add_child(_wrap(L.t("level.xpHint"), 12, UiKit.INK_SOFT))
 	else:
 		col.add_child(UiKit.label(L.t("level.maxReached"), 14))
+		# Мастерство: опыт после последнего уровня даёт очки талантов
+		var mtext := "%s / %s" % [Fmt.n(int(Game.save["xp"])), Fmt.n(Game.mastery_xp())]
+		var mbar := UiKit.bar(Game.level_progress, "purple", 120, 16, mtext)
+		mbar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_child(mbar)
+		col.add_child(_wrap(L.t("level.masteryHint", [Game.mastery_points()]), 12, UiKit.INK_SOFT))
 
 
 # MARK: Характеристики

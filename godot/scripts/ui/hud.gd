@@ -494,8 +494,9 @@ func _refresh_values() -> void:
 	_level_label.text = str(Game.level)
 	_level_name.text = Locations.name_of(Game.current)
 	_xp_bar.value = Game.level_progress
-	(_xp_bar.get_child(0) as Label).text = L.t("level.max") if Game.level >= Game.MAX_LEVEL \
-		else "%s/%s" % [Fmt.compact(int(Game.save["xp"])), Fmt.compact(Game.xp_needed)]
+	# На последнем уровне полоска показывает путь к следующему очку мастерства
+	(_xp_bar.get_child(0) as Label).text = "%s/%s" % [Fmt.compact(int(Game.save["xp"])),
+		Fmt.compact(Game.mastery_xp() if Game.level >= Game.MAX_LEVEL else Game.xp_needed)]
 	_coins_label.text = Fmt.compact(int(Game.save["coins"]))
 	_crystals_label.text = Fmt.compact(Game.shop.crystals())
 	_fit_top()

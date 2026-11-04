@@ -101,7 +101,7 @@ func set_boss_info(info: Variant) -> void:
 func hurt_hero(amount: float) -> float:
 	var dealt := amount * (1.0 - defense())
 	if buff_active("guard"):
-		dealt *= 1.0 - float(Consumables.spec("guard")["power"])
+		dealt *= 1.0 - elixir_power("guard")
 	var top := max_hp()
 	var next := maxf(0.0, minf(hp, top) - dealt)
 	# Второе дыхание (броня 10 ступени): раз в 5 минут герой не падает.
@@ -117,7 +117,7 @@ func hurt_hero(amount: float) -> float:
 	# Свиток второго шанса: срабатывает сам, если остальное не спасло
 	if next <= 0.0 and consumable_count("revive") > 0:
 		Game.save["consumables"]["revive"] = consumable_count("revive") - 1
-		next = top * float(Consumables.spec("revive")["power"])
+		next = top * revive_power()
 		Game.show_toast("px:scroll2", L.t("toast.revive"))
 		Sound.play("success")
 		Game.mark_dirty()
@@ -188,7 +188,7 @@ func weapon_damage(boss := false) -> float:
 	var base := ToolSystem.sword_damage(Game.level, effective_weapon_tier(w)) * Weapons.mult(w)
 	var rage := 1.0 + s.berserk if hp_fraction() < 0.5 else 1.0
 	var vs_boss := 1.0 + float(gear.get("boss_damage", 0.0)) + s.boss_bonus if boss else 1.0
-	var elixir := 1.0 + float(Consumables.spec("strength")["power"]) if buff_active("strength") else 1.0
+	var elixir := 1.0 + elixir_power("strength") if buff_active("strength") else 1.0
 	return base * s.damage_mult * s.sword_mult * s.weapon_mult * rage * vs_boss * elixir
 
 
@@ -266,9 +266,85 @@ func drink_potion() -> void:
 		return
 	Game.save["potions"] = potions() - 1
 	_last_potion = _now()
-	heal(Dungeons.POTION_HEAL + Game.stats.potion_bonus)
+	heal(potion_heal())
 	Sound.play("success")
 	Game.mark_dirty()
+
+
+# MARK: Алхимия
+
+func alchemy_level(id: String) -> int:
+	var d = Game.save.get("alchemy", {})
+	return int(d.get(id, 0)) if d is Dictionary else 0
+
+
+func alchemy_open(id: String) -> bool:
+	return Game.level >= int(Consumables.UPGRADE_LEVEL.get(id, 1))
+
+
+## Цена следующего уровня ({} - уже максимум).
+func alchemy_cost(id: String) -> Dictionary:
+	var next := alchemy_level(id) + 1
+	if next > Consumables.UPGRADE_MAX:
+		return {}
+	return Consumables.upgrade_cost(id, next)
+
+
+func can_upgrade_alchemy(id: String) -> bool:
+	var cost := alchemy_cost(id)
+	return alchemy_open(id) and not cost.is_empty() and Game.can_afford(cost)
+
+
+func upgrade_alchemy(id: String) -> bool:
+	if not can_upgrade_alchemy(id):
+		return false
+	Game.pay(alchemy_cost(id))
+	if not Game.save.get("alchemy") is Dictionary:
+		Game.save["alchemy"] = {}
+	Game.save["alchemy"][id] = alchemy_level(id) + 1
+	Sound.play("unlock")
+	Game.show_toast("px:potion", L.t("alchemy.upgraded", [Consumables.upgrade_name(id), alchemy_level(id)]))
+	Game.mark_dirty()
+	Game.save_now()
+	return true
+
+
+## Сколько улучшений алхимии можно сделать прямо сейчас (для значка вкладки).
+func alchemy_ready() -> int:
+	var n := 0
+	for id in Consumables.UPGRADES:
+		if can_upgrade_alchemy(id):
+			n += 1
+	return n
+
+
+func _alchemy_bonus(id: String) -> float:
+	return float(Consumables.UPGRADE_STEP.get(id, 0.0)) * float(alchemy_level(id))
+
+
+## Сколько лечит зелье: база, талант "Алхимик", алхимия.
+func potion_heal() -> float:
+	return Dungeons.POTION_HEAL + Game.stats.potion_bonus + _alchemy_bonus("heal")
+
+
+## Сила эликсира (доля) с алхимией. Защита - не выше GUARD_MAX.
+func elixir_power(id: String) -> float:
+	var v := float(Consumables.spec(id).get("power", 0.0)) + _alchemy_bonus("elixirs")
+	return minf(Consumables.GUARD_MAX, v) if id == "guard" else v
+
+
+## Время эликсира: алхимия и талант "Алхимик" (+10% за ранг).
+func elixir_duration(id: String) -> float:
+	var base := float(Consumables.spec(id).get("duration", 0.0)) + Consumables.ELIXIR_SECONDS * float(alchemy_level("elixirs"))
+	return base * (1.0 + float(Game.talents.rank("alchemist")) * 0.1)
+
+
+func bomb_power() -> float:
+	return float(Consumables.spec("bomb").get("power", 1.0)) * (1.0 + _alchemy_bonus("bomb"))
+
+
+func revive_power() -> float:
+	return float(Consumables.spec("revive").get("power", 0.5)) + _alchemy_bonus("revive")
 
 
 # MARK: Расходники
@@ -317,7 +393,7 @@ func use_consumable(id: String) -> bool:
 		if MonstersFeature.current == null or not MonstersFeature.current.throw_bomb():
 			return false
 	else:
-		buff_until[id] = maxf(_now(), float(buff_until.get(id, 0.0))) + float(Consumables.spec(id)["duration"])
+		buff_until[id] = maxf(_now(), float(buff_until.get(id, 0.0))) + elixir_duration(id)
 		Sound.play("luck")
 	Game.save["consumables"][id] = consumable_count(id) - 1
 	Game.emit_event("consumable", {"id": id})

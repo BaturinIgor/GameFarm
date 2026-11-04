@@ -67,10 +67,11 @@ const TONES := {
 
 ## Предложение дня: три варианта по очереди, покупается раз в день. value - во сколько кристаллов его оценивать
 ## для честного "в N раз выгоднее" по сравнению с самой маленькой пачкой кристаллов.
+## planks_hours - доски: столько часов работы лесопилки на уровне героя.
 const FLASH := [
-	{"crystals": 1200, "infinite_hours": 2, "value": 8000},
-	{"crystals": 800, "tickets": 10, "maps": 3, "value": 7500},
-	{"crystals": 1000, "energy": 1500, "attempts": 5, "value": 8200},
+	{"crystals": 1200, "infinite_hours": 2, "planks_hours": 12, "value": 8000},
+	{"crystals": 800, "tickets": 10, "maps": 3, "planks_hours": 12, "value": 7500},
+	{"crystals": 1000, "energy": 1500, "attempts": 5, "planks_hours": 12, "value": 8200},
 ]
 ## Ступенчатый набор: покупаются по очереди, все три сразу - за цену третьего.
 const STEPS := {
