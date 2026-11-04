@@ -42,6 +42,7 @@ static func snapshot() -> Dictionary:
 		"tickets": int(s.get("tickets", 0)),
 		"sparks": int(s.get("sparks", 0)),
 		"maps": int(s.get("maps", 0)),
+		"keys": (s["chests"]["keys"] as Dictionary).duplicate() if s.get("chests") is Dictionary else {},
 		"storage": (s.get("storage", {}) as Dictionary).duplicate(),
 		"seeds": (s.get("seeds", {}) as Dictionary).duplicate(),
 		"dishes": (s.get("dishes", {}) as Dictionary).duplicate(),
@@ -66,6 +67,9 @@ static func diff(a: Dictionary, b: Dictionary) -> Array:
 	add.call("px:ticket", int(b["tickets"]) - int(a["tickets"]))
 	add.call("px:spark", int(b["sparks"]) - int(a["sparks"]))
 	add.call("px:tmap", int(b["maps"]) - int(a["maps"]))
+	# Ключи сундуков: значок ключа и сколько (вид ключа - в названии сундука)
+	for k in b["keys"]:
+		add.call("px:key", int(b["keys"][k]) - int(a["keys"].get(k, 0)))
 	for k in b["storage"]:
 		add.call("res:" + str(k), int(b["storage"][k]) - int(a["storage"].get(k, 0)))
 	for crop in b["seeds"]:
