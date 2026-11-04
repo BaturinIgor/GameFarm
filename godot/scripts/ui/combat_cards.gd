@@ -211,7 +211,7 @@ static func potion_shop_card() -> Control:
 	col.add_theme_constant_override("separation", 2)
 	head.add_child(col)
 	col.add_child(UiKit.label(L.t("potion.title", [c.potions()]), 15))
-	col.add_child(_wrap(L.t("potion.hint", [Fmt.pct(Dungeons.POTION_HEAL)]), 11, UiKit.INK_SOFT))
+	col.add_child(_wrap(L.t("potion.hint", [Fmt.pct(Game.combat.potion_heal())]), 11, UiKit.INK_SOFT))
 	# Одно зелье бесплатно раз в сутки
 	v.add_child(FreeButton.new("potion", L.t("free.potion"), func() -> void:
 		Game.save["potions"] = int(Game.save.get("potions", 0)) + 1

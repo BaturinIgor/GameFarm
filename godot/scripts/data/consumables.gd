@@ -16,6 +16,50 @@ const SPECS := {
 	"revive": {"level": 18, "price": 8.0, "power": 0.5, "tone": "gold"},
 }
 
+## Алхимия: улучшения зелья лечения и расходников за монеты и трофеи монстров. Остаются после перерождения.
+## heal - лечение зелья, elixirs - сила и время всех эликсиров, bomb - урон бомбы, revive - здоровье после свитка.
+const UPGRADES := ["heal", "elixirs", "bomb", "revive"]
+const UPGRADE_MAX := 5
+## Прибавка за уровень (доля). Эликсиры ещё и дольше на ELIXIR_SECONDS за уровень.
+const UPGRADE_STEP := {"heal": 0.06, "elixirs": 0.05, "bomb": 0.2, "revive": 0.08}
+const ELIXIR_SECONDS := 8.0
+## Защита эликсира не больше этой доли: иначе вместе со шлемом урон почти не проходит.
+const GUARD_MAX := 0.6
+## С какого уровня героя открывается улучшение (как сам расходник).
+const UPGRADE_LEVEL := {"heal": 5, "elixirs": 8, "bomb": 15, "revive": 18}
+const UPGRADE_ICON := {"heal": "potion", "elixirs": "fist", "bomb": "bolt", "revive": "scroll2"}
+## Трофей и сколько его за уровень, монеты первого уровня (дальше x2 за уровень).
+const UPGRADE_COST := {
+	"heal": {"coins": 600, "items": [["slime", 15]]},
+	"elixirs": {"coins": 900, "items": [["bone", 12], ["tusk", 4]]},
+	"bomb": {"coins": 1500, "items": [["tusk", 10]]},
+	"revive": {"coins": 2500, "items": [["bone", 15], ["essence", 3]]},
+}
+
+
+## Цена уровня n улучшения алхимии.
+static func upgrade_cost(id: String, n: int) -> Dictionary:
+	var base: Dictionary = UPGRADE_COST.get(id, {})
+	if base.is_empty():
+		return {}
+	var items: Array = []
+	for it in base["items"]:
+		items.append([it[0], int(it[1]) * n])
+	return {"coins": int(round(float(base["coins"]) * pow(2.0, float(n - 1)) / 10.0) * 10), "items": items}
+
+
+static func upgrade_name(id: String) -> String:
+	return L.t("alchemy.up." + id)
+
+
+## Что даёт улучшение на уровне n.
+static func upgrade_text(id: String, n: int) -> String:
+	var v := float(UPGRADE_STEP.get(id, 0.0)) * float(n)
+	if id == "elixirs":
+		return L.t("alchemy.up.elixirs.text", [Fmt.pct(v), int(ELIXIR_SECONDS * float(n))])
+	return L.t("alchemy.up." + id + ".text", [Fmt.pct(v)])
+
+
 ## Бестиарий: сколько побед над видом монстра нужно для ступени и сколько кристаллов за неё.
 ## Каждая ступень ещё и +5% урона по этому виду.
 const BESTIARY_TIERS := [25, 100, 500]
@@ -52,14 +96,14 @@ static func name_of(id: String) -> String:
 
 ## Что делает: с числами из таблицы.
 static func info(id: String) -> String:
-	var s := spec(id)
+	var c := Game.combat
 	match id:
 		"strength", "guard", "swift":
-			return L.t("item." + id + ".info", [Fmt.pct(float(s["power"])), int(s["duration"])])
+			return L.t("item." + id + ".info", [Fmt.pct(c.elixir_power(id)), int(c.elixir_duration(id))])
 		"bomb":
-			return L.t("item.bomb.info", [int(float(s["power"]) * 100.0)])
+			return L.t("item.bomb.info", [int(c.bomb_power() * 100.0)])
 		"revive":
-			return L.t("item.revive.info", [Fmt.pct(float(s["power"]))])
+			return L.t("item.revive.info", [Fmt.pct(c.revive_power())])
 	return ""
 
 

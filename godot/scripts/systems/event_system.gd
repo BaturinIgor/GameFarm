@@ -221,6 +221,7 @@ func claim_event_bonus() -> void:
 		return
 	Game.save["eventBonus"] = int(Game.save.get("eventBonus", 0)) + n
 	Game.add_coins(Events.bonus_coins(Game.level) * n)
+	Game.save["storage"]["planks"] = Game.storage_of("planks") + Estate.reward_goods("planks", Events.BONUS_PLANKS_HOURS) * n
 	for _i in n:
 		_random_card()
 	Game.show_toast("px:chest", L.t("toast.eventBonus", [n]))
@@ -229,6 +230,11 @@ func claim_event_bonus() -> void:
 
 func event_reward_coins(base: int) -> int:
 	return Events.coins(base, Game.level)
+
+
+## Сколько штук товара в награде (растёт с уровнем героя и зданий).
+func reward_goods(reward: Dictionary) -> int:
+	return Estate.reward_goods(str(reward.get("kind", "planks")), float(reward.get("hours", 1.0)))
 
 
 func _grant_event_reward(reward: Dictionary, event: String) -> void:
@@ -266,6 +272,10 @@ func _grant_event_reward(reward: Dictionary, event: String) -> void:
 				owned.append(decor)
 				s["eventDecor"] = owned
 				Game.show_toast("px:stairs", L.t("toast.eventDecor", [House.decor_name(decor)]))
+		"goods":
+			# Награда: на склад даже сверх лимита, чтобы не пропала
+			var kind := str(reward.get("kind", "planks"))
+			s["storage"][kind] = Game.storage_of(kind) + reward_goods(reward)
 		"skin":
 			var skin := Events.skin_of(event)
 			var skins: Array = s.get("eventSkins", [])

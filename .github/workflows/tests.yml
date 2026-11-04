@@ -1,0 +1,103 @@
+name: Tests
+
+# Автотесты Godot-версии (godot/tests) на каждый push в любую ветку и на каждый PR.
+# Быстро и без ключа спрайтов: импорт, загрузка всех скриптов, тесты правил игры и данных.
+# Те же тесты идут шагом в сборках APK и IPA, поэтому сборка с упавшими тестами не выходит.
+# Локально: godot --headless --path godot -- --run-tests [часть имени теста]
+
+on:
+  push:
+    paths:
+      - "godot/**"
+      - "GameFarm/Resources/Layouts/**"
+      - "GameFarm/Resources/Strings/**"
+      - "tools/godot_sync.sh"
+      - ".github/workflows/tests.yml"
+  pull_request:
+    paths:
+      - "godot/**"
+      - "GameFarm/Resources/Layouts/**"
+      - "GameFarm/Resources/Strings/**"
+      - "tools/godot_sync.sh"
+      - ".github/workflows/tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: "4.5.1"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      # Раскладки карт и строки из iOS-проекта; спрайты и звуки тестам не нужны
+      - name: Prepare data
+        run: sh tools/godot_sync.sh
+
+      - name: Cache Godot
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: ~/godot-bin
+          key: godot-editor-${{ env.GODOT_VERSION }}-v1
+
+      - name: Download Godot
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          set -e
+          mkdir -p ~/godot-bin
+          BASE="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          curl -fsSL -o /tmp/godot.zip "$BASE/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q /tmp/godot.zip -d ~/godot-bin
+          mv ~/godot-bin/Godot_v${GODOT_VERSION}-stable_linux.x86_64 ~/godot-bin/godot
+
+      - name: Import project
+        run: |
+          set -o pipefail
+          timeout 300 ~/godot-bin/godot --headless --path godot --import 2>&1 | tee import.log | tail -20
+          if grep -E "SCRIPT ERROR|Parse Error" import.log; then
+            echo "::error::Script errors during import"
+            exit 1
+          fi
+
+      - name: Compile all scripts
+        run: |
+          set +e
+          timeout 120 ~/godot-bin/godot --headless --path godot -- --check-scripts > check.log 2>&1
+          code=$?
+          tail -20 check.log
+          if [ $code -ne 0 ] || grep -E "SCRIPT ERROR|Parse Error" check.log; then
+            echo "::error::Scripts failed to compile"
+            exit 1
+          fi
+
+      - name: Run tests
+        run: |
+          set +e
+          timeout 300 ~/godot-bin/godot --headless --path godot -- --run-tests > tests.log 2>&1
+          code=$?
+          grep -vE "^ok " tests.log | tail -80
+          grep -E "^FAIL" tests.log | sed 's/^FAIL /::error title=Test failed::/' || true
+          echo "### Tests" >> "$GITHUB_STEP_SUMMARY"
+          grep -E "^tests:|^  failed:" tests.log | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY"
+          exit $code
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: |
+            import.log
+            check.log
+            tests.log
+          if-no-files-found: ignore

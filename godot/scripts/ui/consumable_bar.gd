@@ -104,6 +104,6 @@ class ItemButton extends Button:
 		if _left <= 0.0 or not Consumables.is_elixir(id):
 			return
 		# Кольцо: сколько ещё действует эликсир
-		var part := clampf(_left / float(Consumables.spec(id)["duration"]), 0.0, 1.0)
+		var part := clampf(_left / maxf(1.0, Game.combat.elixir_duration(id)), 0.0, 1.0)
 		var c := size / 2.0
 		draw_arc(c, SIDE / 2.0 + 3.0, -PI / 2.0, -PI / 2.0 + TAU * part, 40, Color("fff3c4"), 3.0, true)

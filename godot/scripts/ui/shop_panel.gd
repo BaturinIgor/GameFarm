@@ -155,6 +155,8 @@ static func pack_parts(p: Dictionary) -> Array:
 		out.append(["tmap", str(p["maps"])])
 	if p.has("attempts"):
 		out.append(["key", str(p["attempts"])])
+	if p.has("planks_hours"):
+		out.append(["planks", Fmt.n(Estate.reward_goods("planks", float(p["planks_hours"])))])
 	if p.has("cosmetic"):
 		out.append(["star", Products.title(str(p["cosmetic"]))])
 	return out
@@ -802,6 +804,8 @@ static func market_name(item: String) -> String:
 		return L.t("market.item.skin", [Skins.name_of(item.substr(5))])
 	if item == "coins":
 		return L.t("market.item.coins", [Fmt.n(Game.shop.market_coins())])
+	if item == "planks":
+		return L.t("market.item.planks", [Fmt.n(Game.shop.market_planks())])
 	return L.t("market.item." + item)
 
 
@@ -822,10 +826,13 @@ func _market_row(item: String) -> PanelContainer:
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_child(col)
 	col.add_child(_wrap(market_name(item), 14))
-	col.add_child(_wrap(L.t("market.desc." + item), 11, UiKit.INK_SOFT))
+	var desc := L.t("market.desc.planks", [Game.shop.planks_left(), ShopSystem.PLANKS_PER_DAY]) if item == "planks" \
+		else L.t("market.desc." + item)
+	col.add_child(_wrap(desc, 11, UiKit.INK_SOFT))
 	var price := ShopSystem.base_price(item)
 	var b := crystal_button(price, "purple", true)
 	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.disabled = item == "planks" and Game.shop.planks_left() <= 0
 	b.pressed.connect(func() -> void:
 		if not Game.shop.buy_market(item):
 			_not_enough(price))

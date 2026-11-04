@@ -66,6 +66,7 @@ var _fader: ColorRect
 var features: Array[WorldFeature] = []
 var _titan_hits := 0
 var _cornucopia_count := 0
+var _quake_hits := 0
 ## Обзор всего дома (кнопка в плашке этажа): камера отъезжает, пока герой стоит.
 var overview := false
 var _zoom_target := Vector2.ONE
@@ -616,18 +617,36 @@ func _hit_once(spot: ResourceSpot, stats: Stats) -> void:
 		Sound.play("crit", 0.8)
 	_apply(damage, spot, false, crit)
 	if stats.quake:
-		var shook := false
-		for other in spots:
-			if other == spot or not other.alive or not Game.can_harvest(other.spec):
-				continue
-			# С полным рюкзаком сотрясение не ломает соседние точки впустую
-			if not (stats.auto_deposit or Game.premium.in_expedition() or Game.backpack_free > 0):
-				break
-			if other.position.distance_to(spot.position) < stats.quake_radius:
-				_apply(damage * stats.quake_power, other, false, false)
-				shook = true
-		if shook:
-			Fx.ring(fx, spot.position - Vector2(0, 6), Color(1, 1, 1, 0.6), stats.quake_radius * 0.7)
+		_quake(spot, damage, stats)
+
+
+## Сотрясение: каждый quake_every-й удар задевает несколько ближайших точек (не все вокруг).
+## Удар по соседней точке тоже стоит энергию, иначе сотрясение собирает ресурсы почти даром.
+func _quake(spot: ResourceSpot, damage: float, stats: Stats) -> void:
+	_quake_hits += 1
+	if _quake_hits % maxi(1, stats.quake_every) != 0:
+		return
+	# С полным рюкзаком сотрясение не ломает соседние точки впустую
+	if not (stats.auto_deposit or Game.premium.in_expedition() or Game.backpack_free > 0):
+		return
+	var near: Array = []
+	for other in spots:
+		if other == spot or not other.alive or not Game.can_harvest(other.spec):
+			continue
+		var d := other.position.distance_to(spot.position)
+		if d < stats.quake_radius:
+			near.append([d, other])
+	if near.is_empty():
+		return
+	near.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
+	var shook := false
+	for i in mini(stats.quake_targets, near.size()):
+		if not Game.premium.in_expedition() and not Game.energy.try_spend():
+			break
+		_apply(damage * stats.quake_power, near[i][1], false, false)
+		shook = true
+	if shook:
+		Fx.ring(fx, spot.position - Vector2(0, 6), Color(1, 1, 1, 0.6), stats.quake_radius * 0.7)
 
 
 func _apply(damage: float, spot: ResourceSpot, by_helper: bool, strong: bool) -> void:

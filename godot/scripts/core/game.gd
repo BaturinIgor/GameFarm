@@ -9,6 +9,8 @@ signal level_up(from_level: int, to_level: int)
 signal event(name: String, data: Dictionary)
 
 const SAVE_PATH := "user://save.json"
+## Куда пишется сохранение. Автотесты (tests/runner.gd) переключают на свой файл, чтобы не трогать прогресс.
+var save_path := SAVE_PATH
 ## Версия экономики: старые сохранения (до усадьбы) начинаются заново, см. _load_save.
 const ECONOMY := 2
 const ECONOMY_KEEP := ["purchases", "granted", "consumed", "crystals", "crystalFirst", "maxUntil", "maxDailyDay",
@@ -69,8 +71,8 @@ func _ready() -> void:
 			if sys.has_method("on_event"):
 				sys.on_event(name, data))
 	recalc()
-	# Новый уровень - полная энергия
-	level_up.connect(func(_from: int, _to: int) -> void: energy.refill())
+	# Новый уровень - половина запаса энергии (не выше полного)
+	level_up.connect(func(_from: int, _to: int) -> void: energy.level_up_bonus())
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
 
@@ -101,12 +103,12 @@ static func default_save() -> Dictionary:
 
 func _load_save() -> Dictionary:
 	var data := default_save()
-	if FileAccess.file_exists(SAVE_PATH):
-		var text := FileAccess.get_file_as_string(SAVE_PATH)
+	if FileAccess.file_exists(save_path):
+		var text := FileAccess.get_file_as_string(save_path)
 		var parsed = JSON.parse_string(text)
 		if parsed is Dictionary and int(parsed.get("economy", 1)) < ECONOMY:
 			# Новая экономика: прогресс начинается заново. Старый файл - в копию, покупки и кристаллы остаются.
-			DirAccess.copy_absolute(SAVE_PATH, "user://save.economy%d-backup.json" % int(parsed.get("economy", 1)))
+			DirAccess.copy_absolute(save_path, save_path.get_basename() + ".economy%d-backup.json" % int(parsed.get("economy", 1)))
 			for k in ECONOMY_KEEP:
 				if parsed.has(k):
 					data[k] = parsed[k]
@@ -116,9 +118,9 @@ func _load_save() -> Dictionary:
 				data[k] = parsed[k]
 		elif text.strip_edges() != "":
 			# Файл испорчен: сначала копия, чтобы прогресс можно было достать, потом игра с нуля
-			DirAccess.copy_absolute(SAVE_PATH, "user://save.broken-%d.json" % int(Time.get_unix_time_from_system()))
+			DirAccess.copy_absolute(save_path, save_path.get_basename() + ".broken-%d.json" % int(Time.get_unix_time_from_system()))
 	# Числа из JSON приходят дробными: приводим счётчики к целым
-	for key in ["level", "xp", "coins", "harvests", "coinsEarned", "tickets", "bestLevel"]:
+	for key in ["level", "xp", "coins", "harvests", "coinsEarned", "tickets", "bestLevel", "masteryPoints"]:
 		data[key] = int(data.get(key, 0))
 	for dict_key in ["storage", "backpack", "tools", "talents", "animals", "gathered"]:
 		var d: Dictionary = data.get(dict_key, {})
@@ -144,12 +146,12 @@ func save_if_needed() -> void:
 
 func save_now() -> void:
 	save["lastSeen"] = maxf(float(save.get("lastSeen", 0.0)), Time.get_unix_time_from_system())
-	var f := FileAccess.open(SAVE_PATH + ".tmp", FileAccess.WRITE)
+	var f := FileAccess.open(save_path + ".tmp", FileAccess.WRITE)
 	if f == null:
 		return
 	f.store_string(JSON.stringify(save))
 	f.close()
-	DirAccess.rename_absolute(SAVE_PATH + ".tmp", SAVE_PATH)
+	DirAccess.rename_absolute(save_path + ".tmp", save_path)
 	_dirty = false
 	_last_write = Time.get_ticks_msec() / 1000.0
 
@@ -188,14 +190,43 @@ var xp_needed: int:
 var level_progress: float:
 	get:
 		if level >= MAX_LEVEL:
-			return 1.0
+			return minf(1.0, float(save["xp"]) / float(maxi(1, mastery_xp())))
 		return minf(1.0, float(save["xp"]) / float(maxi(1, xp_needed)))
 
 
+## Мастерство: после последнего уровня опыт копится дальше, каждые MASTERY_XP - очко талантов.
+const MASTERY_SHARE := 0.5
+
+
+static func mastery_xp() -> int:
+	return int(round(float(xp_to_next(MAX_LEVEL)) * MASTERY_SHARE))
+
+
+func mastery_points() -> int:
+	return int(save.get("masteryPoints", 0))
+
+
+func _gain_mastery(amount: int) -> void:
+	save["xp"] = int(save["xp"]) + amount
+	var got := 0
+	while int(save["xp"]) >= mastery_xp():
+		save["xp"] = int(save["xp"]) - mastery_xp()
+		save["masteryPoints"] = mastery_points() + 1
+		got += 1
+	if got > 0:
+		show_toast("px:star", L.t("toast.mastery", [got]))
+		Sound.play("levelUp")
+		emit_event("mastery", {"points": got})
+	mark_dirty()
+
+
 func gain_xp(base: int) -> void:
-	if level >= MAX_LEVEL or base <= 0:
+	if base <= 0:
 		return
 	var amount := maxi(1, int(round(base * stats.xp_mult)))
+	if level >= MAX_LEVEL:
+		_gain_mastery(amount)
+		return
 	save["xp"] = int(save["xp"]) + amount
 	var from := level
 	while level < MAX_LEVEL and int(save["xp"]) >= xp_to_next(level):
@@ -434,16 +465,17 @@ func recalc() -> void:
 	s.damage_mult = (1.0 + 0.02 * (lvl - 1.0)) * (1.0 + 0.12 * r.call("power"))
 	s.wood_bonus = 0.2 * r.call("lumberjack")
 	s.stone_bonus = 0.2 * r.call("miner")
-	s.high_tier_bonus = 0.15 * r.call("crusher")
+	s.high_tier_bonus = 0.15 * r.call("crusher") + 0.06 * r.call("deepVein")
 	s.hand_mult = 1.0 + 0.4 * r.call("strongHands")
 	s.hit_interval = 0.55 / ((1.0 + 0.07 * r.call("quickHands")) * (1.0 + 0.05 * r.call("tireless")))
 	s.crit_mult = 2.0 + 0.3 * r.call("critPower")
 	s.shatter_chance = 0.04 * r.call("shatter")
 	s.double_strike_chance = 0.05 * r.call("doubleStrike")
 	s.execute_threshold = 0.06 * r.call("execute")
+	# Сотрясение: каждый 3-й удар, до 2 соседних точек; волна - сильнее и на 3 ранге ещё одна цель
 	s.quake = r.call("quake") > 0
-	s.quake_power = 0.4 * (1.0 + 0.25 * r.call("shockwave"))
-	s.quake_radius = 110.0 * (1.0 + 0.25 * r.call("shockwave"))
+	s.quake_power = 0.35 * (1.0 + 0.15 * r.call("shockwave"))
+	s.quake_targets = 3 if r.call("shockwave") >= 3 else 2
 	s.tool_bonus = 1 if r.call("toolMaster") > 0 else 0
 	# Суперталант "Титан" и ряд за ним
 	s.titan = r.call("titan") > 0
@@ -452,11 +484,13 @@ func recalc() -> void:
 
 	s.yield_all = 0.1 * r.call("bounty") + 0.06 * r.call("fertile") + (0.1 if r.call("abundance") > 0 else 0.0) \
 		+ (PremiumSystem.CAPYBARA_YIELD if premium.owns("garden") else 0.0)
-	s.yield_category["food"] = 0.2 * r.call("farmer")
+	s.yield_category["food"] = 0.2 * r.call("farmer") + 0.08 * r.call("forest")
+	s.yield_category["wood"] = 0.1 * r.call("woodsman")
+	s.yield_category["stone"] = 0.1 * r.call("prospector")
 	s.yield_category["crop"] = 0.2 * r.call("farmer")
 	s.yield_category["ore"] = 0.1 * r.call("oreHunter")
 	s.yield_category["gem"] = 0.1 * r.call("oreHunter")
-	s.regrow_chance = 0.06 * r.call("gardener")
+	s.regrow_chance = 0.06 * r.call("gardener") + 0.02 * r.call("orchard")
 	s.double_chance = 0.05 * r.call("doubleDrop")
 	s.triple_chance = 0.03 * r.call("triple")
 	s.finder_chance = 0.04 * r.call("finder")
@@ -473,16 +507,18 @@ func recalc() -> void:
 	_add(s.yield_category, "ore", motherlode)
 	_add(s.yield_category, "gem", motherlode)
 	s.gold_mult = 1.0 + 0.5 * r.call("goldRush")
-	var jeweler: float = 0.15 * r.call("jeweler")
+	var jeweler: float = 0.15 * r.call("jeweler") + 0.05 * r.call("appraiser")
 	s.sell_category["ore"] = jeweler
 	s.sell_category["gem"] = jeweler
 	s.sell_category["treasure"] = jeweler
 
-	s.reach = Stats.BASE_REACH * (1.0 + 0.12 * r.call("reach"))
+	s.reach = Stats.BASE_REACH * (1.0 + 0.12 * r.call("reach") + 0.06 * r.call("scout"))
 	s.deposit_radius = 92.0 * (1.0 + 0.3 * r.call("depotReach"))
-	s.tame_mult = (1.0 - 0.15 * r.call("tamer")) * (1.0 - 0.1 * r.call("catcher")) * (1.0 - 0.08 * r.call("charmer"))
+	s.tame_mult = (1.0 - 0.15 * r.call("tamer")) * (1.0 - 0.1 * r.call("catcher")) * (1.0 - 0.08 * r.call("charmer")) \
+		* (1.0 - 0.05 * r.call("lure"))
 	s.shop_mult = 1.0 - 0.08 * r.call("bargain")
-	s.spawn_mult = (1.0 + 0.25 * r.call("tamer")) * (1.0 + 0.2 * r.call("tracker")) * (1.0 + 0.12 * r.call("pathfinder"))
+	s.spawn_mult = (1.0 + 0.25 * r.call("tamer")) * (1.0 + 0.2 * r.call("tracker")) * (1.0 + 0.12 * r.call("pathfinder")) \
+		* (1.0 + 0.1 * r.call("spotter"))
 	s.keep_pack = r.call("windwalker") > 0
 	s.storekeeper_xp = int(r.call("storekeeper"))
 	s.discount = 1.0 - 0.07 * r.call("thrift")
@@ -491,28 +527,32 @@ func recalc() -> void:
 	# Сила зверей складывается, а не перемножается
 	s.animal_mult = 1.0 + 0.12 * r.call("beastBond") + 0.05 * r.call("animalFriend") + (0.3 if r.call("soul") > 0 else 0.0) \
 		+ 0.05 * r.call("kinship")
-	s.helper_mult = (1.0 + 0.25 * r.call("packLeader")) * (1.0 + 0.1 * r.call("alpha")) * (1.0 + 0.1 * r.call("packHunt"))
-	s.helper_speed = 1.0 + 0.08 * r.call("training")
+	s.helper_mult = minf(Stats.MAX_HELPER,
+		(1.0 + 0.25 * r.call("packLeader")) * (1.0 + 0.1 * r.call("alpha")) * (1.0 + 0.1 * r.call("packHunt"))
+		* (1.0 + 0.05 * r.call("pawStrike")))
+	s.helper_speed = 1.0 + 0.08 * r.call("training") + 0.04 * r.call("drill")
 	s.helper_range = 260.0 * (1.0 + 0.2 * r.call("keenEye"))
 	s.helper_tier_bonus = int(r.call("packTier"))
 	s.helper_yield = 1.0 + 0.15 * r.call("beastLoot")
-	s.producer_mult = (1.0 + 0.2 * r.call("nightShift")) * (1.0 + 0.1 * r.call("herdsman")) * (1.0 + 0.1 * r.call("herd"))
-	s.double_product_chance = 0.08 * r.call("rancher")
-	s.offline_hours = (PremiumSystem.PRO_OFFLINE_HOURS if premium.has_pro() else Estate.CAP_HOURS) + 2.0 * r.call("pasture")
+	s.producer_mult = minf(Stats.MAX_PRODUCER,
+		(1.0 + 0.2 * r.call("nightShift")) * (1.0 + 0.1 * r.call("herdsman")) * (1.0 + 0.1 * r.call("herd")))
+	s.double_product_chance = 0.08 * r.call("rancher") + 0.04 * r.call("feeder")
+	s.offline_hours = (PremiumSystem.PRO_OFFLINE_HOURS if premium.has_pro() else Estate.CAP_HOURS) + 2.0 * r.call("pasture") \
+		+ r.call("nightOwl")
 	s.star_step = 0.25 + 0.05 * r.call("starFood")
 	s.double_star_chance = 0.15 * r.call("starHunter")
 
 	# Огород
 	s.grow_mult = 1.0 / (1.0 + 0.06 * r.call("greenThumb"))
-	s.extra_crop_chance = 0.12 * r.call("bigHarvest")
+	s.extra_crop_chance = 0.12 * r.call("bigHarvest") + 0.04 * r.call("mulch")
 	s.seed_back_chance = 0.08 * r.call("seedSaver")
-	s.water_mult = 1.0 + 0.15 * r.call("rainmaker")
+	s.water_mult = 1.0 + 0.15 * r.call("rainmaker") + 0.08 * r.call("sprinkler")
 	s.fert_save_chance = 0.12 * r.call("composter")
 	s.fert_extra = int(r.call("deepRoots"))
 	s.meal_mult = 1.0 + 0.15 * r.call("chef")
 	s.cook_mult = 1.0 - 0.1 * r.call("quickCook")
 	_add(s.sell_category, "crop", 0.1 * r.call("marketDay"))
-	s.seed_mult = 1.0 - 0.06 * r.call("seedTrader")
+	s.seed_mult = 1.0 - 0.06 * r.call("seedTrader") - 0.04 * r.call("seedBag")
 	_add(s.sell_category, "crop", 0.06 * r.call("seedTrader"))
 	s.golden_harvest = r.call("goldenHarvest") > 0
 	s.harvest_xp_mult = 2.0 if r.call("harvestMoon") > 0 else 1.0
@@ -526,13 +566,13 @@ func recalc() -> void:
 	# Бой
 	var warlord := 0.15 if r.call("warlord") > 0 else 0.0
 	s.hp_mult = (1.0 + 0.08 * r.call("toughness")) * (1.0 + warlord)
-	s.weapon_mult = (1.0 + 0.07 * r.call("bladeMaster")) * (1.0 + warlord)
-	s.defense_bonus = 0.03 * r.call("stance")
+	s.weapon_mult = (1.0 + 0.07 * r.call("bladeMaster")) * (1.0 + warlord) * (1.0 + 0.03 * r.call("frenzy"))
+	s.defense_bonus = 0.03 * r.call("stance") + 0.01 * r.call("parry")
 	s.dodge_bonus = 0.02 * r.call("evasion")
 	s.lifesteal = 0.02 * r.call("vampirism")
-	s.potion_bonus = 0.1 * r.call("alchemist")
+	s.potion_bonus = 0.1 * r.call("alchemist") + 0.03 * r.call("firstAid")
 	s.berserk = 0.12 * r.call("berserk")
-	s.boss_bonus = 0.08 * r.call("bossSlayer")
+	s.boss_bonus = 0.08 * r.call("bossSlayer") + 0.04 * r.call("hunterMark")
 	s.last_stand = r.call("lastStand") > 0
 	s.dungeon_bonus = 0.1 * r.call("delver")
 	s.regen = 0.005 * r.call("regen")
@@ -555,7 +595,7 @@ func recalc() -> void:
 	var cozy := house.comfort_bonus()
 	s.yield_all += cozy
 	var meal := {"yield": 0.0, "xp": 0.0, "speed": 0.0, "sell": 0.0, "crit": 0.0, "animals": 0.0}
-	var gourmet: float = 1.0 + 0.1 * r.call("gourmet")
+	var gourmet: float = 1.0 + 0.1 * r.call("gourmet") + 0.06 * r.call("picnic")
 	for dish in house.active_meals():
 		var b: Dictionary = house.meal_buff(dish)
 		for k in meal:
@@ -578,21 +618,21 @@ func recalc() -> void:
 	s.animal_mult += collection.constellation_bonus("beasts")
 	s.grow_mult /= 1.0 + collection.constellation_bonus("garden")
 	s.weapon_mult *= 1.0 + collection.constellation_bonus("dungeon")
-	s.producer_mult *= 1.0 + collection.constellation_bonus("birds")
+	s.producer_mult = minf(Stats.MAX_PRODUCER, s.producer_mult * (1.0 + collection.constellation_bonus("birds")))
 	if house.is_built("upper"):
 		s.offline_hours += 2.0
 
 	var speed_bonus: float = 0.07 * r.call("swift") + 0.05 * r.call("tailwind") + lg.call("boots")
-	var crit_bonus: float = 0.05 * r.call("crit") + lg.call("luck")
+	var crit_bonus: float = 0.05 * r.call("crit") + 0.04 * r.call("fury") + lg.call("luck")
 	var respawn_bonus: float = 0.08 * r.call("regrowth") + (0.5 if r.call("abundance") > 0 else 0.0) + lg.call("growth")
-	var xp_bonus: float = 0.1 * r.call("scholar") + 0.06 * r.call("sage") + lg.call("wisdom") + cozy + meal["xp"] \
+	var xp_bonus: float = 0.1 * r.call("scholar") + 0.04 * r.call("curious") + 0.06 * r.call("sage") + lg.call("wisdom") + cozy + meal["xp"] \
 		+ collection.constellation_bonus("sky") + 0.08 * r.call("enlightened")
 	var sell_bonus: float = 0.08 * r.call("trader") + lg.call("merchant") + meal["sell"] + 0.06 * r.call("haggler") \
 		+ (0.1 if r.call("windwalker") > 0 else 0.0)
 	speed_bonus += meal["speed"]
 	crit_bonus += meal["crit"]
 	s.animal_mult += meal["animals"]
-	var capacity: float = float(capacity_at(level)) + 15.0 * r.call("bigPack") \
+	var capacity: float = float(capacity_at(level)) + 15.0 * r.call("bigPack") + 8.0 * r.call("packer") \
 		+ (float(PremiumSystem.STARTER_BACKPACK) if premium.owns("starter") else 0.0) + lg.call("pack") \
 		+ (float(ShopSystem.MAX_BACKPACK) if shop.max_active() else 0.0)
 

@@ -258,9 +258,24 @@ func _production(id: String) -> VBoxContainer:
 			var p := es.pending(bid)
 			var next := (1.0 - (p - floorf(p))) / es.rate(bid) * 3600.0
 			return L.t("estate.nextIn", [House.countdown(next)]) + "  ·  " + L.t("estate.fullIn", [House.countdown(t)])
+		var info := HBoxContainer.new()
+		info.add_theme_constant_override("separation", 8)
+		v.add_child(info)
 		var live := CombatCards.LiveLabel.new(left, 12, UiKit.INK_SOFT)
 		live.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		v.add_child(live)
+		live.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		live.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		info.add_child(live)
+		# Ускорить: окно сразу заполняется, сырьё всё равно нужно
+		if e.can_boost(id):
+			var boost := MapPanel.icon_button([["t", L.t("estate.boost")], ["i", "gem"], ["t", str(e.boost_cost(id))]],
+				"purple", 13)
+			boost.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			boost.pressed.connect(func() -> void:
+				if not Game.estate.boost(bid):
+					Game.show_toast("px:gem", L.t("crystals.notEnough",
+						[Fmt.n(Game.estate.boost_cost(bid) - Game.shop.crystals())])))
+			info.add_child(boost)
 	# Накоплено и кнопка "Забрать"
 	var good := e.recipe(id)
 	var line := HBoxContainer.new()

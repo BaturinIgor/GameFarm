@@ -73,6 +73,22 @@ func _ready() -> void:
 		flow.add_child(_chip(str(it[0]), int(it[1])))
 
 	col.add_child(_text(L.t("offline.inStorage"), 12))
+	# Не влезло на склад: продано скупщику за полцены
+	var sold_coins := int(report.get("sold_coins", 0))
+	if sold_coins > 0:
+		var srow := HBoxContainer.new()
+		srow.alignment = BoxContainer.ALIGNMENT_CENTER
+		srow.add_theme_constant_override("separation", 4)
+		var sl := UiKit.label(L.t("offline.overflowSold"), 12, UiKit.INK_SOFT)
+		sl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		sl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		sl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		srow.add_child(sl)
+		var coin := UiKit.icon("coins", 18)
+		coin.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		srow.add_child(coin)
+		srow.add_child(UiKit.label("+" + Fmt.n(sold_coins), 14))
+		col.add_child(srow)
 	if not bool(report.get("doubled", false)):
 		var pro := Game.premium.has_pro()
 		var twice := Ads.reward_button(L.t("offline.double.pro") if pro else L.t("offline.double"), "green", 15)
