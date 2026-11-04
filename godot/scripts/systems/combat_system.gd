@@ -66,7 +66,7 @@ func defaults(save: Dictionary) -> void:
 
 
 static func _now() -> float:
-	return Time.get_unix_time_from_system()
+	return Clock.now()
 
 
 # MARK: Здоровье

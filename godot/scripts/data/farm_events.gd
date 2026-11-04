@@ -75,11 +75,11 @@ static func index_at(t: float) -> int:
 
 
 static func current() -> Dictionary:
-	return run(index_at(Time.get_unix_time_from_system()))
+	return run(index_at(Clock.now()))
 
 
 static func upcoming(count := 2) -> Array:
-	var now := index_at(Time.get_unix_time_from_system())
+	var now := index_at(Clock.now())
 	var out: Array = []
 	for i in range(1, count + 1):
 		out.append(run(now + i))

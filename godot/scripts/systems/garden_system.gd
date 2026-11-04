@@ -69,7 +69,7 @@ func _clean_choice(save: Dictionary, key: String, known: Dictionary) -> void:
 
 
 static func now() -> float:
-	return Time.get_unix_time_from_system()
+	return Clock.now()
 
 
 # MARK: Грядки

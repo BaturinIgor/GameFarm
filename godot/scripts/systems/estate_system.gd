@@ -60,7 +60,7 @@ static func _num(v: Variant, fallback: float) -> float:
 
 
 static func _now() -> float:
-	return Time.get_unix_time_from_system()
+	return Clock.now()
 
 
 func _b(id: String) -> Dictionary:
