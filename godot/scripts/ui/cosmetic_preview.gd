@@ -12,7 +12,7 @@ var _tick := 0.0
 
 
 static func start(p: String) -> void:
-	if Hud.current == null:
+	if Hud.current == null or not Store.LIVE:
 		return
 	# Ночная поляна видна только на Лесной поляне
 	if p == "glowMeadow" and Game.current != "meadow":
