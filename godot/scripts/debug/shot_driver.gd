@@ -6,7 +6,7 @@ extends Node
 const ORIGIN := Vector2(195, 620)
 const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", "kitchen", "garden", "trader", "hunt", "level:settings",
 	"dungeon", "trophies", "collection", "legacy", "wardrobe", "map", "events", "shop",
-	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story", "wild", "estate:academy", "animals:wild"]
+	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story", "wild", "estate:academy"]
 
 var dir := "/tmp/shots"
 var main: Node
@@ -360,8 +360,14 @@ func _extra(k: int) -> void:
 		12:
 			_shot("6_storage_full")
 			_check_layout("storage_full")
-			main.hud.close_window()
+			# Дикие звери дальних биомов внизу списка (перекрашенные листы)
+			main.hud.open_window(load("res://scripts/ui/animals_panel.gd").new("wild"))
 		13:
+			_scroll_window(100000)
+		14:
+			_shot("6_animals_wild_end")
+			main.hud.close_window()
+		15:
 			_step = 5
 			_time = 300.0
 			_sub = 0
