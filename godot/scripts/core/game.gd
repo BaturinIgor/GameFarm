@@ -9,6 +9,8 @@ signal level_up(from_level: int, to_level: int)
 signal event(name: String, data: Dictionary)
 
 const SAVE_PATH := "user://save.json"
+## Куда пишется сохранение. Автотесты (tests/runner.gd) переключают на свой файл, чтобы не трогать прогресс.
+var save_path := SAVE_PATH
 ## Версия экономики: старые сохранения (до усадьбы) начинаются заново, см. _load_save.
 const ECONOMY := 2
 const ECONOMY_KEEP := ["purchases", "granted", "consumed", "crystals", "crystalFirst", "maxUntil", "maxDailyDay",
@@ -101,12 +103,12 @@ static func default_save() -> Dictionary:
 
 func _load_save() -> Dictionary:
 	var data := default_save()
-	if FileAccess.file_exists(SAVE_PATH):
-		var text := FileAccess.get_file_as_string(SAVE_PATH)
+	if FileAccess.file_exists(save_path):
+		var text := FileAccess.get_file_as_string(save_path)
 		var parsed = JSON.parse_string(text)
 		if parsed is Dictionary and int(parsed.get("economy", 1)) < ECONOMY:
 			# Новая экономика: прогресс начинается заново. Старый файл - в копию, покупки и кристаллы остаются.
-			DirAccess.copy_absolute(SAVE_PATH, "user://save.economy%d-backup.json" % int(parsed.get("economy", 1)))
+			DirAccess.copy_absolute(save_path, save_path.get_basename() + ".economy%d-backup.json" % int(parsed.get("economy", 1)))
 			for k in ECONOMY_KEEP:
 				if parsed.has(k):
 					data[k] = parsed[k]
@@ -116,7 +118,7 @@ func _load_save() -> Dictionary:
 				data[k] = parsed[k]
 		elif text.strip_edges() != "":
 			# Файл испорчен: сначала копия, чтобы прогресс можно было достать, потом игра с нуля
-			DirAccess.copy_absolute(SAVE_PATH, "user://save.broken-%d.json" % int(Time.get_unix_time_from_system()))
+			DirAccess.copy_absolute(save_path, save_path.get_basename() + ".broken-%d.json" % int(Time.get_unix_time_from_system()))
 	# Числа из JSON приходят дробными: приводим счётчики к целым
 	for key in ["level", "xp", "coins", "harvests", "coinsEarned", "tickets", "bestLevel"]:
 		data[key] = int(data.get(key, 0))
@@ -144,12 +146,12 @@ func save_if_needed() -> void:
 
 func save_now() -> void:
 	save["lastSeen"] = maxf(float(save.get("lastSeen", 0.0)), Time.get_unix_time_from_system())
-	var f := FileAccess.open(SAVE_PATH + ".tmp", FileAccess.WRITE)
+	var f := FileAccess.open(save_path + ".tmp", FileAccess.WRITE)
 	if f == null:
 		return
 	f.store_string(JSON.stringify(save))
 	f.close()
-	DirAccess.rename_absolute(SAVE_PATH + ".tmp", SAVE_PATH)
+	DirAccess.rename_absolute(save_path + ".tmp", save_path)
 	_dirty = false
 	_last_write = Time.get_ticks_msec() / 1000.0
 

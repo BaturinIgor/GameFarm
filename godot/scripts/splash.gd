@@ -2,7 +2,7 @@ extends CanvasLayer
 ## Заставка при запуске. Показывает ту же картинку, что экран загрузки движка (boot splash,
 ## assets/splash.png из tools/make_splash.py), рисует под названием полоску загрузки, в фоне грузит
 ## scenes/main.tscn, кладёт игру под заставку и плавно её гасит.
-## В CI (-- --check-scripts, -- --shots, запуск без экрана) сразу запускает главную сцену.
+## В CI (-- --check-scripts, -- --shots, запуск без экрана) сразу запускает главную сцену, с -- --run-tests - автотесты.
 ## -- --splash-shot <папка>: снимки заставки для CI, после перехода в игру выход.
 
 const MAIN := "res://scenes/main.tscn"
@@ -32,6 +32,11 @@ var _shots := 0
 
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
+	# Автотесты в CI: только состояние игры, без мира и интерфейса (tests/runner.gd)
+	if "--run-tests" in args:
+		set_process(false)
+		get_tree().root.add_child.call_deferred(load("res://tests/runner.gd").new())
+		return
 	if "--check-scripts" in args or "--shots" in args or DisplayServer.get_name() == "headless":
 		set_process(false)
 		get_tree().change_scene_to_file.call_deferred(MAIN)
