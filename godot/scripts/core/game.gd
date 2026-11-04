@@ -463,7 +463,7 @@ func recalc() -> void:
 	s.damage_mult = (1.0 + 0.02 * (lvl - 1.0)) * (1.0 + 0.12 * r.call("power"))
 	s.wood_bonus = 0.2 * r.call("lumberjack")
 	s.stone_bonus = 0.2 * r.call("miner")
-	s.high_tier_bonus = 0.15 * r.call("crusher")
+	s.high_tier_bonus = 0.15 * r.call("crusher") + 0.06 * r.call("deepVein")
 	s.hand_mult = 1.0 + 0.4 * r.call("strongHands")
 	s.hit_interval = 0.55 / ((1.0 + 0.07 * r.call("quickHands")) * (1.0 + 0.05 * r.call("tireless")))
 	s.crit_mult = 2.0 + 0.3 * r.call("critPower")
@@ -482,11 +482,13 @@ func recalc() -> void:
 
 	s.yield_all = 0.1 * r.call("bounty") + 0.06 * r.call("fertile") + (0.1 if r.call("abundance") > 0 else 0.0) \
 		+ (PremiumSystem.CAPYBARA_YIELD if premium.owns("garden") else 0.0)
-	s.yield_category["food"] = 0.2 * r.call("farmer")
+	s.yield_category["food"] = 0.2 * r.call("farmer") + 0.08 * r.call("forest")
+	s.yield_category["wood"] = 0.1 * r.call("woodsman")
+	s.yield_category["stone"] = 0.1 * r.call("prospector")
 	s.yield_category["crop"] = 0.2 * r.call("farmer")
 	s.yield_category["ore"] = 0.1 * r.call("oreHunter")
 	s.yield_category["gem"] = 0.1 * r.call("oreHunter")
-	s.regrow_chance = 0.06 * r.call("gardener")
+	s.regrow_chance = 0.06 * r.call("gardener") + 0.02 * r.call("orchard")
 	s.double_chance = 0.05 * r.call("doubleDrop")
 	s.triple_chance = 0.03 * r.call("triple")
 	s.finder_chance = 0.04 * r.call("finder")
@@ -503,16 +505,18 @@ func recalc() -> void:
 	_add(s.yield_category, "ore", motherlode)
 	_add(s.yield_category, "gem", motherlode)
 	s.gold_mult = 1.0 + 0.5 * r.call("goldRush")
-	var jeweler: float = 0.15 * r.call("jeweler")
+	var jeweler: float = 0.15 * r.call("jeweler") + 0.05 * r.call("appraiser")
 	s.sell_category["ore"] = jeweler
 	s.sell_category["gem"] = jeweler
 	s.sell_category["treasure"] = jeweler
 
-	s.reach = Stats.BASE_REACH * (1.0 + 0.12 * r.call("reach"))
+	s.reach = Stats.BASE_REACH * (1.0 + 0.12 * r.call("reach") + 0.06 * r.call("scout"))
 	s.deposit_radius = 92.0 * (1.0 + 0.3 * r.call("depotReach"))
-	s.tame_mult = (1.0 - 0.15 * r.call("tamer")) * (1.0 - 0.1 * r.call("catcher")) * (1.0 - 0.08 * r.call("charmer"))
+	s.tame_mult = (1.0 - 0.15 * r.call("tamer")) * (1.0 - 0.1 * r.call("catcher")) * (1.0 - 0.08 * r.call("charmer")) \
+		* (1.0 - 0.05 * r.call("lure"))
 	s.shop_mult = 1.0 - 0.08 * r.call("bargain")
-	s.spawn_mult = (1.0 + 0.25 * r.call("tamer")) * (1.0 + 0.2 * r.call("tracker")) * (1.0 + 0.12 * r.call("pathfinder"))
+	s.spawn_mult = (1.0 + 0.25 * r.call("tamer")) * (1.0 + 0.2 * r.call("tracker")) * (1.0 + 0.12 * r.call("pathfinder")) \
+		* (1.0 + 0.1 * r.call("spotter"))
 	s.keep_pack = r.call("windwalker") > 0
 	s.storekeeper_xp = int(r.call("storekeeper"))
 	s.discount = 1.0 - 0.07 * r.call("thrift")
@@ -522,29 +526,31 @@ func recalc() -> void:
 	s.animal_mult = 1.0 + 0.12 * r.call("beastBond") + 0.05 * r.call("animalFriend") + (0.3 if r.call("soul") > 0 else 0.0) \
 		+ 0.05 * r.call("kinship")
 	s.helper_mult = minf(Stats.MAX_HELPER,
-		(1.0 + 0.25 * r.call("packLeader")) * (1.0 + 0.1 * r.call("alpha")) * (1.0 + 0.1 * r.call("packHunt")))
-	s.helper_speed = 1.0 + 0.08 * r.call("training")
+		(1.0 + 0.25 * r.call("packLeader")) * (1.0 + 0.1 * r.call("alpha")) * (1.0 + 0.1 * r.call("packHunt"))
+		* (1.0 + 0.05 * r.call("pawStrike")))
+	s.helper_speed = 1.0 + 0.08 * r.call("training") + 0.04 * r.call("drill")
 	s.helper_range = 260.0 * (1.0 + 0.2 * r.call("keenEye"))
 	s.helper_tier_bonus = int(r.call("packTier"))
 	s.helper_yield = 1.0 + 0.15 * r.call("beastLoot")
 	s.producer_mult = minf(Stats.MAX_PRODUCER,
 		(1.0 + 0.2 * r.call("nightShift")) * (1.0 + 0.1 * r.call("herdsman")) * (1.0 + 0.1 * r.call("herd")))
-	s.double_product_chance = 0.08 * r.call("rancher")
-	s.offline_hours = (PremiumSystem.PRO_OFFLINE_HOURS if premium.has_pro() else Estate.CAP_HOURS) + 2.0 * r.call("pasture")
+	s.double_product_chance = 0.08 * r.call("rancher") + 0.04 * r.call("feeder")
+	s.offline_hours = (PremiumSystem.PRO_OFFLINE_HOURS if premium.has_pro() else Estate.CAP_HOURS) + 2.0 * r.call("pasture") \
+		+ r.call("nightOwl")
 	s.star_step = 0.25 + 0.05 * r.call("starFood")
 	s.double_star_chance = 0.15 * r.call("starHunter")
 
 	# Огород
 	s.grow_mult = 1.0 / (1.0 + 0.06 * r.call("greenThumb"))
-	s.extra_crop_chance = 0.12 * r.call("bigHarvest")
+	s.extra_crop_chance = 0.12 * r.call("bigHarvest") + 0.04 * r.call("mulch")
 	s.seed_back_chance = 0.08 * r.call("seedSaver")
-	s.water_mult = 1.0 + 0.15 * r.call("rainmaker")
+	s.water_mult = 1.0 + 0.15 * r.call("rainmaker") + 0.08 * r.call("sprinkler")
 	s.fert_save_chance = 0.12 * r.call("composter")
 	s.fert_extra = int(r.call("deepRoots"))
 	s.meal_mult = 1.0 + 0.15 * r.call("chef")
 	s.cook_mult = 1.0 - 0.1 * r.call("quickCook")
 	_add(s.sell_category, "crop", 0.1 * r.call("marketDay"))
-	s.seed_mult = 1.0 - 0.06 * r.call("seedTrader")
+	s.seed_mult = 1.0 - 0.06 * r.call("seedTrader") - 0.04 * r.call("seedBag")
 	_add(s.sell_category, "crop", 0.06 * r.call("seedTrader"))
 	s.golden_harvest = r.call("goldenHarvest") > 0
 	s.harvest_xp_mult = 2.0 if r.call("harvestMoon") > 0 else 1.0
@@ -558,13 +564,13 @@ func recalc() -> void:
 	# Бой
 	var warlord := 0.15 if r.call("warlord") > 0 else 0.0
 	s.hp_mult = (1.0 + 0.08 * r.call("toughness")) * (1.0 + warlord)
-	s.weapon_mult = (1.0 + 0.07 * r.call("bladeMaster")) * (1.0 + warlord)
-	s.defense_bonus = 0.03 * r.call("stance")
+	s.weapon_mult = (1.0 + 0.07 * r.call("bladeMaster")) * (1.0 + warlord) * (1.0 + 0.03 * r.call("frenzy"))
+	s.defense_bonus = 0.03 * r.call("stance") + 0.01 * r.call("parry")
 	s.dodge_bonus = 0.02 * r.call("evasion")
 	s.lifesteal = 0.02 * r.call("vampirism")
-	s.potion_bonus = 0.1 * r.call("alchemist")
+	s.potion_bonus = 0.1 * r.call("alchemist") + 0.03 * r.call("firstAid")
 	s.berserk = 0.12 * r.call("berserk")
-	s.boss_bonus = 0.08 * r.call("bossSlayer")
+	s.boss_bonus = 0.08 * r.call("bossSlayer") + 0.04 * r.call("hunterMark")
 	s.last_stand = r.call("lastStand") > 0
 	s.dungeon_bonus = 0.1 * r.call("delver")
 	s.regen = 0.005 * r.call("regen")
@@ -587,7 +593,7 @@ func recalc() -> void:
 	var cozy := house.comfort_bonus()
 	s.yield_all += cozy
 	var meal := {"yield": 0.0, "xp": 0.0, "speed": 0.0, "sell": 0.0, "crit": 0.0, "animals": 0.0}
-	var gourmet: float = 1.0 + 0.1 * r.call("gourmet")
+	var gourmet: float = 1.0 + 0.1 * r.call("gourmet") + 0.06 * r.call("picnic")
 	for dish in house.active_meals():
 		var b: Dictionary = house.meal_buff(dish)
 		for k in meal:
@@ -615,16 +621,16 @@ func recalc() -> void:
 		s.offline_hours += 2.0
 
 	var speed_bonus: float = 0.07 * r.call("swift") + 0.05 * r.call("tailwind") + lg.call("boots")
-	var crit_bonus: float = 0.05 * r.call("crit") + lg.call("luck")
+	var crit_bonus: float = 0.05 * r.call("crit") + 0.04 * r.call("fury") + lg.call("luck")
 	var respawn_bonus: float = 0.08 * r.call("regrowth") + (0.5 if r.call("abundance") > 0 else 0.0) + lg.call("growth")
-	var xp_bonus: float = 0.1 * r.call("scholar") + 0.06 * r.call("sage") + lg.call("wisdom") + cozy + meal["xp"] \
+	var xp_bonus: float = 0.1 * r.call("scholar") + 0.04 * r.call("curious") + 0.06 * r.call("sage") + lg.call("wisdom") + cozy + meal["xp"] \
 		+ collection.constellation_bonus("sky") + 0.08 * r.call("enlightened")
 	var sell_bonus: float = 0.08 * r.call("trader") + lg.call("merchant") + meal["sell"] + 0.06 * r.call("haggler") \
 		+ (0.1 if r.call("windwalker") > 0 else 0.0)
 	speed_bonus += meal["speed"]
 	crit_bonus += meal["crit"]
 	s.animal_mult += meal["animals"]
-	var capacity: float = float(capacity_at(level)) + 15.0 * r.call("bigPack") \
+	var capacity: float = float(capacity_at(level)) + 15.0 * r.call("bigPack") + 8.0 * r.call("packer") \
 		+ (float(PremiumSystem.STARTER_BACKPACK) if premium.owns("starter") else 0.0) + lg.call("pack") \
 		+ (float(ShopSystem.MAX_BACKPACK) if shop.max_active() else 0.0)
 
