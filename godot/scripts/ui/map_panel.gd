@@ -12,11 +12,43 @@ static var _planet_tex: Dictionary = {}
 var selected := ""
 var planet := "home"
 var _ticket_ready := false
+## Вкладка: locations (планеты и схема), expeditions (экспедиции и билеты), garden (королевский сад).
+var tab := "locations"
 
 
-func _init() -> void:
+func _init(start_tab := "") -> void:
 	title_key = "hud.map"
 	planet = Locations.planet(Game.current)
+	if start_tab != "":
+		tab = start_tab
+
+
+## Открыли из нижней панели: вкладка, где горит отметка.
+func focus_attention() -> void:
+	if Game.premium.free_ticket_ready():
+		tab = "expeditions"
+	elif Game.world_map.openable_gates() == 0 and garden_chest_ready():
+		tab = "garden"
+
+
+## Королевский сундук в саду можно открыть.
+static func garden_chest_ready() -> bool:
+	if not Game.premium.owns("garden"):
+		return false
+	var at = Game.save.get("gardenChestAt")
+	return not (at is float or at is int) or float(at) <= Time.get_unix_time_from_system()
+
+
+## Вкладки под шапкой: схема мира отдельно от экспедиций и сада, без сплошного полотна.
+func build_top() -> void:
+	var items := [
+		["locations", L.t("map.tab.locations"), Game.world_map.openable_gates()],
+		["expeditions", L.t("exp.title"), 1 if Game.premium.free_ticket_ready() else 0],
+		["garden", L.t("map.tab.garden"), 1 if garden_chest_ready() else 0],
+	]
+	top_bar.add_child(UiKit.tabs(items, tab, func(id: String) -> void:
+		tab = id
+		scroll_to_top()))
 
 
 func _process(delta: float) -> void:
@@ -30,6 +62,13 @@ func _process(delta: float) -> void:
 
 func build() -> void:
 	_ticket_ready = Game.premium.free_ticket_ready()
+	match tab:
+		"expeditions":
+			content.add_child(_expeditions_card())
+			return
+		"garden":
+			content.add_child(_garden_card())
+			return
 	content.add_child(_planet_picker())
 	if planet == "home":
 		content.add_child(WorldGraphView.new(selected, _select))
@@ -41,9 +80,6 @@ func build() -> void:
 		for id in WorldGraph.planet_locations(planet):
 			content.add_child(_location_card(id))
 	content.add_child(EventsPanel.map_card(close))
-	content.add_child(_wild_card())
-	content.add_child(_expeditions_card())
-	content.add_child(_garden_card())
 
 
 func _select(id: String) -> void:
@@ -283,6 +319,8 @@ func _gate_row(v: VBoxContainer, g: Dictionary, from: String) -> void:
 		var b := UiKit.button(text, "green", 15)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.disabled = not wm.can_open_gate(g)
+		if not b.disabled:
+			UiKit.attention(b)
 		var gate_id: String = g["id"]
 		b.pressed.connect(func() -> void:
 			if Game.world_map.open_gate(gate_id):
@@ -300,41 +338,6 @@ static func location_resources(id: String) -> Array:
 			if not y[0] in out:
 				out.append(y[0])
 	return out
-
-
-# MARK: Дикие земли
-
-## Карточка диких земель: отряды в пути и кнопка "Открыть" (с 15 уровня).
-func _wild_card() -> Control:
-	var parts := _ribbon_card(L.t("wild.title"), "green")
-	var v: VBoxContainer = parts[1]
-	var w := Game.wild
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
-	v.add_child(row)
-	row.add_child(UiKit.icon("compass", 34))
-	var text := ""
-	if not w.open():
-		text = L.t("wild.locked", [int(Wild.RINGS[0]["level"])])
-	elif w.squads_total() == 0:
-		text = L.t("wild.noCamp")
-	else:
-		text = L.t("wild.squads", [w.squads().size(), w.squads_total()])
-		if w.ready_count() > 0:
-			text += " · " + L.t("wild.back")
-	var t := UiKit.label(text, 13, UiKit.INK_SOFT)
-	t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	t.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	row.add_child(t)
-	if w.open():
-		var b := UiKit.button(L.t("where.open"), "green", 13, true)
-		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		b.pressed.connect(func() -> void:
-			close()
-			WildPanel.open())
-		row.add_child(b)
-	return parts[0]
 
 
 # MARK: Экспедиции
@@ -373,6 +376,7 @@ func _expeditions_card() -> Control:
 		free.icon = Sprites.icon("ticket")
 		free.add_theme_constant_override("icon_max_width", 20)
 		free.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		UiKit.attention(free)
 		free.pressed.connect(func() -> void: Game.premium.claim_free_ticket())
 		v.add_child(free)
 	elif p.next_free_ticket() != null:

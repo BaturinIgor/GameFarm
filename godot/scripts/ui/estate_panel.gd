@@ -14,6 +14,15 @@ func _init(start_tab := "") -> void:
 		tab = start_tab
 
 
+## Открыли из нижней панели: вкладка, где горит отметка.
+func focus_attention() -> void:
+	var e := Game.estate
+	if e.ready_count() + e.upgradable_count() > 0:
+		tab = "buildings"
+	elif e.orders_open() and e.ready_orders() + Game.fair.ready_count() > 0:
+		tab = "orders"
+
+
 static func open(start_tab := "") -> void:
 	if Hud.current != null:
 		Hud.current.open_window(EstatePanel.new(start_tab))
@@ -31,7 +40,7 @@ func _process(delta: float) -> void:
 
 func build_top() -> void:
 	var e := Game.estate
-	var items := [["buildings", L.t("estate.tab.buildings"), e.ready_count(), "hammer"]]
+	var items := [["buildings", L.t("estate.tab.buildings"), e.ready_count() + e.upgradable_count(), "hammer"]]
 	if e.orders_open():
 		items.append(["orders", L.t("estate.tab.orders"), e.ready_orders() + Game.fair.ready_count(), "quest"])
 	if Game.academy.open():
@@ -302,6 +311,8 @@ func _production(id: String) -> VBoxContainer:
 	line.add_child(l)
 	var take := UiKit.button(L.t("estate.collect"), "green", 13, true)
 	take.disabled = e.ready(id) <= 0
+	if not take.disabled:
+		UiKit.attention(take)
 	take.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	take.pressed.connect(func() -> void:
 		var n := Game.estate.collect(id)
@@ -369,6 +380,8 @@ func _upgrade_row(id: String) -> VBoxContainer:
 	if block.is_empty():
 		var b := UiKit.button(L.t("estate.upgrade") if e.level(id) > 0 else L.t("estate.build"), "green", 15)
 		b.disabled = not e.can_afford(id)
+		if not b.disabled:
+			UiKit.attention(b)
 		b.pressed.connect(func() -> void: Game.estate.start_upgrade(id))
 		v.add_child(b)
 	else:
@@ -534,6 +547,8 @@ func _order_card(o: Dictionary) -> PanelContainer:
 	var done := UiKit.button(L.t("orders.complete"), "green", 14, true)
 	done.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	done.disabled = not ok
+	if ok:
+		UiKit.attention(done)
 	done.pressed.connect(func() -> void: Game.estate.complete_order(oid))
 	row.add_child(done)
 	return p

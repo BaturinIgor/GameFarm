@@ -6,13 +6,25 @@ const TABS := ["mine", "shop", "wild"]
 const ACTIVE_FILL := Color("ddefc8")
 
 var tab := "mine"
+## В этой перестройке уже подсвечена кнопка "Взять с собой".
+var _took_hint := false
 
 
 func _init() -> void:
 	title_key = "hud.animals"
 
 
+## Открыли из нижней панели: вкладка, где горит отметка.
+func focus_attention() -> void:
+	var counts := Game.animals.tab_counts()
+	for t in TABS:
+		if int(counts.get(t, 0)) > 0:
+			tab = t
+			return
+
+
 func build() -> void:
+	_took_hint = false
 	_slots()
 	match tab:
 		"mine":
@@ -21,7 +33,12 @@ func build() -> void:
 				var c := _card()
 				c.add_child(UiKit.label(L.t("animals.empty"), 16))
 				c.add_child(_wrap(UiKit.label(L.t("animals.empty.hint"), 14, UiKit.INK_SOFT)))
-			for id in mine:
+			# Сначала те, у кого горит кнопка: пробуждение или свободное место рядом с героем
+			var a := Game.animals
+			var free := a.active().size() < a.max_active()
+			var first := mine.filter(func(id: String) -> bool:
+				return a.can_awaken(id) or (free and not a.is_active(id) and not Game.wild.on_squad(id)))
+			for id in first + mine.filter(func(id: String) -> bool: return not id in first):
 				_row(id, "mine")
 		"shop":
 			for id in Animals.IDS:
@@ -283,6 +300,8 @@ func _mine_actions(c: VBoxContainer, id: String) -> void:
 		box.add_child(UiKit.cost_view(cost))
 		var ab := UiKit.button(L.t("awaken.action"), "purple", 15, true)
 		ab.disabled = not a.can_awaken(id)
+		if not ab.disabled:
+			UiKit.attention(ab)
 		ab.pressed.connect(func() -> void: Game.animals.awaken(id))
 		box.add_child(ab)
 	var active := a.is_active(id)
@@ -290,6 +309,10 @@ func _mine_actions(c: VBoxContainer, id: String) -> void:
 	var text := L.t("animals.remove") if active else (L.t("animals.full") if full else L.t("animals.take"))
 	var b := UiKit.button(text, "red" if active else "green", 15, true)
 	b.disabled = not active and full
+	# Свободное место рядом с героем - одна отметка на вкладке, подсвечиваем первого, кто сидит дома
+	if not active and not full and not Game.wild.on_squad(id) and not _took_hint:
+		_took_hint = true
+		UiKit.attention(b)
 	b.pressed.connect(func() -> void: Game.animals.toggle_active(id))
 	c.add_child(b)
 
@@ -336,6 +359,8 @@ func _shop_actions(c: VBoxContainer, id: String, stars: int) -> void:
 	var b := UiKit.button("", "green")
 	b.custom_minimum_size = Vector2(0, 46)
 	b.disabled = not level_ok or int(Game.save["coins"]) < price
+	if not b.disabled:
+		UiKit.attention(b)
 	var row := HBoxContainer.new()
 	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	row.offset_left = 14

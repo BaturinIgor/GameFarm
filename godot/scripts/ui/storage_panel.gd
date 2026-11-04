@@ -10,6 +10,14 @@ const TABS := {
 	"goods": ["goods"],
 }
 
+## Множители продажи по кругу и ширина кнопок строки (постоянная, чтобы ряд не прыгал).
+const MULTIPLIERS := [1, 10, 100, 1000]
+const MULT_WIDTH := 48.0
+const SELL_WIDTH := 84.0
+
+## Выбранный множитель по ресурсу: живёт, пока игра открыта.
+static var _mult: Dictionary = {}
+
 var tab := "materials"
 
 
@@ -132,23 +140,37 @@ func _row(parent: Control, kind: String) -> void:
 	var coin := UiKit.icon("coin", 13)
 	coin.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	info.add_child(coin)
-	# Продать 1, 10, 100 или всё; лишние кнопки не показываются
+	# Множитель (x1 -> x10 -> x100 -> x1000 -> x1) и "Продать": ширина постоянная, строка не скачет.
+	# Если на складе меньше множителя, продаётся всё, что есть
 	var buttons := HBoxContainer.new()
-	buttons.add_theme_constant_override("separation", 2)
+	buttons.add_theme_constant_override("separation", 4)
 	buttons.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(buttons)
-	for n in [1, 10, 100]:
-		if have > n:
-			var b := UiKit.button(str(n), "wood", 12, true)
-			var w := 30.0 if n == 1 else (33.0 if n == 10 else 40.0)
-			b.custom_minimum_size = Vector2(w, 34)
-			var count: int = n
-			b.pressed.connect(func() -> void: _sold(kind, Game.sell(kind, count)))
-			buttons.add_child(b)
-	var all := UiKit.button(L.t("storage.sellAll") if have > 1 else L.t("storage.sell"), "green", 12, true)
-	all.custom_minimum_size = Vector2(42, 34)
-	all.pressed.connect(func() -> void: _sold(kind, Game.sell(kind, have)))
-	buttons.add_child(all)
+	var mult := multiplier(kind)
+	var m := UiKit.button("x" + str(mult), "wood", 12, true)
+	m.custom_minimum_size = Vector2(MULT_WIDTH, 34)
+	m.clip_text = true
+	m.pressed.connect(func() -> void:
+		_mult[kind] = next_multiplier(mult)
+		Sound.play("tap")
+		_dirty = true)
+	buttons.add_child(m)
+	var sell := UiKit.button(L.t("storage.sell"), "green", 12, true)
+	sell.custom_minimum_size = Vector2(SELL_WIDTH, 34)
+	sell.clip_text = true
+	sell.pressed.connect(func() -> void: _sold(kind, Game.sell(kind, mini(mult, Game.storage_of(kind)))))
+	buttons.add_child(sell)
+
+
+## Множитель продажи для ресурса (пока игра открыта): 1, 10, 100 или 1000.
+static func multiplier(kind: String) -> int:
+	return int(_mult.get(kind, MULTIPLIERS[0]))
+
+
+## Следующий множитель по кругу.
+static func next_multiplier(current: int) -> int:
+	var i := MULTIPLIERS.find(current)
+	return MULTIPLIERS[(i + 1) % MULTIPLIERS.size()]
 
 
 ## Подсказка о выручке после продажи.
