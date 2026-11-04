@@ -33,7 +33,7 @@ static func build_list(parent: Control, on_enter: Callable) -> void:
 	parent.add_child(tip)
 
 
-## Иконка эссенции (своего рисунка нет - кристалл с фиолетовым оттенком).
+## Иконка эссенции (рисунок - tools/make_rare_icons.py; без него - кристалл с фиолетовым оттенком).
 static func essence_icon(side: float) -> TextureRect:
 	var t := UiKit.icon("essence", side)
 	if t.texture == null:

@@ -4,6 +4,8 @@ extends Sheet
 
 const DONE_FILL := Color("ddefc8")
 const OPEN_FILL := Color("fbe3c2")
+## Ширина ячейки с наградой у целей дня и недели.
+const GOAL_SLOT := 72.0
 ## Эмодзи в строках, которые рисуем пиксельными иконками.
 const EMOJI_ICONS := {"🪙": "coins", "🌟": "stardust", "🎁": "chest_gold"}
 
@@ -90,20 +92,31 @@ func _goals_card(week: bool) -> Control:
 		col.add_child(t)
 		col.add_child(UiKit.bar(float(g["progress"]) / float(maxi(1, int(g["target"]))), "purple", 150.0, 12.0,
 			"%s / %s" % [Fmt.n(int(g["progress"])), Fmt.n(int(g["target"]))]))
+		# Кнопка и галочка в ячейке одной ширины: полоски всех целей одинаковой длины
+		var slot := _goal_slot()
+		row.add_child(slot)
 		if g["claimed"]:
-			var ok := HousePanel.check_mark(22)
-			row.add_child(ok)
+			slot.add_child(HousePanel.check_mark(22))
 		else:
 			var idx := i
 			var b := MapPanel.icon_button([["i", "gem"], ["t", str(g["crystals"])]], "green" if daily.done(g) else "gray", 13)
 			b.disabled = not daily.done(g)
+			b.custom_minimum_size.x = GOAL_SLOT
 			if not b.disabled:
 				UiKit.attention(b)
-			b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			b.pressed.connect(func() -> void: Game.daily.claim(idx, week))
-			row.add_child(b)
+			slot.add_child(b)
 	v.add_child(_goals_bonus(week))
 	return parts[0]
+
+
+## Ячейка справа от цели: ширина не зависит от награды и от того, забрана ли она.
+func _goal_slot() -> CenterContainer:
+	var c := CenterContainer.new()
+	c.custom_minimum_size = Vector2(GOAL_SLOT, 0)
+	c.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return c
 
 
 ## Сколько целей (и сундук) можно забрать прямо сейчас.
