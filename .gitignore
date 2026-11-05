@@ -6,3 +6,4 @@ Payload/
 __pycache__/
 build.log
 build/
+godot/ios/plugins/
