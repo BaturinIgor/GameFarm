@@ -32,9 +32,8 @@ func _init() -> void:
 	_row.add_child(_text)
 	_dot = UiKit.count_badge(0)
 	(_dot.get_child(0) as Label).text = "!"
-	_dot.position = Vector2(-6, -7)
 	_dot.visible = false
-	add_child(_dot)
+	UiKit.pin_badge(_dot, self)
 	pressed.connect(func() -> void: EstatePanel.open())
 	_refresh()
 

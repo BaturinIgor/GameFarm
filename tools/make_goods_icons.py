@@ -60,13 +60,14 @@ def ingots(light, mid, dark, hl):
 def planks():
     im = canvas()
     light, mid, dark, grain = hexc("e0a96d"), hexc("c0803f"), hexc("8a5228"), hexc("a56a33")
+    # Доски шириной 11: со сдвигом стопки и чёрным контуром влезают в 16x16 (раньше край обрезался)
     for i, oy in enumerate((10, 6, 2)):
         ox = 1 + i * 1
-        rect(im, ox, oy, ox + 12, oy + 2, mid)
-        rect(im, ox, oy, ox + 12, oy, light)
-        rect(im, ox, oy + 3, ox + 12, oy + 3, dark)
-        px(im, [(ox + 4, oy + 1), (ox + 5, oy + 1), (ox + 9, oy + 2)], grain)
-        px(im, [(ox + 12, oy + 1), (ox + 12, oy + 2)], dark)
+        rect(im, ox, oy, ox + 10, oy + 2, mid)
+        rect(im, ox, oy, ox + 10, oy, light)
+        rect(im, ox, oy + 3, ox + 10, oy + 3, dark)
+        px(im, [(ox + 3, oy + 1), (ox + 4, oy + 1), (ox + 8, oy + 2)], grain)
+        px(im, [(ox + 10, oy + 1), (ox + 10, oy + 2)], dark)
     return outline(im)
 
 
@@ -108,7 +109,7 @@ def sack(fill_light, fill_mid, fill_dark, mark):
     px(im, [(5, 6), (4, 8), (5, 7)], sl)
     # Содержимое видно сверху и знак на боку
     rect(im, 6, 1, 9, 1, fill_light)
-    px(im, [(7, 0), (8, 0)], fill_light)
+    px(im, [(7, 1), (8, 1)], fill_light)
     px(im, mark, fill_mid)
     return outline(im)
 

@@ -79,6 +79,10 @@ func _ready() -> void:
 	# Новый уровень - половина запаса энергии (не выше полного)
 	level_up.connect(func(_from: int, _to: int) -> void: energy.level_up_bonus())
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# Покупки App Store (на iOS с плагином): цены и незавершённые покупки
+	Store.setup(self)
+	# Реклама за награду (на iOS с плагином AdMob): согласие, запуск SDK, первый ролик
+	Ads.setup(self)
 
 
 func emit_event(name: String, data := {}) -> void:
@@ -100,7 +104,7 @@ static func default_save() -> Dictionary:
 		"tools": {"axe": 1, "pickaxe": 1, "rod": 1, "sword": 1, "armor": 1},
 		"talents": {}, "unlocked": ["meadow"], "current": "meadow",
 		"animals": {}, "active": [], "gathered": {},
-		"harvests": 0, "coinsEarned": 0, "lastSeen": Time.get_unix_time_from_system(),
+		"harvests": 0, "coinsEarned": 0, "lastSeen": Clock.now(),
 		"tutorialDone": false, "openGates": [], "tickets": 1, "bestLevel": 1,
 		"skin": "farmer", "economy": ECONOMY,
 	}
@@ -123,7 +127,7 @@ func _load_save() -> Dictionary:
 				data[k] = parsed[k]
 		elif text.strip_edges() != "":
 			# Файл испорчен: сначала копия, чтобы прогресс можно было достать, потом игра с нуля
-			DirAccess.copy_absolute(save_path, save_path.get_basename() + ".broken-%d.json" % int(Time.get_unix_time_from_system()))
+			DirAccess.copy_absolute(save_path, save_path.get_basename() + ".broken-%d.json" % int(Clock.now()))
 	# Числа из JSON приходят дробными: приводим счётчики к целым
 	for key in ["level", "xp", "coins", "harvests", "coinsEarned", "tickets", "bestLevel", "masteryPoints"]:
 		data[key] = int(data.get(key, 0))
@@ -150,7 +154,7 @@ func save_if_needed() -> void:
 
 
 func save_now() -> void:
-	save["lastSeen"] = maxf(float(save.get("lastSeen", 0.0)), Time.get_unix_time_from_system())
+	save["lastSeen"] = maxf(float(save.get("lastSeen", 0.0)), Clock.now())
 	var f := FileAccess.open(save_path + ".tmp", FileAccess.WRITE)
 	if f == null:
 		return

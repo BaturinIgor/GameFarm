@@ -12,7 +12,7 @@ const TABS := {
 
 ## Множители продажи по кругу и ширина кнопок строки (постоянная, чтобы ряд не прыгал).
 const MULTIPLIERS := [1, 10, 100, 1000]
-const MULT_WIDTH := 48.0
+const MULT_WIDTH := 62.0
 const SELL_WIDTH := 84.0
 
 ## Выбранный множитель по ресурсу: живёт, пока игра открыта.
@@ -149,7 +149,12 @@ func _row(parent: Control, kind: String) -> void:
 	var mult := multiplier(kind)
 	var m := UiKit.button("x" + str(mult), "wood", 12, true)
 	m.custom_minimum_size = Vector2(MULT_WIDTH, 34)
-	m.clip_text = true
+	# Узкие поля: "x1000" целиком помещается в постоянную ширину (раньше обрезалось до "x10")
+	for st_name in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
+		var st := m.get_theme_stylebox(st_name).duplicate() as StyleBox
+		st.content_margin_left = 4
+		st.content_margin_right = 4
+		m.add_theme_stylebox_override(st_name, st)
 	m.pressed.connect(func() -> void:
 		_mult[kind] = next_multiplier(mult)
 		Sound.play("tap")

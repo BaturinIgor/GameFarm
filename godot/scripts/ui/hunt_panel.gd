@@ -281,7 +281,10 @@ func _beast_row(kind: String) -> PanelContainer:
 	name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_l.clip_text = true
 	title.add_child(name_l)
-	title.add_child(UiKit.stars(claimed, tiers.size(), 13.0))
+	# С кнопкой "Забрать" звёзды уходят под полосу: иначе они съедали имя ("Зелёный слайм" обрезался)
+	var stars := UiKit.stars(claimed, tiers.size(), 13.0)
+	if ready < 0:
+		title.add_child(stars)
 	var kills := c.kills_of(kind)
 	if claimed >= tiers.size():
 		col.add_child(UiKit.label(L.t("bestiary.done", [Fmt.n(kills)]), 11, UiKit.GOOD))
@@ -289,6 +292,9 @@ func _beast_row(kind: String) -> PanelContainer:
 		var goal := int(tiers[claimed])
 		col.add_child(UiKit.bar(float(kills) / float(goal), "gold" if ready >= 0 else "orange", 150.0, 12.0,
 			"%s / %s" % [Fmt.n(mini(kills, goal)), Fmt.n(goal)]))
+	if ready >= 0:
+		stars.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		col.add_child(stars)
 	if claimed > 0:
 		col.add_child(UiKit.label(L.t("bestiary.bonus", [Fmt.pct(Consumables.BESTIARY_DAMAGE * claimed)]), 10, UiKit.INK_SOFT))
 	if ready >= 0:

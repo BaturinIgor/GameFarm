@@ -1,8 +1,9 @@
 name: Build IPA (Godot)
 
-# iOS-сборка Godot-версии для установки через SideStore: экспорт проекта Xcode из Godot,
-# xcodebuild без подписи, IPA. Bundle id тот же, что у Swift-версии (com.personal.gamefarm),
-# поэтому SideStore ставит поверх. Логи кладутся в ветку ci-logs-ios.
+# iOS-сборка Godot-версии: экспорт проекта Xcode из Godot с плагином покупок InAppStore (StoreKit),
+# xcodebuild без подписи, IPA для SideStore. Проект Xcode выкладывается артефактом HarvestHollow-xcode:
+# из него в Xcode на Маке делается подписанный архив для App Store. Bundle id тот же, что у
+# Swift-версии (com.personal.gamefarm). Логи кладутся в ветку ci-logs-ios.
 
 on:
   push:
@@ -16,6 +17,8 @@ on:
       - "GameFarm/Resources/Assets.xcassets/AppIcon.appiconset/**"
       - "tools/godot_sync.sh"
       - "tools/make_splash.py"
+      - "tools/build_inappstore.sh"
+      - "tools/fetch_admob.sh"
       - ".github/workflows/ios-godot.yml"
   workflow_dispatch:
 
@@ -100,6 +103,50 @@ jobs:
           "$HOME/godot-bin/Godot.app/Contents/MacOS/Godot" --version
           xcodebuild -version
 
+      # Плагин покупок App Store (godot-ios-plugins/inappstore), собирается под эту версию Godot
+      - name: Cache InAppStore plugin
+        id: cache-iap
+        uses: actions/cache@v4
+        with:
+          path: ~/inappstore
+          key: inappstore-${{ env.GODOT_VERSION }}-${{ hashFiles('tools/build_inappstore.sh') }}-v1
+
+      - name: Build InAppStore plugin
+        if: steps.cache-iap.outputs.cache-hit != 'true'
+        timeout-minutes: 30
+        run: |
+          set -o pipefail
+          bash tools/build_inappstore.sh "$HOME/inappstore" 2>&1 | tee iap.log | tail -80
+
+      - name: Install InAppStore plugin
+        run: |
+          set -e
+          mkdir -p godot/ios/plugins/inappstore
+          cp -R "$HOME"/inappstore/* godot/ios/plugins/inappstore/
+          ls -la godot/ios/plugins/inappstore
+
+      # Реклама за награду: плагин Poing Studios, Google Mobile Ads SDK и UMP (окна согласия)
+      - name: Cache AdMob
+        id: cache-admob
+        uses: actions/cache@v4
+        with:
+          path: ~/admob
+          key: admob-${{ env.GODOT_VERSION }}-${{ hashFiles('tools/fetch_admob.sh') }}-v1
+
+      - name: Fetch AdMob
+        if: steps.cache-admob.outputs.cache-hit != 'true'
+        run: |
+          set -o pipefail
+          bash tools/fetch_admob.sh "$HOME/admob" 2>&1 | tee admob.log | tail -60
+
+      - name: Install AdMob
+        run: |
+          set -e
+          mkdir -p godot/ios/plugins
+          rm -rf godot/ios/plugins/admob
+          cp -R "$HOME/admob" godot/ios/plugins/admob
+          cat godot/ios/plugins/admob/admob.gdip | head -30
+
       - name: Import project
         timeout-minutes: 10
         run: |
@@ -140,12 +187,24 @@ jobs:
         timeout-minutes: 15
         run: |
           set -o pipefail
-          V="2.0.${{ github.run_number }}"
-          perl -pi -e "s/^application\/short_version=.*/application\/short_version=\"$V\"/; s/^application\/version=.*/application\/version=\"$V\"/" godot/export_presets.cfg
+          # Версия для App Store 1.0.0, номер сборки - номер запуска (растёт сам)
+          V="1.0.0"
+          B="${{ github.run_number }}"
+          perl -pi -e "s/^application\/short_version=.*/application\/short_version=\"$V\"/; s/^application\/version=.*/application\/version=\"$B\"/" godot/export_presets.cfg
           rm -rf build-ios && mkdir -p build-ios
           "$GODOT" --headless --verbose --path godot --export-release "iOS" "$GITHUB_WORKSPACE/build-ios/HarvestHollow.xcodeproj" 2>&1 | tee export.log | tail -60
           ls -la build-ios
           test -d build-ios/HarvestHollow.xcodeproj || { echo "::error::Godot did not export the Xcode project"; exit 1; }
+          grep -q "inappstore" build-ios/HarvestHollow.xcodeproj/project.pbxproj || { echo "::error::Плагин InAppStore не попал в проект"; exit 1; }
+          grep -q "GoogleMobileAds" build-ios/HarvestHollow.xcodeproj/project.pbxproj || { echo "::error::AdMob не попал в проект"; exit 1; }
+          (cd build-ios && zip -qry ../HarvestHollow-xcode.zip .)
+
+      # Проект Xcode до сборки: его открывают на Маке, подписывают своей командой и отправляют в App Store
+      - name: Upload Xcode project
+        uses: actions/upload-artifact@v4
+        with:
+          name: HarvestHollow-xcode
+          path: HarvestHollow-xcode.zip
 
       - name: Build (xcodebuild archive, no signing)
         run: |
@@ -194,7 +253,7 @@ jobs:
           cp -R "$APP" ipa/Payload/
           (cd ipa && zip -qry ../HarvestHollow.ipa Payload)
           ls -lh HarvestHollow.ipa
-          echo "::notice::HarvestHollow.ipa: $(du -h HarvestHollow.ipa | cut -f1), версия 2.0.${{ github.run_number }}"
+          echo "::notice::HarvestHollow.ipa: $(du -h HarvestHollow.ipa | cut -f1), версия 1.0.0 (${{ github.run_number }})"
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
@@ -222,7 +281,7 @@ jobs:
         run: |
           L="$RUNNER_TEMP/ci-logs"
           rm -rf "$L" && mkdir -p "$L"
-          cp prepare.log import.log check.log tests.log export.log errors.txt app.txt "$L/" 2>/dev/null || true
+          cp prepare.log iap.log admob.log import.log check.log tests.log export.log errors.txt app.txt "$L/" 2>/dev/null || true
           if [ -f build.log ]; then
             tail -400 build.log > "$L/build_tail.txt"
             [ "$(wc -c < build.log)" -lt 20000000 ] && cp build.log "$L/"

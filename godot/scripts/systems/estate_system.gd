@@ -60,7 +60,7 @@ static func _num(v: Variant, fallback: float) -> float:
 
 
 static func _now() -> float:
-	return Time.get_unix_time_from_system()
+	return Clock.now()
 
 
 func _b(id: String) -> Dictionary:
@@ -157,6 +157,50 @@ func start_upgrade(id: String) -> bool:
 	Game.mark_dirty()
 	Game.save_now()
 	return true
+
+
+# MARK: Докупка товаров за монеты
+
+## Недостающие товары цехов (доски, кирпич, слитки...) для следующего уровня: [[товар, сколько], ...].
+func missing_goods(id: String) -> Array:
+	var out: Array = []
+	for it in Estate.build_cost(id, level(id) + 1).get("items", []):
+		var miss := int(it[1]) - Game.amount(it[0])
+		if miss > 0 and Estate.is_good(it[0]):
+			out.append([it[0], miss])
+	return out
+
+
+## Сколько монет стоит докупить недостающие товары (0 - докупать нечего).
+func missing_goods_coins(id: String) -> int:
+	var sum := 0.0
+	for it in missing_goods(id):
+		sum += float(Estate.price(it[0])) * float(it[1]) * Estate.GOODS_COIN_MULT
+	return int(ceil(sum / 10.0) * 10.0)
+
+
+## Можно построить, докупив товары за монеты: сырья хватает, монет хватает на стройку и товары.
+func can_buy_missing(id: String) -> bool:
+	if not upgrade_block(id).is_empty() or missing_goods(id).is_empty():
+		return false
+	var cost := Estate.build_cost(id, level(id) + 1)
+	for it in cost.get("items", []):
+		if not Estate.is_good(it[0]) and Game.amount(it[0]) < int(it[1]):
+			return false
+	return int(Game.save["coins"]) >= int(cost.get("coins", 0)) + missing_goods_coins(id)
+
+
+## Докупить недостающие товары за монеты и сразу начать стройку.
+func buy_missing_and_upgrade(id: String) -> bool:
+	if not can_buy_missing(id):
+		return false
+	var price := missing_goods_coins(id)
+	var st: Dictionary = Game.save["storage"]
+	for it in missing_goods(id):
+		st[it[0]] = int(st.get(it[0], 0)) + int(it[1])
+	Game.save["coins"] = int(Game.save["coins"]) - price
+	Game.emit_event("buyGoods", {"amount": price})
+	return start_upgrade(id)
 
 
 ## Стройка закончилась: уровень выше, немного опыта. Зовётся раз в секунду из HUD и при открытии окна.

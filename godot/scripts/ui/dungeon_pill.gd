@@ -30,8 +30,7 @@ func _process(_delta: float) -> void:
 
 
 func _build(run: Dictionary) -> void:
-	for c in _row.get_children():
-		c.queue_free()
+	UiKit.clear(_row)
 	var id: String = run["dungeon"]
 	var s := UiKit.pill_style()
 	s.bg_color = Color(Dungeons.colors(id)[1], 0.95)

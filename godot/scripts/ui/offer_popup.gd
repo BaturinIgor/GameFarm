@@ -13,6 +13,8 @@ var _tick := 0.0
 
 
 static func check() -> void:
+	if not Store.LIVE:
+		return
 	Game.premium.check_starter_offer()
 	Game.shop.check_level_bundles()
 	if Hud.current == null:

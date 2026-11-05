@@ -179,7 +179,7 @@ func _take_session(data) -> bool:
 		return false
 	_auth["access"] = str(data["access_token"])
 	_auth["refresh"] = str(data.get("refresh_token", ""))
-	_auth["expires"] = Time.get_unix_time_from_system() + float(data.get("expires_in", 3600))
+	_auth["expires"] = Clock.now() + float(data.get("expires_in", 3600))
 	var user = data.get("user")
 	_auth["user"] = str(user.get("id", "")) if user is Dictionary else ""
 	_save_auth()
@@ -188,7 +188,7 @@ func _take_session(data) -> bool:
 
 ## Есть рабочий токен: вход анонимно или обновление по refresh-токену.
 func _ensure_auth() -> bool:
-	if str(_auth.get("access", "")) != "" and float(_auth.get("expires", 0.0)) - 60.0 > Time.get_unix_time_from_system():
+	if str(_auth.get("access", "")) != "" and float(_auth.get("expires", 0.0)) - 60.0 > Clock.now():
 		return true
 	if str(_auth.get("refresh", "")) != "":
 		var data = await _request("/auth/v1/token?grant_type=refresh_token", {"refresh_token": _auth["refresh"]}, false)

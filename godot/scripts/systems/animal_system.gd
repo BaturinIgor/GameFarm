@@ -306,7 +306,7 @@ func mark_shiny(id: String) -> void:
 
 ## Производители работали и без игрока (не дольше offline_hours). Возвращает отчёт или {}.
 func apply_offline() -> Dictionary:
-	var now := Time.get_unix_time_from_system()
+	var now := Clock.now()
 	var last_seen := float(Game.save.get("lastSeen", now))
 	# Часы перевели назад: время "вне игры" не начисляется заново, считаем от самой поздней отметки.
 	var elapsed := maxf(0.0, minf(now - last_seen, Game.stats.offline_hours * 3600.0))

@@ -62,3 +62,49 @@ func test_start_upgrade_pays() -> void:
 		check(Game.estate.start_upgrade(id), "стройка началась")
 		check(Game.estate.building(id) or Game.estate.level(id) > lvl, "здание строится")
 		check(int(Game.save["coins"]) < 100_000_000, "монеты списаны")
+
+
+## Уровень, на котором нужны доски: главный дом и склад подняты до него.
+func _to_planks_level(id: String) -> void:
+	set_level(Game.MAX_LEVEL)
+	Game.save["estate"]["main"]["level"] = 5
+	Game.save["estate"][id]["level"] = 3
+	for kind in Res.KINDS:
+		Game.save["storage"][kind] = 0
+
+
+func test_buy_missing_goods_starts_upgrade() -> void:
+	_to_planks_level("storage")
+	var cost := Estate.build_cost("storage", 4)
+	for it in cost["items"]:
+		if not Estate.is_good(it[0]):
+			Game.save["storage"][it[0]] = int(it[1])
+	check(not Game.estate.missing_goods("storage").is_empty(), "доски нужны")
+	var price := Game.estate.missing_goods_coins("storage")
+	check(price > 0, "цена докупки")
+	Game.save["coins"] = int(cost["coins"]) + price
+	check(Game.estate.can_buy_missing("storage"), "можно докупить")
+	check(Game.estate.buy_missing_and_upgrade("storage"), "докупили и строим")
+	check(Game.estate.building("storage"), "стройка идёт")
+	eq(Game.save["coins"], 0, "списаны монеты за стройку и товары")
+	for it in cost["items"]:
+		eq(Game.storage_of(it[0]), 0, "списано " + str(it[0]))
+
+
+func test_buy_missing_needs_raw_and_coins() -> void:
+	_to_planks_level("storage")
+	Game.save["coins"] = 1_000_000_000
+	# Камня нет: товары за монеты не заменяют сырьё
+	check(not Game.estate.can_buy_missing("storage"), "без сырья нельзя")
+	var cost := Estate.build_cost("storage", 4)
+	for it in cost["items"]:
+		if not Estate.is_good(it[0]):
+			Game.save["storage"][it[0]] = int(it[1])
+	Game.save["coins"] = Game.estate.missing_goods_coins("storage")
+	check(not Game.estate.can_buy_missing("storage"), "монет только на товары, на стройку нет")
+
+
+func test_buy_missing_price_is_a_real_sink() -> void:
+	# Докупка дороже, чем продать те же товары: не арбитраж
+	for good in Estate.GOODS:
+		check(Estate.GOODS_COIN_MULT * Estate.price(good) > Game.sell_price(good) * 2.0, "докупка %s дешевле продажи" % good)

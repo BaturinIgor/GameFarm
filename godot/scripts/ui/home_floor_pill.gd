@@ -76,8 +76,7 @@ func _toggle() -> void:
 
 
 func _build_menu() -> void:
-	for c in _list.get_children():
-		c.queue_free()
+	UiKit.clear(_list)
 	var here := Game.house.current_floor()
 	var floors := House.FLOORS.duplicate()
 	floors.reverse()

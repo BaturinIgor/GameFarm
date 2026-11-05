@@ -143,6 +143,16 @@ static func remember(group: String, sub: String) -> void:
 	_last[group] = sub
 
 
+## Слепок полосы разделов: если он не изменился, полосу можно не пересобирать.
+static func signature(group: String, current: String) -> String:
+	var parts: Array = [current, L.code]
+	var spec := group_spec(group)
+	if not spec.is_empty():
+		for sub in spec[3]:
+			parts.append("%s:%d:%s" % [sub, count(sub), locked(sub)])
+	return "|".join(parts)
+
+
 ## Полоса разделов под шапкой окна. Одна вкладка без соседей - полосы нет (null).
 static func bar(group: String, current: String) -> Control:
 	var subs: Array = group_spec(group)[3] if not group_spec(group).is_empty() else []
@@ -154,4 +164,4 @@ static func bar(group: String, current: String) -> Control:
 		if locked(sub):
 			text = L.t("nav.lockedShort", [text, level_of(sub)])
 		items.append([sub, text, count(sub)])
-	return UiKit.tabs(items, current, func(id: String) -> void: Nav.open_sub(id))
+	return UiKit.tabs(items, current, func(id: String) -> void: Nav.open_sub(id), true)

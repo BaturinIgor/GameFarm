@@ -512,10 +512,11 @@ func _settings() -> void:
 			var key: String = "cos_" + cid
 			look.add_child(_switch_row(Products.title(cid), L.t("cosmetic.%s.hint" % cid), Settings._flag(key, true),
 				func(on: bool) -> void: Settings.set_value(key, on)))
-	# Покупки
-	section_title(L.t("settings.section.purchases"))
-	var buy := card()
-	_purchases_rows(buy)
+	# Покупки: раздел есть только со StoreKit (iOS)
+	if Store.LIVE:
+		section_title(L.t("settings.section.purchases"))
+		var buy := card()
+		_purchases_rows(buy)
 
 
 func _language_row(c: VBoxContainer) -> void:
@@ -534,7 +535,7 @@ func _language_row(c: VBoxContainer) -> void:
 	row.add_child(pick)
 
 
-## Pro (если куплен), восстановление покупок и сброс тестовых покупок (сборка без магазина, как SIDELOAD).
+## Pro (если куплен) и восстановление покупок App Store.
 func _purchases_rows(c: VBoxContainer) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
@@ -553,10 +554,6 @@ func _purchases_rows(c: VBoxContainer) -> void:
 	var restore := UiKit.button(L.t("shop.restore"), "wood", 13, true)
 	restore.pressed.connect(func() -> void: Store.restore())
 	row.add_child(restore)
-	var reset := UiKit.button(L.t("settings.resetTest"), "gray", 13, true)
-	reset.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	reset.pressed.connect(func() -> void: Game.premium.reset_test_purchases())
-	c.add_child(reset)
 
 
 # MARK: Элементы

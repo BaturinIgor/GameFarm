@@ -65,7 +65,7 @@ static func _num(v) -> bool:
 
 
 static func _now() -> float:
-	return Time.get_unix_time_from_system()
+	return Clock.now()
 
 
 static func day_index() -> int:
@@ -289,7 +289,7 @@ func claim_gift() -> Dictionary:
 
 ## Секунд до следующего подарка (до начала нового дня).
 static func next_day_in() -> float:
-	return House.start_of_day() + 86400.0 - Time.get_unix_time_from_system()
+	return House.start_of_day() + 86400.0 - Clock.now()
 
 
 func give_market_free(item: String) -> void:

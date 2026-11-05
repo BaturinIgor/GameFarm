@@ -62,7 +62,7 @@ func _fill(v: VBoxContainer) -> void:
 	# Бесплатно раз в 8 часов
 	v.add_child(FreeButton.new("energy", "+%d" % Freebies.ENERGY, func() -> void: Game.energy.add(Freebies.ENERGY, true)))
 	# Ролик
-	var ad := Ads.reward_button(L.t("energy.ad", [EnergySystem.AD_ENERGY, en.ads_left()]), "blue", 14)
+	var ad := Ads.reward_button(L.t(Ads.k("energy.ad"), [EnergySystem.AD_ENERGY, en.ads_left()]), "blue", 14)
 	ad.disabled = en.ads_left() <= 0
 	ad.pressed.connect(func() -> void:
 		Ads.show_rewarded(func() -> void:

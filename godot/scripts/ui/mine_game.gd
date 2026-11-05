@@ -149,8 +149,7 @@ func _refresh_labels() -> void:
 	_moves_label.text = str(moves)
 	_moves_label.modulate = Color(1, 0.55, 0.5) if moves <= 3 else Color.WHITE
 	_rocks_label.text = str(board.rocks_left())
-	for c in _ore_row.get_children():
-		c.queue_free()
+	UiKit.clear(_ore_row)
 	for c in board.colors:
 		var n := int(blocks.get(c, 0))
 		var item := HBoxContainer.new()
@@ -289,8 +288,7 @@ func _center(i: int) -> Vector2:
 # MARK: Конец этажа
 
 func _show_end(kind: String) -> void:
-	for c in _end_layer.get_children():
-		c.queue_free()
+	UiKit.clear(_end_layer)
 	_end_layer.mouse_filter = Control.MOUSE_FILTER_STOP
 	var p := PanelContainer.new()
 	var s := UiKit.box(UiKit.PARCHMENT, UiKit.OUTLINE, 18, 3, true)
@@ -332,7 +330,7 @@ func _show_end(kind: String) -> void:
 				Game.show_toast("px:gem", L.t("chest.noCrystals")))
 		v.add_child(buy)
 		if not _ad_used and Ads.ready():
-			var ad := Ads.reward_button(L.t("mine.adMoves", [Mine.EXTRA_MOVES]), "orange", 15)
+			var ad := Ads.reward_button(L.t(Ads.k("mine.adMoves"), [Mine.EXTRA_MOVES]), "orange", 15)
 			ad.pressed.connect(func() -> void:
 				Ads.show_rewarded(func() -> void:
 					_ad_used = true
@@ -349,8 +347,7 @@ func _show_end(kind: String) -> void:
 
 
 func _clear_end() -> void:
-	for c in _end_layer.get_children():
-		c.queue_free()
+	UiKit.clear(_end_layer)
 	_end_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
