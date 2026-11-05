@@ -151,6 +151,11 @@ func grant(key: String) -> void:
 		Game.save["purchases"] = purchases
 	elif key == "energyPack":
 		Game.energy.add(Products.ENERGY_PACK, true)
+	elif key in Products.KEY_PACKS:
+		var pack: Dictionary = Products.KEY_PACKS[key]
+		for k in pack:
+			Game.chests.add_keys(str(k), int(pack[k]), false)
+		Game.show_toast("px:key", L.t("toast.purchased", [Products.title(key)]))
 	elif key == "attemptsPack":
 		Game.dungeons.add_tokens(Products.ATTEMPTS_PACK)
 		Game.show_toast("px:key", L.t("toast.purchased", [Products.title(key)]))

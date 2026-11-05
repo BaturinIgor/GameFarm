@@ -56,3 +56,16 @@ func test_rewards_are_positive() -> void:
 				check(int(rw["n"]) > 0, "%s %d*: награда %s пустая" % [r, s, rw["type"]])
 				check(str(rw["type"]) in Chests.POOLS[r], "тип из пула")
 				check(ChestSystem.reward_text(rw) != "", "есть подпись")
+
+
+func test_key_bundles_give_keys() -> void:
+	for k in Products.KEY_PACKS:
+		check(Products.consumable(k), k + " покупается снова")
+		check(Products.IDS.has(k) and Products.PRICES.has(k), k + ": есть id и цена")
+	Game.premium.grant("keyChest", "t1")
+	eq(Game.chests.keys("copper"), int(Products.KEY_PACKS["keyChest"]["copper"]))
+	eq(Game.chests.keys("star"), int(Products.KEY_PACKS["keyChest"]["star"]))
+	Game.premium.grant("keyChest", "t1")
+	eq(Game.chests.keys("star"), int(Products.KEY_PACKS["keyChest"]["star"]), "одна покупка выдаётся один раз")
+	Game.premium.grant("keyChest", "t2")
+	eq(Game.chests.keys("star"), 2 * int(Products.KEY_PACKS["keyChest"]["star"]), "вторая покупка - ещё ключи")

@@ -17,6 +17,11 @@ func build() -> void:
 	content.add_child(hint)
 	for chest in Chests.IDS:
 		_chest_card(chest)
+	# Наборы ключей за деньги: только в сборке с настоящими покупками, рядом с таблицей шансов
+	if Store.LIVE:
+		content.add_child(CombatCards.section_title(L.t("chest.packs")))
+		for k in Products.KEY_PACKS:
+			content.add_child(key_pack_card(k))
 	_odds_card()
 
 
@@ -96,6 +101,25 @@ func _chest_card(chest: String) -> void:
 			Sound.play("error")
 			Game.show_toast("px:gem", L.t("chest.noCrystals")))
 	buttons.add_child(buy)
+
+
+## Карточка набора ключей: ключи с количеством и кнопка с ценой.
+static func key_pack_card(product: String) -> Control:
+	var parts := ShopPanel.shop_card(Products.title(product), Products.tone(product))
+	var v: VBoxContainer = parts[1]
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	v.add_child(row)
+	var pack: Dictionary = Products.KEY_PACKS[product]
+	for k in pack:
+		var cell := HBoxContainer.new()
+		cell.add_theme_constant_override("separation", 3)
+		cell.add_child(key_icon(str(k), 24))
+		cell.add_child(UiKit.label("x%d" % int(pack[k]), 16))
+		row.add_child(cell)
+	v.add_child(ShopPanel.buy_button(product, Products.tone(product)))
+	return parts[0]
 
 
 func _open(chest: String, count: int) -> void:
