@@ -136,14 +136,16 @@ const HYBRID_SPECS := {
 const CRYSTAL_GROWTH := 1.4
 
 # Пробуждение зверей
-const AWAKEN_MAX := 3
+## 4-я ступень - мифическая: кроме ресурсов нужны Осколки Древних (shards).
+const AWAKEN_MAX := 4
 const AWAKEN_COSTS := [
 	{"coins": 2500, "items": [["slime", 20], ["bone", 10]]},
 	{"coins": 9000, "items": [["crystal", 15], ["bone", 40]]},
 	{"coins": 30000, "items": [["stardust", 8], ["ruby", 8]]},
+	{"coins": 80000, "items": [["stardust", 15], ["ruby", 15]], "shards": 2},
 ]
-## Цвет ауры: бронза, серебро, золото.
-const AWAKEN_COLORS := [Color("cd7f32"), Color("d8dee8"), Color("ffd54a")]
+## Цвет ауры: бронза, серебро, золото, мифическая (сиренево-голубая).
+const AWAKEN_COLORS := [Color("cd7f32"), Color("d8dee8"), Color("ffd54a"), Color("9fd8ff")]
 
 # Редкая окраска: 3% диких зверей бывают другого цвета
 const SHINY_CHANCE := 0.03

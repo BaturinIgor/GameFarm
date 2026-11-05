@@ -275,13 +275,15 @@ func awaken_cost(id: String) -> Dictionary:
 
 func can_awaken(id: String) -> bool:
 	var cost := awaken_cost(id)
-	return not cost.is_empty() and Game.can_afford(cost)
+	return not cost.is_empty() and Game.can_afford(cost) and Game.story.shards() >= int(cost.get("shards", 0))
 
 
 func awaken(id: String) -> void:
 	if not can_awaken(id):
 		return
-	Game.pay(awaken_cost(id))
+	var cost := awaken_cost(id)
+	Game.pay(cost)
+	Game.story.spend_shards(int(cost.get("shards", 0)))
 	if not Game.save.has("awaken"):
 		Game.save["awaken"] = {}
 	Game.save["awaken"][id] = awaken_level(id) + 1

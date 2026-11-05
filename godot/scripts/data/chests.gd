@@ -40,8 +40,8 @@ const POOLS := {
 	"blue": ["goods", "crystals", "card", "energy", "egg"],
 	"purple": ["goods", "crystals", "card", "egg"],
 	"gold": ["crystals", "card", "ticket", "egg"],
-	"red": ["crystals", "card", "egg"],
-	"rainbow": ["skin"],
+	"red": ["crystals", "card", "egg", "shard"],
+	"rainbow": ["skin", "shard"],
 }
 ## Кристаллы по цвету.
 const CRYSTALS := {"blue": 3, "purple": 6, "gold": 15, "red": 40, "rainbow": 100}

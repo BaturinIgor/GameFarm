@@ -69,6 +69,18 @@ static func animal_icon(id: String, size := 32.0) -> TextureRect:
 	return t
 
 
+## Строка цены в Осколках Древних: значок и "есть / нужно".
+static func shard_line(need: int) -> Control:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	var ic := UiKit.icon("spark", 18)
+	ic.modulate = Story.SHARD_TINT
+	row.add_child(ic)
+	var have := Game.story.shards()
+	row.add_child(UiKit.label(L.t("shard.cost", [have, need]), 12, UiKit.GOOD if have >= need else UiKit.TONES["red"][2]))
+	return row
+
+
 ## Рамка портрета зверя: у пробуждённого - цвет ступени (бронза, серебро, золото) и мягкое сияние.
 static func awaken_frame(level: int, radius := 14) -> StyleBoxFlat:
 	if level <= 0:
@@ -299,6 +311,8 @@ func _mine_actions(c: VBoxContainer, id: String) -> void:
 		nl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		nrow.add_child(nl)
 		box.add_child(UiKit.cost_view(cost))
+		if int(cost.get("shards", 0)) > 0:
+			box.add_child(shard_line(int(cost["shards"])))
 		var ab := UiKit.button(L.t("awaken.action"), "purple", 15, true)
 		ab.disabled = not a.can_awaken(id)
 		if not ab.disabled:

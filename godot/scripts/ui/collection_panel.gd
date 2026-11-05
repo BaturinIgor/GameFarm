@@ -11,7 +11,8 @@ const CARD_EMPTY_TOP := Color("5a5560")
 const CARD_EMPTY_BOTTOM := Color("3a3640")
 
 ## Вкладки (Коллекции 2.0): созвездия, зверинец, трофеи. Сверху у всех - уровень коллекционера.
-const TABS := [["stars", "cards", "coll.tab.stars"], ["zoo", "paw", "coll.tab.zoo"], ["trophies", "crown", "coll.tab.trophies"]]
+const TABS := [["stars", "cards", "coll.tab.stars"], ["zoo", "paw", "coll.tab.zoo"], ["trophies", "crown", "coll.tab.trophies"],
+	["diary", "book", "coll.tab.diary"]]
 
 ## Раскрыта ли подсказка "Как работают карты".
 var _guide_open := false
@@ -42,6 +43,9 @@ func build() -> void:
 			return
 		"trophies":
 			TrophiesPanel.build_list(content)
+			return
+		"diary":
+			_build_diary()
 			return
 	var col := Game.collection
 	var row := HBoxContainer.new()
@@ -491,3 +495,26 @@ class NightSky extends Control:
 		var line := pts.duplicate()
 		line.append(pts[0])
 		draw_polyline(line, UiKit.OUTLINE, 2.0, true)
+
+
+# MARK: Дневник Древних
+
+## Прочитанные страницы по главам; непрочитанные - замком. Сам сюжет - в окне "Сердца земли".
+func _build_diary() -> void:
+	var sys := Game.story
+	var total := sys.pages_total()
+	var hint := UiKit.label(L.t("coll.diary.hint", [total, Story.count() * Story.PAGES]), 12, UiKit.INK_SOFT)
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content.add_child(hint)
+	var last := mini(sys.chapter(), Story.count() - 1)
+	for ch in last + 1:
+		var read := Story.PAGES if ch < sys.chapter() else sys.pages()
+		var v := TraderPanel.card_box(content, StoryPanel.NIGHT_EDGE if read > 0 else Color(UiKit.WOOD_DARK, 0.45))
+		v.add_child(UiKit.label(L.t("heart.chapterShort", [ch + 1, Story.title(ch)]), 15))
+		for i in Story.PAGES:
+			if i < read:
+				v.add_child(StoryPanel.page_view(ch, i))
+			else:
+				v.add_child(UiKit.label(L.t("coll.diary.missing"), 12, UiKit.INK_SOFT))
+	if sys.chapter() < Story.count() - 1:
+		content.add_child(UiKit.label(L.t("coll.diary.more", [Story.count() - last - 1]), 12, UiKit.INK_SOFT))
