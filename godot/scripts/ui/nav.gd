@@ -79,6 +79,8 @@ static func count(sub: String) -> int:
 			return Game.talents.points_free()
 		"hunt":
 			return Game.combat.bestiary_ready_count()
+		"collection":
+			return Game.collection.collector_ready()
 		"map":
 			return Game.world_map.openable_gates() + (1 if Game.premium.free_ticket_ready() else 0) \
 				+ (1 if MapPanel.garden_chest_ready() else 0)

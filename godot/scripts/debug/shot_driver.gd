@@ -5,7 +5,7 @@ extends Node
 
 const ORIGIN := Vector2(195, 620)
 const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", "kitchen", "garden", "trader", "hunt", "level:settings",
-	"dungeon", "trophies", "collection", "legacy", "wardrobe", "map", "events", "shop",
+	"dungeon", "trophies", "collection", "collection:zoo", "collection:trophies", "legacy", "wardrobe", "map", "events", "shop",
 	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story", "wild", "estate:academy"]
 
 var dir := "/tmp/shots"

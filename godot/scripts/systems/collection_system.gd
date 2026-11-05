@@ -16,6 +16,7 @@ func defaults(save: Dictionary) -> void:
 			if Cards.is_valid(str(id)):
 				cards[str(id)] = int(raw[id])
 	save["cards"] = cards
+	save["collectorClaimed"] = maxi(0, int(save.get("collectorClaimed", 0)))
 
 
 ## Карты за монстров (rollCard(for: MonsterKind)): CombatSystem.note_kill шлёт событие kill.
@@ -119,3 +120,78 @@ func gain_animal_card(id: String) -> void:
 
 func random_card() -> void:
 	gain_card(Cards.IDS[randi() % Cards.IDS.size()])
+
+
+# MARK: Уровень коллекционера (Коллекции 2.0)
+## Очки за всё найденное: карты, звери, редкие окраски, гибриды, трофеи.
+## Каждые COLLECTOR_STEP очков - уровень, за уровень ключ: медный, каждый 5-й серебряный, каждый 10-й звёздный.
+
+const COLLECTOR_STEP := 6
+const COLLECTOR_POINTS := {"card": 1, "animal": 2, "shiny": 2, "hybrid": 3, "trophy": 3}
+
+
+func collector_parts() -> Dictionary:
+	var a := Game.animals
+	var hybrids := 0
+	var shiny := 0
+	for id in a.owned():
+		if Animals.is_hybrid(id):
+			hybrids += 1
+		if a.is_shiny(id):
+			shiny += 1
+	var trophies := 0
+	for t in Trophies.IDS:
+		if Trophies.is_earned(t):
+			trophies += 1
+	return {"card": cards_owned(), "animal": a.owned().size(), "shiny": shiny, "hybrid": hybrids, "trophy": trophies}
+
+
+func collector_points() -> int:
+	var parts := collector_parts()
+	var n := 0
+	for k in parts:
+		n += int(parts[k]) * int(COLLECTOR_POINTS.get(k, 1))
+	return n
+
+
+func collector_level() -> int:
+	return collector_points() / COLLECTOR_STEP
+
+
+## Очков до следующего уровня и сколько уже набрано внутри уровня.
+func collector_progress() -> Array:
+	return [collector_points() % COLLECTOR_STEP, COLLECTOR_STEP]
+
+
+func collector_claimed() -> int:
+	return int(Game.save.get("collectorClaimed", 0))
+
+
+func collector_ready() -> int:
+	return maxi(0, collector_level() - collector_claimed())
+
+
+static func collector_reward(lvl: int) -> String:
+	if lvl % 10 == 0:
+		return "star"
+	if lvl % 5 == 0:
+		return "silver"
+	return "copper"
+
+
+## Забрать награды всех новых уровней. Возвращает {ключ: сколько}.
+func claim_collector() -> Dictionary:
+	var out := {}
+	var top := collector_level()
+	for lvl in range(collector_claimed() + 1, top + 1):
+		var k := collector_reward(lvl)
+		out[k] = int(out.get(k, 0)) + 1
+	if out.is_empty():
+		return out
+	for k in out:
+		Game.chests.add_keys(k, int(out[k]), false)
+	Game.save["collectorClaimed"] = top
+	Sound.play("success")
+	Game.save_now()
+	Game.changed.emit()
+	return out
