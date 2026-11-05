@@ -540,6 +540,7 @@
  "estate.builders": "建設者：{0}/{1}",
  "estate.building": "建設中：{0}",
  "estate.built": "{0}：レベル{1}完成！",
+ "estate.buyGoods": "足りない品を買って建てる：{0}コイン",
  "estate.camp": "キャンプ",
  "estate.camp.effect": "部隊数：{0}、次のレベルで{1}",
  "estate.camp.info": "野生の地へ向かうどうぶつの部隊を用意します。",

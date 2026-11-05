@@ -540,6 +540,7 @@
  "estate.builders": "Builders: {0}/{1}",
  "estate.building": "Building: {0}",
  "estate.built": "{0}: level {1} is ready!",
+ "estate.buyGoods": "Buy missing goods and build: {0} coins",
  "estate.camp": "Camp",
  "estate.camp.effect": "Squads: {0}, next level {1}",
  "estate.camp.info": "Provides animal squads for trips to the wild lands.",

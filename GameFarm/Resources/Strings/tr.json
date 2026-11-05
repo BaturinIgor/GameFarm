@@ -540,6 +540,7 @@
  "estate.builders": "İnşaatçılar: {0}/{1}",
  "estate.building": "İnşaat: {0}",
  "estate.built": "{0}: {1}. seviye hazır!",
+ "estate.buyGoods": "Eksik malları al ve inşa et: {0} altın",
  "estate.camp": "Kamp",
  "estate.camp.effect": "Ekip: {0}, sonraki seviye {1}",
  "estate.camp.info": "Vahşi diyarlara yapılan geziler için hayvan ekipleri sağlar.",

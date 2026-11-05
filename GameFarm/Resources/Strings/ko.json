@@ -540,6 +540,7 @@
  "estate.builders": "일꾼: {0}/{1}",
  "estate.building": "건설: {0}",
  "estate.built": "{0}: 레벨 {1} 완성!",
+ "estate.buyGoods": "부족한 물품 사고 건설: {0} 코인",
  "estate.camp": "캠프",
  "estate.camp.effect": "부대: {0}, 다음 레벨 {1}",
  "estate.camp.info": "야생 지대로 떠나는 원정을 위해 동물 부대를 제공해요.",

@@ -540,6 +540,7 @@
  "estate.builders": "Thợ xây: {0}/{1}",
  "estate.building": "Đang xây: {0}",
  "estate.built": "{0}: cấp {1} đã xong!",
+ "estate.buyGoods": "Mua hàng còn thiếu và xây: {0} xu",
  "estate.camp": "Trại thám hiểm",
  "estate.camp.effect": "Đội: {0}, cấp sau {1}",
  "estate.camp.info": "Cung cấp các đội thú cho chuyến đi vào vùng hoang dã.",

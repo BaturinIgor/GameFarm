@@ -540,6 +540,7 @@
  "estate.builders": "Bauarbeiter: {0}/{1}",
  "estate.building": "Bau: {0}",
  "estate.built": "{0}: Stufe {1} ist fertig!",
+ "estate.buyGoods": "Fehlende Waren kaufen und bauen: {0} Münzen",
  "estate.camp": "Feldlager",
  "estate.camp.effect": "Trupps: {0}, nächste Stufe {1}",
  "estate.camp.info": "Stellt Tiertrupps für Ausflüge in die Wildnis bereit.",
