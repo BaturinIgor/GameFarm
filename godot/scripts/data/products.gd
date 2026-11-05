@@ -10,6 +10,8 @@ const KEYS := [
 	# Предложение дня на 24 часа, ступенчатый набор, украшения, строитель, наборы энергии и попыток
 	"flash", "step1", "step2", "step3", "stepsAll",
 	"aura", "rainbow", "glowMeadow", "petGlow", "builder", "energyPack", "attemptsPack",
+	# Наборы ключей от сундуков
+	"keyPack", "keyChest",
 ]
 
 ## Идентификаторы магазина (rawValue ProductID).
@@ -41,6 +43,8 @@ const IDS := {
 	"builder": "com.personal.gamefarm.builder",
 	"energyPack": "com.personal.gamefarm.energypack",
 	"attemptsPack": "com.personal.gamefarm.attemptspack",
+	"keyPack": "com.personal.gamefarm.keypack",
+	"keyChest": "com.personal.gamefarm.keychest",
 }
 
 ## Цена до загрузки из магазина (и в тестовой сборке).
@@ -51,7 +55,7 @@ const PRICES := {
 	"traveler": "$2.99", "explorer": "$4.99", "master": "$9.99",
 	"flash": "$4.99", "step1": "$0.99", "step2": "$1.99", "step3": "$2.99", "stepsAll": "$2.99",
 	"aura": "$2.99", "rainbow": "$2.99", "glowMeadow": "$1.99", "petGlow": "$1.99", "builder": "$4.99",
-	"energyPack": "$0.99", "attemptsPack": "$0.99",
+	"energyPack": "$0.99", "attemptsPack": "$0.99", "keyPack": "$1.99", "keyChest": "$4.99",
 }
 
 ## Цвет набора в магазине (Offers.tone).
@@ -62,7 +66,7 @@ const TONES := {
 	"traveler": "blue", "explorer": "green", "master": "red",
 	"flash": "red", "step1": "green", "step2": "blue", "step3": "purple", "stepsAll": "gold",
 	"aura": "gold", "rainbow": "purple", "glowMeadow": "blue", "petGlow": "green", "builder": "orange",
-	"energyPack": "orange", "attemptsPack": "red",
+	"energyPack": "orange", "attemptsPack": "red", "keyPack": "blue", "keyChest": "gold",
 }
 
 ## Предложение дня: три варианта по очереди, покупается раз в день. value - во сколько кристаллов его оценивать
@@ -85,6 +89,12 @@ const COSMETICS := ["aura", "rainbow", "glowMeadow", "petGlow"]
 ## Наборы энергии и попыток.
 const ENERGY_PACK := 1000
 const ATTEMPTS_PACK := 5
+
+## Наборы ключей: сколько ключей каждого вида. По кристаллам выходит в 1,6 и 2,3 раза выгоднее самой маленькой пачки.
+const KEY_PACKS := {
+	"keyPack": {"copper": 5, "silver": 2},
+	"keyChest": {"copper": 10, "silver": 4, "star": 2},
+}
 
 ## Пачки кристаллов: сколько кристаллов и сколько процентов сверху по сравнению с самой маленькой.
 ## Первая покупка каждой пачки - вдвое больше.
@@ -127,7 +137,8 @@ static func id(product: String) -> String:
 ## Расходуемая покупка: её можно купить снова (билеты, пропуск, кристаллы, продление MAX).
 static func consumable(product: String) -> bool:
 	var k := key(product)
-	return k == "tickets" or k == "eventPass" or k == "max" or k in CRYSTAL_PACKS or k in ["flash", "energyPack", "attemptsPack"]
+	return k == "tickets" or k == "eventPass" or k == "max" or k in CRYSTAL_PACKS or k in KEY_PACKS \
+		or k in ["flash", "energyPack", "attemptsPack"]
 
 
 static func is_crystals(product: String) -> bool:
@@ -136,7 +147,8 @@ static func is_crystals(product: String) -> bool:
 
 ## Покупку выдаёт ShopSystem.grant (новые наборы).
 static func shop_granted(product: String) -> bool:
-	return key(product) in ["flash", "step1", "step2", "step3", "stepsAll", "builder", "energyPack", "attemptsPack"]
+	return key(product) in ["flash", "step1", "step2", "step3", "stepsAll", "builder", "energyPack", "attemptsPack"] \
+		or key(product) in KEY_PACKS
 
 
 ## Во сколько раз предложение дня выгоднее самой маленькой пачки кристаллов (по цене за кристалл).
