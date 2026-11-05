@@ -540,6 +540,7 @@
  "estate.builders": "Constructores: {0}/{1}",
  "estate.building": "Obra: {0}",
  "estate.built": "{0}: ¡nivel {1} listo!",
+ "estate.buyGoods": "Comprar lo que falta y construir: {0} monedas",
  "estate.camp": "Campamento",
  "estate.camp.effect": "Grupos: {0}, siguiente nivel {1}",
  "estate.camp.info": "Aporta grupos de animales para las salidas a las tierras salvajes.",

@@ -372,6 +372,19 @@ func _talent_order() -> Array:
 
 
 func _build() -> void:
+	# Редкие материалы диких земель бот не добывает (там бои): считаем, что игрок ходит туда,
+	# когда открыто кольцо, и приносит столько, сколько нужно на стройку
+	for i in Wild.RINGS.size():
+		var ring: Dictionary = Wild.RINGS[i]
+		if Game.level < int(ring["level"]):
+			continue
+		var need := 0
+		for id in Estate.IDS:
+			for it in Estate.build_cost(id, Game.estate.level(id) + 1).get("items", []):
+				if it[0] == ring["rare"]:
+					need = maxi(need, int(it[1]))
+		if Game.storage_of(ring["rare"]) < need:
+			Game.save["storage"][ring["rare"]] = need
 	# Главный дом, склад, амбар, лесопилка - в первую очередь, потом остальные по возрастанию уровня
 	var order: Array = Estate.IDS.duplicate()
 	order.sort_custom(func(a: String, b: String) -> bool:
@@ -385,6 +398,14 @@ func _build() -> void:
 		if not block.is_empty():
 			continue
 		var cost := Estate.build_cost(id, Game.estate.level(id) + 1)
+		if not Game.can_afford(cost) and profile.get("buy_goods", true) and Game.estate.can_buy_missing(id) \
+				and int(Game.save["coins"]) > Game.estate.missing_goods_coins(id) * 2:
+			var c := int(Game.save["coins"])
+			_count_goods(cost)
+			if Game.estate.buy_missing_and_upgrade(id):
+				built[id] = int(built.get(id, 0)) + 1
+				coins_by["goods"] = int(coins_by.get("goods", 0)) + c - int(Game.save["coins"])
+				continue
 		if not Game.can_afford(cost):
 			for it in cost.get("items", []):
 				if Estate.is_good(it[0]) and Game.amount(it[0]) < int(it[1]):
@@ -393,9 +414,22 @@ func _build() -> void:
 		if Game.estate.start_upgrade(id):
 			built[id] = int(built.get(id, 0)) + 1
 			_count_goods(cost)
-	# Цеха: первый рецепт, лесопилка - доски
-	if Game.estate.level("sawmill") > 0:
-		Game.estate.set_recipe("sawmill", "planks")
+	# Цеха: делают тот товар из своих рецептов, которого меньше всего относительно нужного на стройку
+	var want := _reserve()
+	for id in Estate.IDS:
+		if not Estate.produces(id) or Game.estate.level(id) <= 0:
+			continue
+		var best := Game.estate.recipe(id)
+		var best_ratio := INF
+		for good in Estate.recipes(id):
+			var need := float(want.get(good, 0))
+			if need <= 0.0:
+				continue
+			var ratio := float(Game.amount(good)) / need
+			if ratio < best_ratio:
+				best_ratio = ratio
+				best = good
+		Game.estate.set_recipe(id, best)
 
 
 func _count_goods(cost: Dictionary) -> void:
