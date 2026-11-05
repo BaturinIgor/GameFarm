@@ -540,6 +540,7 @@
  "estate.builders": "Tukang: {0}/{1}",
  "estate.building": "Pembangunan: {0}",
  "estate.built": "{0}: level {1} selesai!",
+ "estate.buyGoods": "Beli barang yang kurang dan bangun: {0} koin",
  "estate.camp": "Kemah",
  "estate.camp.effect": "Regu: {0}, level berikutnya {1}",
  "estate.camp.info": "Menyediakan regu hewan untuk perjalanan ke tanah liar.",

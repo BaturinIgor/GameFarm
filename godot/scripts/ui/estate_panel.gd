@@ -384,6 +384,13 @@ func _upgrade_row(id: String) -> VBoxContainer:
 			UiKit.attention(b)
 		b.pressed.connect(func() -> void: Game.estate.start_upgrade(id))
 		v.add_child(b)
+		# Не хватает только товаров цехов: докупить их за монеты и строить
+		if b.disabled and not e.missing_goods(id).is_empty():
+			var price := e.missing_goods_coins(id)
+			var buy := UiKit.button(L.t("estate.buyGoods", [Fmt.compact(price)]), "wood", 13)
+			buy.disabled = not e.can_buy_missing(id)
+			buy.pressed.connect(func() -> void: Game.estate.buy_missing_and_upgrade(id))
+			v.add_child(buy)
 	else:
 		var why := HBoxContainer.new()
 		why.add_theme_constant_override("separation", 8)

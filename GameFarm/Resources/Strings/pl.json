@@ -540,6 +540,7 @@
  "estate.builders": "Budowniczowie: {0}/{1}",
  "estate.building": "Budowa: {0}",
  "estate.built": "{0}: poziom {1} gotowy!",
+ "estate.buyGoods": "Dokup towary i buduj: {0} monet",
  "estate.camp": "Obóz",
  "estate.camp.effect": "Oddziałów: {0}, na następnym poziomie {1}",
  "estate.camp.info": "Daje oddziały zwierząt na wyprawy w dzikie krainy.",

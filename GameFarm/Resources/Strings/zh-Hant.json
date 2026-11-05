@@ -540,6 +540,7 @@
  "estate.builders": "工人：{0}/{1}",
  "estate.building": "建造中：{0}",
  "estate.built": "{0}：{1} 級完成！",
+ "estate.buyGoods": "購買缺少的貨物並建造：{0} 金幣",
  "estate.camp": "營地",
  "estate.camp.effect": "小隊：{0}，下一級 {1}",
  "estate.camp.info": "為前往荒野的出行提供動物小隊。",
