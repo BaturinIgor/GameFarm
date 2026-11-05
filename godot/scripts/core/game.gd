@@ -80,6 +80,8 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	# Покупки App Store (на iOS с плагином): цены и незавершённые покупки
 	Store.setup(self)
+	# Реклама за награду (на iOS с плагином AdMob): согласие, запуск SDK, первый ролик
+	Ads.setup(self)
 
 
 func emit_event(name: String, data := {}) -> void:
