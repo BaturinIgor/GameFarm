@@ -138,6 +138,10 @@ static func make_reward(rarity: String, stars: int, level: int) -> Dictionary:
 			r["n"] = stars
 		"skin":
 			r["n"] = 1
+		"egg":
+			# Яйцо того же цвета, что и находка
+			r["kind"] = rarity
+			r["n"] = 1
 	return r
 
 
@@ -167,6 +171,9 @@ func give(r: Dictionary) -> void:
 			r["cards"] = cards
 		"ticket":
 			Game.save["tickets"] = int(Game.save.get("tickets", 0)) + n
+		"egg":
+			for i in n:
+				Game.incubator.add_egg(str(r["kind"]), "", 0.0, false)
 		"skin":
 			var skin := Game.shop.random_missing_skin()
 			if skin == "":
@@ -190,6 +197,7 @@ static func reward_icon(r: Dictionary) -> String:
 		"card": return "px:cards"
 		"ticket": return "px:ticket"
 		"skin": return "skin:" + str(r["kind"])
+		"egg": return "egg:" + str(r["kind"])
 	return "px:chest"
 
 
@@ -208,6 +216,7 @@ static func reward_text(r: Dictionary) -> String:
 			return L.t("chest.reward.cards", [n])
 		"ticket": return L.t("chest.reward.tickets", [n])
 		"skin": return L.t("chest.reward.skin", [Skins.name_of(str(r["kind"]))])
+		"egg": return Incubator.name_of(str(r["kind"]))
 	return ""
 
 

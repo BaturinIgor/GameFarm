@@ -37,10 +37,10 @@ const KEYS := ["copper", "silver", "star"]
 const POOLS := {
 	"gray": ["coins", "goods"],
 	"green": ["coins", "goods", "energy"],
-	"blue": ["goods", "crystals", "card", "energy"],
-	"purple": ["goods", "crystals", "card"],
-	"gold": ["crystals", "card", "ticket"],
-	"red": ["crystals", "card"],
+	"blue": ["goods", "crystals", "card", "energy", "egg"],
+	"purple": ["goods", "crystals", "card", "egg"],
+	"gold": ["crystals", "card", "ticket", "egg"],
+	"red": ["crystals", "card", "egg"],
 	"rainbow": ["skin"],
 }
 ## Кристаллы по цвету.

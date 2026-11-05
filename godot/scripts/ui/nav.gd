@@ -8,7 +8,7 @@ class_name Nav
 ## Вкладки нижней панели: id, иконка, ключ подписи, разделы.
 const GROUPS := [
 	["farm", "chest", "nav.farm", ["storage", "estate", "workshop"]],
-	["animals", "paw", "hud.animals", ["animals", "wild"]],
+	["animals", "paw", "hud.animals", ["animals", "wild", "incubator"]],
 	["quests", "scroll", "hud.quests", ["quests"]],
 	["hero", "star", "nav.hero", ["talents", "hunt", "collection", "wardrobe"]],
 	["world", "map", "nav.world", ["map", "mine", "events"]],
@@ -23,6 +23,7 @@ const SUBS := {
 	"workshop": ["hud.workshop", "res://scripts/ui/workshop_panel.gd"],
 	"animals": ["hud.animals", "res://scripts/ui/animals_panel.gd"],
 	"wild": ["wild.title", "res://scripts/ui/wild_panel.gd"],
+	"incubator": ["inc.title", "res://scripts/ui/incubator_panel.gd"],
 	"quests": ["hud.quests", "res://scripts/ui/quests_panel.gd"],
 	"talents": ["hud.talents", "res://scripts/ui/talents_panel.gd"],
 	"hunt": ["hunt.title", "res://scripts/ui/hunt_panel.gd"],
@@ -50,6 +51,7 @@ static func level_of(sub: String) -> int:
 		"wild": return int(Wild.RINGS[0]["level"])
 		"events": return Events.MIN_LEVEL
 		"mine": return Mine.MIN_LEVEL
+		"incubator": return Incubator.MIN_LEVEL
 	return 0
 
 
@@ -82,6 +84,8 @@ static func count(sub: String) -> int:
 				+ (1 if MapPanel.garden_chest_ready() else 0)
 		"mine":
 			return Game.mine.ready_count()
+		"incubator":
+			return Game.incubator.ready_count()
 		"events":
 			return Game.events.event_claimable()
 	return 0

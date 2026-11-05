@@ -47,6 +47,7 @@ func _ready() -> void:
 		if e is InputEventMouseButton and e.pressed:
 			close())
 	add_child(dim)
+	Sound.keep_smooth(3.0)
 	var confetti := Confetti.new()
 	confetti.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(confetti)

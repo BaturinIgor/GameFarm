@@ -80,9 +80,17 @@ static func moves(floor_n: int) -> int:
 	return 18 + (4 if floor_n <= 10 else 0) + mini(6, floor_n / 15)
 
 
-## Монеты за этаж.
+## Монеты за этаж. Глубже COINS_FLOOR_CAP награда не растёт: сложность там уже не растёт, а этажи бесконечны.
+const COINS_FLOOR_CAP := 50
+
+
 static func coins(floor_n: int, level: int) -> int:
-	return int(round(Chests.base_value(level) * (0.5 + 0.02 * float(floor_n)) / 10.0)) * 10
+	return int(round(Chests.base_value(level) * (0.5 + 0.02 * float(mini(floor_n, COINS_FLOOR_CAP))) / 10.0)) * 10
+
+
+## Опыт за этаж: примерно как пара минут добычи на этом уровне, чтобы шахта не тормозила прокачку.
+static func xp(level: int) -> int:
+	return maxi(10, int(Game.xp_to_next(level) / 80.0))
 
 
 ## Ключ за этаж ("" - без ключа): каждые 25 - звёздный, каждые 10 - серебряный, каждые 5 - медный.

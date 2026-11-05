@@ -45,8 +45,8 @@ static func sources(res_kind: String) -> Array:
 		var cs := Farming.spec(crop)
 		if str(cs.get("produce", "")) == res_kind:
 			out.append({"kind": "crop", "id": crop, "open": Game.level >= int(cs["level"]), "level": int(cs["level"])})
-	for a in Animals.SPECS:
-		for e in Animals.SPECS[a].get("effects", []):
+	for a in Animals.IDS:
+		for e in Animals.effects(a):
 			if e.get("type") == "produce" and str(e.get("kind", "")) == res_kind:
 				out.append({"kind": "animal", "id": a, "open": Game.animals.stars(a) > 0, "level": 0})
 	for m in Monsters.KINDS:

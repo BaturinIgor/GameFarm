@@ -37,6 +37,12 @@ func _process(delta: float) -> void:
 		_trace = 1.0
 		print("t=%.1f pos=%s pack=%d coins=%d storage=%s" % [_time, world.player.position, Game.backpack_count,
 			int(Game.save["coins"]), Game.save["storage"]])
+		# Нагрузка: время скриптов и кадра, вызовы отрисовки, узлы и сироты (рост - утечка)
+		print("PERF t=%.1f step=%d fps=%d process_ms=%.2f draws=%d nodes=%d orphans=%d objects=%d mem_mb=%.1f" % [_time, _step,
+			Engine.get_frames_per_second(), Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
+			Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME), Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
+			Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT), Performance.get_monitor(Performance.OBJECT_COUNT),
+			Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0])
 	match _step:
 		0:
 			if _time > 1.5:
@@ -490,7 +496,52 @@ func _extra(k: int) -> void:
 			_shot("7_mine_crystal")
 			_mine.queue_free()
 			main.hud.close_window()
-		43:
+			# Инкубатор: яйца всех цветов, яйцо в работе, гнездо с парой по рецепту
+			if Game.level < 20:
+				Game.save["level"] = 20
+				Game.recalc()
+			Game.save["animals"]["horse"] = 3
+			Game.save["animals"]["swan"] = 3
+			Game.save["incubator"]["eggs"] = []
+			for r in Incubator.RARITIES:
+				Game.incubator.add_egg(r, "", 0.0, false)
+			Game.incubator.add_egg("gold", "pegasus", 0.25, false)
+			Game.incubator.incubate(1)
+			Game.incubator.breed("horse", "swan")
+			main.hud.open_window(IncubatorPanel.new())
+		44:
+			_shot("8_incubator")
+			_check_layout("incubator")
+			_scroll_window(100000)
+		45:
+			_shot("8_incubator_nest")
+			Game.save["incubator"]["slot"]["egg"] = {"r": "gold", "a": "pegasus", "s": 1.0}
+			Game.save["incubator"]["slot"]["until"] = Clock.now() - 1.0
+			Game.save["incubator"]["nest"]["until"] = Clock.now() - 1.0
+			Game.changed.emit()
+			for n in main.hud.find_children("*", "", true, false):
+				if n is Sheet:
+					(n as Sheet).scroll_to_top()
+		46:
+			_shot("8_incubator_ready")
+			HatchOverlay.show_result(Game.incubator.hatch())
+		47:
+			_shot("8_hatch_shake")
+		50:
+			_shot("8_hatch_reveal")
+			for n in main.hud.find_children("*", "", true, false):
+				if n is HatchOverlay:
+					n.queue_free()
+			Game.incubator.add_egg("green", "", 0.0, false)
+			Game.save["incubator"]["slot"] = {"egg": {"r": "green", "a": "", "s": 0.0}, "until": Clock.now() - 1.0}
+			HatchOverlay.show_result(Game.incubator.hatch())
+		53:
+			_shot("8_hatch_plain")
+			for n in main.hud.find_children("*", "", true, false):
+				if n is HatchOverlay:
+					n.queue_free()
+			main.hud.close_window()
+		54:
 			_step = 5
 			_time = 300.0
 			_sub = 0

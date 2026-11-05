@@ -25,6 +25,7 @@ func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
 	var i := args.find("--simulate")
 	var names: Array = PROFILES.keys()
+	var no_mini := args.has("--no-minigames")
 	if i >= 0 and i + 1 < args.size() and PROFILES.has(args[i + 1]):
 		names = [args[i + 1]]
 	var days := int(args[i + 2]) if i >= 0 and i + 2 < args.size() and args[i + 2].is_valid_int() else -1
@@ -34,6 +35,8 @@ func _ready() -> void:
 		var p: Dictionary = PROFILES[n].duplicate(true)
 		if days > 0:
 			p["days"] = days
+		if no_mini:
+			p["minigames"] = false
 		seed(12345)
 		var started := Time.get_ticks_msec()
 		var bot: RefCounted = bot_script.new(p)
@@ -48,6 +51,8 @@ func _ready() -> void:
 			last["hours"], last["coins"], last["crystals"], last["estate"], last["tools"]])
 		print("   energy outs %d, waiting goods %s, spent goods %s, crystals spent %d" % [rep["energy_outs"],
 			rep["waiting_goods"], rep["spent_goods"], rep["crystals_spent"]])
+		print("   minigames %s, mine best %d, eggs %d, hybrids %s, animals %d" % [rep["minigames"], rep["mine_floor"], rep["eggs"],
+			rep["found_hybrids"], last["animals"]])
 	Clock.offset = 0.0
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(Game.save_path))
 	get_tree().quit(0)

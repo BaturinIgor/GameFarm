@@ -43,6 +43,7 @@ static func snapshot() -> Dictionary:
 		"sparks": int(s.get("sparks", 0)),
 		"maps": int(s.get("maps", 0)),
 		"keys": (s["chests"]["keys"] as Dictionary).duplicate() if s.get("chests") is Dictionary else {},
+		"eggs": _egg_counts(),
 		"storage": (s.get("storage", {}) as Dictionary).duplicate(),
 		"seeds": (s.get("seeds", {}) as Dictionary).duplicate(),
 		"dishes": (s.get("dishes", {}) as Dictionary).duplicate(),
@@ -50,6 +51,16 @@ static func snapshot() -> Dictionary:
 		"decor": (s.get("eventDecor", []) as Array).duplicate(),
 		"skins": (s.get("eventSkins", []) as Array).duplicate(),
 	}
+
+
+## Яйца в запасе по редкости.
+static func _egg_counts() -> Dictionary:
+	var out := {}
+	var inc: Variant = Game.save.get("incubator")
+	if inc is Dictionary and inc.get("eggs") is Array:
+		for e in inc["eggs"]:
+			out[str(e["r"])] = int(out.get(str(e["r"]), 0)) + 1
+	return out
 
 
 ## Что прибавилось между двумя снимками: [[значок, подпись], ...]. Траты (минус) не показываем.
@@ -70,6 +81,8 @@ static func diff(a: Dictionary, b: Dictionary) -> Array:
 	# Ключи сундуков: значок ключа и сколько (вид ключа - в названии сундука)
 	for k in b["keys"]:
 		add.call("px:key", int(b["keys"][k]) - int(a["keys"].get(k, 0)))
+	for r in b["eggs"]:
+		add.call("egg:" + str(r), int(b["eggs"][r]) - int(a["eggs"].get(r, 0)))
 	for k in b["storage"]:
 		add.call("res:" + str(k), int(b["storage"][k]) - int(a["storage"].get(k, 0)))
 	for crop in b["seeds"]:
