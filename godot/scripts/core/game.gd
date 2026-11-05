@@ -78,6 +78,8 @@ func _ready() -> void:
 	# Новый уровень - половина запаса энергии (не выше полного)
 	level_up.connect(func(_from: int, _to: int) -> void: energy.level_up_bonus())
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# Покупки App Store (на iOS с плагином): цены и незавершённые покупки
+	Store.setup(self)
 
 
 func emit_event(name: String, data := {}) -> void:

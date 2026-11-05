@@ -930,7 +930,7 @@ func _build_free() -> void:
 
 	# Удача
 	content.add_child(EventsPanel.section(L.t("free.title")))
-	content.add_child(_wrap(L.t("free.subtitle.pro") if Game.premium.has_pro() else L.t(Ads.k("free.subtitle")), 12,
+	content.add_child(_wrap(L.t("free.subtitle.pro") if Game.premium.has_pro() and Ads.LIVE else L.t(Ads.k("free.subtitle")), 12,
 		UiKit.INK_SOFT))
 	content.add_child(LuckButton.new("wide"))
 
@@ -962,7 +962,7 @@ static func tagline(product: String) -> String:
 	match product:
 		"skins": return L.t("offer.tag.skins", [Skins.collection().size()])
 		"tickets": return L.t("offer.tag.tickets", [Expeditions.TICKET_PACK])
-	return L.t("offer.tag." + product)
+	return L.t(Ads.k("offer.tag.pro") if product == "pro" else "offer.tag." + product)
 
 
 ## Преимущества набора: [[иконка, текст], ...] (иконки как IconView: px:, an:, skin:).
@@ -974,20 +974,20 @@ static func perks(product: String) -> Array:
 				["px:bag", L.t("starter.backpack", [PremiumSystem.STARTER_BACKPACK])],
 				["skin:robot", L.t("starter.skin")]]
 		"pro":
-			return [["px:no_ads", L.t("pro.noAds")],
-				["px:moon", L.t("pro.offline", [int(PremiumSystem.PRO_OFFLINE_HOURS)])],
+			var pro := [["px:no_ads", L.t("pro.noAds")]] if Ads.LIVE else []
+			return pro + [["px:moon", L.t("pro.offline", [int(PremiumSystem.PRO_OFFLINE_HOURS)])],
 				["px:portal", L.t("pro.autoDeposit")],
 				["px:quest", L.t("pro.quest")],
 				["px:chest", L.t("pro.treasure")],
 				["px:ticket", L.t("pro.tickets")],
 				["skin:genie", L.t("pro.skin")]]
 		"max":
-			return [["px:crown", L.t("max.perk.pro")],
+			return [["px:crown", L.t(Ads.k("max.perk.pro"))],
 				["px:gem", L.t("max.perk.daily", [ShopSystem.MAX_DAILY_CRYSTALS])],
 				["px:star", L.t("max.perk.vip")],
 				["px:wardrobe", L.t("max.perk.skin")],
 				["px:bag", L.t("max.perk.backpack", [ShopSystem.MAX_BACKPACK])],
-				["px:clover", L.t("max.perk.luck")]]
+				["px:clover", L.t(Ads.k("max.perk.luck"))]]
 		"garden":
 			return [["px:apples", L.t("garden.trees")],
 				["px:honey", L.t("garden.bees")],
