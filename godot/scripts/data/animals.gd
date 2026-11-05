@@ -166,7 +166,7 @@ static func name_of(id: String) -> String:
 
 ## Id из сохранения с учётом старых зверей ("" - такого нет).
 static func from(raw: String) -> String:
-	if SPECS.has(raw):
+	if SPECS.has(raw) or HYBRID_SPECS.has(raw):
 		return raw
 	return MIGRATION.get(raw, "")
 
