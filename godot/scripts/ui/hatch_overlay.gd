@@ -107,6 +107,7 @@ func _gui_input(e: InputEvent) -> void:
 
 ## Тряска: по одной на ступень редкости, с каждой трещин больше.
 func _play() -> void:
+	Sound.keep_smooth(6.0)
 	var shakes := int(Chests.SHAKES.get(_rarity(), 1)) + 1
 	_tween = create_tween()
 	_tween.tween_property(_egg, "scale", Vector2(0.6, 0.6), 0.0)

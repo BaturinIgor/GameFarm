@@ -123,7 +123,7 @@ const HYBRID_SPECS := {
 		"effects": [{"type": "produce", "kind": "gold", "interval": 50.0}, {"type": "yield", "cat": "food", "v": 0.1}]},
 	"pegasus": {"emoji": "🐎", "source": "hybrid", "base": "horse",
 		"recolor": [Color("5a6f9e"), Color("cfe0ff"), Color("ffffff")],
-		"effects": [{"type": "speed", "v": 0.18}, {"type": "backpack", "v": 40}]},
+		"effects": [{"type": "speed", "v": 0.15}, {"type": "backpack", "v": 40}]},
 	"honeyToad": {"emoji": "🐸", "source": "hybrid", "base": "frog",
 		"recolor": [Color("7a4a08"), Color("e8a820"), Color("ffe680")],
 		"effects": [{"type": "produce", "kind": "honey", "interval": 35.0}, {"type": "respawn", "v": 0.1}]},

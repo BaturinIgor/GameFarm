@@ -114,6 +114,7 @@ func _gui_input(e: InputEvent) -> void:
 
 ## Тряска сундука: по одной на ступень, на каждой лучи перекрашиваются в следующий цвет.
 func _play(icon: Control) -> void:
+	Sound.keep_smooth(8.0)
 	var shakes := int(Chests.SHAKES.get(_best, 1))
 	var top := Chests.rarity_index(_best)
 	_tween = create_tween()

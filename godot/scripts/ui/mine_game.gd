@@ -200,6 +200,8 @@ func tap_cell(i: int) -> void:
 	var cell: Variant = board.cells[i]
 	var before := board.rocks_left()
 	var res := board.tap(i)
+	if not res.is_empty():
+		Sound.keep_smooth(2.5)
 	if res.is_empty():
 		if cell != null and cell["k"] == "ore":
 			Sound.play("error", 0.5)

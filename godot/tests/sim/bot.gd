@@ -1,7 +1,8 @@
 extends RefCounted
 ## Бот-игрок: играет сессиями по правилам игры (системы Game) в ускоренном времени (Clock.offset).
 ## Мир заменён моделью: точки добычи из раскладок карт, удары по прочности и энергии, восстановление точек.
-## Бои, подземелья, ивенты, огород и мини-игры бот не трогает: их доход в расчёт не входит.
+## Бои, подземелья, ивенты и огород бот не трогает: их доход в расчёт не входит.
+## Шахту он проходит без поля (победа с шансом mine_win), открывает сундуки и пользуется инкубатором и гнездом.
 
 const WALK := 2.5          # секунд дойти до следующей точки
 const DEPOSIT_WALK := 10.0 # секунд сходить к складу
@@ -21,6 +22,7 @@ var sold_by := {}          # ресурс -> монет за продажу
 var coins_by := {}         # источник -> монет
 var crystals_spent := 0
 var events_hit := {}
+var games := {"mine_runs": 0, "mine_wins": 0, "mine_coins": 0, "chests": 0, "hatched": 0, "hybrids": 0, "shiny": 0, "eggs_crystals": 0}
 var _spots := {}           # "loc|type" -> [время готовности точек]
 var _layouts := {}
 
@@ -355,6 +357,8 @@ func _spend() -> void:
 	_build()
 	_orders()
 	_animals()
+	if profile.get("minigames", true):
+		_minigames()
 	if profile.get("spend_crystals", false):
 		_crystals()
 
@@ -476,6 +480,59 @@ func _crystals() -> void:
 				crystals_spent += c - Game.shop.crystals()
 
 
+# MARK: Шахта, сундуки, инкубатор
+
+func _minigames() -> void:
+	var win_chance := float(profile.get("mine_win", 0.75))
+	while Game.mine.open() and Game.mine.start():
+		games["mine_runs"] += 1
+		var f := Game.mine.floor_n()
+		if randf() < win_chance:
+			var c0 := int(Game.save["coins"])
+			var blocks := {}
+			for c in Mine.colors(f):
+				blocks[c] = randi_range(10, 25)
+			Game.mine.take_ore(f, blocks)
+			Game.mine.win(f)
+			games["mine_wins"] += 1
+			games["mine_coins"] += int(Game.save["coins"]) - c0
+		advance(150.0)
+		played += 150.0
+	for chest in Chests.IDS:
+		games["chests"] += Game.chests.open(chest, 50).size()
+	var inc := Game.incubator
+	if not inc.open():
+		return
+	if inc.ready():
+		var out := inc.hatch()
+		games["hatched"] += 1
+		if Animals.is_hybrid(str(out["animal"])):
+			games["hybrids"] += 1
+		if bool(out["shiny"]):
+			games["shiny"] += 1
+		games["eggs_crystals"] += int(out["crystals"])
+	if not inc.busy() and not inc.eggs().is_empty():
+		# Самое редкое яйцо первым
+		var best := 0
+		for i in inc.eggs().size():
+			if Incubator.RARITIES.find(str(inc.eggs()[i]["r"])) > Incubator.RARITIES.find(str(inc.eggs()[best]["r"])):
+				best = i
+		inc.incubate(best)
+	if inc.nest_ready():
+		inc.collect_nest()
+	if not inc.nesting():
+		var ps := inc.parents()
+		var pair: Array = []
+		for rec in Incubator.RECIPES:
+			if rec[0] in ps and rec[1] in ps and not rec[2] in inc.found():
+				pair = [rec[0], rec[1]]
+				break
+		if pair.is_empty() and ps.size() >= 2:
+			pair = [ps[0], ps[1]]
+		if not pair.is_empty():
+			inc.breed(pair[0], pair[1])
+
+
 # MARK: Отчёт
 
 func _snapshot(d: int) -> void:
@@ -497,4 +554,5 @@ func _snapshot(d: int) -> void:
 func report() -> Dictionary:
 	return {"profile": profile["name"], "milestones": milestones, "days": log_days, "energy_outs": energy_outs,
 		"waiting_goods": waiting_goods, "built": built, "spent_goods": spent_goods, "sold_coins": sold_coins, "sold_by": sold_by, "coins_by": coins_by,
-		"crystals_spent": crystals_spent, "gathered": Game.save["gathered"], "storage": Game.save["storage"], "played_hours": snappedf(played / 3600.0, 0.1)}
+		"crystals_spent": crystals_spent, "minigames": games, "mine_floor": Game.mine.best(),
+		"eggs": Game.incubator.eggs().size(), "found_hybrids": Game.incubator.found(), "gathered": Game.save["gathered"], "storage": Game.save["storage"], "played_hours": snappedf(played / 3600.0, 0.1)}
