@@ -41,6 +41,7 @@ static func snapshot() -> Dictionary:
 		"points": int(s.get("bonusTalentPoints", 0)),
 		"tickets": int(s.get("tickets", 0)),
 		"sparks": int(s.get("sparks", 0)),
+		"shards": int(s.get("shards", 0)),
 		"maps": int(s.get("maps", 0)),
 		"keys": (s["chests"]["keys"] as Dictionary).duplicate() if s.get("chests") is Dictionary else {},
 		"eggs": _egg_counts(),
@@ -78,6 +79,7 @@ static func diff(a: Dictionary, b: Dictionary) -> Array:
 	add.call("px:ticket", int(b["tickets"]) - int(a["tickets"]))
 	add.call("px:spark", int(b["sparks"]) - int(a["sparks"]))
 	add.call("px:tmap", int(b["maps"]) - int(a["maps"]))
+	add.call("shard", int(b["shards"]) - int(a["shards"]))
 	# Ключи сундуков: значок ключа и сколько (вид ключа - в названии сундука)
 	for k in b["keys"]:
 		add.call("px:key", int(b["keys"][k]) - int(a["keys"].get(k, 0)))

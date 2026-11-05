@@ -127,7 +127,7 @@ func random_card() -> void:
 ## Каждые COLLECTOR_STEP очков - уровень, за уровень ключ: медный, каждый 5-й серебряный, каждый 10-й звёздный.
 
 const COLLECTOR_STEP := 6
-const COLLECTOR_POINTS := {"card": 1, "animal": 2, "shiny": 2, "hybrid": 3, "trophy": 3}
+const COLLECTOR_POINTS := {"card": 1, "animal": 2, "shiny": 2, "hybrid": 3, "trophy": 3, "page": 1}
 
 
 func collector_parts() -> Dictionary:
@@ -143,7 +143,8 @@ func collector_parts() -> Dictionary:
 	for t in Trophies.IDS:
 		if Trophies.is_earned(t):
 			trophies += 1
-	return {"card": cards_owned(), "animal": a.owned().size(), "shiny": shiny, "hybrid": hybrids, "trophy": trophies}
+	return {"card": cards_owned(), "animal": a.owned().size(), "shiny": shiny, "hybrid": hybrids, "trophy": trophies,
+		"page": Game.story.pages_total()}
 
 
 func collector_points() -> int:

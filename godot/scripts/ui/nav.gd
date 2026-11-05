@@ -9,7 +9,7 @@ class_name Nav
 const GROUPS := [
 	["farm", "chest", "nav.farm", ["storage", "estate", "workshop"]],
 	["animals", "paw", "hud.animals", ["animals", "wild", "incubator"]],
-	["quests", "scroll", "hud.quests", ["quests"]],
+	["quests", "scroll", "hud.quests", ["quests", "heart"]],
 	["hero", "star", "nav.hero", ["talents", "hunt", "collection", "wardrobe"]],
 	["world", "map", "nav.world", ["map", "mine", "events"]],
 ]
@@ -25,6 +25,7 @@ const SUBS := {
 	"wild": ["wild.title", "res://scripts/ui/wild_panel.gd"],
 	"incubator": ["inc.title", "res://scripts/ui/incubator_panel.gd"],
 	"quests": ["hud.quests", "res://scripts/ui/quests_panel.gd"],
+	"heart": ["heart.title", "res://scripts/ui/story_panel.gd"],
 	"talents": ["hud.talents", "res://scripts/ui/talents_panel.gd"],
 	"hunt": ["hunt.title", "res://scripts/ui/hunt_panel.gd"],
 	"collection": ["nav.collection", "res://scripts/ui/collection_panel.gd"],
@@ -52,6 +53,7 @@ static func level_of(sub: String) -> int:
 		"events": return Events.MIN_LEVEL
 		"mine": return Mine.MIN_LEVEL
 		"incubator": return Incubator.MIN_LEVEL
+		"heart": return Story.MIN_LEVEL
 	return 0
 
 
@@ -88,6 +90,8 @@ static func count(sub: String) -> int:
 			return Game.mine.ready_count()
 		"incubator":
 			return Game.incubator.ready_count()
+		"heart":
+			return Game.story.ready_count() + (1 if Game.story.can_raise_altar() else 0)
 		"events":
 			return Game.events.event_claimable()
 	return 0

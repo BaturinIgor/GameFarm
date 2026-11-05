@@ -336,6 +336,13 @@ static func crisp(code: String, target: float, limit := 0.0) -> Control:
 	return t
 
 
+## Осколок Древних: значок искры в холодном голубом.
+static func shard_icon(size := 22.0) -> TextureRect:
+	var t := icon("spark", size)
+	t.modulate = Story.SHARD_TINT
+	return t
+
+
 ## Иконка по строке как IconView в iOS: "px:имя", "res:вид", "an:зверь", иначе текст (эмодзи).
 static func icon_any(code: String, size := 22.0) -> Control:
 	if code.begins_with("px:"):
@@ -346,6 +353,8 @@ static func icon_any(code: String, size := 22.0) -> Control:
 		return EggView.icon(code.substr(4), size)
 	if code.begins_with("skin:"):
 		return EventsPanel.skin_icon(code.substr(5), size)
+	if code == "shard":
+		return shard_icon(size)
 	if code.begins_with("an:"):
 		var t := icon("paw", size)
 		var tex := AnimalSheet.icon(code.substr(3))

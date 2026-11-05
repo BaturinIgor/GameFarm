@@ -50,13 +50,14 @@ var fair := FairSystem.new()
 var chests := ChestSystem.new()
 var mine := MineSystem.new()
 var incubator := IncubatorSystem.new()
+var story := StorySystem.new()
 var farm := FarmEventSystem.new()
 var rating := RatingSystem.new()
 
 ## Все системы по порядку: для значений по умолчанию и событий.
 var systems: Array:
 	get: return [talents, workshop, animals, quests, house, garden, combat, dungeons, events, collection, legacy, premium, shop,
-		world_map, estate, daily, residents, raids, wild, academy, energy, fair, chests, mine, incubator, farm, rating]
+		world_map, estate, daily, residents, raids, wild, academy, energy, fair, chests, mine, incubator, story, farm, rating]
 ## Где появиться после перехода через проход (id прохода).
 var arrival_gate := ""
 ## В доме: у какой станции появиться (exit, up, down); на лугу - у двери дома.
@@ -467,6 +468,12 @@ func discounted(cost: Dictionary) -> Dictionary:
 ## Полный порт recalc() из Swift: таланты, наследие, уют, блюда, созвездия, звери, снаряжение, усиления ивента.
 func recalc() -> void:
 	var s := Stats.new()
+	# Алтарь Древних поднимает потолки, разбуженные Сердца дают добычу
+	var caps := Story.altar_caps(int(save.get("altar", 0)))
+	s.cap_yield = float(caps["yield"])
+	s.cap_xp = float(caps["xp"])
+	s.cap_animal = float(caps["animal"])
+	s.cap_sell = float(caps["sell"])
 	var r := func(id: String) -> float: return float(talents.rank(id))
 	var lg := func(perk: String) -> float: return legacy.value(perk)
 	var lvl := float(level)
@@ -492,7 +499,8 @@ func recalc() -> void:
 	s.crit_mult += 0.25 * r.call("keenEdge")
 
 	s.yield_all = 0.1 * r.call("bounty") + 0.06 * r.call("fertile") + (0.1 if r.call("abundance") > 0 else 0.0) \
-		+ (PremiumSystem.CAPYBARA_YIELD if premium.owns("garden") else 0.0)
+		+ (PremiumSystem.CAPYBARA_YIELD if premium.owns("garden") else 0.0) \
+		+ Story.HEART_YIELD * float(int(save.get("heart", {}).get("ch", 0)))
 	s.yield_category["food"] = 0.2 * r.call("farmer") + 0.08 * r.call("forest")
 	s.yield_category["wood"] = 0.1 * r.call("woodsman")
 	s.yield_category["stone"] = 0.1 * r.call("prospector")
@@ -646,7 +654,7 @@ func recalc() -> void:
 		+ (float(ShopSystem.MAX_BACKPACK) if shop.max_active() else 0.0)
 
 	for id in save.get("active", []):
-		var m := minf(Stats.MAX_ANIMAL, s.star_multiplier(int(save["animals"].get(id, 1))) * s.animal_mult * animals.boost(id))
+		var m := minf(Stats.MAX_ANIMAL + s.cap_animal, s.star_multiplier(int(save["animals"].get(id, 1))) * s.animal_mult * animals.boost(id))
 		for e in animals.effects(id):
 			var v := float(e.get("v", 0.0))
 			match e["type"]:
@@ -692,8 +700,8 @@ func recalc() -> void:
 	s.crit_chance = minf(0.75, crit_bonus)
 	# Потолки: все источники складываются, потом режутся (новая экономика)
 	s.respawn_mult = maxf(Stats.MIN_RESPAWN, 1.0 / (1.0 + respawn_bonus))
-	s.xp_mult = minf(Stats.MAX_XP, 1.0 + xp_bonus)
-	s.sell_mult = minf(Stats.MAX_SELL, 1.0 + 0.01 * (lvl - 1.0) + sell_bonus)
+	s.xp_mult = minf(Stats.MAX_XP + s.cap_xp, 1.0 + xp_bonus)
+	s.sell_mult = minf(Stats.MAX_SELL + s.cap_sell, 1.0 + 0.01 * (lvl - 1.0) + sell_bonus)
 	s.capacity = int(capacity)
 	stats = s
 

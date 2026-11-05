@@ -107,8 +107,15 @@ const MAX_HELPER := 2.0
 const MAX_PRODUCER := 2.0
 
 
+## Прибавка к потолкам от Алтаря Древних (Story.altar_caps).
+var cap_yield := 0.0
+var cap_xp := 0.0
+var cap_animal := 0.0
+var cap_sell := 0.0
+
+
 func yield_multiplier(kind: String) -> float:
-	return minf(MAX_YIELD, 1.0 + yield_all + float(yield_category.get(Res.category(kind), 0.0)) + float(yield_kind.get(kind, 0.0)))
+	return minf(MAX_YIELD + cap_yield, 1.0 + yield_all + float(yield_category.get(Res.category(kind), 0.0)) + float(yield_kind.get(kind, 0.0)))
 
 
 func star_multiplier(stars: int) -> float:

@@ -22,7 +22,7 @@ var sold_by := {}          # ресурс -> монет за продажу
 var coins_by := {}         # источник -> монет
 var crystals_spent := 0
 var events_hit := {}
-var games := {"mine_runs": 0, "mine_wins": 0, "mine_coins": 0, "chests": 0, "hatched": 0, "hybrids": 0, "shiny": 0, "eggs_crystals": 0}
+var games := {"mine_runs": 0, "mine_wins": 0, "mine_coins": 0, "chests": 0, "hatched": 0, "hybrids": 0, "shiny": 0, "eggs_crystals": 0, "hearts": 0, "altar": 0}
 var _spots := {}           # "loc|type" -> [время готовности точек]
 var _layouts := {}
 
@@ -163,6 +163,9 @@ func _needs() -> Dictionary:
 		var b: Array = Game.estate.upgrade_block(id)
 		if b.is_empty() or str(b[0]) == "estate.block.builders":
 			add.call(Estate.build_cost(id, Game.estate.level(id) + 1))
+	# Дар Сердцу текущей главы
+	if profile.get("story_needs", true) and Game.story.chapter_open() and not Game.story.gift_given():
+		add.call(Story.gift(Game.story.chapter()))
 	for good in _active_recipes():
 		for it in Estate.RECIPES[good]:
 			var want := int(it[1]) * 40
@@ -201,6 +204,9 @@ func _gather_step() -> float:
 		value += float(spec["xp"]) * 1.0
 		# Энергия дороже времени: очки за единицу энергии и за секунду
 		var score := value / (float(hits) * 4.0 + sec)
+		# Страницы дневника падают только в локации главы: туда и тянет, пока их не хватает
+		if Game.story.chapter_open() and o[0] == Story.loc(Game.story.chapter()) and Game.story.pages() < Story.PAGES:
+			score *= 3.0
 		if score > best_score:
 			best_score = score
 			best = [o, spec, hits, key, sec]
@@ -212,6 +218,7 @@ func _gather_step() -> float:
 		if not Game.energy.try_spend():
 			return -1.0
 	advance(best[4])
+	Game.save["current"] = str(best[0][0])
 	_take_spot(best[3], int(best[0][2]), float(spec["respawn"]) * Game.stats.respawn_mult)
 	var stats := Game.stats
 	var roll := randf()
@@ -354,6 +361,8 @@ func _spend() -> void:
 			_count_goods(cost)
 	for g in WorldGraph.GATES:
 		Game.world_map.open_gate(g["id"])
+	# Сюжет раньше стройки: дар просит монеты, а стройка тратит их все
+	_story()
 	_build()
 	_orders()
 	_animals()
@@ -361,6 +370,24 @@ func _spend() -> void:
 		_minigames()
 	if profile.get("spend_crystals", false):
 		_crystals()
+
+
+## Сердца земли: пара боёв за сессию в локации главы (живой игрок бьёт монстров по пути), дар, пробуждение,
+## алтарь. Мифическое пробуждение - в _animals через обычный awaken.
+func _story() -> void:
+	var st := Game.story
+	if st.chapter_open():
+		var loc := Story.loc(st.chapter())
+		var keep := Game.current
+		Game.save["current"] = loc
+		for i in int(profile.get("story_kills", 3)):
+			Game.emit_event("kill", {"monster": "slime", "level": Game.level, "boss": false})
+		Game.save["current"] = keep
+		st.give_gift()
+		if not st.awaken_heart().is_empty():
+			games["hearts"] += 1
+	while st.raise_altar():
+		games["altar"] += 1
 
 
 func _talent_order() -> Array:
@@ -551,11 +578,12 @@ func _snapshot(d: int) -> void:
 	log_days.append({"day": d, "level": Game.level, "hours": snappedf(played / 3600.0, 0.1), "coins": int(Game.save["coins"]),
 		"crystals": Game.shop.crystals(), "estate": levels, "tools": tools, "planks": Game.storage_of("planks"),
 		"talents_spent": Game.talents.points_spent(), "talents_total": Game.talents.points_total(),
-		"locations": Game.world_map.reachable.size(), "animals": Game.animals.owned().size()})
+		"locations": Game.world_map.reachable.size(), "animals": Game.animals.owned().size(),
+		"chapter": Game.story.chapter(), "shards": Game.story.shards(), "altar": Game.story.altar()})
 
 
 func report() -> Dictionary:
 	return {"profile": profile["name"], "milestones": milestones, "days": log_days, "energy_outs": energy_outs,
 		"waiting_goods": waiting_goods, "built": built, "spent_goods": spent_goods, "sold_coins": sold_coins, "sold_by": sold_by, "coins_by": coins_by,
-		"crystals_spent": crystals_spent, "minigames": games, "mine_floor": Game.mine.best(),
+		"crystals_spent": crystals_spent, "minigames": games, "shards": Game.story.shards(), "chapter": Game.story.chapter(), "mine_floor": Game.mine.best(),
 		"eggs": Game.incubator.eggs().size(), "found_hybrids": Game.incubator.found(), "gathered": Game.save["gathered"], "storage": Game.save["storage"], "played_hours": snappedf(played / 3600.0, 0.1)}

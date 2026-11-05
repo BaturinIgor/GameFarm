@@ -6,7 +6,8 @@ extends Node
 const ORIGIN := Vector2(195, 620)
 const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", "kitchen", "garden", "trader", "hunt", "level:settings",
 	"dungeon", "trophies", "collection", "collection:zoo", "collection:trophies", "legacy", "wardrobe", "map", "events", "shop",
-	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story", "wild", "estate:academy"]
+	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story", "wild", "estate:academy",
+	"story", "story:altar", "collection:diary"]
 
 var dir := "/tmp/shots"
 var main: Node
@@ -129,6 +130,10 @@ func _process(delta: float) -> void:
 				Game.save["coins"] = 25000
 				for k in ["wood", "stone", "clay", "coal", "iron", "berries", "fish", "apples"]:
 					Game.save["storage"][k] = 300
+				# Сердца земли: две страницы первой главы, часть слуг Мглы, осколки и две ступени алтаря
+				Game.save["heart"] = {"ch": 0, "pages": 2, "pity": 0, "gift": false, "kills": 4}
+				Game.save["shards"] = 3
+				Game.save["altar"] = 2
 				Game.recalc()
 				Game.mark_dirty()
 				_step = 4
