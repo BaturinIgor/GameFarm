@@ -83,7 +83,7 @@ func _build_reveal(area: Vector2) -> void:
 		_reveal.add_child(_center(L.t("hatch.new"), 16, Color(1.0, 0.86, 0.35)))
 	var icon_box := CenterContainer.new()
 	icon_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var icon := AnimalsPanel.animal_icon(id, minf(150.0, area.x * 0.4))
+	var icon := AnimalsPanel.animal_icon(id, minf(120.0, area.x * 0.32))
 	if bool(result.get("shiny", false)):
 		icon.material = AnimalSheet.shiny_material()
 	icon_box.add_child(icon)

@@ -150,6 +150,7 @@ func take_ore(floor_n: int, blocks: Dictionary) -> Dictionary:
 func win(floor_n: int) -> void:
 	var m := _m()
 	Game.add_coins(Mine.coins(floor_n, Game.level))
+	Game.gain_xp(Mine.xp(Game.level))
 	var key := Mine.key_for(floor_n)
 	if key != "":
 		Game.chests.add_keys(key, 1, false)
