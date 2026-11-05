@@ -18,6 +18,7 @@ on:
       - "tools/godot_sync.sh"
       - "tools/make_splash.py"
       - "tools/build_inappstore.sh"
+      - "tools/fetch_admob.sh"
       - ".github/workflows/ios-godot.yml"
   workflow_dispatch:
 
@@ -124,6 +125,28 @@ jobs:
           cp -R "$HOME"/inappstore/* godot/ios/plugins/inappstore/
           ls -la godot/ios/plugins/inappstore
 
+      # Реклама за награду: плагин Poing Studios, Google Mobile Ads SDK и UMP (окна согласия)
+      - name: Cache AdMob
+        id: cache-admob
+        uses: actions/cache@v4
+        with:
+          path: ~/admob
+          key: admob-${{ env.GODOT_VERSION }}-${{ hashFiles('tools/fetch_admob.sh') }}-v1
+
+      - name: Fetch AdMob
+        if: steps.cache-admob.outputs.cache-hit != 'true'
+        run: |
+          set -o pipefail
+          bash tools/fetch_admob.sh "$HOME/admob" 2>&1 | tee admob.log | tail -60
+
+      - name: Install AdMob
+        run: |
+          set -e
+          mkdir -p godot/ios/plugins
+          rm -rf godot/ios/plugins/admob
+          cp -R "$HOME/admob" godot/ios/plugins/admob
+          cat godot/ios/plugins/admob/admob.gdip | head -30
+
       - name: Import project
         timeout-minutes: 10
         run: |
@@ -173,6 +196,7 @@ jobs:
           ls -la build-ios
           test -d build-ios/HarvestHollow.xcodeproj || { echo "::error::Godot did not export the Xcode project"; exit 1; }
           grep -q "inappstore" build-ios/HarvestHollow.xcodeproj/project.pbxproj || { echo "::error::Плагин InAppStore не попал в проект"; exit 1; }
+          grep -q "GoogleMobileAds" build-ios/HarvestHollow.xcodeproj/project.pbxproj || { echo "::error::AdMob не попал в проект"; exit 1; }
           (cd build-ios && zip -qry ../HarvestHollow-xcode.zip .)
 
       # Проект Xcode до сборки: его открывают на Маке, подписывают своей командой и отправляют в App Store
@@ -257,7 +281,7 @@ jobs:
         run: |
           L="$RUNNER_TEMP/ci-logs"
           rm -rf "$L" && mkdir -p "$L"
-          cp prepare.log iap.log import.log check.log tests.log export.log errors.txt app.txt "$L/" 2>/dev/null || true
+          cp prepare.log iap.log admob.log import.log check.log tests.log export.log errors.txt app.txt "$L/" 2>/dev/null || true
           if [ -f build.log ]; then
             tail -400 build.log > "$L/build_tail.txt"
             [ "$(wc -c < build.log)" -lt 20000000 ] && cp build.log "$L/"
