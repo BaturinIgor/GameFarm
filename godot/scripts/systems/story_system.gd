@@ -1,7 +1,8 @@
 class_name StorySystem
 extends RefCounted
 ## Сюжет «Сердца земли», Осколки Древних и Алтарь (данные - data/story.gd).
-## В Game.save: heart = {ch: текущая глава (= разбуженных Сердец), pages, pity, gift, kills}, shards, altar.
+## В Game.save: heart = {ch: текущая глава (= разбуженных Сердец), pages, pity, gift, given, kills}, shards, altar.
+## given - уже принесённая часть дара {coins: n, вид: n}: дар можно приносить по частям, мастерские не "съедят" его.
 
 
 func defaults(save: Dictionary) -> void:
@@ -11,10 +12,20 @@ func defaults(save: Dictionary) -> void:
 		"pages": clampi(int(raw.get("pages", 0)), 0, Story.PAGES),
 		"pity": maxi(0, int(raw.get("pity", 0))),
 		"gift": bool(raw.get("gift", false)),
+		"given": _clean_given(raw.get("given", {})),
 		"kills": maxi(0, int(raw.get("kills", 0))),
 	}
 	save["shards"] = maxi(0, int(save.get("shards", 0)))
 	save["altar"] = clampi(int(save.get("altar", 0)), 0, Story.ALTAR.size())
+
+
+static func _clean_given(raw: Variant) -> Dictionary:
+	var out := {}
+	if raw is Dictionary:
+		for k in raw:
+			if int(raw[k]) > 0:
+				out[str(k)] = int(raw[k])
+	return out
 
 
 func _h() -> Dictionary:
@@ -57,16 +68,51 @@ func kills() -> int:
 	return int(_h()["kills"])
 
 
+## Сколько дара ещё не принесено: {coins, items} в формате цены.
+func gift_left() -> Dictionary:
+	var g := Story.gift(chapter())
+	var given: Dictionary = _h().get("given", {})
+	var items: Array = []
+	for it in g.get("items", []):
+		var n := int(it[1]) - int(given.get(str(it[0]), 0))
+		if n > 0:
+			items.append([it[0], n])
+	return {"coins": maxi(0, int(g.get("coins", 0)) - int(given.get("coins", 0))), "items": items}
+
+
+## Можно принести хоть что-то из оставшегося.
 func can_give_gift() -> bool:
-	return chapter_open() and not gift_given() and Game.can_afford(Story.gift(chapter()))
+	if not chapter_open() or gift_given():
+		return false
+	var left := gift_left()
+	if int(left["coins"]) > 0 and int(Game.save["coins"]) > 0:
+		return true
+	for it in left["items"]:
+		if Game.amount(str(it[0])) > 0:
+			return true
+	return false
 
 
+## Принести, что есть: каждую часть дара до нужного. Дар готов, когда принесено всё.
 func give_gift() -> bool:
 	if not can_give_gift():
 		return false
-	Game.pay(Story.gift(chapter()))
-	_h()["gift"] = true
-	Sound.play("success")
+	var left := gift_left()
+	var given: Dictionary = _h()["given"]
+	var pay := {"coins": mini(int(left["coins"]), int(Game.save["coins"])), "items": []}
+	given["coins"] = int(given.get("coins", 0)) + int(pay["coins"])
+	for it in left["items"]:
+		var n := mini(int(it[1]), Game.amount(str(it[0])))
+		if n > 0:
+			pay["items"].append([it[0], n])
+			given[str(it[0])] = int(given.get(str(it[0]), 0)) + n
+	Game.pay(pay)
+	var rest := gift_left()
+	if int(rest["coins"]) == 0 and rest["items"].is_empty():
+		_h()["gift"] = true
+		Sound.play("success")
+	else:
+		Sound.play("tap")
 	_changed()
 	return true
 
@@ -83,7 +129,7 @@ func awaken_heart() -> Dictionary:
 	var out := {"shards": Story.shards_for(ch), "key": Story.key_for(ch), "ch": ch}
 	add_shards(int(out["shards"]), false)
 	Game.chests.add_keys(str(out["key"]), 1, false)
-	Game.save["heart"] = {"ch": ch + 1, "pages": 0, "pity": 0, "gift": false, "kills": 0}
+	Game.save["heart"] = {"ch": ch + 1, "pages": 0, "pity": 0, "gift": false, "given": {}, "kills": 0}
 	Sound.play("levelUp")
 	Game.emit_event("heart", {"ch": ch})
 	Game.recalc()

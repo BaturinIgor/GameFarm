@@ -119,9 +119,9 @@ func _chapter_card(ch: int) -> void:
 
 	# 2. Дар Сердцу
 	var given := sys.gift_given()
-	v.add_child(_step(2, L.t("heart.step.gift"), given, ""))
+	v.add_child(_step(2, L.t("heart.step.gift"), given, L.t("heart.step.giftHint")))
 	if not given:
-		v.add_child(UiKit.cost_view(Story.gift(ch)))
+		v.add_child(UiKit.cost_view(sys.gift_left()))
 		var give := UiKit.button(L.t("heart.give"), "gold", 15)
 		give.disabled = not sys.can_give_gift()
 		give.pressed.connect(func() -> void: Game.story.give_gift())

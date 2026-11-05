@@ -53,6 +53,7 @@ func _ready() -> void:
 			rep["waiting_goods"], rep["spent_goods"], rep["crystals_spent"]])
 		print("   minigames %s, mine best %d, eggs %d, hybrids %s, animals %d" % [rep["minigames"], rep["mine_floor"], rep["eggs"],
 			rep["found_hybrids"], last["animals"]])
+		print("   story chapter %d, shards left %d" % [rep["chapter"], rep["shards"]])
 	Clock.offset = 0.0
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(Game.save_path))
 	get_tree().quit(0)

@@ -49,10 +49,18 @@ func test_full_chapter_flow() -> void:
 	eq(Game.story.kills(), Story.kills(0), "счётчик не растёт сверх нужного")
 	# Дар
 	Game.save["coins"] = 0
+	Game.save["storage"] = {}
+	Game.save["backpack"] = {}
 	check(not Game.story.give_gift(), "без ресурсов дар не принести")
+	# По частям: сначала только монеты, потом остальное
+	Game.save["coins"] = int(Story.gift(0)["coins"])
+	check(Game.story.give_gift(), "часть дара принесена")
+	check(not Game.story.gift_given(), "дар ещё не весь")
+	eq(int(Game.story.gift_left()["coins"]), 0, "монеты зачтены")
 	_fill_gift(0)
-	check(Game.story.give_gift(), "дар принесён")
-	eq(int(Game.save["coins"]), 0, "монеты списаны")
+	check(Game.story.give_gift(), "остаток дара принесён")
+	check(Game.story.gift_given(), "дар принесён целиком")
+	eq(int(Game.save["coins"]), int(Story.gift(0)["coins"]), "монеты второй раз не списаны")
 	check(Game.story.can_awaken())
 	var yield_before := Game.stats.yield_all
 	var shards := Game.story.shards()

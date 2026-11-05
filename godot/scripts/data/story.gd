@@ -1,21 +1,21 @@
 class_name Story
 ## Сюжет «Сердца земли»: глава на каждую большую локацию. В главе три шага: найти 3 страницы дневника Древних
-## (падают при добыче в этой локации), принести дар Сердцу и прогнать слуг Мглы (победить монстров там же).
+## (падают при добыче в этой локации), принести дар Сердцу (монеты и плоды этой локации) и прогнать слуг Мглы (победить монстров там же).
 ## Разбуженное Сердце даёт Осколок Древних, ключ и +2% к добыче. Осколки тратятся на Алтарь Древних
 ## (поднимает потолки бонусов) и мифическое пробуждение зверей.
 
 const CHAPTERS := [
 	{"loc": "meadow", "gift": {"coins": 300, "items": [["berries", 20], ["apples", 20]]}},
-	{"loc": "hills", "gift": {"coins": 800, "items": [["carrots", 30], ["coal", 20], ["planks", 10]]}},
-	{"loc": "lake", "gift": {"coins": 1500, "items": [["fish", 40], ["bamboo", 30], ["planks", 20]]}},
-	{"loc": "swamp", "gift": {"coins": 2500, "items": [["herbs", 40], ["clay", 40], ["brick", 10]]}},
-	{"loc": "desert", "gift": {"coins": 4000, "items": [["cactus", 40], ["coconut", 30], ["brick", 20]]}},
-	{"loc": "snow", "gift": {"coins": 7000, "items": [["ice", 50], ["diamond", 5], ["iron_bar", 10]]}},
-	{"loc": "caves", "gift": {"coins": 12000, "items": [["crystal", 20], ["diamond", 10], ["iron_bar", 20]]}},
-	{"loc": "island", "gift": {"coins": 18000, "items": [["pearl", 15], ["coral", 30], ["lime", 20]]}},
-	{"loc": "volcano", "gift": {"coins": 26000, "items": [["ruby", 10], ["obsidian", 30], ["gold_bar", 10]]}},
-	{"loc": "sky", "gift": {"coins": 35000, "items": [["stardust", 15], ["cloud", 40], ["gold_bar", 20]]}},
-	{"loc": "crystalReef", "gift": {"coins": 50000, "items": [["coral", 60], ["pearl", 30], ["gold_bar", 30]]}},
+	{"loc": "hills", "gift": {"coins": 800, "items": [["carrots", 30], ["coal", 20]]}},
+	{"loc": "lake", "gift": {"coins": 1500, "items": [["fish", 30], ["bamboo", 30]]}},
+	{"loc": "swamp", "gift": {"coins": 2500, "items": [["herbs", 30], ["clay", 30]]}},
+	{"loc": "desert", "gift": {"coins": 4000, "items": [["cactus", 40], ["coconut", 15]]}},
+	{"loc": "snow", "gift": {"coins": 7000, "items": [["ice", 40], ["diamond", 5]]}},
+	{"loc": "caves", "gift": {"coins": 12000, "items": [["mushrooms", 60], ["crystal", 10]]}},
+	{"loc": "island", "gift": {"coins": 18000, "items": [["pineapple", 30], ["coral", 15]]}},
+	{"loc": "volcano", "gift": {"coins": 26000, "items": [["obsidian", 20], ["ruby", 5]]}},
+	{"loc": "sky", "gift": {"coins": 35000, "items": [["cloud", 30], ["goldenApple", 20]]}},
+	{"loc": "crystalReef", "gift": {"coins": 50000, "items": [["coral", 30], ["pineapple", 40]]}},
 ]
 
 ## С какого уровня открыт раздел.
@@ -34,10 +34,10 @@ const FINAL_SHARDS := 3
 ## Бонус к добыче за каждое разбуженное Сердце.
 const HEART_YIELD := 0.02
 
-## Осколок с любой добычи: редкая находка (примерно раз в 2-3 часа игры).
-const SHARD_CHANCE := 0.0004
-## Шахта: осколок каждые 25 этажей.
-const MINE_SHARD_EVERY := 25
+## Осколок с любой добычи: редкая находка (очень редко).
+const SHARD_CHANCE := 0.0001
+## Шахта: осколок каждые 100 этажей.
+const MINE_SHARD_EVERY := 100
 
 ## Алтарь Древних: каждый уровень поднимает один потолок. Цена - осколки.
 const ALTAR := [
