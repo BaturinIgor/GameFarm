@@ -782,7 +782,7 @@
  "hatch.maxStars": "すでに星5: +{0} クリスタル",
  "hatch.new": "新しい動物!",
  "hatch.shiny": "レアな色!",
- "hatch.stars": "+{0} 星",
+ "hatch.stars": "星: +{0}",
  "home.anvil": "金床",
  "home.anvil.hint": "道具と装備を強化",
  "home.bed": "ベッド",

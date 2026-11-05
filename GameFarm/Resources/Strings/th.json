@@ -782,7 +782,7 @@
  "hatch.maxStars": "ครบ 5 ดาวแล้ว: +{0} คริสตัล",
  "hatch.new": "สัตว์ใหม่!",
  "hatch.shiny": "สีหายาก!",
- "hatch.stars": "+{0} ดาว",
+ "hatch.stars": "ดาว: +{0}",
  "home.anvil": "ทั่งตีเหล็ก",
  "home.anvil.hint": "อัปเกรดเครื่องมือและอุปกรณ์",
  "home.bed": "เตียง",

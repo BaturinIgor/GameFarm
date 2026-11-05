@@ -782,7 +782,7 @@
  "hatch.maxStars": "이미 별 5개: +{0} 크리스탈",
  "hatch.new": "새 동물!",
  "hatch.shiny": "희귀한 색!",
- "hatch.stars": "+{0} 별",
+ "hatch.stars": "별: +{0}",
  "home.anvil": "모루",
  "home.anvil.hint": "도구와 장비 강화",
  "home.bed": "침대",

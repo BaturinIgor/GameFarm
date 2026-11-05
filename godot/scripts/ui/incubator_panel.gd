@@ -171,6 +171,14 @@ func _nest_card() -> void:
 		pair.add_child(UiKit.icon("heart", 20))
 		pair.add_child(AnimalsPanel.animal_icon(str(n["b"]), 40))
 		v.add_child(pair)
+		var names := UiKit.label("%s + %s" % [Animals.name_of(str(n["a"])), Animals.name_of(str(n["b"]))], 13)
+		names.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		v.add_child(names)
+		var hy := Incubator.hybrid_of(str(n["a"]), str(n["b"]))
+		var what := UiKit.label(L.t("inc.nestHybrid", [Animals.name_of(hy)]) if hy != "" else L.t("inc.nestPlain"), 12, UiKit.INK_SOFT)
+		what.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		what.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		v.add_child(what)
 		if sys.nest_ready():
 			var take := UiKit.button(L.t("inc.nestTake"), "green", 15)
 			take.pressed.connect(func() -> void:

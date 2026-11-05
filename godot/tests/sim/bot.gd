@@ -484,7 +484,10 @@ func _crystals() -> void:
 
 func _minigames() -> void:
 	var win_chance := float(profile.get("mine_win", 0.75))
-	while Game.mine.open() and Game.mine.start():
+	# Шахта - пара заходов за сессию (профиль mine_runs), а не все фонари подряд
+	var runs := int(profile.get("mine_runs", 2))
+	while runs > 0 and Game.mine.open() and Game.mine.start():
+		runs -= 1
 		games["mine_runs"] += 1
 		var f := Game.mine.floor_n()
 		if randf() < win_chance:

@@ -782,7 +782,7 @@
  "hatch.maxStars": "Already 5 stars: +{0} crystals",
  "hatch.new": "New animal!",
  "hatch.shiny": "Rare coloring!",
- "hatch.stars": "+{0} star",
+ "hatch.stars": "Stars: +{0}",
  "home.anvil": "Anvil",
  "home.anvil.hint": "Upgrade tools and gear",
  "home.bed": "Bed",

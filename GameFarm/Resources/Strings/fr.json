@@ -782,7 +782,7 @@
  "hatch.maxStars": "Déjà 5 étoiles : +{0} cristaux",
  "hatch.new": "Nouvel animal !",
  "hatch.shiny": "Couleur rare !",
- "hatch.stars": "+{0} étoile",
+ "hatch.stars": "Étoiles : +{0}",
  "home.anvil": "Enclume",
  "home.anvil.hint": "Améliorer les outils et l'équipement",
  "home.bed": "Lit",

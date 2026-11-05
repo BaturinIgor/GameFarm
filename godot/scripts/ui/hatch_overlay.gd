@@ -9,6 +9,7 @@ var _rays: ChestOverlay.Rays
 var _egg: EggView
 var _egg_box := CenterContainer.new()
 var _reveal := VBoxContainer.new()
+var _card := PanelContainer.new()
 var _flash := ColorRect.new()
 var _tween: Tween
 var _done := false
@@ -54,11 +55,18 @@ func _ready() -> void:
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(center)
+	# Карточка зверя: тёмная подложка с рамкой цвета яйца, чтобы текст читался поверх лучей
+	var col := EggView.shell_color(_rarity())
+	var st := UiKit.box(Color(0.12, 0.09, 0.14, 0.92).lerp(col, 0.12), col, 16, 4, false)
+	st.set_content_margin_all(16)
+	_card.add_theme_stylebox_override("panel", st)
+	_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_card.modulate.a = 0.0
+	center.add_child(_card)
 	_reveal.alignment = BoxContainer.ALIGNMENT_CENTER
 	_reveal.add_theme_constant_override("separation", 8)
 	_reveal.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_reveal.modulate.a = 0.0
-	center.add_child(_reveal)
+	_card.add_child(_reveal)
 	_build_reveal(area)
 
 	_flash.color = Color(1, 1, 1, 0)
@@ -134,11 +142,11 @@ func _burst() -> void:
 	var tw := create_tween()
 	tw.tween_property(_flash, "color:a", 0.0, 0.35)
 	Sound.play("levelUp" if bool(result.get("new", false)) or bool(result.get("shiny", false)) else "treasure")
-	_reveal.pivot_offset = _reveal.size / 2.0
-	_reveal.scale = Vector2(0.5, 0.5)
+	_card.pivot_offset = _card.size / 2.0
+	_card.scale = Vector2(0.5, 0.5)
 	var rv := create_tween().set_parallel()
-	rv.tween_property(_reveal, "modulate:a", 1.0, 0.15)
-	rv.tween_property(_reveal, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	rv.tween_property(_card, "modulate:a", 1.0, 0.15)
+	rv.tween_property(_card, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	rv.chain().tween_callback(func() -> void: _done = true)
 	_tween = rv
 
@@ -150,8 +158,8 @@ func _finish() -> void:
 		_burst()
 		if _tween != null and _tween.is_valid():
 			_tween.kill()
-	_reveal.modulate.a = 1.0
-	_reveal.scale = Vector2.ONE
+	_card.modulate.a = 1.0
+	_card.scale = Vector2.ONE
 	_done = true
 
 

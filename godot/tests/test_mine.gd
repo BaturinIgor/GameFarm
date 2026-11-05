@@ -177,3 +177,8 @@ func test_keys_by_depth() -> void:
 	for f in [1, 11, 21, 31, 41, 51]:
 		for c in Mine.colors(f):
 			check(Mine.ore_of(f, c) in Res.KINDS, "руда этажа %d - известный ресурс" % f)
+
+
+func test_coins_stop_growing_deep() -> void:
+	check(Mine.coins(30, 40) > Mine.coins(1, 40), "глубже - больше монет")
+	eq(Mine.coins(500, 40), Mine.coins(Mine.COINS_FLOOR_CAP, 40), "после предела монеты не растут")
