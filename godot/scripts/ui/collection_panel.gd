@@ -10,16 +10,39 @@ const CARD_BOTTOM := Color("23306a")
 const CARD_EMPTY_TOP := Color("5a5560")
 const CARD_EMPTY_BOTTOM := Color("3a3640")
 
+## Вкладки (Коллекции 2.0): созвездия, зверинец, трофеи. Сверху у всех - уровень коллекционера.
+const TABS := [["stars", "cards", "coll.tab.stars"], ["zoo", "paw", "coll.tab.zoo"], ["trophies", "crown", "coll.tab.trophies"]]
+
 ## Раскрыта ли подсказка "Как работают карты".
 var _guide_open := false
+var tab := "stars"
 
 
-func _init() -> void:
+func _init(start_tab := "") -> void:
 	title_key = "collection.title"
+	if start_tab != "":
+		tab = start_tab
+
+
+func build_top() -> void:
+	var items: Array = []
+	for t in TABS:
+		items.append([t[0], L.t(t[2]), 0, t[1]])
+	top_bar.add_child(UiKit.tabs(items, tab, func(id: String) -> void:
+		tab = id
+		scroll_to_top()))
 
 
 func build() -> void:
 	content.add_theme_constant_override("separation", 16)
+	content.add_child(collector_card())
+	match tab:
+		"zoo":
+			_build_zoo()
+			return
+		"trophies":
+			TrophiesPanel.build_list(content)
+			return
 	var col := Game.collection
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
@@ -29,6 +52,115 @@ func build() -> void:
 	_guide()
 	for c in Cards.CONSTELLATIONS:
 		_constellation_card(c)
+
+
+# MARK: Уровень коллекционера
+
+## Карточка уровня: полоска до следующего, награда за следующий уровень, кнопка "Забрать".
+static func collector_card() -> Control:
+	var c := Game.collection
+	var lvl := c.collector_level()
+	var ready := c.collector_ready()
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 6)
+	var p := PanelContainer.new()
+	var s := UiKit.box(Color("2a1f5a"), UiKit.GOLD_DARK if ready > 0 else UiKit.OUTLINE, 14, 3, false)
+	s.set_content_margin_all(10)
+	p.add_theme_stylebox_override("panel", s)
+	p.add_child(v)
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 8)
+	v.add_child(head)
+	head.add_child(UiKit.icon("crown", 26))
+	var title := UiKit.label(L.t("coll.level", [lvl]), 16, Color.WHITE, 3)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(title)
+	var next := c.collector_claimed() + 1 if ready > 0 else lvl + 1
+	var reward := HBoxContainer.new()
+	reward.add_theme_constant_override("separation", 3)
+	reward.add_child(ChestsPanel.key_icon(CollectionSystem.collector_reward(next), 18))
+	head.add_child(reward)
+	var pr := c.collector_progress()
+	v.add_child(UiKit.bar(float(pr[0]) / float(pr[1]), "purple", 0.0, 12.0, "%d / %d" % [pr[0], pr[1]]))
+	var hint := UiKit.label(L.t("coll.hint"), 11, Color(1, 1, 1, 0.75), 2)
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	v.add_child(hint)
+	if ready > 0:
+		var b := UiKit.button(L.t("coll.claim", [ready]), "green", 15)
+		b.pressed.connect(func() -> void:
+			var got := Game.collection.claim_collector()
+			for k in got:
+				Game.show_toast("px:key", "%s +%d" % [Chests.key_name(str(k)), int(got[k])]))
+		v.add_child(b)
+		UiKit.attention(b)
+	return p
+
+
+# MARK: Зверинец
+
+func _build_zoo() -> void:
+	var a := Game.animals
+	var owned := 0
+	var shiny := 0
+	for id in Animals.IDS:
+		if a.stars(id) > 0:
+			owned += 1
+			if a.is_shiny(id):
+				shiny += 1
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	content.add_child(row)
+	row.add_child(_summary("paw", L.t("coll.zoo.owned", [owned, Animals.IDS.size()])))
+	row.add_child(_summary("rainbow", L.t("coll.zoo.shiny", [shiny])))
+	var box := TraderPanel.card_box(content)
+	for id in Animals.IDS:
+		box.add_child(_zoo_row(id))
+
+
+func _zoo_row(id: String) -> Control:
+	var a := Game.animals
+	var stars := a.stars(id)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	var ic := AnimalsPanel.animal_icon(id, 40)
+	if stars <= 0:
+		ic.modulate = Color(0, 0, 0, 0.7)
+	elif a.is_shiny(id):
+		ic.material = AnimalSheet.shiny_material()
+	row.add_child(ic)
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_theme_constant_override("separation", 1)
+	row.add_child(col)
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 6)
+	col.add_child(head)
+	head.add_child(UiKit.label(Animals.name_of(id) if stars > 0 else "???", 14))
+	if a.is_shiny(id):
+		head.add_child(UiKit.icon("rainbow", 14))
+	if stars > 0:
+		head.add_child(UiKit.stars(stars, Animals.MAX_STARS, 10))
+	var how := UiKit.label(source_text(id), 11, UiKit.INK_SOFT)
+	how.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(how)
+	return row
+
+
+## Где взять зверя: лавка, дикие земли, кристаллы, гнездо или набор.
+static func source_text(id: String) -> String:
+	if Animals.is_hybrid(id):
+		var rec := Incubator.recipe_of(id)
+		return L.t("coll.src.hybrid", [Animals.name_of(rec[0]), Animals.name_of(rec[1])])
+	if Animals.is_premium(id):
+		return L.t("coll.src.premium")
+	if Animals.is_crystal(id):
+		return L.t("coll.src.crystal", [Animals.crystal_level(id)])
+	var loc := Animals.wild_location(id)
+	if loc != "":
+		return L.t("coll.src.wild", [Locations.name_of(loc)])
+	if Animals.shop_level(id) >= 0:
+		return L.t("coll.src.shop", [Animals.shop_level(id)])
+	return ""
 
 
 func _summary(icon_name: String, text: String) -> PanelContainer:

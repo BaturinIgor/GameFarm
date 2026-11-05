@@ -9,6 +9,11 @@ func _init() -> void:
 
 func build() -> void:
 	content.add_theme_constant_override("separation", 10)
+	build_list(content)
+
+
+## Список трофеев (его же показывает вкладка коллекции).
+static func build_list(content: Control) -> void:
 	for id in Trophies.IDS:
 		var earned := Trophies.is_earned(id)
 		var target := Trophies.target(id)
