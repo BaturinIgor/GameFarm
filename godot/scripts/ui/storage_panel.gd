@@ -12,6 +12,8 @@ const TABS := {
 
 ## Множители продажи по кругу и ширина кнопок строки (постоянная, чтобы ряд не прыгал).
 const MULTIPLIERS := [1, 10, 100, 1000]
+## Продать всё, что есть.
+const MAX := -1
 const MULT_WIDTH := 62.0
 const SELL_WIDTH := 84.0
 
@@ -140,14 +142,14 @@ func _row(parent: Control, kind: String) -> void:
 	var coin := UiKit.icon("coin", 13)
 	coin.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	info.add_child(coin)
-	# Множитель (x1 -> x10 -> x100 -> x1000 -> x1) и "Продать": ширина постоянная, строка не скачет.
-	# Если на складе меньше множителя, продаётся всё, что есть
+	# Множитель (x1 -> x10 -> x100 -> x1000 -> МАКС) и "Продать": ширина постоянная, строка не скачет.
+	# Множители не больше запаса: при 85 штуках - x1, x10, МАКС
 	var buttons := HBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 4)
 	buttons.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(buttons)
 	var mult := multiplier(kind)
-	var m := UiKit.button("x" + str(mult), "wood", 12, true)
+	var m := UiKit.button(L.t("storage.max") if mult == MAX else "x" + str(mult), "wood", 12, true)
 	m.custom_minimum_size = Vector2(MULT_WIDTH, 34)
 	# Узкие поля: "x1000" целиком помещается в постоянную ширину (раньше обрезалось до "x10")
 	for st_name in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
@@ -156,26 +158,44 @@ func _row(parent: Control, kind: String) -> void:
 		st.content_margin_right = 4
 		m.add_theme_stylebox_override(st_name, st)
 	m.pressed.connect(func() -> void:
-		_mult[kind] = next_multiplier(mult)
+		_mult[kind] = next_multiplier(mult, Game.storage_of(kind))
 		Sound.play("tap")
 		_dirty = true)
 	buttons.add_child(m)
 	var sell := UiKit.button(L.t("storage.sell"), "green", 12, true)
 	sell.custom_minimum_size = Vector2(SELL_WIDTH, 34)
 	sell.clip_text = true
-	sell.pressed.connect(func() -> void: _sold(kind, Game.sell(kind, mini(mult, Game.storage_of(kind)))))
+	sell.pressed.connect(func() -> void:
+		var n := Game.storage_of(kind) if multiplier(kind) == MAX else mini(multiplier(kind), Game.storage_of(kind))
+		_sold(kind, Game.sell(kind, n)))
 	buttons.add_child(sell)
 
 
-## Множитель продажи для ресурса (пока игра открыта): 1, 10, 100 или 1000.
+## Множитель продажи для ресурса (пока игра открыта): 1, 10, 100, 1000 или MAX (всё, что есть).
+## Множитель не больше запаса: если запас упал ниже выбранного, показываем МАКС.
 static func multiplier(kind: String) -> int:
-	return int(_mult.get(kind, MULTIPLIERS[0]))
+	var m := int(_mult.get(kind, MULTIPLIERS[0]))
+	if m != MAX and m > 1 and m >= Game.storage_of(kind):
+		return MAX
+	return m
 
 
-## Следующий множитель по кругу.
-static func next_multiplier(current: int) -> int:
-	var i := MULTIPLIERS.find(current)
-	return MULTIPLIERS[(i + 1) % MULTIPLIERS.size()]
+## Множители, которые имеют смысл при запасе have: только меньше запаса, и в конце МАКС.
+static func options(have: int) -> Array:
+	var out: Array = []
+	for m in MULTIPLIERS:
+		if m < have:
+			out.append(m)
+	if have > 1:
+		out.append(MAX)
+	return out if not out.is_empty() else [MULTIPLIERS[0]]
+
+
+## Следующий множитель по кругу (1 -> 10 -> 100 -> 1000 -> МАКС -> 1), лишние пропускаются.
+static func next_multiplier(current: int, have: int) -> int:
+	var list := options(have)
+	var i := list.find(current)
+	return list[(i + 1) % list.size()]
 
 
 ## Подсказка о выручке после продажи.

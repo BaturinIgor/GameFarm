@@ -1671,6 +1671,7 @@
  "storage.empty": "仓库是空的",
  "storage.empty.hint": "采集资源，然后带到院子中央的仓库 📦。仓库里的资源可以卖钱换金币。",
  "storage.inBackpack": "🎒 背包中",
+ "storage.max": "最大",
  "storage.priceHint": "售价会随等级和\"商人\"天赋提升。",
  "storage.row": "{0} 个  ·  每个 {1} 🪙",
  "storage.sell": "出售",

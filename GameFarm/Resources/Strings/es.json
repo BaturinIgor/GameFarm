@@ -1671,6 +1671,7 @@
  "storage.empty": "El almacén está vacío",
  "storage.empty.hint": "Recolecta recursos y llévalos al almacén 📦 en el centro del patio. Los recursos almacenados se pueden vender por monedas.",
  "storage.inBackpack": "🎒 En la mochila",
+ "storage.max": "MÁX",
  "storage.priceHint": "El precio de venta sube con tu nivel y el talento \"Comerciante\".",
  "storage.row": "{0} uds.  ·  {1} 🪙 c/u",
  "storage.sell": "Vender",

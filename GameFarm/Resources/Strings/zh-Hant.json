@@ -1671,6 +1671,7 @@
  "storage.empty": "倉庫空空如也",
  "storage.empty.hint": "採集資源並帶到庭院中央的倉庫 📦。倉庫裡的資源可以賣出換金幣。",
  "storage.inBackpack": "🎒 背包中",
+ "storage.max": "最大",
  "storage.priceHint": "售價會隨著你的等級和 \"商人\" 天賦提升。",
  "storage.row": "{0} 個  ·  每個 {1} 🪙",
  "storage.sell": "賣出",

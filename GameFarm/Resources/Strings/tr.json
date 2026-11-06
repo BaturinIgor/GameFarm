@@ -1671,6 +1671,7 @@
  "storage.empty": "Depo boş",
  "storage.empty.hint": "Kaynak topla ve onları avlunun ortasındaki depoya 📦 getir. Depodaki kaynaklar para karşılığında satılabilir.",
  "storage.inBackpack": "🎒 Çantada",
+ "storage.max": "MAKS",
  "storage.priceHint": "Satış fiyatı seviyenle ve \"Tüccar\" yeteneğiyle artar.",
  "storage.row": "{0} adet  ·  tanesi {1} 🪙",
  "storage.sell": "Sat",

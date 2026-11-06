@@ -244,10 +244,14 @@ func _parent_button(id: String) -> Control:
 		UiKit.TONES["green"][1] if picked else Color(UiKit.WOOD_DARK, 0.35), 12, 3 if picked else 2, false)
 	for st in ["normal", "hover", "pressed", "focus"]:
 		b.add_theme_stylebox_override(st, s)
+	# Значок по центру кнопки при любом её размере (якорь в центре с ручной позицией уезжал вправо вниз)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var icon := AnimalsPanel.animal_icon(id, 36)
-	icon.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	icon.position = Vector2(8, 8)
-	b.add_child(icon)
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	center.add_child(icon)
+	b.add_child(center)
 	b.tooltip_text = Animals.name_of(id)
 	b.pressed.connect(func() -> void:
 		Sound.play("tap")

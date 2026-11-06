@@ -1671,6 +1671,7 @@
  "storage.empty": "Magazyn jest pusty",
  "storage.empty.hint": "Zbieraj surowce i zanoś je do magazynu 📦 na środku podwórka. Surowce z magazynu możesz sprzedać za monety.",
  "storage.inBackpack": "🎒 W plecaku",
+ "storage.max": "MAX",
  "storage.priceHint": "Cena sprzedaży rośnie wraz z poziomem i talentem \"Handlarz\".",
  "storage.row": "{0} szt.  ·  {1} 🪙 za szt.",
  "storage.sell": "Sprzedaj",

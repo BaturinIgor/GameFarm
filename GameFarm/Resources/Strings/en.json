@@ -1671,6 +1671,7 @@
  "storage.empty": "Storage is empty",
  "storage.empty.hint": "Gather resources and bring them to the storage 📦 in the middle of the yard. Stored resources can be sold for coins.",
  "storage.inBackpack": "🎒 In backpack",
+ "storage.max": "MAX",
  "storage.priceHint": "Sell price grows with your level and the \"Trader\" talent.",
  "storage.row": "{0} pcs  ·  {1} 🪙 each",
  "storage.sell": "Sell",

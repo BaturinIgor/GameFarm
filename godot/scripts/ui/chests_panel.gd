@@ -5,6 +5,8 @@ extends Sheet
 
 ## Раскрыта ли таблица шансов.
 var _odds := false
+## Показать наборы ключей без настоящих покупок (снимки экрана).
+static var debug_packs := false
 
 
 func _init() -> void:
@@ -18,7 +20,7 @@ func build() -> void:
 	for chest in Chests.IDS:
 		_chest_card(chest)
 	# Наборы ключей за деньги: только в сборке с настоящими покупками, рядом с таблицей шансов
-	if Store.LIVE:
+	if Store.LIVE or debug_packs:
 		content.add_child(CombatCards.section_title(L.t("chest.packs")))
 		for k in Products.KEY_PACKS:
 			content.add_child(key_pack_card(k))

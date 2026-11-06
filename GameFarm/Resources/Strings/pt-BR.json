@@ -1671,6 +1671,7 @@
  "storage.empty": "O armazém está vazio",
  "storage.empty.hint": "Colete recursos e leve-os ao armazém 📦 no meio do pátio. Os recursos armazenados podem ser vendidos por moedas.",
  "storage.inBackpack": "🎒 Na mochila",
+ "storage.max": "MÁX",
  "storage.priceHint": "O preço de venda aumenta com seu nível e com o talento \"Comerciante\".",
  "storage.row": "{0} un.  ·  {1} 🪙 cada",
  "storage.sell": "Vender",

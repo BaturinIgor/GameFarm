@@ -1671,6 +1671,7 @@
  "storage.empty": "Gudang kosong",
  "storage.empty.hint": "Kumpulkan sumber daya dan bawa ke gudang 📦 di tengah halaman. Sumber daya di gudang bisa dijual untuk koin.",
  "storage.inBackpack": "🎒 Di ransel",
+ "storage.max": "MAKS",
  "storage.priceHint": "Harga jual naik seiring level dan bakat \"Pedagang\".",
  "storage.row": "{0} buah  ·  {1} 🪙 per buah",
  "storage.sell": "Jual",

@@ -377,6 +377,8 @@ static func _ribbon_card(title: String, tone: String) -> Array:
 	panel.add_child(v)
 	var holder := Control.new()
 	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Низ ленты уходит ниже рамки на ~9 точек; запас, чтобы первая строка карточки не наезжала на ленту
+	holder.custom_minimum_size = Vector2(0, 8)
 	v.add_child(holder)
 	var ribbon := LevelUpOverlay.Ribbon.new()
 	ribbon.tone = UiKit.TONES[tone]

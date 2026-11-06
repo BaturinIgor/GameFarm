@@ -284,10 +284,11 @@ func _check_layout(w: String) -> void:
 	var limit := get_viewport().get_visible_rect().size.x
 	var panel: Control = sheet._panel
 	var right := panel.get_global_rect().end.x
-	if right <= limit + 0.5:
+	var inner_w := sheet.content.get_combined_minimum_size().x
+	if right <= limit + 0.5 and inner_w <= sheet.content_width() + 0.5:
 		print("LAYOUT OK %s width=%.0f" % [w, panel.size.x])
 		return
-	print("LAYOUT OVERFLOW %s panel_right=%.0f screen=%.0f" % [w, right, limit])
+	print("LAYOUT OVERFLOW %s panel_right=%.0f screen=%.0f content=%.0f/%.0f" % [w, right, limit, inner_w, sheet.content_width()])
 	var avail := sheet.content_width()
 	_report_overflow(sheet.content, avail, w, 0)
 
@@ -399,7 +400,7 @@ func _extra(k: int) -> void:
 			_shot("6_quests_th")
 			L.set_language(_lang)
 			# Все множители продажи на виду: x1000 и x100 должны читаться целиком
-			StoragePanel._mult = {"wood": 1000, "stone": 100, "clay": 10}
+			StoragePanel._mult = {"wood": 1000, "stone": 100, "clay": 10, "coal": StoragePanel.MAX}
 			main.hud.open_window(StoragePanel.new())
 		12:
 			_shot("6_storage_full")
@@ -449,6 +450,7 @@ func _extra(k: int) -> void:
 			ChestOverlay.show_rewards("wood", list)
 		20:
 			_shot("6_chest_shake")
+
 		26:
 			_shot("6_chest_open10")
 			for n in main.hud.find_children("*", "", true, false):
@@ -544,7 +546,39 @@ func _extra(k: int) -> void:
 				if n is HatchOverlay:
 					n.queue_free()
 			main.hud.close_window()
-		54:
+		_ when k >= 54 and k < 54 + 2 * Story.count():
+			# Каждая глава "Сердец земли" на узком экране: страницы прочитаны, дар принесён наполовину,
+			# пройденные главы списком. Окно не должно вылезать за экран.
+			var ch := (k - 54) / 2
+			if (k - 54) % 2 == 0:
+				if ch == 5:
+					_shot("6_story_reward")
+				Game.save["level"] = maxi(Game.level, int(Locations.SPECS[Story.loc(ch)]["level"]))
+				Game.recalc()
+				Game.save["current"] = Story.loc(ch)
+				if not Story.loc(ch) in Game.world_map.reachable:
+					Game.world_map.reachable.append(Story.loc(ch))
+				var given := {"coins": int(Story.gift(ch)["coins"]) / 2}
+				Game.save["heart"] = {"ch": ch, "pages": Story.PAGES, "pity": 0, "gift": false, "given": given, "kills": 1}
+				main.hud.open_window(StoryPanel.new())
+			else:
+				_check_layout("story_ch%d" % (ch + 1))
+				if ch == 4:
+					_scroll_window(520)
+				if ch == Story.count() - 1:
+					_scroll_window(100000)
+		_ when k == 54 + 2 * Story.count():
+			_shot("6_story_last")
+			# Наборы ключей за деньги (в сборке без покупок их не видно - показываем принудительно)
+			ChestsPanel.debug_packs = true
+			main.hud.open_window(ChestsPanel.new())
+		_ when k == 55 + 2 * Story.count():
+			_scroll_window(100000)
+		_ when k == 56 + 2 * Story.count():
+			_shot("6_chests_packs")
+			_check_layout("chests_packs")
+			ChestsPanel.debug_packs = false
+			main.hud.close_window()
 			_step = 5
 			_time = 300.0
 			_sub = 0
