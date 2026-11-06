@@ -21,6 +21,11 @@ on:
       - "tools/fetch_admob.sh"
       - ".github/workflows/ios-godot.yml"
   workflow_dispatch:
+    inputs:
+      appstore:
+        description: "Подписать и загрузить в App Store Connect (TestFlight)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -206,7 +211,75 @@ jobs:
           name: HarvestHollow-xcode
           path: HarvestHollow-xcode.zip
 
+      # Загрузка в App Store без Xcode на Маке: подпись облачная, через ключ API App Store Connect
+      # (xcodebuild -allowProvisioningUpdates сам заводит сертификат и профиль). Нужны секреты
+      # APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (ключ с ролью Admin).
+      - name: App Store - archive, export, upload
+        if: inputs.appstore
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          set -uo pipefail
+          for name in TEAM_ID ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8; do
+            [ -n "${!name}" ] || { echo "::error::Не задан секрет ${name/TEAM_ID/APPLE_TEAM_ID}"; exit 1; }
+          done
+          KEY_DIR="$HOME/.appstoreconnect/private_keys"
+          mkdir -p "$KEY_DIR"
+          KEY="$KEY_DIR/AuthKey_$ASC_KEY_ID.p8"
+          if printf '%s' "$ASC_KEY_P8" | grep -q "BEGIN PRIVATE KEY"; then
+            printf '%s\n' "$ASC_KEY_P8" > "$KEY"
+          else
+            printf '%s' "$ASC_KEY_P8" | base64 --decode > "$KEY"
+          fi
+          AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+          ARCHIVE="$RUNNER_TEMP/HarvestHollow.xcarchive"
+          xcodebuild \
+            -project build-ios/HarvestHollow.xcodeproj \
+            -scheme HarvestHollow \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$ARCHIVE" \
+            "${AUTH[@]}" \
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            CODE_SIGN_IDENTITY="Apple Development" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            PROVISIONING_PROFILE="" \
+            archive > appstore.log 2>&1
+          status=$?
+          grep -E "error:|fatal error" appstore.log | sort -u | head -60 | sed 's/^/::error::/'
+          tail -30 appstore.log
+          [ $status -eq 0 ] || exit $status
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict>
+          </plist>
+          EOF
+          xcodebuild -exportArchive \
+            -archivePath "$ARCHIVE" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            "${AUTH[@]}" >> appstore.log 2>&1
+          status=$?
+          tail -40 appstore.log
+          rm -rf "$KEY_DIR"
+          [ $status -eq 0 ] || { echo "::error::Экспорт или загрузка не прошли, см. appstore.log"; exit $status; }
+          echo "::notice::Сборка 1.0.0 (${{ github.run_number }}) отправлена в App Store Connect. Через 10-30 минут появится в TestFlight."
+
       - name: Build (xcodebuild archive, no signing)
+        if: ${{ !inputs.appstore }}
         run: |
           set +e
           xcodebuild \
@@ -233,6 +306,7 @@ jobs:
 
       # Псевдоподпись ldid, как в build.yml: SideStore переподписывает приложение своим сертификатом
       - name: Package IPA
+        if: ${{ !inputs.appstore }}
         run: |
           set -e
           brew install ldid > /dev/null
@@ -256,13 +330,14 @@ jobs:
           echo "::notice::HarvestHollow.ipa: $(du -h HarvestHollow.ipa | cut -f1), версия 1.0.0 (${{ github.run_number }})"
 
       - name: Upload IPA
+        if: ${{ !inputs.appstore }}
         uses: actions/upload-artifact@v4
         with:
           name: HarvestHollow-ipa
           path: HarvestHollow.ipa
 
       - name: Publish release
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && !inputs.appstore
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -281,7 +356,7 @@ jobs:
         run: |
           L="$RUNNER_TEMP/ci-logs"
           rm -rf "$L" && mkdir -p "$L"
-          cp prepare.log iap.log admob.log import.log check.log tests.log export.log errors.txt app.txt "$L/" 2>/dev/null || true
+          cp prepare.log appstore.log iap.log admob.log import.log check.log tests.log export.log errors.txt app.txt "$L/" 2>/dev/null || true
           if [ -f build.log ]; then
             tail -400 build.log > "$L/build_tail.txt"
             [ "$(wc -c < build.log)" -lt 20000000 ] && cp build.log "$L/"
