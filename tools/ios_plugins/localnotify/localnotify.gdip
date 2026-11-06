@@ -1,0 +1,17 @@
+[config]
+name="LocalNotify"
+binary="localnotify.xcframework"
+
+initialization="register_localnotify_types"
+deinitialization="unregister_localnotify_types"
+
+[dependencies]
+linked=[]
+embedded=[]
+system=["UserNotifications.framework"]
+
+capabilities=[]
+
+files=[]
+
+[plist]
