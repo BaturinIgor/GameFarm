@@ -79,9 +79,9 @@ func _ready() -> void:
 	ribbon.anchor_left = 0.5
 	ribbon.anchor_right = 0.5
 	ribbon.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	ribbon.offset_top = -30
 	ribbon.set_text(L.t("exp.done"))
 	holder.add_child(ribbon)
+	ribbon.keep_clear(holder, 30, 14)
 
 	var top := MarginContainer.new()
 	top.add_theme_constant_override("margin_top", 12)

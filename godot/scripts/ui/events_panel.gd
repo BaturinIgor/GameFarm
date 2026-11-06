@@ -691,9 +691,9 @@ static func map_card(on_travel: Callable) -> Control:
 	ribbon.anchor_left = 0.5
 	ribbon.anchor_right = 0.5
 	ribbon.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	ribbon.offset_top = -41
 	ribbon.set_text(L.t("event.title"))
 	holder.add_child(ribbon)
+	ribbon.keep_clear(holder, 41, 10)
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
@@ -816,9 +816,9 @@ class BoonPicker extends Control:
 		ribbon.anchor_left = 0.5
 		ribbon.anchor_right = 0.5
 		ribbon.grow_horizontal = Control.GROW_DIRECTION_BOTH
-		ribbon.offset_top = -36
 		ribbon.set_text(L.t("boon.title", [Game.events.event_stage()]))
 		holder.add_child(ribbon)
+		ribbon.keep_clear(holder, 36, 12)
 		var sub := HousePanel.wrapped(L.t("boon.subtitle"), 13, UiKit.INK_SOFT)
 		sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		var top := MarginContainer.new()

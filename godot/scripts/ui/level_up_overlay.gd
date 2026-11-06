@@ -195,6 +195,18 @@ class Ribbon extends Control:
 		label.text = text
 		update_minimum_size()
 
+	## Лента висит в пустом holder и поднята на rise над ним. Holder растягивается так,
+	## чтобы следующая строка столбца (через sep) начиналась на 8 точек ниже ленты с тенью.
+	## Высота ленты зависит от шрифта устройства, поэтому считается по ней самой.
+	func keep_clear(holder: Control, rise: float, sep: float) -> void:
+		offset_top = -rise
+		var fit := func() -> void:
+			var h := maxf(size.y, get_combined_minimum_size().y)
+			holder.custom_minimum_size.y = maxf(0.0, h + 3.0 + 8.0 - rise - sep)
+		resized.connect(fit)
+		minimum_size_changed.connect(fit)
+		fit.call()
+
 	func _get_minimum_size() -> Vector2:
 		return label.get_minimum_size() + Vector2(52, 16)
 
