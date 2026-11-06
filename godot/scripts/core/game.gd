@@ -84,6 +84,9 @@ func _ready() -> void:
 	Store.setup(self)
 	# Реклама за награду (на iOS с плагином AdMob): согласие, запуск SDK, первый ролик
 	Ads.setup(self)
+	# Копия сохранения в iCloud и локальные уведомления (на iOS с плагинами)
+	Cloud.setup(self)
+	Notify.setup(self)
 
 
 func emit_event(name: String, data := {}) -> void:
@@ -94,6 +97,10 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_WM_CLOSE_REQUEST \
 			or what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_GO_BACK_REQUEST:
 		save_now()
+		Cloud.upload(true)
+		Notify.schedule_all()
+	elif what == NOTIFICATION_APPLICATION_RESUMED or what == NOTIFICATION_APPLICATION_FOCUS_IN:
+		Notify.clear()
 
 
 # MARK: Сохранение
@@ -178,6 +185,25 @@ func save_now() -> void:
 	DirAccess.rename_absolute(save_path + ".tmp", save_path)
 	_dirty = false
 	_last_write = Time.get_ticks_msec() / 1000.0
+	Cloud.upload()
+
+
+## Заменить всё сохранение (игра из iCloud): файл переписывается, системы и мир собираются заново.
+func replace_save(data: Dictionary) -> void:
+	if FileAccess.file_exists(save_path):
+		DirAccess.copy_absolute(save_path, save_path.get_basename() + ".before-cloud.json")
+	var f := FileAccess.open(save_path + ".tmp", FileAccess.WRITE)
+	if f == null:
+		return
+	f.store_string(JSON.stringify(data))
+	f.close()
+	DirAccess.rename_absolute(save_path + ".tmp", save_path)
+	save = _load_save()
+	for sys in systems:
+		sys.defaults(save)
+	recalc()
+	_dirty = false
+	get_tree().change_scene_to_file.call_deferred("res://scenes/main.tscn")
 
 
 func show_toast(icon: String, text: String) -> void:

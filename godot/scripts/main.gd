@@ -37,6 +37,9 @@ func _ready() -> void:
 	OfflineOverlay.check()
 	CalendarPanel.check()
 	OfferPopup.check()
+	# Игра с другого устройства в iCloud и вопрос про уведомления (только на iOS с плагинами)
+	Cloud.check()
+	Notify.maybe_ask()
 
 	var fade_layer := CanvasLayer.new()
 	fade_layer.layer = 50

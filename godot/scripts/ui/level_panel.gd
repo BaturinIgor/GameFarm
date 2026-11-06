@@ -502,6 +502,22 @@ func _settings() -> void:
 		func(on: bool) -> void: Settings.set_value("dialogs", on)))
 	game.add_child(_switch_row(L.t("settings.battery"), L.t("settings.battery.hint"), Sound.battery_saver,
 		func(on: bool) -> void: Sound.battery_saver = on))
+	if Notify.LIVE:
+		game.add_child(_switch_row(L.t("settings.notify"), L.t("settings.notify.hint"), Notify.enabled(),
+			func(on: bool) -> void:
+				Settings.set_value("notify", on)
+				if on and Notify.status() == 0:
+					Engine.get_singleton("LocalNotify").request_permission()))
+	# Сохранение в iCloud: только на iOS с плагином
+	if Cloud.LIVE:
+		section_title(L.t("settings.section.cloud"))
+		var cloud := card()
+		cloud.add_child(_switch_row(L.t("settings.cloud"), L.t("settings.cloud.hint"), Cloud.enabled(),
+			func(on: bool) -> void:
+				Settings.set_value("cloud", on)
+				if on:
+					Cloud.upload(true)))
+		_cloud_row(cloud)
 	# Внешний вид
 	section_title(L.t("settings.section.look"))
 	var look := card()
@@ -517,6 +533,29 @@ func _settings() -> void:
 		section_title(L.t("settings.section.purchases"))
 		var buy := card()
 		_purchases_rows(buy)
+
+
+## Что лежит в iCloud и кнопка загрузить оттуда.
+func _cloud_row(c: VBoxContainer) -> void:
+	var m := Cloud.meta()
+	if m.is_empty():
+		return
+	c.add_child(_divider())
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	c.add_child(row)
+	var when := Time.get_datetime_string_from_unix_time(int(m.get("at", 0)), true).substr(0, 16)
+	var l := UiKit.label(L.t("settings.cloud.copy", [int(m.get("level", 1)), when]), 13, UiKit.INK_SOFT)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(l)
+	var load_b := UiKit.button(L.t("cloud.load"), "wood", 13, true)
+	load_b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	load_b.pressed.connect(func() -> void:
+		ConfirmPopup.ask("px:cloud", L.t("cloud.title"), L.t("cloud.confirm", [int(m.get("level", 1)), when]),
+			L.t("cloud.load"), "orange", Cloud.restore))
+	row.add_child(load_b)
 
 
 func _language_row(c: VBoxContainer) -> void:
