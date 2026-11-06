@@ -87,6 +87,8 @@ func _ready() -> void:
 	# Копия сохранения в iCloud и локальные уведомления (на iOS с плагинами)
 	Cloud.setup(self)
 	Notify.setup(self)
+	# Game Center: вход, достижения и таблицы лидеров
+	GCenter.setup(self)
 
 
 func emit_event(name: String, data := {}) -> void:
@@ -99,6 +101,7 @@ func _notification(what: int) -> void:
 		save_now()
 		Cloud.upload(true)
 		Notify.schedule_all()
+		GCenter.sync()
 	elif what == NOTIFICATION_APPLICATION_RESUMED or what == NOTIFICATION_APPLICATION_FOCUS_IN:
 		Notify.clear()
 

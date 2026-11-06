@@ -508,6 +508,10 @@ func _settings() -> void:
 				Settings.set_value("notify", on)
 				if on and Notify.status() == 0:
 					Engine.get_singleton("LocalNotify").request_permission()))
+	# Game Center: достижения и таблицы лидеров (только на iOS с плагином)
+	if GCenter.LIVE:
+		game.add_child(_divider())
+		_game_center_row(game)
 	# Сохранение в iCloud: только на iOS с плагином
 	if Cloud.LIVE:
 		section_title(L.t("settings.section.cloud"))
@@ -533,6 +537,22 @@ func _settings() -> void:
 		section_title(L.t("settings.section.purchases"))
 		var buy := card()
 		_purchases_rows(buy)
+
+
+func _game_center_row(c: VBoxContainer) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	c.add_child(row)
+	var l := UiKit.label("Game Center", 14)
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(l)
+	for v in [["achievements", "gc.achievements"], ["leaderboards", "gc.leaderboards"]]:
+		var b := UiKit.button(L.t(v[1]), "wood", 13, true)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var view: String = v[0]
+		b.pressed.connect(func() -> void: GCenter.show(view))
+		row.add_child(b)
 
 
 ## Что лежит в iCloud и кнопка загрузить оттуда.

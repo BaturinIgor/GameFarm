@@ -106,3 +106,25 @@ func test_week_has_six_goals() -> void:
 	eq(Game.daily.week_goals().size(), DailySystem.WEEK_CRYSTALS.size(), "у новичка тоже шесть")
 	for t in ["cook", "chest", "hatch", "mine", "guardian", "treasure", "order"]:
 		check(L.t("daily." + t, [1]) != "daily." + t, "есть текст цели %s" % t)
+
+
+func test_game_center_lists() -> void:
+	var all := GCenter.all_achievements()
+	eq(all.size(), Quests.achievements().size() + Trophies.IDS.size(), "все достижения и трофеи")
+	check(GCenter.pending_achievements().is_empty(), "у нового игрока нечего отправлять")
+	Game.save["kills"] = 60
+	check("trophy.wolf" in GCenter.pending_achievements(), "трофей волка выполнен")
+	GCenter._state()["ach"].append("trophy.wolf")
+	check(not "trophy.wolf" in GCenter.pending_achievements(), "отправленное не шлём снова")
+	set_level(12)
+	eq(int(GCenter.pending_scores().get("level", 0)), 12, "уровень в таблицу")
+	GCenter._state()["scores"]["level"] = 12
+	check(not GCenter.pending_scores().has("level"), "тот же уровень не шлём")
+	var m := GCenter.manifest()
+	var pts := 0
+	for a in m["achievements"]:
+		pts += int(a["points"])
+		check(int(a["points"]) >= 1 and int(a["points"]) <= 100, "очки достижения 1-100")
+		eq(a["names"].size(), L.CODES.size(), "название на всех языках")
+	check(pts <= 1000, "не больше 1000 очков")
+	eq(m["leaderboards"].size(), GCenter.BOARDS.size())
