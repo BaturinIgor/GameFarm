@@ -54,3 +54,55 @@ func test_story_migration_keeps_finale() -> void:
 	again["heart"]["ch"] = 12
 	fresh(again)
 	eq(int(Game.save["heart"]["ch"]), 12, "сохранение версии 2 не сдвигается")
+
+
+func test_task_farm_events() -> void:
+	# Старый круг не меняется до NEW_FROM, новый - со всеми видами
+	for i in FarmEvents.NEW_FROM:
+		eq(FarmEvents.run(i)["event"], FarmEvents.OLD_IDS[i % FarmEvents.OLD_IDS.size()], "проход %d как в 1.0" % i)
+	var seen := {}
+	for i in FarmEvents.IDS.size():
+		seen[FarmEvents.run(FarmEvents.NEW_FROM + i)["event"]] = true
+	eq(seen.size(), FarmEvents.IDS.size(), "в новом круге все ивенты")
+	for e in FarmEvents.ACTIONS:
+		eq(FarmEvents.kind(e), "task")
+		check(L.t("farm." + e) != "farm." + e, "есть название %s" % e)
+		for a in FarmEvents.ACTIONS[e]:
+			check(L.t("farm.act." + a) != "farm.act." + a, "есть текст очков за %s" % a)
+	eq(FarmEvents.action_points("workshopMarathon", "produce", {"amount": 7}), 7, "товары - за штуку")
+	eq(FarmEvents.action_points("workshopMarathon", "order", {}), 20)
+	eq(FarmEvents.action_points("workshopMarathon", "kill", {}), 0, "чужие дела не считаются")
+
+
+func test_task_event_counts_actions() -> void:
+	set_level(Events.MIN_LEVEL + 5)
+	# Найти проход марафона мастерских и встать в его середину
+	var idx := FarmEvents.NEW_FROM
+	while FarmEvents.run(idx)["event"] != "workshopMarathon":
+		idx += 1
+	Clock.offset = float(FarmEvents.run(idx)["start"]) + 3600.0 - Time.get_unix_time_from_system()
+	check(Game.farm.is_open(), "ивенты открыты")
+	Game.farm.sync()
+	var before := Game.farm.points()
+	Game.emit_event("produce", {"kind": "planks", "amount": 5})
+	Game.emit_event("order", {"cart": 0})
+	Game.emit_event("kill", {"monster": "slime", "level": 1, "boss": false})
+	eq(Game.farm.points(), before + 25, "очки за товары и заказ")
+
+
+func test_week_has_six_goals() -> void:
+	set_level(20)
+	Game.save["weekly"] = {"week": -1, "v": 1, "goals": [], "bonus": false}
+	var goals := Game.daily.week_goals()
+	eq(goals.size(), DailySystem.WEEK_CRYSTALS.size(), "шесть целей недели")
+	var types := {}
+	for g in goals:
+		types[g["type"]] = true
+		check(L.t("daily." + str(g["type"]), [1]) != "daily." + str(g["type"]), "есть текст цели %s" % g["type"])
+	eq(types.size(), goals.size(), "цели не повторяются")
+	# Новичок: всё равно шесть целей
+	fresh()
+	set_level(1)
+	eq(Game.daily.week_goals().size(), DailySystem.WEEK_CRYSTALS.size(), "у новичка тоже шесть")
+	for t in ["cook", "chest", "hatch", "mine", "guardian", "treasure", "order"]:
+		check(L.t("daily." + t, [1]) != "daily." + t, "есть текст цели %s" % t)

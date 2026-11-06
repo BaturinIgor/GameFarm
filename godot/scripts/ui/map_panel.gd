@@ -18,7 +18,10 @@ var tab := "locations"
 func _init(start_tab := "") -> void:
 	title_key = "hud.map"
 	planet = Locations.planet(Game.current)
-	if start_tab != "":
+	# Можно открыть сразу на планете: MapPanel.new("ember")
+	if start_tab in WorldGraph.PLANETS:
+		planet = start_tab
+	elif start_tab != "":
 		tab = start_tab
 
 
