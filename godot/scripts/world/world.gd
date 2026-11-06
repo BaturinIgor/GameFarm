@@ -93,13 +93,15 @@ func _ready() -> void:
 	L.language_changed.connect(_on_language)
 
 
-## Новый язык: подпись склада и таблички ворот (остальное перерисуется при смене локации).
+## Новый язык: локация строится заново, чтобы имена жителей и подписи зданий тоже сменились.
 func _on_language() -> void:
 	if _storage_title != null and is_instance_valid(_storage_title):
 		_storage_title.text = L.t("scene.storage")
 	for g in gates:
 		if is_instance_valid(g):
 			g.refresh_text()
+	if loaded != "":
+		rebuild_here.call_deferred()
 
 
 func set_fader(rect: ColorRect) -> void:
