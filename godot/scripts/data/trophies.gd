@@ -45,7 +45,7 @@ static func progress(id: String) -> int:
 				if bool(Game.collection.call("is_complete", c)):
 					n += 1
 			return n
-		"cup": return int(s.get("rebirths", 0))
+		"cup": return mini(1, int(s.get("altar", 0)) + int(s.get("rebirths", 0)))
 	return 0
 
 

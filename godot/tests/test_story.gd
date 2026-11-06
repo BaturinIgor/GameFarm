@@ -163,3 +163,26 @@ func test_save_roundtrip() -> void:
 	eq(int(bad["heart"]["pages"]), 0)
 	eq(int(bad["shards"]), 0)
 	eq(int(bad["altar"]), Story.ALTAR.size())
+
+
+func test_heart_gives_sparks() -> void:
+	set_level(Story.MIN_LEVEL)
+	Game.save["current"] = Story.loc(0)
+	Game.save["heart"] = {"ch": 0, "pages": Story.PAGES, "pity": 0, "gift": true, "given": {}, "kills": Story.kills(0)}
+	Game.save["sparks"] = 0
+	check(Game.story.can_awaken())
+	var out := Game.story.awaken_heart()
+	eq(int(out["sparks"]), Story.sparks_for(0))
+	eq(Game.legacy.sparks(), Story.sparks_for(0), "искры наследия за Сердце")
+
+
+func test_rebirth_perks_refunded() -> void:
+	# Перерождения нет: бонусы, которые работали только при нём, возвращаются искрами.
+	var s := {"legacy": {"harvest": 2, "capital": 2, "companions": 1}, "sparks": 1}
+	Game.legacy.defaults(s)
+	eq(int(s["legacy"].get("harvest", 0)), 2, "купленные ранги остаются")
+	check(not s["legacy"].has("capital") and not s["legacy"].has("companions"), "старые бонусы убраны")
+	eq(int(s["sparks"]), 1 + Legacy.cost("capital", 0) + Legacy.cost("capital", 1) + Legacy.cost("companions", 0), "искры вернулись")
+	Game.legacy.defaults(s)
+	eq(int(s["sparks"]), 1 + Legacy.cost("capital", 0) + Legacy.cost("capital", 1) + Legacy.cost("companions", 0), "второй раз не возвращаются")
+	check(not Game.legacy.has_method("rebirth"), "перерождения больше нет")

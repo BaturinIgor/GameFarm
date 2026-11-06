@@ -126,8 +126,9 @@ func awaken_heart() -> Dictionary:
 	if not can_awaken():
 		return {}
 	var ch := chapter()
-	var out := {"shards": Story.shards_for(ch), "key": Story.key_for(ch), "ch": ch}
+	var out := {"shards": Story.shards_for(ch), "key": Story.key_for(ch), "ch": ch, "sparks": Story.sparks_for(ch)}
 	add_shards(int(out["shards"]), false)
+	Game.legacy.add_sparks(int(out["sparks"]))
 	Game.chests.add_keys(str(out["key"]), 1, false)
 	Game.save["heart"] = {"ch": ch + 1, "pages": 0, "pity": 0, "gift": false, "given": {}, "kills": 0}
 	Sound.play("levelUp")

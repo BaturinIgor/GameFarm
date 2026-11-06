@@ -70,6 +70,15 @@ static func kills(ch: int) -> int:
 	return KILLS_BASE + KILLS_STEP * ch
 
 
+## Искры наследия за пробуждённое Сердце (вместо перерождения): 4, 6, 8 ... 24.
+const SPARKS_BASE := 4
+const SPARKS_STEP := 2
+
+
+static func sparks_for(ch: int) -> int:
+	return SPARKS_BASE + SPARKS_STEP * ch
+
+
 static func shards_for(ch: int) -> int:
 	return FINAL_SHARDS if ch == CHAPTERS.size() - 1 else SHARDS_PER_CHAPTER
 

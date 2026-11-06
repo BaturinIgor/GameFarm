@@ -135,8 +135,9 @@ func _chapter_card(ch: int) -> void:
 		L.t("heart.step.killsHint", [Locations.name_of(loc)])))
 
 	# Награда и пробуждение
-	var reward := HBoxContainer.new()
-	reward.add_theme_constant_override("separation", 6)
+	var reward := HFlowContainer.new()
+	reward.add_theme_constant_override("h_separation", 6)
+	reward.add_theme_constant_override("v_separation", 4)
 	reward.add_child(UiKit.label(L.t("heart.reward"), 12, UiKit.INK_SOFT))
 	reward.add_child(UiKit.shard_icon(18))
 	reward.add_child(UiKit.label("x%d" % Story.shards_for(ch), 13))
@@ -144,6 +145,8 @@ func _chapter_card(ch: int) -> void:
 	key.modulate = Chests.KEY_TINT.get(Story.key_for(ch), Color.WHITE)
 	reward.add_child(key)
 	reward.add_child(UiKit.label(Chests.key_name(Story.key_for(ch)), 13))
+	reward.add_child(UiKit.icon("spark", 18))
+	reward.add_child(UiKit.label("x%d" % Story.sparks_for(ch), 13))
 	reward.add_child(UiKit.label(L.t("heart.yield", [int(round(Story.HEART_YIELD * 100.0))]), 13, UiKit.GOOD))
 	v.add_child(reward)
 	var awaken := UiKit.button(L.t("heart.awaken"), "green", 16)
