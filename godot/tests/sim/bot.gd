@@ -398,8 +398,14 @@ func _talent_order() -> Array:
 		var tb := Talents.tier(b)
 		if ta != tb:
 			return ta < tb
-		return pref.find(Talents.branch(a)) < pref.find(Talents.branch(b)))
+		return _branch_rank(pref, Talents.branch(a)) < _branch_rank(pref, Talents.branch(b)))
 	return ids
+
+
+## Место ветки в предпочтениях профиля; ветки вне списка (усадьба) - в конце.
+static func _branch_rank(pref: Array, b: String) -> int:
+	var i := pref.find(b)
+	return i if i >= 0 else pref.size()
 
 
 func _build() -> void:

@@ -222,7 +222,6 @@ func tick() -> void:
 			Game.mark_dirty()
 			Game.save_now()
 	_refill_orders()
-	Game.academy.tick()
 
 
 func speedup_cost(id: String) -> int:

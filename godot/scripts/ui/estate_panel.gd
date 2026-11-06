@@ -5,7 +5,6 @@ extends Sheet
 
 var tab := "buildings"
 var _tick := 0.0
-var _academy_pick := ""
 
 
 func _init(start_tab := "") -> void:
@@ -43,8 +42,6 @@ func build_top() -> void:
 	var items := [["buildings", L.t("estate.tab.buildings"), e.ready_count() + e.upgradable_count(), "hammer"]]
 	if e.orders_open():
 		items.append(["orders", L.t("estate.tab.orders"), e.ready_orders() + Game.fair.ready_count(), "quest"])
-	if Game.academy.open():
-		items.append(["academy", L.t("estate.tab.academy"), 0, "book"])
 	top_bar.add_child(UiKit.tabs(items, tab, func(id: String) -> void:
 		tab = id
 		scroll_to_top()))
@@ -54,8 +51,6 @@ func build() -> void:
 	Game.estate.tick()
 	if tab == "orders" and Game.estate.orders_open():
 		_build_orders()
-	elif tab == "academy" and Game.academy.open():
-		_build_academy()
 	else:
 		_build_buildings()
 
@@ -65,6 +60,14 @@ func build() -> void:
 func _build_buildings() -> void:
 	var e := Game.estate
 	content.add_child(_status_row())
+	var talents := UiKit.button(L.t("estate.talents"), "blue", 14, true)
+	talents.icon = Sprites.icon("book")
+	talents.add_theme_constant_override("icon_max_width", 20)
+	talents.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	talents.pressed.connect(func() -> void:
+		if Hud.current != null:
+			Hud.current.open_window(TalentsPanel.new("estate")))
+	content.add_child(talents)
 	if e.ready_count() > 0:
 		var all := UiKit.button(L.t("estate.collectAll"), "green", 15)
 		all.icon = Sprites.icon("basket")
@@ -189,9 +192,6 @@ func _effect_text(id: String) -> String:
 			var t := e.working_level(id)
 			return L.t("estate.tower.effect", [Raids.tower_count(lvl), Fmt.n(int(Raids.tower_damage(t))),
 				Raids.tower_count(lvl + 1)])
-		"academy":
-			return L.t("estate.academy.effect", [mini(Academy.MAX, (lvl + 1) / 2), mini(Academy.MAX, (lvl + 2) / 2)]) \
-				if lvl > 0 else Estate.info(id)
 		"camp":
 			return L.t("estate.camp.effect", [Wild.squads(lvl), Wild.squads(lvl + 1)]) if lvl > 0 else Estate.info(id)
 		"wall":
@@ -592,15 +592,6 @@ static func _wrap(text: String, font_size: int, color := UiKit.INK) -> Label:
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	l.custom_minimum_size = Vector2(80, 0)
 	return l
-
-
-# MARK: Академия
-
-## Дерево исследований; выбранный узел запоминается, пока окно открыто.
-func _build_academy() -> void:
-	content.add_child(AcademyTree.new(_academy_pick, func(id: String) -> void:
-		_academy_pick = id
-		_dirty = true))
 
 
 ## Кто заказал: по тому, чего в заказе больше всего (доски - плотник, руда - кузнец, урожай - пекарня...).
