@@ -4,8 +4,8 @@ extends Sheet
 ## Вылупление показывает HatchOverlay.
 
 ## Выбор родителей для гнезда: первый и второй.
-var _pick_a := ""
-var _pick_b := ""
+static var _pick_a := ""
+static var _pick_b := ""
 var _timer_labels: Array = []
 var _was_ready := false
 var _was_nest_ready := false

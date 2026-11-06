@@ -578,6 +578,18 @@ func _extra(k: int) -> void:
 			_shot("6_chests_packs")
 			_check_layout("chests_packs")
 			ChestsPanel.debug_packs = false
+			# Гнездо без пары: выбор родителей, первые два выбраны
+			Game.save["incubator"]["nest"] = {}
+			for id in Game.incubator.parents().slice(0, 2):
+				if IncubatorPanel._pick_a == "":
+					IncubatorPanel._pick_a = id
+				else:
+					IncubatorPanel._pick_b = id
+			main.hud.open_window(IncubatorPanel.new())
+		_ when k == 57 + 2 * Story.count():
+			_scroll_window(560)
+		_ when k == 58 + 2 * Story.count():
+			_shot("8_incubator_pick")
 			main.hud.close_window()
 			_step = 5
 			_time = 300.0
