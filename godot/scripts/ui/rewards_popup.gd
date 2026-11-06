@@ -32,6 +32,7 @@ static func show_items(list: Array, title := "rewards.title") -> void:
 
 ## Всё, что может прийти наградой: валюты, склад, семена, блюда, карты, украшения, образы.
 static func snapshot() -> Dictionary:
+	Game.absorb_old_currencies(Game.save)
 	var s := Game.save
 	return {
 		"coins": int(s.get("coins", 0)),
@@ -42,6 +43,7 @@ static func snapshot() -> Dictionary:
 		"tickets": int(s.get("tickets", 0)),
 		"sparks": int(s.get("sparks", 0)),
 		"shards": int(s.get("shards", 0)),
+		"lamps": int(s["mine"].get("lamps", 0)) if s.get("mine") is Dictionary else 0,
 		"maps": int(s.get("maps", 0)),
 		"keys": (s["chests"]["keys"] as Dictionary).duplicate() if s.get("chests") is Dictionary else {},
 		"eggs": _egg_counts(),
@@ -80,6 +82,7 @@ static func diff(a: Dictionary, b: Dictionary) -> Array:
 	add.call("px:spark", int(b["sparks"]) - int(a["sparks"]))
 	add.call("px:tmap", int(b["maps"]) - int(a["maps"]))
 	add.call("shard", int(b["shards"]) - int(a["shards"]))
+	add.call("px:flame", int(b["lamps"]) - int(a["lamps"]))
 	# Ключи сундуков: значок ключа и сколько (вид ключа - в названии сундука)
 	for k in b["keys"]:
 		add.call("px:key", int(b["keys"][k]) - int(a["keys"].get(k, 0)))

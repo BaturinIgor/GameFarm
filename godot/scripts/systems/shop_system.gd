@@ -22,9 +22,9 @@ const DEAL_DISCOUNT := 0.4
 
 ## Лавка за кристаллы: цена и что даёт. Образы из коллекции добавляются отдельно (skin:<id>).
 const MARKET := {
-	"ticket1": {"price": 40, "icon": "ticket"},
-	"ticket5": {"price": 170, "icon": "ticket"},
-	"map1": {"price": 60, "icon": "tmap"},
+	"ticket1": {"price": 8, "icon": "ticket"},
+	"ticket5": {"price": 30, "icon": "ticket"},
+	"map1": {"price": 20, "icon": "tmap"},
 	"luck30": {"price": 25, "icon": "clover"},
 	"coins": {"price": 30, "icon": "moneybag"},
 	"planks": {"price": 30, "icon": "planks"},

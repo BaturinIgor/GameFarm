@@ -961,7 +961,7 @@ func _build_free() -> void:
 static func tagline(product: String) -> String:
 	match product:
 		"skins": return L.t("offer.tag.skins", [Skins.collection().size()])
-		"tickets": return L.t("offer.tag.tickets", [Expeditions.TICKET_PACK])
+		"tickets": return L.t("offer.tag.tickets", [Mine.LAMP_PACK])
 	return L.t(Ads.k("offer.tag.pro") if product == "pro" else "offer.tag." + product)
 
 
@@ -997,7 +997,7 @@ static func perks(product: String) -> Array:
 		"skins":
 			return [["px:wardrobe", L.t("skins.subtitle", [Skins.collection().size()])]]
 		"tickets":
-			return [["px:ticket", L.t("tickets.subtitle", [Expeditions.TICKET_PACK])]]
+			return [["px:ticket", L.t("tickets.subtitle", [Mine.LAMP_PACK])]]
 		"eventPass":
 			var skin := Events.skin_of(Events.current()["event"])
 			return [["skin:" + skin, L.t("event.vip.desc", [Skins.name_of(skin)])]]
@@ -1396,8 +1396,8 @@ func _tickets_row() -> PanelContainer:
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_child(col)
-	col.add_child(_wrap(L.t("offer.tag.tickets", [Expeditions.TICKET_PACK]), 15))
-	col.add_child(UiKit.label(L.t("tickets.have", [Game.premium.tickets()]), 12, UiKit.INK_SOFT))
+	col.add_child(_wrap(L.t("offer.tag.tickets", [Mine.LAMP_PACK]), 15))
+	col.add_child(UiKit.label(L.t("tickets.have", [Game.mine.lamps()]), 12, UiKit.INK_SOFT))
 	var b := UiKit.button(Store.price("tickets"), "blue", 14, true)
 	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	if Store.busy == "tickets":

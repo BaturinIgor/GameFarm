@@ -16,7 +16,6 @@ const MINI_PILLS := [
 	"res://scripts/ui/raid_pill.gd",
 	"res://scripts/ui/event_pill.gd",
 	"res://scripts/ui/meal_pill.gd",
-	"res://scripts/ui/expedition_pill.gd",
 	"res://scripts/ui/event_map_pill.gd",
 ]
 

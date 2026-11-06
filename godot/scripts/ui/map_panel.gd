@@ -11,8 +11,7 @@ static var _planet_tex: Dictionary = {}
 ## Выбранная на схеме локация ("" - текущая).
 var selected := ""
 var planet := "home"
-var _ticket_ready := false
-## Вкладка: locations (планеты и схема), expeditions (экспедиции и билеты), garden (королевский сад).
+## Вкладка: locations (планеты и схема), garden (королевский сад).
 var tab := "locations"
 
 
@@ -25,9 +24,7 @@ func _init(start_tab := "") -> void:
 
 ## Открыли из нижней панели: вкладка, где горит отметка.
 func focus_attention() -> void:
-	if Game.premium.free_ticket_ready():
-		tab = "expeditions"
-	elif Game.world_map.openable_gates() == 0 and garden_chest_ready():
+	if Game.world_map.openable_gates() == 0 and garden_chest_ready():
 		tab = "garden"
 
 
@@ -39,11 +36,10 @@ static func garden_chest_ready() -> bool:
 	return not (at is float or at is int) or float(at) <= Time.get_unix_time_from_system()
 
 
-## Вкладки под шапкой: схема мира отдельно от экспедиций и сада, без сплошного полотна.
+## Вкладки под шапкой: схема мира отдельно от сада, без сплошного полотна.
 func build_top() -> void:
 	var items := [
 		["locations", L.t("map.tab.locations"), Game.world_map.openable_gates()],
-		["expeditions", L.t("exp.title"), 1 if Game.premium.free_ticket_ready() else 0],
 		["garden", L.t("map.tab.garden"), 1 if garden_chest_ready() else 0],
 	]
 	top_bar.add_child(UiKit.tabs(items, tab, func(id: String) -> void:
@@ -51,24 +47,10 @@ func build_top() -> void:
 		scroll_to_top()))
 
 
-func _process(delta: float) -> void:
-	# Бесплатный билет созрел, пока окно открыто: показать кнопку
-	var ticket := Game.premium.free_ticket_ready()
-	if ticket != _ticket_ready:
-		_ticket_ready = ticket
-		_dirty = true
-	super(delta)
-
-
 func build() -> void:
-	_ticket_ready = Game.premium.free_ticket_ready()
-	match tab:
-		"expeditions":
-			content.add_child(_expeditions_card())
-			return
-		"garden":
-			content.add_child(_garden_card())
-			return
+	if tab == "garden":
+		content.add_child(_garden_card())
+		return
 	content.add_child(_planet_picker())
 	if planet == "home":
 		content.add_child(WorldGraphView.new(selected, _select))
@@ -338,128 +320,6 @@ static func location_resources(id: String) -> Array:
 			if not y[0] in out:
 				out.append(y[0])
 	return out
-
-
-# MARK: Экспедиции
-
-func _expeditions_card() -> Control:
-	var parts := _ribbon_card(L.t("exp.title"), "blue")
-	var v: VBoxContainer = parts[1]
-	var p := Game.premium
-	# Описание во всю ширину, под ним кошелёк (билеты и карты) и время до бесплатного билета в одну строку
-	# (или кнопка бесплатного билета ниже): раньше кошелёк стоял справа от описания, и под ним было пусто
-	var sub := _wrap(L.t("exp.subtitle2"), 12, UiKit.INK_SOFT)
-	v.add_child(sub)
-	var top := HBoxContainer.new()
-	top.add_theme_constant_override("separation", 10)
-	v.add_child(top)
-	var wallet := PanelContainer.new()
-	var ws := UiKit.box(UiKit.PARCHMENT_DEEP, Color(UiKit.WOOD_DARK, 0.5), 14, 2, false)
-	ws.content_margin_left = 10
-	ws.content_margin_right = 10
-	ws.content_margin_top = 4
-	ws.content_margin_bottom = 4
-	wallet.add_theme_stylebox_override("panel", ws)
-	wallet.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	top.add_child(wallet)
-	var wrow := HBoxContainer.new()
-	wrow.add_theme_constant_override("separation", 4)
-	wallet.add_child(wrow)
-	wrow.add_child(UiKit.icon("ticket", 20))
-	wrow.add_child(UiKit.label(str(p.tickets()), 16))
-	var tmap := UiKit.icon("tmap", 20)
-	wrow.add_child(tmap)
-	wrow.add_child(UiKit.label(str(p.maps()), 16))
-
-	if p.free_ticket_ready():
-		var free := UiKit.button(L.t("exp.freeTicket"), "orange", 15)
-		free.icon = Sprites.icon("ticket")
-		free.add_theme_constant_override("icon_max_width", 20)
-		free.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		UiKit.attention(free)
-		free.pressed.connect(func() -> void: Game.premium.claim_free_ticket())
-		v.add_child(free)
-	elif p.next_free_ticket() != null:
-		var next := float(p.next_free_ticket())
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 5)
-		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		var clock := UiKit.icon("stopwatch", 14)
-		clock.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row.add_child(clock)
-		var left := func() -> String:
-			return L.t("exp.nextTicket", [TraderPanel.countdown(next - Time.get_unix_time_from_system())])
-		var live := CombatCards.LiveLabel.new(left, 12, UiKit.INK_SOFT)
-		live.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		live.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		row.add_child(live)
-		top.add_child(row)
-
-	var busy := p.expedition() != null or Game.dungeons.run != null
-	for id in Expeditions.ids():
-		v.add_child(_expedition_row(id, busy))
-	return parts[0]
-
-
-func _expedition_row(id: String, busy: bool) -> PanelContainer:
-	var price := Expeditions.cost(id)
-	var maps := Expeditions.maps(id)
-	var box := PanelContainer.new()
-	var s := UiKit.box(Color(UiKit.PARCHMENT_DEEP, 0.55), Color(UiKit.WOOD_DARK, 0.3), 14, 1, false)
-	s.set_content_margin_all(10)
-	box.add_theme_stylebox_override("panel", s)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
-	box.add_child(row)
-	var ic := UiKit.icon(Expeditions.icon(id), 36)
-	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	row.add_child(ic)
-	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 3)
-	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(col)
-	col.add_child(_wrap(Locations.name_of(id), 14, UiKit.INK))
-	col.add_child(_wrap(Expeditions.perk(id), 12, UiKit.INK_SOFT))
-	col.add_child(UiKit.label(L.t("exp.minutes", [int(Expeditions.duration(id) / 60.0)]), 11, UiKit.INK_SOFT))
-	# Не хватает инструментов: какие уровни нужны (красным), перед входом ещё и окно с вопросом
-	var gear := Expeditions.gear(id)
-	for m in gear["missing"]:
-		var need := HBoxContainer.new()
-		need.add_theme_constant_override("separation", 4)
-		need.add_child(UiKit.icon(Tools.icon_name(str(m["tool"])), 14))
-		var nl := UiKit.label(L.t("exp.gear.need", [L.t("tool." + str(m["tool"])), int(m["need"]), int(m["have"])]),
-			11, UiKit.BAD)
-		nl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		nl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		need.add_child(nl)
-		col.add_child(need)
-	var parts: Array = [["t", L.t("exp.go")], ["t", str(price)], ["i", "ticket"]]
-	if maps > 0:
-		parts.append_array([["t", str(maps)], ["i", "tmap"]])
-	var tone := "purple" if maps > 0 else ("orange" if price >= 3 else "green")
-	var b := icon_button(parts, tone)
-	b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	var p := Game.premium
-	b.disabled = p.tickets() < price or p.maps() < maps or busy
-	var go := func() -> void:
-		if Game.premium.start_expedition(id):
-			close()
-	b.pressed.connect(func() -> void:
-		var g := Expeditions.gear(id)
-		if (g["missing"] as Array).is_empty():
-			go.call()
-			return
-		var lines := PackedStringArray()
-		for m in g["missing"]:
-			lines.append(L.t("exp.gear.need", [L.t("tool." + str(m["tool"])), int(m["need"]), int(m["have"])]))
-		var text := L.t("exp.gear.text", [int(g["blocked"]), int(g["total"])]) + "\n" + "\n".join(lines)
-		ConfirmPopup.ask("px:" + Tools.icon_name(str(g["missing"][0]["tool"])), L.t("exp.gear.title"), text,
-			L.t("exp.gear.go"), "orange", go, L.t("exp.gear.workshop"), func() -> void:
-				if Hud.current != null:
-					Hud.current.open_window(WorkshopPanel.new())))
-	col.add_child(b)
-	return box
 
 
 # MARK: Королевский сад

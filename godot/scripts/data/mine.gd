@@ -10,6 +10,10 @@ const H := 9
 const MIN_LEVEL := 5
 
 const LAMPS_MAX := 5
+## Сколько фонарей можно держать про запас (купленные и бывшие билеты).
+const LAMPS_HOLD := 99
+## Платный набор фонарей (бывший набор билетов, продукт tickets5).
+const LAMP_PACK := 20
 const LAMP_SECONDS := 1800.0
 ## Полный запас фонарей за кристаллы.
 const LAMPS_PRICE := 30

@@ -30,17 +30,14 @@ static func sectors(ring: int) -> Array:
 	var spec: Dictionary = RINGS[ring]
 	var h: Array = spec["hours"]
 	var out: Array = []
-	var expeditions := Expeditions.ids()
 	for i in SECTORS:
 		var roll := rng.randf()
 		var kind := "deposit"
 		# Первые два сектора кольца - всегда месторождения, остальные - что выпадет
 		if i >= 2:
-			kind = "lair" if roll < 0.3 else ("ruins" if roll < 0.6 else ("cache" if roll < 0.85 else "deposit"))
+			kind = "lair" if roll < 0.3 else ("cache" if roll < 0.7 else "deposit")
 		var hours := snappedf(rng.randf_range(float(h[0]), float(h[1])), 0.25)
 		var exp_id := ""
-		if kind == "ruins" and not expeditions.is_empty():
-			exp_id = expeditions[rng.randi() % expeditions.size()]
 		out.append({"id": "%d_%d" % [ring, i], "kind": kind, "ring": ring, "hours": hours, "expedition": exp_id})
 	return out
 
