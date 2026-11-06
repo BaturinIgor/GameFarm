@@ -98,6 +98,13 @@ func build(world: World) -> void:
 			if p == null:
 				continue
 			slots.append({"kind": e[0], "level": level, "point": p, "node": null, "respawn": randf_range(0.5, 4.0)})
+	# Страж локации на дальних планетах: раз в день, пока его не победили
+	var g := Planets.guardian(world.loaded)
+	if not g.is_empty() and not Game.world_map.guardian_done(world.loaded):
+		var gp = _far_point(world)
+		if gp != null:
+			slots.append({"kind": g["kind"], "level": level + int(g["plus"]), "point": gp, "node": null,
+				"respawn": 1.0, "boss": true, "tint": g["tint"], "guardian": world.loaded})
 	# Фарм-ивент "охота": ивентовые монстры своего цвета на каждой основной локации
 	var hunt := Game.farm.hunt_monster()
 	if hunt != "":
@@ -317,6 +324,8 @@ func damage_monster(foe: MonsterNode, damage: float, from: Vector2, strong: bool
 			s["respawn"] = INF if w.spec["kind"] == "dungeon" or foe.boss or s.get("raid", false) else randf_range(35.0, 55.0)
 			if s.get("raid", false):
 				Game.raids.note_killed()
+			if s.has("guardian"):
+				Game.world_map.guardian_defeated(str(s["guardian"]))
 	return result
 
 
@@ -338,7 +347,9 @@ func _update_monsters(world: World, dt: float, stats: Stats) -> void:
 				if s.has("farm") and s["farm"] != Game.farm.hunt_monster_event():
 					s["respawn"] = INF
 					continue
-				m = MonsterNode.new(s["kind"], int(s["level"]), point, Monsters.roll_traits(int(s["level"])), false, s.get("tint"))
+				var is_boss := bool(s.get("boss", false))
+				var traits: Array = Monsters.pick_traits(2) if is_boss else Monsters.roll_traits(int(s["level"]))
+				m = MonsterNode.new(s["kind"], int(s["level"]), point, traits, is_boss, s.get("tint"))
 				if s.has("farm"):
 					m.set_meta("farm", true)
 				world.entities.add_child(m)
@@ -362,7 +373,7 @@ func _update_monsters(world: World, dt: float, stats: Stats) -> void:
 	if boss != null:
 		var dungeon := Dungeons.of_location(world.loaded)
 		var title := Dungeons.boss_name(dungeon) if world.spec["kind"] == "dungeon" and dungeon != "" \
-			else Monsters.name_of(boss.kind)
+			else (Planets.guardian_name(world.loaded) if Planets.GUARDIAN.has(world.loaded) else Monsters.name_of(boss.kind))
 		Game.combat.set_boss_info({"name": title, "fraction": boss.hp_fraction()})
 	Game.combat.set_in_combat(combat)
 	_update_pets(world, dt, stats)

@@ -14,6 +14,8 @@ const KINDS := [
 	"planks", "slats", "brick", "lime", "iron_bar", "gold_bar", "flour", "oil", "cloth", "silk", "cut_gem", "jewel",
 	# Редкие материалы диких земель (Wild.RINGS)
 	"copper", "amber", "amethyst", "emerald",
+	# Дальние планеты (Planets.RESOURCE): своё в каждой локации
+	"emberstone", "resin", "phoenixFeather", "starlight", "frostglass", "azurite",
 ]
 
 const CATEGORY := {
@@ -22,6 +24,8 @@ const CATEGORY := {
 	"coal": "ore", "iron": "ore", "gold": "ore", "sulfur": "ore", "obsidian": "ore",
 	"diamond": "gem", "crystal": "gem", "ruby": "gem",
 	"copper": "gem", "amber": "gem", "amethyst": "gem", "emerald": "gem",
+	"emberstone": "ore", "frostglass": "gem", "azurite": "gem",
+	"resin": "treasure", "phoenixFeather": "treasure", "starlight": "treasure",
 	"berries": "food", "apples": "food", "mushrooms": "food", "carrots": "food", "herbs": "food", "fish": "food",
 	"cactus": "food", "coconut": "food", "banana": "food", "pineapple": "food", "goldenApple": "food",
 	"egg": "farm", "milk": "farm", "wool": "farm", "honey": "farm", "feather": "farm",
@@ -38,6 +42,7 @@ const PRICE := {
 	"wood": 1, "bamboo": 3, "stone": 1, "clay": 3, "coal": 3, "iron": 6, "gold": 15, "sulfur": 20, "obsidian": 30,
 	"ice": 8, "diamond": 60, "crystal": 120, "ruby": 150,
 	"copper": 40, "amber": 90, "amethyst": 180, "emerald": 320,
+	"emberstone": 240, "resin": 220, "phoenixFeather": 300, "starlight": 280, "frostglass": 320, "azurite": 360,
 	"berries": 1, "apples": 2, "mushrooms": 2, "carrots": 2, "herbs": 3, "fish": 4, "cactus": 5, "coconut": 6,
 	"banana": 8, "pineapple": 10, "goldenApple": 60,
 	"egg": 4, "milk": 6, "wool": 8, "honey": 12, "feather": 5,
@@ -54,6 +59,7 @@ const ORE_COLOR := {
 	"diamond": Color(0.45, 0.9, 1.0), "ruby": Color(0.95, 0.15, 0.3), "pearl": Color(0.96, 0.94, 0.98),
 	"copper": Color(0.88, 0.54, 0.29), "amber": Color(1.0, 0.71, 0.16), "amethyst": Color(0.72, 0.47, 0.94),
 	"emerald": Color(0.25, 0.82, 0.48),
+	"emberstone": Color(1.0, 0.45, 0.15), "frostglass": Color(0.7, 0.92, 1.0), "azurite": Color(0.2, 0.45, 1.0),
 	"goldenApple": Color(1.0, 0.8, 0.2),
 }
 

@@ -109,6 +109,35 @@ ESSENCE = [
     "....3333....",
 ]
 
+# Перо феникса: изогнутое перо с огненным краем
+FEATHER = [
+    ".........11",
+    "........101",
+    ".......1012",
+    "......10122",
+    ".....101122",
+    "....1011223",
+    "...10112233",
+    "..1011223.",
+    ".101122 3.".replace(" ", "3"),
+    ".11223....",
+    "1223......",
+    "33........",
+]
+# Звёздный свет: пятиконечная звезда с бликом
+STAR = [
+    ".....11.....",
+    ".....101....",
+    "....10012...",
+    "1111001122223",
+    ".11000112223.",
+    "..110111223..",
+    "..11111223...",
+    ".1112.12223..",
+    ".112...1223..",
+    ".13.....133..",
+]
+
 ICONS = {
     "copper": (NUGGET, ["#ffd2a0", "#e08a4a", "#b05a2a", "#6e3418"]),
     "amber": (DROP, ["#fff0a0", "#ffb52a", "#d9771a", "#8e4210"]),
@@ -116,6 +145,13 @@ ICONS = {
     "emerald": (CRYSTAL, ["#c8ffd8", "#3fd27a", "#1f9450", "#0e5a2e"]),
     "tusk": (TUSK, ["#fffbea", "#efe2bf", "#c9b07a", "#8a6a3a"]),
     "essence": (ESSENCE, ["#fbeaff", "#d08cff", "#9a4ae0", "#5a2296"]),
+    # Дальние планеты (1.1)
+    "emberstone": (NUGGET, ["#ffe0a0", "#ff8a3a", "#c8401a", "#5a1a0e"]),
+    "resin": (DROP, ["#ffe6b0", "#e8962a", "#b0581a", "#5e2a0c"]),
+    "phoenixFeather": (FEATHER, ["#fff2a0", "#ffb22a", "#ff5a1f", "#8a1a0e"]),
+    "starlight": (STAR, ["#ffffff", "#e8ecff", "#a8b4ff", "#4a4aa8"]),
+    "frostglass": (CRYSTAL, ["#ffffff", "#bfe8ff", "#6ab8f0", "#2a6aa0"]),
+    "azurite": (CRYSTAL, ["#c8dcff", "#4a7aff", "#1f3fc0", "#0e1f6e"]),
 }
 for name, (rows, pal) in ICONS.items():
     from_rows(rows, [hexc(c) for c in pal]).save(os.path.join(OUT, f"ic_{name}.png"))

@@ -132,7 +132,59 @@ func _planet_card(p: String) -> PanelContainer:
 	col.add_child(_wrap(WorldGraph.planet_blurb(p), 12, UiKit.INK_SOFT))
 	if not Game.world_map.planet_open(p):
 		col.add_child(_locked_line(L.t("common.needLevel", [WorldGraph.planet_level(p)]), 12, UiKit.TONES["orange"][2]))
+	var outer := VBoxContainer.new()
+	outer.add_theme_constant_override("separation", 10)
+	card.remove_child(row)
+	outer.add_child(row)
+	outer.add_child(_planet_preview(p))
+	card.add_child(outer)
 	return card
+
+
+## Что ждёт на планете: свои ресурсы, звери, стражи и монстры (видно и до открытия планеты).
+func _planet_preview(p: String) -> VBoxContainer:
+	var info := Planets.preview(p)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 6)
+	v.add_child(UiKit.label(L.t("planet.preview"), 14))
+	var res: Array = info["resources"]
+	if not res.is_empty():
+		v.add_child(_preview_row(L.t("planet.preview.res"), res.map(func(r: String) -> String: return "px:" + r),
+			res.map(func(r: String) -> String: return Res.name_of(r))))
+	var animals: Array = info["animals"]
+	if not animals.is_empty():
+		v.add_child(_preview_row(L.t("planet.preview.animals"), animals.map(func(a: String) -> String: return "an:" + a),
+			animals.map(func(a: String) -> String: return L.t("animal." + a))))
+	var guards: Array = info["guardians"]
+	if not guards.is_empty():
+		v.add_child(_preview_row(L.t("planet.preview.guardians"), guards.map(func(_g: String) -> String: return "px:crown"),
+			guards.map(func(g: String) -> String: return Planets.guardian_name(g))))
+	var mons: Array = info["monsters"]
+	if not mons.is_empty():
+		var names: Array = mons.map(func(m: String) -> String: return Monsters.name_of(m))
+		v.add_child(_wrap(L.t("planet.preview.monsters", [", ".join(PackedStringArray(names))]), 12, UiKit.INK_SOFT))
+	v.add_child(_wrap(L.t("planet.preview.story", [info["locations"].size()]), 12, UiKit.INK_SOFT))
+	return v
+
+
+## Подпись и значки с именами в одну строку с переносом.
+static func _preview_row(title: String, icons: Array, names: Array) -> VBoxContainer:
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 3)
+	v.add_child(UiKit.label(title, 12, UiKit.INK_SOFT))
+	var flow := HFlowContainer.new()
+	flow.add_theme_constant_override("h_separation", 10)
+	flow.add_theme_constant_override("v_separation", 4)
+	v.add_child(flow)
+	for i in icons.size():
+		var h := HBoxContainer.new()
+		h.add_theme_constant_override("separation", 3)
+		var ic := UiKit.icon_any(str(icons[i]), 20)
+		ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		h.add_child(ic)
+		h.add_child(UiKit.label(str(names[i]), 12))
+		flow.add_child(h)
+	return v
 
 
 ## Нарисованная планета: шар с полосами и светом (PlanetBall).
@@ -242,6 +294,19 @@ func _location_card(id: String) -> PanelContainer:
 		if Game.animals.stars(animal) <= 0:
 			chip.modulate.a = 0.55
 		flow.add_child(chip)
+	# Страж локации (дальние планеты): раз в день
+	if Planets.GUARDIAN.has(id):
+		var g_row := HBoxContainer.new()
+		g_row.add_theme_constant_override("separation", 6)
+		v.add_child(g_row)
+		var crown := UiKit.icon("crown", 18)
+		crown.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		g_row.add_child(crown)
+		var done := Game.world_map.guardian_done(id)
+		var g_l := _wrap(L.t("guardian.done" if done else "guardian.waits", [Planets.guardian_name(id)]), 12,
+			UiKit.GOOD if done else UiKit.INK_SOFT)
+		g_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		g_row.add_child(g_l)
 
 	if here:
 		v.add_child(UiKit.label(L.t("map.here"), 14, UiKit.GOOD))
