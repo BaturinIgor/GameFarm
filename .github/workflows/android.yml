@@ -31,11 +31,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Дважды подряд шаг висел по 40 минут на apt-get: ставим предел и повторы загрузки
       - name: Prepare assets
+        timeout-minutes: 15
         env:
           ASSETS_KEY: ${{ secrets.ASSETS_KEY }}
         run: |
-          command -v ffmpeg > /dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null)
+          command -v ffmpeg > /dev/null || (sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update -qq \
+            && sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y -qq ffmpeg > /dev/null)
           # Pillow рисует картинку заставки (tools/make_splash.py)
           python3 -c "import PIL" 2> /dev/null \
             || python3 -m pip install -q --break-system-packages pillow \
