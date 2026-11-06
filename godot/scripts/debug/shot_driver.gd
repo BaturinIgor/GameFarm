@@ -347,7 +347,9 @@ func _collect_leaves(node: Node, out: Array, clip := Rect2(-1e6, -1e6, 2e6, 2e6)
 		if not ctl.is_visible_in_tree() or ctl.has_meta("overlay_ok") or ctl.is_queued_for_deletion():
 			continue
 		var r := ctl.get_global_rect().intersection(clip)
-		if r.size.x <= 0.5 or r.size.y <= 0.5:
+		# Пустой держатель нулевой высоты не пропускаем: в нём висит лента, которая и наезжает
+		var empty := r.size.x <= 0.5 or r.size.y <= 0.5
+		if empty and (ctl.clip_contents or ctl is ScrollContainer):
 			continue
 		# Прокрутка не режет: проверяем всё содержимое, но сравниваем только внутри одной прокрутки
 		var inner_clip := clip
@@ -385,7 +387,7 @@ func _collect_leaves(node: Node, out: Array, clip := Rect2(-1e6, -1e6, 2e6, 2e6)
 			r = r.grow_side(SIDE_BOTTOM, 4.0)
 		elif ctl is BaseButton:
 			leaf = true
-		if leaf:
+		if leaf and r.size.x > 0.5 and r.size.y > 0.5:
 			out.append([ctl, r, group])
 		_collect_leaves(ctl, out, inner_clip, inner_group)
 
