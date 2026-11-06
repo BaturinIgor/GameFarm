@@ -96,6 +96,8 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_t += delta
+	# Лучи крутятся всё время, пока окно открыто: без полной частоты кадров они дёргаются
+	Sound.keep_smooth(0.5)
 	# Радужные рамки переливаются
 	for f in _card_frames:
 		if is_instance_valid(f[0]):
@@ -113,26 +115,50 @@ func _gui_input(e: InputEvent) -> void:
 
 
 ## Тряска сундука: по одной на ступень, на каждой лучи перекрашиваются в следующий цвет.
+## Между встрясками сундук не замирает: приседает и подпрыгивает, к нему слетаются искры,
+## иначе пауза выглядит как зависание игры.
 func _play(icon: Control) -> void:
-	Sound.keep_smooth(8.0)
 	var shakes := int(Chests.SHAKES.get(_best, 1))
 	var top := Chests.rarity_index(_best)
 	_tween = create_tween()
 	_tween.tween_property(icon, "scale", Vector2(0.6, 0.6), 0.0)
-	_tween.tween_property(icon, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_tween.tween_property(icon, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	for i in shakes:
 		# Цвет лучей поднимается по шкале к лучшей награде
 		var step := int(round(float(top) * float(i + 1) / float(shakes)))
 		var c := Chests.color(Chests.RARITIES[step])
+		var grow := 1.0 + 0.08 * float(i + 1)
 		_tween.tween_callback(func() -> void:
 			_rays.color = c
 			_rays.boost = 1.0 + 0.25 * float(i)
+			_sparks(c)
 			Sound.play("tap" if i < shakes - 1 else "unlock"))
 		for s in [0.18, -0.18, 0.12, -0.12, 0.0]:
-			_tween.tween_property(icon, "rotation", float(s) * (1.0 + 0.3 * float(i)), 0.05)
-		_tween.tween_property(icon, "scale", Vector2.ONE * (1.0 + 0.08 * float(i + 1)), 0.08)
-		_tween.tween_interval(0.22)
+			_tween.tween_property(icon, "rotation", float(s) * (1.0 + 0.3 * float(i)), 0.045)
+		_tween.tween_property(icon, "scale", Vector2.ONE * grow, 0.07)
+		# Присел и распрямился - вместо неподвижной паузы
+		_tween.tween_property(icon, "scale", Vector2(grow * 1.12, grow * 0.86), 0.07).set_ease(Tween.EASE_OUT)
+		_tween.tween_property(icon, "scale", Vector2.ONE * grow, 0.09).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	_tween.tween_callback(_burst)
+
+
+## Искры цвета ступени слетаются к сундуку.
+func _sparks(c: Color) -> void:
+	var area := get_viewport_rect().size
+	var at := Vector2(area.x / 2.0, area.y * 0.4)
+	for k in 8:
+		var p := ColorRect.new()
+		p.size = Vector2(5, 5)
+		p.color = c.lightened(0.3)
+		p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var from := at + Vector2.from_angle(TAU * float(k) / 8.0 + randf() * 0.5) * randf_range(120.0, 170.0)
+		p.position = from
+		add_child(p)
+		move_child(p, _rays.get_index() + 1)
+		var tw := create_tween().set_parallel()
+		tw.tween_property(p, "position", at, 0.3).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+		tw.tween_property(p, "modulate:a", 0.0, 0.1).set_delay(0.2)
+		tw.chain().tween_callback(p.queue_free)
 
 
 ## Вспышка, сундук исчезает, карточки вылетают по очереди.
