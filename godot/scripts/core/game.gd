@@ -53,11 +53,12 @@ var incubator := IncubatorSystem.new()
 var story := StorySystem.new()
 var farm := FarmEventSystem.new()
 var rating := RatingSystem.new()
+var alliance := AllianceSystem.new()
 
 ## Все системы по порядку: для значений по умолчанию и событий.
 var systems: Array:
 	get: return [talents, workshop, animals, quests, house, garden, combat, dungeons, events, collection, legacy, premium, shop,
-		world_map, estate, daily, residents, raids, wild, academy, energy, fair, chests, mine, incubator, story, farm, rating]
+		world_map, estate, daily, residents, raids, wild, academy, energy, fair, chests, mine, incubator, story, farm, rating, alliance]
 ## Где появиться после перехода через проход (id прохода).
 var arrival_gate := ""
 ## В доме: у какой станции появиться (exit, up, down); на лугу - у двери дома.
@@ -735,6 +736,17 @@ func recalc() -> void:
 		crit_bonus += events.boon("lucky")
 		s.regen += events.boon("regen")
 		respawn_bonus += events.boon("regrowth")
+
+	# Таланты альянса (последняя копия с сервера, работает и без сети)
+	if alliance.in_alliance():
+		s.yield_all += alliance.bonus("harvest")
+		s.damage_mult *= 1.0 + alliance.bonus("strength")
+		s.grow_mult /= 1.0 + alliance.bonus("garden")
+		s.animal_mult += alliance.bonus("beasts")
+		s.producer_mult = minf(Stats.MAX_PRODUCER, s.producer_mult * (1.0 + alliance.bonus("workshop")))
+		s.hp_mult *= 1.0 + alliance.bonus("vitality")
+		s.double_chance += alliance.bonus("fortune")
+		s.discount *= 1.0 - alliance.bonus("thrift")
 
 	var strider := 1.25 if r.call("strider") > 0 else 1.0
 	capacity *= (1.0 + 0.1 * r.call("packMaster")) * strider

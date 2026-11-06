@@ -198,6 +198,27 @@ func _ensure_auth() -> bool:
 	return _take_session(fresh)
 
 
+## Вызов функции сервера с входом (для альянсов и других онлайн-частей). null - нет сети или ошибка.
+func call_rpc(fn: String, args: Dictionary) -> Variant:
+	if not OnlineConfig.enabled():
+		return null
+	if _node == null:
+		_start()
+	var ok: bool = await _ensure_auth()
+	if not ok:
+		return null
+	return await _rpc(fn, args)
+
+
+## Текст последней ошибки сервера (например "limit" или "name taken").
+var last_error := ""
+
+
+## id игрока на сервере (после входа).
+func user_id() -> String:
+	return str(_auth.get("user", ""))
+
+
 func _rpc(fn: String, args: Dictionary) -> Variant:
 	return await _request("/rest/v1/rpc/" + fn, args, true)
 
@@ -220,9 +241,12 @@ func _request(path: String, body: Dictionary, authed: bool) -> Variant:
 	var code := int(res[1])
 	var text: String = (res[3] as PackedByteArray).get_string_from_utf8()
 	if int(res[0]) != HTTPRequest.RESULT_SUCCESS or code < 200 or code >= 300:
+		var err_body = JSON.parse_string(text) if text != "" else null
+		last_error = str(err_body.get("message", "")) if err_body is Dictionary else ("network" if code == 0 else str(code))
 		if code == 401 and authed:
 			_auth["access"] = ""
 		return null
+	last_error = ""
 	if text.strip_edges() == "":
 		return true
 	var parsed = JSON.parse_string(text)

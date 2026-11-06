@@ -11,7 +11,7 @@ const GROUPS := [
 	["animals", "paw", "hud.animals", ["animals", "wild", "incubator"]],
 	["quests", "scroll", "hud.quests", ["quests", "heart"]],
 	["hero", "star", "nav.hero", ["talents", "hunt", "collection", "wardrobe"]],
-	["world", "map", "nav.world", ["map", "mine", "events"]],
+	["world", "map", "nav.world", ["map", "mine", "events", "alliance"]],
 ]
 ## Вкладка в центре: крупнее остальных.
 const CENTER := "quests"
@@ -33,6 +33,7 @@ const SUBS := {
 	"map": ["hud.map", "res://scripts/ui/map_panel.gd"],
 	"mine": ["mine.title", "res://scripts/ui/mine_panel.gd"],
 	"events": ["event.title", "res://scripts/ui/events_panel.gd"],
+	"alliance": ["alliance.title", "res://scripts/ui/alliance_panel.gd"],
 }
 
 ## Последний открытый раздел вкладки: туда и возвращаемся, если ничего не горит.
@@ -54,6 +55,7 @@ static func level_of(sub: String) -> int:
 		"mine": return Mine.MIN_LEVEL
 		"incubator": return Incubator.MIN_LEVEL
 		"heart": return Story.MIN_LEVEL
+		"alliance": return Alliances.JOIN_LEVEL
 	return 0
 
 
@@ -93,6 +95,10 @@ static func count(sub: String) -> int:
 			return Game.story.ready_count() + (1 if Game.story.can_raise_altar() else 0)
 		"events":
 			return Game.events.event_claimable()
+		"alliance":
+			# Отметка, пока остались бесплатные вклады на сегодня
+			var al := Game.alliance
+			return 1 if al.in_alliance() and al.loaded and al.day_used("free") < Alliances.FREE_PER_DAY else 0
 	return 0
 
 

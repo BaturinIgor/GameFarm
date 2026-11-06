@@ -7,7 +7,8 @@ const ORIGIN := Vector2(195, 620)
 const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", "kitchen", "garden", "trader", "hunt", "level:settings",
 	"dungeon", "trophies", "collection", "collection:zoo", "collection:trophies", "legacy", "wardrobe", "map", "map:ember", "map:azure", "events", "shop",
 	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story", "wild", "talents:estate",
-	"story", "story:altar", "collection:diary"]
+	"story", "story:altar", "collection:diary", "alliance:find", "alliance:create", "alliance:main", "alliance:chat",
+	"alliance:members", "alliance:top"]
 
 var dir := "/tmp/shots"
 var main: Node
@@ -148,6 +149,8 @@ func _process(delta: float) -> void:
 					_opened = w
 					# Окна с покупками за деньги (наборы, пропуск, кристаллы) тоже должны пройти проверку
 					Store.LIVE = true
+					if w.begins_with("alliance"):
+						_alliance_demo(w)
 					if ":" in w:
 						var parts := w.split(":")
 						main.hud.open_window(load("res://scripts/ui/%s_panel.gd" % parts[0]).new(parts[1]))
@@ -162,6 +165,7 @@ func _process(delta: float) -> void:
 			else:
 				main.hud.close_window()
 				Store.LIVE = Engine.has_singleton("InAppStore")
+				_alliance_demo("")
 				_step = 41
 				_time = 260.0
 				_sub = 0
@@ -741,3 +745,60 @@ func _free_overlays() -> void:
 	for n in main.hud.find_children("*", "", true, false):
 		if n is WherePopup or n is DialogPopup or n is EnergyPopup:
 			n.queue_free()
+
+
+var _level_before := -1
+
+
+## Окно альянса без сервера: подставные альянс, участники, чат и рейтинг. "" - вернуть как было.
+func _alliance_demo(w: String) -> void:
+	var al := Game.alliance
+	if w == "":
+		if _level_before >= 0:
+			Game.save["level"] = _level_before
+			_level_before = -1
+		al.demo = false
+		al.data = {}
+		Game.save["alliance"] = {}
+		Game.recalc()
+		return
+	if _level_before < 0:
+		_level_before = int(Game.save["level"])
+	Game.save["level"] = 20
+	al.demo = true
+	al.loaded = true
+	al.error = ""
+	if w == "alliance:find" or w == "alliance:create":
+		al.data = {}
+		Game.save["alliance"] = {}
+		al.found = [
+			{"id": 1, "name": "Green Valley", "tag": "GV", "emblem": 6, "about": "Friendly farmers, daily contributions", "min_level": 10, "level": 7, "members": 41, "cap": 55},
+			{"id": 2, "name": "Звёздные пахари", "tag": "STAR", "emblem": 0, "about": "Активные, чат на русском", "min_level": 15, "level": 12, "members": 80, "cap": 80},
+			{"id": 3, "name": "Moonlit Orchard", "tag": "MOON", "emblem": 5, "about": "", "min_level": 10, "level": 3, "members": 12, "cap": 35},
+		]
+	else:
+		var talents := {"harvest": 1650, "strength": 900, "garden": 700, "beasts": 120, "workshop": 300}
+		al.data = {"id": 1, "name": "Green Valley", "tag": "GV", "emblem": 6, "about": "Friendly farmers. 20 free contributions every day!",
+			"min_level": 10, "xp": 9800, "week_xp": 2100, "cap": 55, "talents": talents, "role": "leader",
+			"day": {"free": 8, "coins": 0, "gems": 6},
+			"members": [
+				{"id": "a", "name": Game.rating.player_name(), "level": 20, "role": "leader", "week": 140, "total": 2900, "me": true},
+				{"id": "b", "name": "Masha", "level": 31, "role": "officer", "week": 120, "total": 3400, "me": false},
+				{"id": "c", "name": "Kenji", "level": 18, "role": "member", "week": 60, "total": 800, "me": false},
+				{"id": "d", "name": "Lucía", "level": 12, "role": "member", "week": 20, "total": 150, "me": false},
+			]}
+		Game.save["alliance"] = {"id": 1, "name": "Green Valley", "tag": "GV", "emblem": 6, "talents": talents}
+		var now := int(Time.get_unix_time_from_system())
+		al.messages = [
+			{"id": 1, "kind": "join", "name": "Lucía", "body": "", "at": now - 3600},
+			{"id": 2, "kind": "text", "name": "Masha", "user_id": "b", "body": "Всем привет! Не забываем бесплатные вклады в «Общий урожай»", "at": now - 1800, "me": false},
+			{"id": 3, "kind": "text", "name": Game.rating.player_name(), "user_id": "a", "body": "Done, 20/20 today", "at": now - 900, "me": true},
+			{"id": 4, "kind": "level", "name": "", "body": "7", "at": now - 600},
+			{"id": 5, "kind": "text", "name": "Kenji", "user_id": "c", "body": "Who wants to trade planks?", "at": now - 60, "me": false},
+		]
+		al.top = [
+			{"place": 1, "id": 2, "name": "Звёздные пахари", "tag": "STAR", "emblem": 0, "level": 12, "week_xp": 5400, "me": false},
+			{"place": 2, "id": 1, "name": "Green Valley", "tag": "GV", "emblem": 6, "level": 7, "week_xp": 2100, "me": true},
+			{"place": 3, "id": 3, "name": "Moonlit Orchard", "tag": "MOON", "emblem": 5, "level": 3, "week_xp": 900, "me": false},
+		]
+	Game.recalc()
