@@ -1,12 +1,12 @@
 class_name Talents
 ## Таланты: ветки, ряды, ранги, стоимость и суперталанты (порт Talents.swift).
 
-const BRANCHES := ["mining", "gathering", "travel", "beasts", "farming", "combat"]
+const BRANCHES := ["mining", "gathering", "travel", "beasts", "farming", "combat", "estate"]
 
 ## Пиксельная иконка ветки.
 const BRANCH_ICONS := {
 	"mining": "tool_pickaxe", "gathering": "basket", "travel": "boots",
-	"beasts": "paw", "farming": "watering_can", "combat": "sword",
+	"beasts": "paw", "farming": "watering_can", "combat": "sword", "estate": "hammer",
 }
 
 const BRANCH_COLORS := {
@@ -16,6 +16,7 @@ const BRANCH_COLORS := {
 	"beasts": Color(0.9, 0.4, 0.75),
 	"farming": Color(0.85, 0.65, 0.15),
 	"combat": Color(0.85, 0.25, 0.3),
+	"estate": Color(0.62, 0.45, 0.28),
 }
 
 ## Уровень персонажа, с которого открывается ряд дерева.
@@ -172,6 +173,21 @@ const SPECS := {
 	"firstAid": ["combat", "potion", 3, 2, 2, ["stance"], 0.03, "percent"],
 	"frenzy": ["combat", "swords", 3, 5, 0, ["berserk"], 0.03, "percent"],
 	"hunterMark": ["combat", "skull", 3, 5, 2, ["bossSlayer"], 0.04, "percent"],
+	# Усадьба (бывшая академия): бонусы зданий, энергии, обороны и отрядов. Как работают - Academy.
+	"estBuild": ["estate", "hammer", 5, 0, 1, [], 0.06, "percent"],
+	"estStorage": ["estate", "chest", 5, 1, 0, ["estBuild"], 0.08, "percent"],
+	"estStamina": ["estate", "bolt", 5, 1, 1, ["estBuild"], 0.06, "percent"],
+	"estTowers": ["estate", "sword", 5, 1, 2, ["estBuild"], 0.12, "percent"],
+	"estWorkshops": ["estate", "basket", 5, 2, 0, ["estStorage"], 0.08, "percent"],
+	"estRecovery": ["estate", "hourglass", 3, 2, 1, ["estStamina"], 0.08, "percent"],
+	"estFortify": ["estate", "shield", 3, 2, 2, ["estTowers"], 0.04, "percent"],
+	"estOrders": ["estate", "coins", 5, 3, 0, ["estWorkshops"], 0.08, "percent"],
+	"estThrift": ["estate", "clover", 3, 3, 1, ["estRecovery"], 0.05, "percent"],
+	"estSquads": ["estate", "compass", 3, 3, 2, ["estFortify"], 0.1, "percent"],
+	"estStockpile": ["estate", "stopwatch", 3, 4, 0, ["estOrders"], 1.0, "flat"],
+	"estBargain": ["estate", "coin", 3, 4, 1, ["estThrift"], 0.08, "percent"],
+	"estTrackers": ["estate", "gem", 3, 4, 2, ["estSquads"], 0.12, "percent"],
+	"estInsight": ["estate", "book", 3, 5, 1, ["estBargain", "estStockpile"], 0.06, "percent"],
 }
 
 

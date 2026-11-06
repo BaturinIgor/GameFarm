@@ -21,7 +21,13 @@ func rank(id: String) -> int:
 
 func points_total() -> int:
 	return Game.talent_points_at(Game.level) + int(Game.save.get("bonusTalentPoints", 0)) \
-		+ int(Game.legacy.value("talent")) + dungeon_points() + Game.mastery_points()
+		+ int(Game.legacy.value("talent")) + dungeon_points() + Game.mastery_points() + estate_points()
+
+
+## Очко таланта за каждый уровень главного дома усадьбы после первого: возмещает очки,
+## которые теперь идут на ветку "Усадьба" (раньше академия качалась ресурсами).
+func estate_points() -> int:
+	return maxi(0, Game.estate.level("main") - 1) if Game.save.get("estate") is Dictionary else 0
 
 
 ## Очко таланта за первую победу над каждым боссом подземелий (этажи 5 и 10).

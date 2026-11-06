@@ -80,7 +80,7 @@ const FRIEND := {
 	"smith": {"likes": ["iron_bar", "gold_bar"], "bonus": "smelter", "step": 0.05},
 	"miller": {"likes": ["flour", "oil"], "bonus": "mill", "step": 0.05},
 	"weaver": {"likes": ["cloth", "silk"], "bonus": "loom", "step": 0.05},
-	"scholar": {"likes": ["cut_gem", "lime"], "bonus": "research", "step": -0.04},
+	"scholar": {"likes": ["cut_gem", "lime"], "bonus": "jeweler", "step": 0.05},
 	"tracker": {"likes": ["planks", "jewel"], "bonus": "squads", "step": 0.05},
 }
 

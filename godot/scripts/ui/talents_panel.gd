@@ -27,8 +27,10 @@ var _dock := VBoxContainer.new()
 var _confirm: Control
 
 
-func _init() -> void:
+func _init(start_branch := "") -> void:
 	title_key = "hud.talents"
+	if start_branch in Talents.BRANCHES:
+		branch = start_branch
 
 
 func _ready() -> void:
@@ -165,7 +167,11 @@ func _branch_picker() -> void:
 				selected = ""
 				_scroll.scroll_vertical = 0
 				_dirty = true)
-		grid.add_child(btn)
+		# Седьмая ветка (усадьба) - во всю ширину под сеткой, а не одна в углу
+		if Talents.BRANCHES.size() % 3 == 1 and b == Talents.BRANCHES[-1]:
+			_top.add_child(btn)
+		else:
+			grid.add_child(btn)
 
 
 # MARK: Дерево

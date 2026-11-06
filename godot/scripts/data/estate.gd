@@ -4,7 +4,7 @@ class_name Estate
 ## Здание работает не выше уровня (уровень героя / 3 + 1) - так после перерождения доход растёт заново.
 
 ## Порядок - как в окне усадьбы.
-const IDS := ["main", "storage", "barn", "board", "sawmill", "mill", "kiln", "smelter", "loom", "academy", "jeweler", "tower", "wall", "camp"]
+const IDS := ["main", "storage", "barn", "board", "sawmill", "mill", "kiln", "smelter", "loom", "jeweler", "tower", "wall", "camp"]
 
 ## hero - с какого уровня героя открывается, time/cost - множители времени и цены, max - потолок уровня,
 ## sprite - картинка из пака, recipes - что производит (первый рецепт - по умолчанию).
@@ -18,8 +18,6 @@ const BUILDINGS := {
 	"kiln": {"hero": 6, "time": 1.0, "cost": 1.0, "max": 20, "sprite": "clay_pit", "recipes": ["brick", "lime"]},
 	"smelter": {"hero": 9, "time": 1.1, "cost": 1.1, "max": 20, "sprite": "anvil", "recipes": ["iron_bar", "gold_bar"]},
 	"loom": {"hero": 12, "time": 1.0, "cost": 1.1, "max": 20, "sprite": "stall", "recipes": ["cloth", "silk"]},
-	# Академия: исследования - бонусы усадьбы по таймеру (Academy)
-	"academy": {"hero": 15, "time": 1.2, "cost": 1.3, "max": 20, "sprite": "greenhouse"},
 	"jeweler": {"hero": 25, "time": 1.2, "cost": 1.3, "max": 20, "sprite": "stall_purple", "recipes": ["cut_gem", "jewel"]},
 	# Защита от набегов: свои рисунки (tools/make_defense_art.py)
 	"tower": {"hero": 10, "time": 1.0, "cost": 1.1, "max": 20, "sprite": "tower"},
