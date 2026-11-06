@@ -1671,6 +1671,7 @@
  "storage.empty": "倉庫はからっぽ",
  "storage.empty.hint": "素材を集めて、広場の真ん中にある倉庫 📦 に運ぼう。倉庫の素材はコインで売れるよ。",
  "storage.inBackpack": "🎒 リュックの中",
+ "storage.max": "最大",
  "storage.priceHint": "売値はレベルとスキル\"商人\"で上がるよ。",
  "storage.row": "{0}個  ·  1個 {1} 🪙",
  "storage.sell": "売る",

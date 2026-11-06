@@ -1671,6 +1671,7 @@
  "storage.empty": "L'entrepôt est vide",
  "storage.empty.hint": "Récolte des ressources et apporte-les à l'entrepôt 📦 au milieu de la cour. Les ressources stockées peuvent être vendues contre des pièces.",
  "storage.inBackpack": "🎒 Dans le sac à dos",
+ "storage.max": "MAX",
  "storage.priceHint": "Le prix de vente augmente avec ton niveau et le talent \"Marchand\".",
  "storage.row": "{0} unités  ·  {1} 🪙 chacune",
  "storage.sell": "Vendre",

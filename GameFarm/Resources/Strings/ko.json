@@ -1671,6 +1671,7 @@
  "storage.empty": "창고가 비어 있어",
  "storage.empty.hint": "자원을 모아서 마당 한가운데 있는 창고 📦로 가져와. 창고에 있는 자원은 팔아서 코인으로 바꿀 수 있어.",
  "storage.inBackpack": "🎒 가방 속",
+ "storage.max": "최대",
  "storage.priceHint": "판매 가격은 레벨과 \"상인\" 특성에 따라 올라가.",
  "storage.row": "{0}개  ·  개당 {1} 🪙",
  "storage.sell": "판매",

@@ -85,3 +85,16 @@ func test_discount_never_zero() -> void:
 	Game.stats.discount = 0.01
 	var d := Game.discounted({"coins": 10, "items": [["wood", 3]]})
 	check(int(d["items"][0][1]) >= 1, "скидка не делает предмет бесплатным")
+
+
+func test_sell_multipliers_up_to_max() -> void:
+	# При 85 штуках: x1, x10, МАКС - продать 100 нельзя, значит и кнопки такой нет
+	eq(StoragePanel.options(85), [1, 10, StoragePanel.MAX])
+	eq(StoragePanel.options(5000), [1, 10, 100, 1000, StoragePanel.MAX])
+	eq(StoragePanel.options(1), [1])
+	eq(StoragePanel.next_multiplier(10, 85), StoragePanel.MAX)
+	eq(StoragePanel.next_multiplier(StoragePanel.MAX, 85), 1)
+	Game.save["storage"]["wood"] = 85
+	StoragePanel._mult = {"wood": 1000}
+	eq(StoragePanel.multiplier("wood"), StoragePanel.MAX, "выбранный множитель больше запаса - МАКС")
+	StoragePanel._mult = {}

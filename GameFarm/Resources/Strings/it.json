@@ -1671,6 +1671,7 @@
  "storage.empty": "Il magazzino è vuoto",
  "storage.empty.hint": "Raccogli risorse e portale al magazzino 📦 al centro del cortile. Le risorse in magazzino si possono vendere per monete.",
  "storage.inBackpack": "🎒 Nello zaino",
+ "storage.max": "MAX",
  "storage.priceHint": "Il prezzo di vendita cresce con il tuo livello e il talento \"Mercante\".",
  "storage.row": "{0} pz  ·  {1} 🪙 cad.",
  "storage.sell": "Vendi",
