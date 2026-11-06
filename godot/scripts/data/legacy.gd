@@ -1,12 +1,10 @@
 class_name Legacy
-## Перерождение и наследие (порт Rebirth и LegacyPerk из Legacy.swift).
-## Игрок начинает заново и получает искры, а за искры покупает вечные бонусы наследия.
+## Наследие (порт LegacyPerk из Legacy.swift): за искры покупаются вечные бонусы.
 
-## С этого уровня перерождение даёт искры.
-const MIN_LEVEL := 15
-
-const PERKS := ["harvest", "wisdom", "merchant", "pack", "boots", "growth", "talent", "tools", "capital",
-	"fighter", "vigor", "luck", "gardener", "chef", "companions"]
+const PERKS := ["harvest", "wisdom", "merchant", "pack", "boots", "growth", "talent", "tools",
+	"fighter", "vigor", "luck", "gardener", "chef"]
+## Бонусы, которые работали только при перерождении. Купленные ранги возвращаются искрами.
+const RETIRED := ["capital", "companions"]
 
 ## Пиксельная иконка бонуса (ic_<имя>).
 const ICON := {
@@ -24,14 +22,6 @@ const PER_RANK := {
 
 ## Бонусы, которые показываются процентами.
 const PERCENT := ["harvest", "wisdom", "merchant", "boots", "growth", "fighter", "vigor", "luck", "gardener", "chef"]
-
-
-## Искры за текущий забег: растут с уровнем, плюс немного за достижения и открытые проходы.
-static func sparks(level: int, achievements: int, gates: int) -> int:
-	if level < MIN_LEVEL:
-		return 0
-	var base := pow(float(level - 10), 1.5) / 2.0
-	return int(floor(base)) + achievements / 2 + gates
 
 
 static func name_of(perk: String) -> String:

@@ -1,19 +1,19 @@
 class_name LegacyPanel
 extends Sheet
-## Перерождение и вечные бонусы наследия (порт LegacyView, LegacyRow, SparkBadge).
-## Здесь же карточка перерождения для окна профиля (rebirthCard из LevelView).
+## Вечные бонусы наследия за искры (порт LegacyView, LegacyRow, SparkBadge).
+## Здесь же карточка наследия для окна профиля.
 
 const LILAC := Color("ede2fa")
 
 
 func _init() -> void:
-	title_key = "rebirth.title"
+	title_key = "legacy.title"
 
 
 func build() -> void:
 	content.add_theme_constant_override("separation", 16)
-	_rebirth_card()
-	section_title(L.t("legacy.title"))
+	_sparks_card()
+	section_title(L.t("legacy.perks"))
 	for perk in Legacy.PERKS:
 		_perk_row(perk)
 	var hint := _wrap(L.t("legacy.hint"), 12, UiKit.INK_SOFT)
@@ -21,10 +21,9 @@ func build() -> void:
 	content.add_child(hint)
 
 
-# MARK: Перерождение
+# MARK: Искры
 
-func _rebirth_card() -> void:
-	var reward := Game.legacy.rebirth_reward()
+func _sparks_card() -> void:
 	var p := PanelContainer.new()
 	var ps := UiKit.box(UiKit.PARCHMENT_LIGHT, _purple(1), 18, 4, false)
 	ps.content_margin_left = 16
@@ -36,155 +35,21 @@ func _rebirth_card() -> void:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 10)
 	p.add_child(v)
-	v.add_child(_ribbon(L.t("rebirth.title")))
-
 	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 10)
 	v.add_child(head)
-	var count := UiKit.label(L.t("rebirth.count", [Game.legacy.rebirths()]), 14)
-	count.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	count.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	head.add_child(count)
-	head.add_child(spark_badge(Game.legacy.sparks()))
-	v.add_child(_wrap(L.t("rebirth.text"), 13, UiKit.INK_SOFT))
-
-	var keep := HBoxContainer.new()
-	keep.add_theme_constant_override("separation", 6)
-	v.add_child(keep)
-	keep.add_child(HousePanel.check_mark(16))
-	var keep_text := _wrap(L.t("rebirth.keep"), 12, UiKit.GOOD)
-	keep_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	keep.add_child(keep_text)
-	var lose := HBoxContainer.new()
-	lose.add_theme_constant_override("separation", 6)
-	v.add_child(lose)
-	lose.add_child(_reset_mark(16))
-	var lose_text := _wrap(L.t("rebirth.lose"), 12, UiKit.TONES["red"][2])
-	lose_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lose.add_child(lose_text)
-
-	var box := PanelContainer.new()
-	box.add_theme_stylebox_override("panel", UiKit.box(LILAC, Color(_purple(1), 0.5), 12, 2, false))
-	v.add_child(box)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 6)
-	box.add_child(row)
-	if Game.level >= Legacy.MIN_LEVEL:
-		var t := UiKit.label(L.t("rebirth.reward"), 14)
-		t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		t.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row.add_child(t)
-		var ic := UiKit.icon("spark", 22)
-		ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row.add_child(ic)
-		row.add_child(UiKit.label("+" + Fmt.n(reward), 18))
-	else:
-		var key := UiKit.icon("key", 18)
-		key.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row.add_child(key)
-		var locked := _wrap(L.t("rebirth.locked", [Legacy.MIN_LEVEL]), 13, UiKit.TONES["orange"][2])
-		locked.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(locked)
-
-	var go := UiKit.button(L.t("rebirth.action"), "purple", 16)
-	go.pressed.connect(func() -> void: LegacyPanel.confirm_rebirth())
-	v.add_child(go)
-
-
-## Лента с названием карточки (RibbonTitle).
-func _ribbon(text: String) -> PanelContainer:
-	var r := PanelContainer.new()
-	var s := UiKit.box(_purple(1), UiKit.OUTLINE, 12, 3, false)
-	s.shadow_color = _purple(2)
-	s.shadow_offset = Vector2(0, 3)
-	s.shadow_size = 1
-	s.content_margin_left = 22
-	s.content_margin_right = 22
-	s.content_margin_top = 4
-	s.content_margin_bottom = 4
-	r.add_theme_stylebox_override("panel", s)
-	r.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var l := UiKit.title(text, 17)
-	l.label_settings.outline_color = _purple(2)
-	r.add_child(l)
-	return r
-
-
-## Значок "сбросится": красный кружок со стрелкой по кругу.
-func _reset_mark(side: float) -> Control:
-	var m := Control.new()
-	m.custom_minimum_size = Vector2(side, side)
-	m.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	m.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	m.draw.connect(func() -> void:
-		var r := side / 2.0
-		var c := Vector2(r, r)
-		m.draw_circle(c, r, Color.WHITE)
-		m.draw_circle(c, r - 1.5, UiKit.TONES["red"][1])
-		var ar := r * 0.48
-		var w := maxf(1.5, side * 0.11)
-		m.draw_arc(c, ar, -PI * 0.15, PI * 1.35, 16, Color.WHITE, w, true)
-		var tip := c + Vector2(cos(-PI * 0.15), sin(-PI * 0.15)) * ar
-		m.draw_colored_polygon(PackedVector2Array([tip + Vector2(-r * 0.32, -r * 0.05), tip + Vector2(r * 0.22, -r * 0.3),
-			tip + Vector2(r * 0.12, r * 0.28)]), Color.WHITE))
-	return m
-
-
-## "Начать ферму заново?": сколько искр дадут, отменить нельзя.
-static func confirm_rebirth() -> void:
-	if Hud.current == null:
-		return
-	var reward := Game.legacy.rebirth_reward()
-	var layer := Control.new()
-	layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	layer.mouse_filter = Control.MOUSE_FILTER_STOP
-	var dim := ColorRect.new()
-	dim.color = UiKit.DIM
-	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	dim.gui_input.connect(func(e: InputEvent) -> void:
-		if e is InputEventMouseButton and e.pressed:
-			layer.queue_free())
-	layer.add_child(dim)
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	layer.add_child(center)
-	var box := PanelContainer.new()
-	var st := UiKit.panel_style(18)
-	st.set_content_margin_all(20)
-	box.add_theme_stylebox_override("panel", st)
-	box.custom_minimum_size = Vector2(300, 0)
-	center.add_child(box)
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 12)
-	box.add_child(v)
-	var ic := UiKit.icon("spark", 44)
-	ic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	v.add_child(ic)
-	var title := UiKit.label(L.t("rebirth.confirm"), 18)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	v.add_child(title)
-	var msg := UiKit.label(L.t("rebirth.confirm.message", [reward]), 13, UiKit.INK_SOFT)
-	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	v.add_child(msg)
-	var buttons := HBoxContainer.new()
-	buttons.add_theme_constant_override("separation", 10)
-	v.add_child(buttons)
-	var cancel := UiKit.button(L.t("common.cancel"), "wood", 15)
-	cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cancel.pressed.connect(layer.queue_free)
-	buttons.add_child(cancel)
-	var ok := UiKit.button(L.t("rebirth.action"), "purple", 15)
-	ok.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	ok.pressed.connect(func() -> void:
-		layer.queue_free()
-		if Hud.current != null:
-			Hud.current.close_window()
-		Game.legacy.rebirth())
-	buttons.add_child(ok)
-	Hud.current.show_overlay(layer)
+	var text := _wrap(L.t("legacy.text"), 13, UiKit.INK_SOFT)
+	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(text)
+	var badge := spark_badge(Game.legacy.sparks())
+	badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(badge)
+	if Game.level >= Story.MIN_LEVEL:
+		var go := UiKit.button(L.t("legacy.toAltar"), "purple", 15)
+		go.pressed.connect(func() -> void:
+			if Hud.current != null:
+				Hud.current.open_window(StoryPanel.new("altar")))
+		v.add_child(go)
 
 
 # MARK: Наследие
@@ -286,7 +151,7 @@ static func spark_badge(sparks: int) -> PanelContainer:
 	return p
 
 
-## Карточка перерождения для окна профиля (rebirthCard из LevelView): искры за забег и кнопка в это окно.
+## Карточка наследия для окна профиля: сколько искр и кнопка в это окно.
 static func profile_card() -> PanelContainer:
 	var p := PanelContainer.new()
 	p.add_theme_stylebox_override("panel", UiKit.box(UiKit.PARCHMENT_LIGHT, _purple(1), 14, 3, false))
@@ -304,10 +169,8 @@ static func profile_card() -> PanelContainer:
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 2)
 	row.add_child(col)
-	col.add_child(UiKit.label(L.t("rebirth.title"), 16))
-	var sub_text := L.t("rebirth.short", [Game.legacy.rebirth_reward()]) if Game.level >= Legacy.MIN_LEVEL \
-		else L.t("rebirth.locked", [Legacy.MIN_LEVEL])
-	var sub := UiKit.label(sub_text, 12, UiKit.INK_SOFT)
+	col.add_child(UiKit.label(L.t("legacy.title"), 16))
+	var sub := UiKit.label(L.t("legacy.short"), 12, UiKit.INK_SOFT)
 	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(sub)
 	row.add_child(spark_badge(Game.legacy.sparks()))
