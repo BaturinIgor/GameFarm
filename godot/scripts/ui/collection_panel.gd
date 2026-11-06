@@ -361,6 +361,7 @@ func _card_tile(card: String) -> VBoxContainer:
 	center.add_child(pic)
 	if not owned:
 		var q := UiKit.label("?", 18, Color(1, 1, 1, 0.7))
+		q.set_meta("overlay_ok", true)
 		q.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		center.add_child(q)
 	var st := UiKit.stars(Game.collection.card_stars(card), Cards.THRESHOLDS.size(), 9.0)

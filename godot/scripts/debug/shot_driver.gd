@@ -142,6 +142,8 @@ func _process(delta: float) -> void:
 				var w: String = WINDOWS[t / 2]
 				if t % 2 == 0 and _opened != w:
 					_opened = w
+					# Окна с покупками за деньги (наборы, пропуск, кристаллы) тоже должны пройти проверку
+					Store.LIVE = true
 					if ":" in w:
 						var parts := w.split(":")
 						main.hud.open_window(load("res://scripts/ui/%s_panel.gd" % parts[0]).new(parts[1]))
@@ -155,6 +157,7 @@ func _process(delta: float) -> void:
 					_check_layout(w)
 			else:
 				main.hud.close_window()
+				Store.LIVE = Engine.has_singleton("InAppStore")
 				_step = 41
 				_time = 260.0
 				_sub = 0
@@ -285,12 +288,112 @@ func _check_layout(w: String) -> void:
 	var panel: Control = sheet._panel
 	var right := panel.get_global_rect().end.x
 	var inner_w := sheet.content.get_combined_minimum_size().x
+	_check_overlap_later(w, sheet)
 	if right <= limit + 0.5 and inner_w <= sheet.content_width() + 0.5:
 		print("LAYOUT OK %s width=%.0f" % [w, panel.size.x])
 		return
 	print("LAYOUT OVERFLOW %s panel_right=%.0f screen=%.0f content=%.0f/%.0f" % [w, right, limit, inner_w, sheet.content_width()])
 	var avail := sheet.content_width()
 	_report_overflow(sheet.content, avail, w, 0)
+
+
+## Наложения: видимые картинки, надписи и кнопки окна не должны залезать друг на друга,
+## если одна не лежит внутри другой (значки-счётчики помечены meta "overlay_ok").
+func _check_overlap_later(w: String, sheet: Sheet) -> void:
+	if _check_overlap(w, sheet, false) == 0:
+		print("OVERLAP OK %s" % w)
+		return
+	# Окно могло перестроиться в этом кадре: ждём, пока контейнеры расставят новые элементы
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if is_instance_valid(sheet) and sheet.is_inside_tree():
+		_check_overlap(w, sheet, true)
+	else:
+		print("OVERLAP %s (окно закрылось до перепроверки)" % w)
+
+
+## Сколько пар элементов окна залезают друг на друга; loud - напечатать их.
+func _check_overlap(w: String, sheet: Sheet, loud: bool) -> int:
+	var leaves: Array = []
+	_collect_leaves(sheet._panel, leaves)
+	var bad := 0
+	for i in leaves.size():
+		for j in range(i + 1, leaves.size()):
+			var a: Control = leaves[i][0]
+			var b: Control = leaves[j][0]
+			if leaves[i][2] != leaves[j][2] or a.is_ancestor_of(b) or b.is_ancestor_of(a):
+				continue
+			var x: Rect2 = (leaves[i][1] as Rect2).intersection(leaves[j][1])
+			var tight := a is LevelUpOverlay.Ribbon or b is LevelUpOverlay.Ribbon
+			if x.size.x > (0.5 if tight else 2.0) and x.size.y > (0.5 if tight else 2.0):
+				bad += 1
+				if loud and bad <= 8:
+					print("  %s overlap %.0fx%.0f: %s <-> %s" % [w, x.size.x, x.size.y, _describe(a), _describe(b)])
+	if loud:
+		print(("OVERLAP %s count=%d" % [w, bad]) if bad > 0 else ("OVERLAP OK %s" % w))
+	return bad
+
+
+func _collect_leaves(node: Node, out: Array, clip := Rect2(-1e6, -1e6, 2e6, 2e6), group: Object = null) -> void:
+	for c in node.get_children():
+		if not c is Control:
+			continue
+		var ctl := c as Control
+		if not ctl.is_visible_in_tree() or ctl.has_meta("overlay_ok") or ctl.is_queued_for_deletion():
+			continue
+		var r := ctl.get_global_rect().intersection(clip)
+		if r.size.x <= 0.5 or r.size.y <= 0.5:
+			continue
+		# Прокрутка не режет: проверяем всё содержимое, но сравниваем только внутри одной прокрутки
+		var inner_clip := clip
+		var inner_group := group
+		if ctl is ScrollContainer:
+			inner_clip = Rect2(-1e6, -1e6, 2e6, 2e6)
+			inner_group = ctl
+		elif ctl.clip_contents:
+			inner_clip = r
+		var leaf := false
+		if ctl is Label:
+			leaf = (ctl as Label).text.strip_edges() != ""
+			if leaf:
+				# Рамка надписи шире текста: берём только сам текст
+				var lb := ctl as Label
+				var ts := lb.get_minimum_size()
+				if lb.autowrap_mode == TextServer.AUTOWRAP_OFF:
+					var gx := ctl.get_global_rect().position.x
+					if lb.horizontal_alignment == HORIZONTAL_ALIGNMENT_CENTER:
+						gx += (ctl.size.x - ts.x) / 2.0
+					elif lb.horizontal_alignment == HORIZONTAL_ALIGNMENT_RIGHT:
+						gx += ctl.size.x - ts.x
+					var gy := ctl.get_global_rect().position.y
+					var lh := ts.y
+					if lb.vertical_alignment == VERTICAL_ALIGNMENT_CENTER:
+						gy += (ctl.size.y - lh) / 2.0
+					elif lb.vertical_alignment == VERTICAL_ALIGNMENT_BOTTOM:
+						gy += ctl.size.y - lh
+					r = Rect2(gx, gy, minf(ts.x, ctl.size.x), minf(lh, ctl.size.y)).intersection(clip)
+		elif ctl is TextureRect:
+			leaf = (ctl as TextureRect).texture != null
+		elif ctl is LevelUpOverlay.Ribbon:
+			# Под лентой рисуется тень на 3 точки, и ей нужен хотя бы 1 точка воздуха
+			leaf = true
+			r = r.grow_side(SIDE_BOTTOM, 4.0)
+		elif ctl is BaseButton:
+			leaf = true
+		if leaf:
+			out.append([ctl, r, group])
+		_collect_leaves(ctl, out, inner_clip, inner_group)
+
+
+func _describe(c: Control) -> String:
+	var t := ""
+	if c is Label:
+		t = " '" + (c as Label).text.left(24) + "'"
+	elif c is Button:
+		t = " '" + (c as Button).text.left(24) + "'"
+	elif c is LevelUpOverlay.Ribbon:
+		t = " ribbon '" + (c as LevelUpOverlay.Ribbon).label.text.left(24) + "'"
+	return "%s%s @%s" % [c.get_class(), t, c.get_global_rect().position.round()]
 
 
 func _report_overflow(node: Control, avail: float, w: String, depth: int) -> void:

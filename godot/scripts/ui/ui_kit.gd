@@ -460,6 +460,8 @@ class Pulse extends Node:
 ## Счётчик всегда в одном месте: правый верхний угол хозяина, чуть наружу. Так одинаково
 ## на нижней панели, во вкладках, разделах, плашках и кнопках (раньше где слева, где справа, где в строке).
 static func pin_badge(badge: Control, owner: Control) -> void:
+	# Значок намеренно лежит на углу кнопки
+	badge.set_meta("overlay_ok", true)
 	badge.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	badge.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	badge.offset_left = -14
