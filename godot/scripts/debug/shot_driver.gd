@@ -27,6 +27,10 @@ func _ready() -> void:
 	if i >= 0 and i + 1 < args.size():
 		dir = args[i + 1]
 	DirAccess.make_dir_recursive_absolute(dir)
+	# Снимки для App Store на нужном языке: "-- --shots <папка> --lang en"
+	var li := args.find("--lang")
+	if li >= 0 and li + 1 < args.size():
+		L.set_language(args[li + 1], false)
 
 
 func _process(delta: float) -> void:

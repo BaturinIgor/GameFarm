@@ -13,6 +13,11 @@ on:
       - "tools/make_splash.py"
       - ".github/workflows/android.yml"
   workflow_dispatch:
+    inputs:
+      store_langs:
+        description: "Языки для снимков App Store 1290x2796 (через пробел, например: en ru). Пусто - не снимать."
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -161,6 +166,18 @@ jobs:
             exit 1
           fi
           ls -la shots
+
+      - name: App Store screenshots (1290x2796)
+        if: github.event.inputs.store_langs != ''
+        continue-on-error: true
+        run: |
+          for lang in ${{ github.event.inputs.store_langs }}; do
+            mkdir -p "shots/store/$lang"
+            timeout 300 xvfb-run -a -s "-screen 0 1290x2796x24" ~/godot-bin/godot --path godot \
+              --rendering-driver opengl3 --resolution 1290x2796 -- --shots "$GITHUB_WORKSPACE/shots/store/$lang" --lang "$lang" > "store_$lang.log" 2>&1 || true
+            tail -5 "store_$lang.log"
+            ls "shots/store/$lang" | head -100
+          done
 
       - name: Export APK
         env:
