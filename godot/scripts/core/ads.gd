@@ -7,9 +7,9 @@ class_name Ads
 ## Настоящая реклама доступна: синглтоны плагина регистрируются движком до загрузки скриптов.
 static var LIVE: bool = Engine.has_singleton("PoingGodotAdMobRewardedAd")
 
-## Блок "Rewarded" из AdMob. Сейчас тестовый блок Google: заменить на свой перед выпуском.
+## Блок "Rewarded" из AdMob (приложение Harvest Hollow, блок rewarded).
 ## App ID приложения - в tools/fetch_admob.sh (ADMOB_APP_ID).
-const REWARDED_ID := "ca-app-pub-3940256099942544/1712485313"
+const REWARDED_ID := "ca-app-pub-9867750696429328/9239036001"
 
 ## Ролик загружен (uid в плагине) или -1.
 static var _ad := -1

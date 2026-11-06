@@ -10,9 +10,8 @@ OUT="$1"
 [ -n "$OUT" ] || { echo "usage: $0 <out dir>"; exit 2; }
 V="${GODOT_VERSION:-4.5.1}"
 
-# App ID из AdMob (Приложения - Настройки приложения). Сейчас тестовый от Google: заменить перед выпуском,
-# вместе с Ads.REWARDED_ID в godot/scripts/core/ads.gd.
-ADMOB_APP_ID="ca-app-pub-3940256099942544~1458002511"
+# App ID из AdMob (Приложения - Настройки приложения). Блок Rewarded - Ads.REWARDED_ID в godot/scripts/core/ads.gd.
+ADMOB_APP_ID="ca-app-pub-9867750696429328~8153185043"
 
 POING_VERSION="v4.1.0"
 GMA_URL="https://dl.google.com/googleadmobadssdk/c8c5523373ed76aa/googlemobileadsios-spm-12.14.0.zip"
