@@ -2103,7 +2103,7 @@
  "talent.woodsman": "Mateiro",
  "talent.woodsman.text": "+{0} de madeira em cada coleta",
  "talents.free": "Pontos livres: {0}",
- "talents.hint": "1 ponto por nível, pontos bônus a cada 10 níveis e por conquistas",
+ "talents.hint": "1 ponto por nível, pontos bônus a cada 10 níveis, por conquistas e por níveis da casa principal",
  "talents.learn": "Aprender por 1 ponto",
  "talents.learnFor": "Aprender por {0} pontos",
  "talents.needMax": "Maximize \"{0}\" ({1}/{2})",

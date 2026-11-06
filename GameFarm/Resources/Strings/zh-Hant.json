@@ -2103,7 +2103,7 @@
  "talent.woodsman": "林中人",
  "talent.woodsman.text": "每次採集木材 +{0}",
  "talents.free": "可用點數：{0}",
- "talents.hint": "每升 1 級得 1 點，每 10 級和達成成就還有額外點數",
+ "talents.hint": "每升 1 級得 1 點，每 10 級、達成成就和主屋升級還有額外點數",
  "talents.learn": "花 1 點學習",
  "talents.learnFor": "花 {0} 點學習",
  "talents.needMax": "將 \"{0}\" 升滿（{1}/{2}）",

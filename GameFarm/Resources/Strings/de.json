@@ -2103,7 +2103,7 @@
  "talent.woodsman": "Waldläufer",
  "talent.woodsman.text": "+{0} Holz bei jeder Ernte",
  "talents.free": "Freie Punkte: {0}",
- "talents.hint": "1 Punkt pro Level, Bonuspunkte alle 10 Level und für Erfolge",
+ "talents.hint": "1 Punkt pro Level, Bonuspunkte alle 10 Level, für Erfolge und für Stufen des Haupthauses",
  "talents.learn": "Für 1 Punkt lernen",
  "talents.learnFor": "Für {0} Punkte lernen",
  "talents.needMax": "Bringe \"{0}\" auf Maximum ({1}/{2})",

@@ -2103,7 +2103,7 @@
  "talent.woodsman": "Ormancı",
  "talent.woodsman.text": "Her toplamada +{0} odun",
  "talents.free": "Boş puan: {0}",
- "talents.hint": "Seviye başına 1 puan; her 10 seviyede ve başarımlar için bonus puanlar",
+ "talents.hint": "Seviye başına 1 puan; her 10 seviyede, başarımlar ve ana ev seviyeleri için bonus puanlar",
  "talents.learn": "1 puanla öğren",
  "talents.learnFor": "{0} puanla öğren",
  "talents.needMax": "\"{0}\" yeteneğini sona kadar geliştir ({1}/{2})",

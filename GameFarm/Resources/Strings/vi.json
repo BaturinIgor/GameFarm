@@ -2103,7 +2103,7 @@
  "talent.woodsman": "Người rừng",
  "talent.woodsman.text": "+{0} gỗ mỗi lần thu hoạch",
  "talents.free": "Điểm còn lại: {0}",
- "talents.hint": "1 điểm mỗi cấp, điểm thưởng sau mỗi 10 cấp và khi đạt thành tựu",
+ "talents.hint": "1 điểm mỗi cấp, điểm thưởng sau mỗi 10 cấp, khi đạt thành tựu và khi nâng cấp nhà chính",
  "talents.learn": "Học với 1 điểm",
  "talents.learnFor": "Học với {0} điểm",
  "talents.needMax": "Nâng \"{0}\" lên tối đa ({1}/{2})",

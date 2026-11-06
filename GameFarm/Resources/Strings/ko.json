@@ -2103,7 +2103,7 @@
  "talent.woodsman": "숲사람",
  "talent.woodsman.text": "채집마다 나무 +{0}",
  "talents.free": "남은 포인트: {0}",
- "talents.hint": "레벨마다 1포인트, 10레벨마다 그리고 업적으로 보너스 포인트를 받아",
+ "talents.hint": "레벨마다 1포인트, 10레벨마다, 업적과 본채 레벨로 보너스 포인트를 받아",
  "talents.learn": "1포인트로 배우기",
  "talents.learnFor": "{0}포인트로 배우기",
  "talents.needMax": "\"{0}\" 특성을 최대로 올려 봐 ({1}/{2})",

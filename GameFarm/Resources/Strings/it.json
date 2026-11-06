@@ -2103,7 +2103,7 @@
  "talent.woodsman": "Boscaiolo",
  "talent.woodsman.text": "+{0} legno a ogni raccolta",
  "talents.free": "Punti liberi: {0}",
- "talents.hint": "1 punto per livello, punti bonus ogni 10 livelli e per gli obiettivi",
+ "talents.hint": "1 punto per livello, punti bonus ogni 10 livelli, per gli obiettivi e per i livelli della casa principale",
  "talents.learn": "Impara per 1 punto",
  "talents.learnFor": "Impara per {0} punti",
  "talents.needMax": "Porta \"{0}\" al massimo ({1}/{2})",

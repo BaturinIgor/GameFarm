@@ -2103,7 +2103,7 @@
  "talent.woodsman": "Penjaga hutan",
  "talent.woodsman.text": "+{0} kayu dari setiap panen",
  "talents.free": "Poin bebas: {0}",
- "talents.hint": "1 poin per level, poin bonus setiap 10 level dan dari pencapaian",
+ "talents.hint": "1 poin per level, poin bonus setiap 10 level, dari pencapaian dan level rumah utama",
  "talents.learn": "Pelajari dengan 1 poin",
  "talents.learnFor": "Pelajari dengan {0} poin",
  "talents.needMax": "Maksimalkan \"{0}\" ({1}/{2})",

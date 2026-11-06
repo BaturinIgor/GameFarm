@@ -2103,7 +2103,7 @@
  "talent.woodsman": "Leñador",
  "talent.woodsman.text": "+{0} de madera en cada recolección",
  "talents.free": "Puntos libres: {0}",
- "talents.hint": "1 punto por nivel, puntos extra cada 10 niveles y por logros",
+ "talents.hint": "1 punto por nivel, puntos extra cada 10 niveles, por logros y por niveles de la casa principal",
  "talents.learn": "Aprender por 1 punto",
  "talents.learnFor": "Aprender por {0} puntos",
  "talents.needMax": "Sube \"{0}\" al máximo ({1}/{2})",

@@ -2103,7 +2103,7 @@
  "talent.woodsman": "Leśnik",
  "talent.woodsman.text": "+{0} drewna z każdego zbioru",
  "talents.free": "Wolne punkty: {0}",
- "talents.hint": "1 punkt za poziom, dodatkowe punkty co 10 poziomów i za osiągnięcia",
+ "talents.hint": "1 punkt za poziom, dodatkowe punkty co 10 poziomów, za osiągnięcia i poziomy głównego domu",
  "talents.learn": "Naucz się za 1 punkt",
  "talents.learnFor": "Naucz się za {0} pkt",
  "talents.needMax": "Rozwiń \"{0}\" na maksa ({1}/{2})",

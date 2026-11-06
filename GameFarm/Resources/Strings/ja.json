@@ -2103,7 +2103,7 @@
  "talent.woodsman": "森の民",
  "talent.woodsman.text": "採取ごとに木材+{0}",
  "talents.free": "未使用ポイント：{0}",
- "talents.hint": "レベルごとに1ポイント。10レベルごとと実績でボーナスポイントももらえるよ",
+ "talents.hint": "レベルごとに1ポイント。10レベルごと、実績、母屋のレベルでボーナスポイントももらえるよ",
  "talents.learn": "1ポイントで習得",
  "talents.learnFor": "{0}ポイントで習得",
  "talents.needMax": "\"{0}\"を最大まで上げよう（{1}/{2}）",

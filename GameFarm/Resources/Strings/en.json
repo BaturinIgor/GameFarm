@@ -2103,7 +2103,7 @@
  "talent.woodsman": "Woodsman",
  "talent.woodsman.text": "+{0} wood from every harvest",
  "talents.free": "Free points: {0}",
- "talents.hint": "1 point per level, bonus points every 10 levels and for achievements",
+ "talents.hint": "1 point per level, bonus points every 10 levels, for achievements and for main house levels",
  "talents.learn": "Learn for 1 point",
  "talents.learnFor": "Learn for {0} points",
  "talents.needMax": "Max out \"{0}\" ({1}/{2})",

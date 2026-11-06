@@ -99,3 +99,10 @@ func test_academy_save_migrated() -> void:
 	eq(int(s["bonusTalentPoints"]), 2 + 2 + 5 + 1, "за перенесённые ранги - бесплатные очки")
 	Game.academy.defaults(s)
 	eq(int(s["bonusTalentPoints"]), 10, "второй раз не переносится")
+
+
+func test_estate_house_gives_points() -> void:
+	var before := Game.talents.points_total()
+	var lvl := Game.estate.level("main")
+	Game.save["estate"]["main"]["level"] = lvl + 3
+	eq(Game.talents.points_total(), before + 3, "очко за каждый уровень главного дома")
