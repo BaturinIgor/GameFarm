@@ -153,7 +153,7 @@ jobs:
             echo "::error::Script errors in the splash scene"
             exit 1
           fi
-          timeout 180 xvfb-run -a -s "-screen 0 1170x2532x24" ~/godot-bin/godot --path godot \
+          timeout 300 xvfb-run -a -s "-screen 0 1170x2532x24" ~/godot-bin/godot --path godot \
             --rendering-driver opengl3 --resolution 390x844 -- --shots "$GITHUB_WORKSPACE/shots" > shots.log 2>&1 || true
           tail -30 shots.log
           if grep -E "SCRIPT ERROR" shots.log; then
