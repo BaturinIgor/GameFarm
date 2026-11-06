@@ -323,12 +323,17 @@ func _check_overlap(w: String, sheet: Sheet, loud: bool) -> int:
 			var b: Control = leaves[j][0]
 			if leaves[i][2] != leaves[j][2] or a.is_ancestor_of(b) or b.is_ancestor_of(a):
 				continue
+			# Рисунок, собранный вручную в простом Control (значок на углу, горка кристаллов),
+			# накладывается намеренно; ошибка - когда элементы раскладывает контейнер
+			var common := _common_parent(a, b)
+			if common is Control and not common is Container:
+				continue
 			var x: Rect2 = (leaves[i][1] as Rect2).intersection(leaves[j][1])
 			var tight := a is LevelUpOverlay.Ribbon or b is LevelUpOverlay.Ribbon
 			if x.size.x > (0.5 if tight else 2.0) and x.size.y > (0.5 if tight else 2.0):
 				bad += 1
 				if loud and bad <= 8:
-					print("  %s overlap %.0fx%.0f: %s <-> %s" % [w, x.size.x, x.size.y, _describe(a), _describe(b)])
+					print("  %s overlap %.0fx%.0f in %s: %s <-> %s" % [w, x.size.x, x.size.y, common.get_class(), _describe(a), _describe(b)])
 	if loud:
 		print(("OVERLAP %s count=%d" % [w, bad]) if bad > 0 else ("OVERLAP OK %s" % w))
 	return bad
@@ -383,6 +388,13 @@ func _collect_leaves(node: Node, out: Array, clip := Rect2(-1e6, -1e6, 2e6, 2e6)
 		if leaf:
 			out.append([ctl, r, group])
 		_collect_leaves(ctl, out, inner_clip, inner_group)
+
+
+func _common_parent(a: Node, b: Node) -> Node:
+	var p := a.get_parent()
+	while p != null and not p.is_ancestor_of(b):
+		p = p.get_parent()
+	return p
 
 
 func _describe(c: Control) -> String:
