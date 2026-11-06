@@ -222,7 +222,8 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
         run: |
-          set -uo pipefail
+          # Без -e: статус xcodebuild проверяется вручную, а пустой grep не должен валить шаг
+          set +e -uo pipefail
           for name in TEAM_ID ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8; do
             [ -n "${!name}" ] || { echo "::error::Не задан секрет ${name/TEAM_ID/APPLE_TEAM_ID}"; exit 1; }
           done
@@ -250,7 +251,7 @@ jobs:
             PROVISIONING_PROFILE="" \
             archive > appstore.log 2>&1
           status=$?
-          grep -E "error:|fatal error" appstore.log | sort -u | head -60 | sed 's/^/::error::/'
+          grep -E "error:|fatal error" appstore.log | sort -u | head -60 | sed 's/^/::error::/' || true
           tail -30 appstore.log
           [ $status -eq 0 ] || exit $status
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
