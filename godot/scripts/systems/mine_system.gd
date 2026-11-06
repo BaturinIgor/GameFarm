@@ -11,7 +11,7 @@ func defaults(save: Dictionary) -> void:
 	save["mine"] = {
 		"floor": maxi(1, int(raw.get("floor", 1))),
 		"best": maxi(0, int(raw.get("best", 0))),
-		"lamps": clampi(int(raw.get("lamps", Mine.LAMPS_MAX)), 0, Mine.LAMPS_MAX * 3),
+		"lamps": clampi(int(raw.get("lamps", Mine.LAMPS_MAX)), 0, Mine.LAMPS_HOLD),
 		"lampAt": float(raw.get("lampAt", 0.0)),
 		"day": int(raw.get("day", -1)),
 		"ore": maxi(0, int(raw.get("ore", 0))),

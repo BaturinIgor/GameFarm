@@ -106,7 +106,7 @@ static func default_save() -> Dictionary:
 		"talents": {}, "unlocked": ["meadow"], "current": "meadow",
 		"animals": {}, "active": [], "gathered": {},
 		"harvests": 0, "coinsEarned": 0, "lastSeen": Clock.now(),
-		"tutorialDone": false, "openGates": [], "tickets": 1, "bestLevel": 1,
+		"tutorialDone": false, "openGates": [], "tickets": 0, "bestLevel": 1,
 		"skin": "farmer", "economy": ECONOMY,
 	}
 
@@ -145,8 +145,22 @@ func _load_save() -> Dictionary:
 
 
 func mark_dirty() -> void:
+	absorb_old_currencies(save)
 	_dirty = true
 	changed.emit()
+
+
+## Экспедиций больше нет: билеты превращаются в фонари шахты, карты сокровищ - в медные ключи (1:1).
+## Так любая старая выдача (магазин, ивенты, сундуки, сохранения) сразу даёт новое.
+static func absorb_old_currencies(s: Dictionary) -> void:
+	var tickets := int(s.get("tickets", 0))
+	if tickets > 0 and s.get("mine") is Dictionary:
+		s["mine"]["lamps"] = mini(Mine.LAMPS_HOLD, int(s["mine"].get("lamps", 0)) + tickets)
+		s["tickets"] = 0
+	var maps := int(s.get("maps", 0))
+	if maps > 0 and s.get("chests") is Dictionary and s["chests"].get("keys") is Dictionary:
+		s["chests"]["keys"]["copper"] = int(s["chests"]["keys"].get("copper", 0)) + maps
+		s["maps"] = 0
 
 
 func save_if_needed() -> void:
@@ -467,6 +481,7 @@ func discounted(cost: Dictionary) -> Dictionary:
 
 ## Полный порт recalc() из Swift: таланты, наследие, уют, блюда, созвездия, звери, снаряжение, усиления ивента.
 func recalc() -> void:
+	absorb_old_currencies(save)
 	var s := Stats.new()
 	# Алтарь Древних поднимает потолки, разбуженные Сердца дают добычу
 	var caps := Story.altar_caps(int(save.get("altar", 0)))

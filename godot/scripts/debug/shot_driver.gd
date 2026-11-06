@@ -373,11 +373,11 @@ func _extra(k: int) -> void:
 			main.hud.open_window(ShopPanel.new("crystals"))
 		5:
 			_shot("6_shop_crystals_bought")
-			main.hud.open_window(MapPanel.new("expeditions"))
+			main.hud.open_window(MapPanel.new("garden"))
 		6:
 			_scroll_window(0)
 		7:
-			_shot("6_map_expeditions")
+			_shot("6_map_garden")
 			main.hud.close_window()
 			LanguagePopup.open()
 		8:

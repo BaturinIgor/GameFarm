@@ -271,9 +271,13 @@ static func tabs(items: Array, selected: String, on_select: Callable, section :=
 
 
 ## Иконка из спрайтов (ic_<имя>) в интерфейсе, без сглаживания.
+## Старые значки валют, которых больше нет: билет экспедиции стал фонарём шахты, карта сокровищ - медным ключом.
+const ICON_ALIAS := {"ticket": "flame", "tmap": "key"}
+
+
 static func icon(name: String, size := 24.0) -> TextureRect:
 	var t := TextureRect.new()
-	t.texture = Sprites.icon(name)
+	t.texture = Sprites.icon(str(ICON_ALIAS.get(name, name)))
 	t.custom_minimum_size = Vector2(size, size)
 	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED

@@ -68,3 +68,47 @@ func test_float_numbers_become_int() -> void:
 	var loaded: Dictionary = Game._load_save()
 	eq(typeof(loaded["level"]), TYPE_INT)
 	eq(typeof(loaded["storage"]["wood"]), TYPE_INT)
+
+
+func test_old_currencies_absorbed() -> void:
+	# Экспедиций больше нет: билеты из старых сохранений и наград становятся фонарями шахты,
+	# карты сокровищ - медными ключами.
+	Game.save["mine"]["lamps"] = 2
+	Game.save["chests"]["keys"]["copper"] = 1
+	Game.save["tickets"] = 4
+	Game.save["maps"] = 3
+	Game.mark_dirty()
+	eq(int(Game.save["tickets"]), 0, "билеты обнулены")
+	eq(int(Game.save["maps"]), 0, "карты обнулены")
+	eq(int(Game.save["mine"]["lamps"]), 6, "билеты стали фонарями")
+	eq(int(Game.save["chests"]["keys"]["copper"]), 4, "карты стали медными ключами")
+	Game.save["tickets"] = 500
+	Game.mark_dirty()
+	eq(int(Game.save["mine"]["lamps"]), Mine.LAMPS_HOLD, "запас фонарей ограничен")
+
+
+func test_old_expedition_save_cleared() -> void:
+	var s: Dictionary = JSON.parse_string(JSON.stringify(Game.save))
+	s["expedition"] = {"location": "goldMine", "endsAt": 1.0, "returnTo": "meadow"}
+	s["current"] = "goldMine"
+	for sys in Game.systems:
+		sys.defaults(s)
+	check(not (s.get("expedition") is Dictionary and not (s["expedition"] as Dictionary).is_empty()), "забег экспедиции стёрт")
+	check(str(s["current"]) != "goldMine", "из экспедиции вернулись домой")
+	check(not Game.premium.can_start_expedition("goldMine"), "экспедиции не запускаются")
+
+
+func test_market_lamps_and_keys() -> void:
+	Game.save["crystals"] = 1000
+	var lamps := Game.mine.lamps()
+	check(Game.shop.buy_market("ticket1"))
+	eq(Game.mine.lamps(), lamps + 1, "фонарь из лавки")
+	var keys := int(Game.save["chests"]["keys"].get("copper", 0))
+	check(Game.shop.buy_market("map1"))
+	eq(int(Game.save["chests"]["keys"].get("copper", 0)), keys + 1, "медный ключ из лавки")
+
+
+func test_wild_has_no_ruins() -> void:
+	for ring in Wild.RINGS.size():
+		for sec in Wild.sectors(ring):
+			check(str(sec["kind"]) != "ruins", "в диких землях нет руин с экспедициями")

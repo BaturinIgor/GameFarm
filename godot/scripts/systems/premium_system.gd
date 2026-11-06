@@ -39,17 +39,13 @@ func defaults(save: Dictionary) -> void:
 		if not _is_number(save.get(key)):
 			save.erase(key)
 	_repair_timers(save)
-	save["tickets"] = int(save.get("tickets", 1))
+	save["tickets"] = int(save.get("tickets", 0))
 	save["maps"] = int(save.get("maps", 0))
 	if not _is_number(save.get("lastFreeTicket")):
 		save.erase("lastFreeTicket")
-	var run = _clean_run(save.get("expedition"))
-	if run == null:
-		save.erase("expedition")
-	else:
-		save["expedition"] = run
-	# Карта экспедиции без самой экспедиции: на луг
-	if Locations.kind(str(save.get("current", "meadow"))) == "expedition" and run == null:
+	# Экспедиций больше нет: незаконченная вылазка просто закрывается, герой - на лугу
+	save.erase("expedition")
+	if Locations.kind(str(save.get("current", "meadow"))) == "expedition":
 		save["current"] = "meadow"
 
 
@@ -136,7 +132,7 @@ func grant(product: String, transaction := "") -> void:
 		if key == "eventPass":
 			Game.events.activate_vip()
 		else:
-			Game.save["tickets"] = tickets() + Expeditions.TICKET_PACK
+			Game.save["tickets"] = tickets() + Mine.LAMP_PACK
 		Game.show_toast("px:chest_gold", L.t("toast.purchased", [Products.title(key)]))
 		Game.mark_dirty()
 		Game.save_now()
@@ -289,7 +285,7 @@ func open_garden_chest() -> void:
 	Game.add_coins(coins)
 	for it in items:
 		Game.add_to_storage(it[0], it[1])
-	Game.save["tickets"] = mini(Expeditions.MAX_TICKETS, tickets() + 1)
+	Game.save["tickets"] = tickets() + 1
 	Game.save["gardenChestAt"] = _now() + GARDEN_CHEST_EVERY
 	garden_chest_found = {"coins": coins, "items": items}
 	Sound.play("treasure")
@@ -310,7 +306,7 @@ func maps() -> int:
 
 func free_ticket_ready() -> bool:
 	var last = Game.save.get("lastFreeTicket")
-	if tickets() >= Expeditions.MAX_TICKETS:
+	if Game.mine.lamps() >= Mine.LAMPS_HOLD:
 		return false
 	return not _is_number(last) or float(last) + Game.house.free_ticket_interval() <= _now()
 
@@ -328,7 +324,7 @@ func claim_free_ticket() -> void:
 	if not free_ticket_ready():
 		return
 	var n := 2 if has_pro() else 1
-	Game.save["tickets"] = mini(Expeditions.MAX_TICKETS, tickets() + n)
+	Game.save["tickets"] = tickets() + n
 	Game.save["lastFreeTicket"] = _now()
 	Game.show_toast("px:ticket", L.t("toast.ticket", [n]))
 	Sound.play("coin")
@@ -373,7 +369,7 @@ func expedition_left() -> float:
 
 
 func can_start_expedition(id: String) -> bool:
-	return Locations.kind(id) == "expedition" and expedition() == null and Game.dungeons.run == null \
+	return false and Locations.kind(id) == "expedition" and expedition() == null and Game.dungeons.run == null \
 		and tickets() >= Expeditions.cost(id) and maps() >= Expeditions.maps(id)
 
 
