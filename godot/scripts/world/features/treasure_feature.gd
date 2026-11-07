@@ -75,6 +75,8 @@ func _check_treasure(world: World) -> void:
 	world.shake = maxf(world.shake, 4.0)
 	world.player.celebrate()
 	Sound.play("treasure")
+	# Монеты и вспышка летят без касаний: полная частота кадров, чтобы не дёргалось
+	Sound.keep_smooth(3.0)
 	Input.vibrate_handheld(30)
 	if Hud.current != null:
 		Hud.current.show_overlay(TreasureCard.new(reward))

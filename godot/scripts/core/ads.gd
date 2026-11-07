@@ -15,6 +15,8 @@ const REWARDED_ID := "ca-app-pub-9867750696429328/9239036001"
 static var _ad := -1
 static var _loading := false
 static var _started := false
+## Окно согласия (GDPR или пояснение перед ATT) загружается или на экране: SDK ждёт ответа игрока.
+static var _form_open := false
 ## Ролик на экране: награда выдаётся, когда его закроют, если досмотрели.
 static var _showing := false
 static var _earned := false
@@ -49,7 +51,9 @@ static func setup(host: Node) -> void:
 	consent.connect("on_consent_info_updated_failure", func(_e: Dictionary) -> void: Ads._start_sdk())
 	consent.update({"tag_for_under_age_of_consent": false, "consent_debug_settings": {}})
 	# Если Google не ответит, всё равно запускаем рекламу через 10 секунд
-	host.get_tree().create_timer(10.0).timeout.connect(Ads._start_sdk)
+	host.get_tree().create_timer(10.0).timeout.connect(func() -> void:
+		if not Ads._form_open:
+			Ads._start_sdk())
 
 
 static func _on_consent_info() -> void:
@@ -59,9 +63,14 @@ static func _on_consent_info() -> void:
 	if ump == null or not consent.get_is_consent_form_available() or consent.get_consent_status() != 2:
 		_start_sdk()
 		return
+	_form_open = true
 	ump.connect("on_consent_form_load_success_listener", func(uid: int) -> void: ump.show(uid))
-	ump.connect("on_consent_form_dismissed", func(_uid: int, _e: Dictionary) -> void: Ads._start_sdk())
-	ump.connect("on_consent_form_load_failure_listener", func(_e: Dictionary) -> void: Ads._start_sdk())
+	ump.connect("on_consent_form_dismissed", func(_uid: int, _e: Dictionary) -> void:
+		Ads._form_open = false
+		Ads._start_sdk())
+	ump.connect("on_consent_form_load_failure_listener", func(_e: Dictionary) -> void:
+		Ads._form_open = false
+		Ads._start_sdk())
 	ump.load_consent_form()
 
 

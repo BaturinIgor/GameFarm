@@ -19,6 +19,8 @@ func _init(treasure: Dictionary, title_key := "treasure.title") -> void:
 
 
 func _ready() -> void:
+	# Только показывает награду и сама исчезает: мир под ней идёт дальше, иначе экран будто зависал
+	set_meta("passive", true)
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Лента заголовка заходит на верх плашки

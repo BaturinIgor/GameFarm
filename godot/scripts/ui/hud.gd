@@ -756,7 +756,8 @@ func is_blocking() -> bool:
 	if _overlay_layer.get_parent() == null:
 		return false
 	for c in _overlay_layer.get_children():
-		if not c.is_queued_for_deletion():
+		# Карточка награды (клад) не мешает играть: мир под ней не останавливается
+		if not c.is_queued_for_deletion() and not c.get_meta("passive", false):
 			return true
 	return false
 
