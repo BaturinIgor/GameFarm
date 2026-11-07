@@ -235,7 +235,19 @@ def tiktok_post(name: str, acc: dict, tokens: dict, video: pathlib.Path, meta: d
                               "disable_comment": False, "disable_duet": False, "disable_stitch": False,
                               "video_cover_timestamp_ms": 1500},
                 "source_info": source}
-        init, _ = http("POST", f"{TT}/post/publish/video/init/", json_body=body, headers=auth)
+        try:
+            init, _ = http("POST", f"{TT}/post/publish/video/init/", json_body=body, headers=auth)
+        except SystemExit as e:
+            # До аудита приложения TikTok принимает только "только для меня"
+            if "unaudited_client" not in str(e):
+                raise
+            if privacy == "SELF_ONLY":
+                raise SystemExit(f"{name}: приложение ещё не прошло проверку TikTok, а до неё публиковать можно только "
+                                 "в закрытый аккаунт. Включите в TikTok: Настройки и конфиденциальность → "
+                                 "Конфиденциальность → Закрытый аккаунт.")
+            print(f"  {name}: приложение ещё не прошло проверку TikTok, публикую «только для меня»", flush=True)
+            body["post_info"]["privacy_level"] = "SELF_ONLY"
+            init, _ = http("POST", f"{TT}/post/publish/video/init/", json_body=body, headers=auth)
     else:
         init, _ = http("POST", f"{TT}/post/publish/inbox/video/init/", json_body={"source_info": source}, headers=auth)
     data = init["data"]
@@ -249,6 +261,9 @@ def tiktok_post(name: str, acc: dict, tokens: dict, video: pathlib.Path, meta: d
         if status == "FAILED":
             raise SystemExit(f"TikTok отклонил ролик: {st['data'].get('fail_reason')}")
         time.sleep(5)
+    else:
+        raise SystemExit(f"TikTok за 5 минут не закончил обработку ({status}). Проверить позже: "
+                         f"publish_clips.py check {name} {data['publish_id']}")
     where = "черновик во «Входящих» TikTok, подпись: " + meta["caption"] if mode != "direct" else status
     return f"{data['publish_id']} ({where})"
 
@@ -397,7 +412,7 @@ def publish(video: pathlib.Path, names: list[str], a) -> None:
     posted = load(POSTED, [])
     for name in targets(names, meta["lang"]):
         acc = account(name)
-        if any(p["account"] == name and p["clip"] == video.name for p in posted):
+        if any(p["account"] == name and p["clip"] == video.name for p in posted) and not a.force:
             print(f"{name}: {video.name} уже опубликован, пропускаю")
             continue
         last = max((p["at"] for p in posted if p["account"] == name), default=0)
@@ -425,8 +440,11 @@ def main() -> None:
         p.add_argument("--to", nargs="*", help="аккаунты или площадки (tiktok, instagram, youtube); по умолчанию все")
         p.add_argument("--dry-run", action="store_true", help="показать, что уйдёт, ничего не публикуя")
         p.add_argument("--private", action="store_true", help="TikTok и YouTube: приватно, для проверки")
-        p.add_argument("--force", action="store_true", help="не ждать сутки между роликами")
+        p.add_argument("--force", action="store_true", help="не ждать сутки и публиковать повторно")
     sub.add_parser("status", help="что уже опубликовано")
+    ck = sub.add_parser("check", help="TikTok: состояние загрузки по publish_id (без него - настройки аккаунта)")
+    ck.add_argument("account")
+    ck.add_argument("publish_id", nargs="?")
     a = ap.parse_args()
 
     if a.cmd == "login":
@@ -435,6 +453,24 @@ def main() -> None:
         tokens[a.account] = PLATFORMS[acc["platform"]][0](a.account, acc)
         save(TOKENS, tokens)
         print(f"{a.account}: вход выполнен, токен в {TOKENS}")
+        if acc["platform"] == "tiktok":
+            # Показываем, в какой аккаунт вошли: при входе по QR легко отсканировать не тем аккаунтом
+            try:
+                me, _ = http("GET", f"{TT}/user/info/?fields=display_name",
+                             headers={"Authorization": f"Bearer {tokens[a.account]['access_token']}"})
+                print(f"{a.account}: это аккаунт «{me['data']['user']['display_name']}». Если не тот - войдите заново.")
+            except SystemExit:
+                pass
+    elif a.cmd == "check":
+        acc = account(a.account)
+        token = tiktok_token(a.account, acc, load(TOKENS, {}))
+        auth = {"Authorization": f"Bearer {token}"}
+        if a.publish_id:
+            st, _ = http("POST", f"{TT}/post/publish/status/fetch/", json_body={"publish_id": a.publish_id}, headers=auth)
+        else:
+            # Что TikTok разрешает этому аккаунту: у закрытого нет PUBLIC_TO_EVERYONE
+            st, _ = http("POST", f"{TT}/post/publish/creator_info/query/", json_body={}, headers=auth)
+        print(json.dumps(st, ensure_ascii=False, indent=2))
     elif a.cmd == "post":
         publish(a.path, a.to, a)
     elif a.cmd == "next":
