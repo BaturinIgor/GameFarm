@@ -1,0 +1,35 @@
+{
+  "_": "Скопируйте в marketing/accounts.json (он в .gitignore) и впишите ключи приложений. Аккаунты создаются вручную, по одному на площадку и язык. redirect_uri для TikTok и Instagram должен совпадать с адресом в настройках приложения. link - ссылка на игру с campaign token, чтобы в App Store Connect было видно, откуда пришли установки.",
+  "accounts": {
+    "tiktok_en": {
+      "platform": "tiktok",
+      "lang": "en",
+      "client_key": "TIKTOK_CLIENT_KEY",
+      "client_secret": "TIKTOK_CLIENT_SECRET",
+      "redirect_uri": "https://baturinigor.github.io/GameFarm/oauth.html",
+      "mode": "draft"
+    },
+    "tiktok_ru": {
+      "platform": "tiktok",
+      "lang": "ru",
+      "client_key": "TIKTOK_CLIENT_KEY",
+      "client_secret": "TIKTOK_CLIENT_SECRET",
+      "redirect_uri": "https://baturinigor.github.io/GameFarm/oauth.html",
+      "mode": "draft"
+    },
+    "instagram": {
+      "platform": "instagram",
+      "lang": "en",
+      "app_id": "INSTAGRAM_APP_ID",
+      "app_secret": "INSTAGRAM_APP_SECRET",
+      "redirect_uri": "https://baturinigor.github.io/GameFarm/oauth.html"
+    },
+    "youtube": {
+      "platform": "youtube",
+      "lang": "en",
+      "client_id": "GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com",
+      "client_secret": "GOOGLE_OAUTH_CLIENT_SECRET",
+      "link": "https://apps.apple.com/app/idAPP_ID?pt=PROVIDER_ID&ct=youtube&mt=8"
+    }
+  }
+}

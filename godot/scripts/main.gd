@@ -55,6 +55,11 @@ func _ready() -> void:
 		var driver: Node = load("res://scripts/debug/shot_driver.gd").new()
 		driver.main = self
 		add_child(driver)
+	# Ролики для соцсетей: сценарий играет сам (scripts/debug/clip_driver.gd)
+	elif "--clip" in OS.get_cmdline_user_args():
+		var clip: Node = load("res://scripts/debug/clip_driver.gd").new()
+		clip.main = self
+		add_child(clip)
 
 
 var _back_at := -10.0

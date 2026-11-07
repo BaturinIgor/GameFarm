@@ -47,7 +47,7 @@ func _ready() -> void:
 		set_process(false)
 		get_tree().root.add_child.call_deferred(load("res://tests/sim/sim_runner.gd").new())
 		return
-	if "--check-scripts" in args or "--shots" in args or DisplayServer.get_name() == "headless":
+	if "--check-scripts" in args or "--shots" in args or "--clip" in args or DisplayServer.get_name() == "headless":
 		set_process(false)
 		get_tree().change_scene_to_file.call_deferred(MAIN)
 		return
