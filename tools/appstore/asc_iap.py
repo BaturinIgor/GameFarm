@@ -101,6 +101,7 @@ def call(method, path, body=None, ok=(200, 201, 204)):
         except urllib.error.HTTPError as e:
             text = e.read().decode(errors="replace")
             if e.code == 429 or e.code >= 500:
+                print(f"  {method} {path.split('?')[0]} -> {e.code}, жду {2 ** attempt * 2} с и пробую ещё раз", flush=True)
                 time.sleep(2 ** attempt * 2)
                 continue
             raise RuntimeError(f"{method} {path} -> {e.code}: {text[:800]}")

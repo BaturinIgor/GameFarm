@@ -102,6 +102,7 @@ def ensure_achievement_locs(ach_id, a):
         except RuntimeError:
             pass
         state = ((img or {}).get("attributes", {}).get("assetDeliveryState") or {}).get("state", "")
+        print(f"  {loc}: картинка {state or 'нет'}", flush=True)
         if img and state not in ("UPLOAD_COMPLETE", "COMPLETE"):
             # Прошлая загрузка не закончилась (или упала): убираем и грузим заново
             call("DELETE", f"/v1/gameCenterAchievementImages/{img['id']}")
