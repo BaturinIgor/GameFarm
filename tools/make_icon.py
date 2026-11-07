@@ -1,9 +1,9 @@
-"""Иконка Harvest Hollow: герой с топором у домика на поляне, вечернее небо со звездой.
+"""Иконка Harvest Hollow: ночь, знамя альянса с Хранителем-фениксом, герой с топором и курица.
 
     python3 tools/make_icon.py <out.png>
 
 Рисуется пикселями 64x64 вручную (без графики паков), потом увеличивается в 16 раз
-и получает мягкое свечение звезды и окна.
+и получает мягкое свечение Хранителя.
 """
 import math
 import random
@@ -381,28 +381,70 @@ def _add(base, layer):
     return out
 
 
-def main(path):
-    img = Image.new("RGBA", (N, N))
-    sky(img)
-    stars(img)
-    paint(img, BIG_STAR, 45, 4)
-    hills(img)
-    meadow(img)
-    # домик слева, чуть дальше героя
-    shadow(img, 15, 48, 14, 2.5, 0.65)
-    window, chimney = house(img, 2, 24)
-    smoke(img, 21, 22)
-    # тропинка к двери
-    px = img.load()
-    for y in range(48, N):
-        w = 2 + (y - 48) * 0.35
-        cx = 10 + (y - 48) * 0.9
-        for x in range(int(cx - w), int(cx + w) + 1):
-            if 0 <= x < N:
-                px[x, y] = hexc("#c8925a") if (x + y) % 6 else hexc("#a8744a")
-    # герой с топором
+# Хранитель альянса (птенец феникса), курица и знамя альянса с короной
+PH = {"O": OUT, "F": "#ffd54a", "f": "#ff8a2a", "R": "#e04a2a", "E": "#262b44", "b": "#ffb15e", "X": "#fff3b0"}
+PHOENIX = [
+    "O.................O",
+    "OO...............OO",
+    "OfO.............OfO",
+    "OffO....OOO....OffO",
+    ".OffO..OFXFO..OffO.",
+    ".OfFfOOFEFEFOOfFfO.",
+    "..OfFFFFFbFFFFFfO..",
+    "..OffFFFFFFFFFffO..",
+    "...OOfFFFFFFFfOO...",
+    ".....OfRFFFRfO.....",
+    "....OfRO.O.ORfO....",
+    "....OO.......OO....",
+]
+CH = {"O": OUT, "W": "#ffffff", "w": "#c8d0e0", "r": "#e43b44", "b": "#feae34", "y": "#f77622", "E": "#262b44"}
+CHICKEN = [
+    "...rr.....",
+    "..OrrO....",
+    ".OWWWWO...",
+    "OWWWEWbO..",
+    "OWWWWWbbO.",
+    "OwWWWWWWO.",
+    "OwwWWWWwO.",
+    ".OwwwwwO..",
+    "..OOOOO...",
+    "...y.y....",
+    "..yy.yy...",
+]
+# Полотно 7 клеток, корона по центру (по клетке поля с обеих сторон)
+BN = {"O": OUT, "Y": "#ffc825", "t": "#743f39", "B": "#3a6fd0", "b": "#24408a"}
+BANNER = [
+    "OOO........",
+    "OYO........",
+    "OtOOOOOOOOO",
+    "OtOBBBBBBBO",
+    "OtOBYBYBYBO",
+    "OtOBYYYYYBO",
+    "OtOBYYYYYBO",
+    "OtOBBBBBBBO",
+    "OtOBBBBBBbO",
+    "OtOBBBBBBbO",
+    "OtOBBBOBBbO",
+    "OtOBBO.OBbO",
+    "OtOBO...ObO",
+    "OtOO.....OO",
+    "OtO........",
+    "OtO........",
+    "OtO........",
+    "OtO........",
+    "OtO........",
+    "OOO........",
+]
+
+
+def sprite(rows, pal):
+    img = Image.new("RGBA", (len(rows[0]), len(rows)), (0, 0, 0, 0))
+    paint(img, rows, 0, 0, pal)
+    return img
+
+
+def hero_with_axe(img, hx, hy):
     h = hero()
-    hx, hy = 26, 27
     shadow(img, hx + 12, hy + 31, 9, 1.6, 0.55)
     axe = Image.new("RGBA", (16, 34), (0, 0, 0, 0))
     paint(axe, AXE, 2, 0)
@@ -422,10 +464,24 @@ def main(path):
                  (hx + 18, hy + 25), (hx + 19, hy + 25), (hx + 20, hy + 25), (hx + 18, hy + 22), (hx + 20, hy + 22)):
         px[x, y] = hexc(OUT)
 
-    big = img.resize((N * SCALE, N * SCALE), Image.NEAREST)
-    s = SCALE
-    big = glow(big, 51.5 * s, 9.5 * s, 13 * s, (255, 236, 170), 0.55)
-    big = glow(big, window[0] * s, window[1] * s, 9 * s, (255, 200, 90), 0.4)
+
+def main(path):
+    """Ночь, крупно: знамя альянса, на нём сияющий Хранитель, перед ним герой с топором и курица."""
+    img = Image.new("RGBA", (N, N))
+    sky(img)
+    stars(img)
+    hills(img)
+    meadow(img)
+    img.alpha_composite(sprite(BANNER, BN).resize((22, 40), Image.NEAREST), (37, 18))
+    img.alpha_composite(sprite(PHOENIX, PH), (29, 8))
+    hero_with_axe(img, 14, 27)
+    shadow(img, 13, 59, 5, 1.2, 0.55)
+    img.alpha_composite(sprite(CHICKEN, CH), (7, 49))
+    # кадр 56x56 крупнее сцены, затем 1024x1024
+    x0, y0, size = 4, 8, 56
+    big = img.crop((x0, y0, x0 + size, y0 + size)).resize((1024, 1024), Image.NEAREST)
+    k = 1024 / size
+    big = glow(big, (38.5 - x0) * k, (13.5 - y0) * k, 14 * k, (255, 190, 90), 0.6)
     big.convert("RGB").save(path)
     print("ok", path)
 
