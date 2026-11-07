@@ -58,8 +58,8 @@ def upload(kind, rel_name, rel_kind, owner_id, path):
         for h in op.get("requestHeaders", []):
             req.add_header(h["name"], h["value"])
         urllib.request.urlopen(req, timeout=120, context=asc_iap.SSL).read()
-    call("PATCH", f"/v1/{kind}/{iid}", {"data": {"type": kind, "id": iid,
-        "attributes": {"uploaded": True, "sourceFileChecksum": hashlib.md5(blob).hexdigest()}}})
+    # У картинок Game Center нет sourceFileChecksum (в отличие от скриншотов покупок)
+    call("PATCH", f"/v1/{kind}/{iid}", {"data": {"type": kind, "id": iid, "attributes": {"uploaded": True}}})
 
 
 def ensure_achievement(detail_id, existing, a):
@@ -101,6 +101,11 @@ def ensure_achievement_locs(ach_id, a):
             img = call("GET", f"/v1/gameCenterAchievementLocalizations/{loc_id}/gameCenterAchievementImage").get("data")
         except RuntimeError:
             pass
+        state = ((img or {}).get("attributes", {}).get("assetDeliveryState") or {}).get("state", "")
+        if img and state not in ("UPLOAD_COMPLETE", "COMPLETE"):
+            # Прошлая загрузка не закончилась (или упала): убираем и грузим заново
+            call("DELETE", f"/v1/gameCenterAchievementImages/{img['id']}")
+            img = None
         if not img:
             upload("gameCenterAchievementImages", "gameCenterAchievementLocalization",
                    "gameCenterAchievementLocalizations", loc_id, image_for(a))
