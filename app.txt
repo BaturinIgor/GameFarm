@@ -1,0 +1,246 @@
+== bundle
+total 172392
+drwxr-xr-x  13 runner  staff       416 Nov  7 12:11 .
+drwxr-xr-x   3 runner  staff        96 Nov  7 12:10 ..
+-rw-r--r--   1 runner  staff     28240 Nov  7 12:10 AppIcon60x60@2x.png
+-rw-r--r--   1 runner  staff     37819 Nov  7 12:10 AppIcon76x76@2x~ipad.png
+-rw-r--r--   1 runner  staff    888568 Nov  7 12:11 Assets.car
+drwxr-xr-x   3 runner  staff        96 Nov  7 12:10 en.lproj
+drwxr-xr-x   3 runner  staff        96 Nov  7 12:11 Frameworks
+-rwxr-xr-x   1 runner  staff  65474256 Nov  7 12:11 HarvestHollow
+-rw-r--r--   1 runner  staff  21816884 Nov  7 12:10 HarvestHollow.pck
+-rw-r--r--   1 runner  staff      3403 Nov  7 12:11 Info.plist
+drwxr-xr-x   5 runner  staff       160 Nov  7 12:11 Launch Screen.storyboardc
+-rw-r--r--   1 runner  staff         8 Nov  7 12:11 PkgInfo
+-rw-r--r--   1 runner  staff       990 Nov  7 12:10 PrivacyInfo.xcprivacy
+== Info.plist
+{
+  "BuildMachineOSBuild" => "25G332"
+  "CADisableMinimumFrameDurationOnPhone" => true
+  "CFBundleDevelopmentRegion" => "en"
+  "CFBundleDisplayName" => "Harvest Hollow"
+  "CFBundleExecutable" => "HarvestHollow"
+  "CFBundleIcons" => {
+    "CFBundlePrimaryIcon" => {
+      "CFBundleIconFiles" => [
+        0 => "AppIcon60x60"
+      ]
+      "CFBundleIconName" => "AppIcon"
+    }
+  }
+  "CFBundleIcons~ipad" => {
+    "CFBundlePrimaryIcon" => {
+      "CFBundleIconFiles" => [
+        0 => "AppIcon60x60"
+        1 => "AppIcon76x76"
+      ]
+    }
+  }
+  "CFBundleIdentifier" => "com.personal.gamefarm"
+  "CFBundleInfoDictionaryVersion" => "6.0"
+  "CFBundleName" => "HarvestHollow"
+  "CFBundlePackageType" => "APPL"
+  "CFBundleShortVersionString" => "1.0.0"
+  "CFBundleSupportedPlatforms" => [
+    0 => "iPhoneOS"
+  ]
+  "CFBundleVersion" => "63"
+  "DTCompiler" => "com.apple.compilers.llvm.clang.1_0"
+  "DTPlatformBuild" => "23F81a"
+  "DTPlatformName" => "iphoneos"
+  "DTPlatformVersion" => "26.5"
+  "DTSDKBuild" => "23F81a"
+  "DTSDKName" => "iphoneos26.5"
+  "DTXcode" => "2660"
+  "DTXcodeBuild" => "17F113"
+  "GADApplicationIdentifier" => "ca-app-pub-9867750696429328~8153185043"
+  "ITSAppUsesNonExemptEncryption" => false
+  "LSRequiresIPhoneOS" => true
+  "LSSupportsOpeningDocumentsInPlace" => true
+  "MinimumOSVersion" => "14.0"
+  "NSCameraUsageDescription" => ""
+  "NSMicrophoneUsageDescription" => ""
+  "NSPhotoLibraryUsageDescription" => ""
+  "NSUserTrackingUsageDescription" => "This lets rewarded ads be more relevant to you. The game works the same either way."
+  "SKAdNetworkItems" => [
+    0 => {
+      "SKAdNetworkIdentifier" => "cstr6suwn9.skadnetwork"
+    }
+    1 => {
+      "SKAdNetworkIdentifier" => "4fzdc2evr5.skadnetwork"
+    }
+    2 => {
+      "SKAdNetworkIdentifier" => "2fnua5tdw4.skadnetwork"
+    }
+    3 => {
+      "SKAdNetworkIdentifier" => "ydx93a7ass.skadnetwork"
+    }
+    4 => {
+      "SKAdNetworkIdentifier" => "p78axxw29g.skadnetwork"
+    }
+    5 => {
+      "SKAdNetworkIdentifier" => "v72qych5uu.skadnetwork"
+    }
+    6 => {
+      "SKAdNetworkIdentifier" => "ludvb6z3bs.skadnetwork"
+    }
+    7 => {
+      "SKAdNetworkIdentifier" => "cp8zw746q7.skadnetwork"
+    }
+    8 => {
+      "SKAdNetworkIdentifier" => "3sh42y64q3.skadnetwork"
+    }
+    9 => {
+      "SKAdNetworkIdentifier" => "c6k4g5qg8m.skadnetwork"
+    }
+    10 => {
+      "SKAdNetworkIdentifier" => "s39g8k73mm.skadnetwork"
+    }
+    11 => {
+      "SKAdNetworkIdentifier" => "wg4vff78zm.skadnetwork"
+    }
+    12 => {
+      "SKAdNetworkIdentifier" => "3qy4746246.skadnetwork"
+    }
+    13 => {
+      "SKAdNetworkIdentifier" => "f38h382jlk.skadnetwork"
+    }
+    14 => {
+      "SKAdNetworkIdentifier" => "hs6bdukanm.skadnetwork"
+    }
+    15 => {
+      "SKAdNetworkIdentifier" => "mlmmfzh3r3.skadnetwork"
+    }
+    16 => {
+      "SKAdNetworkIdentifier" => "v4nxqhlyqp.skadnetwork"
+    }
+    17 => {
+      "SKAdNetworkIdentifier" => "wzmmz9fp6w.skadnetwork"
+    }
+    18 => {
+      "SKAdNetworkIdentifier" => "su67r6k2v3.skadnetwork"
+    }
+    19 => {
+      "SKAdNetworkIdentifier" => "yclnxrl5pm.skadnetwork"
+    }
+    20 => {
+      "SKAdNetworkIdentifier" => "t38b2kh725.skadnetwork"
+    }
+    21 => {
+      "SKAdNetworkIdentifier" => "7ug5zh24hu.skadnetwork"
+    }
+    22 => {
+      "SKAdNetworkIdentifier" => "gta9lk7p23.skadnetwork"
+    }
+    23 => {
+      "SKAdNetworkIdentifier" => "vutu7akeur.skadnetwork"
+    }
+    24 => {
+      "SKAdNetworkIdentifier" => "y5ghdn5j9k.skadnetwork"
+    }
+    25 => {
+      "SKAdNetworkIdentifier" => "v9wttpbfk9.skadnetwork"
+    }
+    26 => {
+      "SKAdNetworkIdentifier" => "n38lu8286q.skadnetwork"
+    }
+    27 => {
+      "SKAdNetworkIdentifier" => "47vhws6wlr.skadnetwork"
+    }
+    28 => {
+      "SKAdNetworkIdentifier" => "kbd757ywx3.skadnetwork"
+    }
+    29 => {
+      "SKAdNetworkIdentifier" => "9t245vhmpl.skadnetwork"
+    }
+    30 => {
+      "SKAdNetworkIdentifier" => "a2p9lx4jpn.skadnetwork"
+    }
+    31 => {
+      "SKAdNetworkIdentifier" => "22mmun2rn5.skadnetwork"
+    }
+    32 => {
+      "SKAdNetworkIdentifier" => "44jx6755aq.skadnetwork"
+    }
+    33 => {
+      "SKAdNetworkIdentifier" => "k674qkevps.skadnetwork"
+    }
+    34 => {
+      "SKAdNetworkIdentifier" => "4468km3ulz.skadnetwork"
+    }
+    35 => {
+      "SKAdNetworkIdentifier" => "2u9pt9hc89.skadnetwork"
+    }
+    36 => {
+      "SKAdNetworkIdentifier" => "8s468mfl3y.skadnetwork"
+    }
+    37 => {
+      "SKAdNetworkIdentifier" => "klf5c3l5u5.skadnetwork"
+    }
+    38 => {
+      "SKAdNetworkIdentifier" => "ppxm28t8ap.skadnetwork"
+    }
+    39 => {
+      "SKAdNetworkIdentifier" => "kbmxgpxpgc.skadnetwork"
+    }
+    40 => {
+      "SKAdNetworkIdentifier" => "uw77j35x4d.skadnetwork"
+    }
+    41 => {
+      "SKAdNetworkIdentifier" => "578prtvx9j.skadnetwork"
+    }
+    42 => {
+      "SKAdNetworkIdentifier" => "4dzt52r2t5.skadnetwork"
+    }
+    43 => {
+      "SKAdNetworkIdentifier" => "tl55sbb4fm.skadnetwork"
+    }
+    44 => {
+      "SKAdNetworkIdentifier" => "c3frkrj4fj.skadnetwork"
+    }
+    45 => {
+      "SKAdNetworkIdentifier" => "e5fvkxwrpn.skadnetwork"
+    }
+    46 => {
+      "SKAdNetworkIdentifier" => "8c4e2ghe7u.skadnetwork"
+    }
+    47 => {
+      "SKAdNetworkIdentifier" => "3rd42ekr43.skadnetwork"
+    }
+    48 => {
+      "SKAdNetworkIdentifier" => "97r2b46745.skadnetwork"
+    }
+    49 => {
+      "SKAdNetworkIdentifier" => "3qcr597p9d.skadnetwork"
+    }
+  ]
+  "UIDeviceFamily" => [
+    0 => 1
+  ]
+  "UIFileSharingEnabled" => true
+  "UILaunchStoryboardName" => "Launch Screen"
+  "UIRequiredDeviceCapabilities" => [
+    0 => "arm64"
+  ]
+  "UIRequiresFullScreen" => true
+  "UIStatusBarHidden" => true
+  "UISupportedInterfaceOrientations" => [
+    0 => "UIInterfaceOrientationPortrait"
+  ]
+  "UISupportedInterfaceOrientations~ipad" => [
+    0 => "UIInterfaceOrientationPortrait"
+  ]
+}
+== sizes
+4.0K	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/en.lproj
+4.0K	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/Info.plist
+4.0K	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/PkgInfo
+4.0K	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/PrivacyInfo.xcprivacy
+ 12K	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/Launch Screen.storyboardc
+ 28K	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/AppIcon60x60@2x.png
+ 40K	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/AppIcon76x76@2x~ipad.png
+868K	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/Assets.car
+7.4M	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/Frameworks
+ 21M	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/HarvestHollow.pck
+ 62M	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app/HarvestHollow
+ 92M	build-ios/HarvestHollow.xcarchive/Products/Applications/HarvestHollow.app
