@@ -1,0 +1,637 @@
+Godot Engine v4.5.1.stable.official.f62fdbde1 - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:364)
+OpenGL API 4.5 (Core Profile) Mesa 26.0.8-1ubuntu0.3 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 21.1.8, 256 bits)
+ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+ALSA lib pcm.c:2722:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+ERROR: Condition "status < 0" is true. Returning: ERR_CANT_OPEN
+   at: init_output_device (drivers/alsa/audio_driver_alsa.cpp:90)
+WARNING: All audio drivers failed, falling back to the dummy driver.
+     at: initialize (servers/audio_server.cpp:244)
+
+t=0.1 pos=(656.0, 1192.0) pack=0 coins=30 storage={  }
+PERF t=0.1 step=0 fps=1 process_ms=758.42 draws=261 nodes=1106 orphans=1 objects=3693 mem_mb=99.3
+t=1.1 pos=(656.0, 1192.0) pack=0 coins=30 storage={  }
+PERF t=1.1 step=0 fps=27 process_ms=9.82 draws=276 nodes=1109 orphans=1 objects=3698 mem_mb=99.5
+shot saved: 1_start
+t=2.1 pos=(709.5287, 1222.751) pack=0 coins=30 storage={  }
+PERF t=2.1 step=1 fps=40 process_ms=39.66 draws=278 nodes=1113 orphans=1 objects=3725 mem_mb=99.9
+t=3.1 pos=(819.4462, 1276.733) pack=0 coins=30 storage={  }
+PERF t=3.1 step=1 fps=60 process_ms=40.37 draws=266 nodes=1110 orphans=1 objects=3716 mem_mb=99.8
+shot saved: 2_walk
+t=4.1 pos=(820.8334, 1278.031) pack=0 coins=30 storage={  }
+PERF t=4.1 step=1 fps=60 process_ms=8.31 draws=260 nodes=1108 orphans=1 objects=3706 mem_mb=99.8
+t=5.1 pos=(858.9652, 1329.145) pack=2 coins=30 storage={  }
+PERF t=5.1 step=1 fps=60 process_ms=21.72 draws=262 nodes=1122 orphans=1 objects=3792 mem_mb=100.0
+t=6.1 pos=(860.0996, 1330.665) pack=2 coins=30 storage={  }
+PERF t=6.1 step=1 fps=60 process_ms=14.82 draws=262 nodes=1108 orphans=1 objects=3699 mem_mb=99.9
+t=7.1 pos=(868.4252, 1364.223) pack=5 coins=30 storage={  }
+PERF t=7.1 step=1 fps=60 process_ms=11.18 draws=267 nodes=1125 orphans=1 objects=3781 mem_mb=100.0
+t=8.1 pos=(876.4825, 1396.699) pack=5 coins=30 storage={  }
+PERF t=8.1 step=1 fps=60 process_ms=9.21 draws=263 nodes=1108 orphans=1 objects=3707 mem_mb=99.9
+shot saved: 3_gathered
+t=9.1 pos=(873.0705, 1394.971) pack=7 coins=30 storage={  }
+PERF t=9.1 step=2 fps=60 process_ms=8.84 draws=272 nodes=1122 orphans=1 objects=3778 mem_mb=100.0
+t=10.1 pos=(782.8738, 1288.218) pack=7 coins=30 storage={  }
+PERF t=10.1 step=2 fps=60 process_ms=22.47 draws=276 nodes=1119 orphans=1 objects=3744 mem_mb=100.1
+shot saved: 4_deposited
+t=100.1 pos=(722.8778, 1192.404) pack=0 coins=30 storage={ "stone": 7 }
+PERF t=100.1 step=3 fps=60 process_ms=13.90 draws=380 nodes=1197 orphans=1 objects=4073 mem_mb=102.6
+shot saved: 5_storage_window
+wild sent: true sectors: [{ "id": "0_0", "kind": "deposit", "ring": 0, "hours": 0.5, "expedition": "" }, { "id": "0_1", "kind": "deposit", "ring": 0, "hours": 0.5, "expedition": "" }, { "id": "0_2", "kind": "lair", "ring": 0, "hours": 0.75, "expedition": "" }, { "id": "0_3", "kind": "lair", "ring": 0, "hours": 0.75, "expedition": "" }, { "id": "0_4", "kind": "lair", "ring": 0, "hours": 0.75, "expedition": "" }]
+t=200.1 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=200.1 step=4 fps=56 process_ms=99.87 draws=389 nodes=1394 orphans=1 objects=4594 mem_mb=106.0
+shot saved: 6_workshop
+OVERLAP OK workshop
+LAYOUT OK workshop width=390
+t=201.1 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=201.1 step=4 fps=33 process_ms=62.95 draws=438 nodes=1396 orphans=1 objects=4605 mem_mb=106.1
+t=202.1 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=202.1 step=4 fps=20 process_ms=31.11 draws=649 nodes=1284 orphans=1 objects=4301 mem_mb=104.5
+shot saved: 6_talents
+OVERLAP OK talents
+LAYOUT OK talents width=390
+t=203.1 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=203.1 step=4 fps=20 process_ms=110.39 draws=649 nodes=1284 orphans=1 objects=4301 mem_mb=104.5
+t=204.2 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=204.2 step=4 fps=20 process_ms=31.25 draws=465 nodes=1260 orphans=1 objects=4298 mem_mb=104.4
+shot saved: 6_animals
+OVERLAP OK animals
+LAYOUT OK animals width=390
+t=205.2 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=205.2 step=4 fps=20 process_ms=68.01 draws=465 nodes=1260 orphans=1 objects=4298 mem_mb=104.4
+t=206.2 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=206.2 step=4 fps=20 process_ms=35.60 draws=516 nodes=1258 orphans=1 objects=4316 mem_mb=104.6
+shot saved: 6_quests
+OVERLAP OK quests
+LAYOUT OK quests width=390
+t=207.2 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=207.2 step=4 fps=20 process_ms=28.28 draws=516 nodes=1258 orphans=1 objects=4316 mem_mb=104.6
+t=208.2 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=208.2 step=4 fps=20 process_ms=26.94 draws=431 nodes=1431 orphans=2 objects=4706 mem_mb=106.7
+shot saved: 6_level
+OVERLAP OK level
+LAYOUT OK level width=390
+t=209.2 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=209.2 step=4 fps=20 process_ms=35.16 draws=431 nodes=1431 orphans=2 objects=4706 mem_mb=106.7
+t=210.3 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=210.3 step=4 fps=20 process_ms=33.94 draws=437 nodes=1267 orphans=3 objects=4331 mem_mb=105.1
+shot saved: 6_house
+OVERLAP OK house
+LAYOUT OK house width=390
+t=211.3 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=211.3 step=4 fps=20 process_ms=93.13 draws=437 nodes=1267 orphans=3 objects=4331 mem_mb=105.1
+t=212.3 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=212.3 step=4 fps=20 process_ms=27.46 draws=437 nodes=1354 orphans=4 objects=4601 mem_mb=106.2
+shot saved: 6_kitchen
+OVERLAP OK kitchen
+LAYOUT OK kitchen width=390
+t=213.3 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=213.3 step=4 fps=20 process_ms=34.71 draws=437 nodes=1354 orphans=4 objects=4601 mem_mb=106.2
+t=214.3 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=214.3 step=4 fps=20 process_ms=29.44 draws=452 nodes=1230 orphans=5 objects=4265 mem_mb=104.9
+shot saved: 6_garden
+OVERLAP OK garden
+LAYOUT OK garden width=390
+t=215.3 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=215.3 step=4 fps=20 process_ms=27.58 draws=452 nodes=1230 orphans=5 objects=4265 mem_mb=104.9
+t=216.3 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=216.3 step=4 fps=20 process_ms=25.48 draws=570 nodes=1417 orphans=6 objects=4800 mem_mb=107.2
+shot saved: 6_trader
+OVERLAP OK trader
+LAYOUT OK trader width=390
+t=217.3 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=217.3 step=4 fps=20 process_ms=32.21 draws=570 nodes=1417 orphans=6 objects=4800 mem_mb=107.2
+t=218.3 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=218.3 step=4 fps=20 process_ms=40.66 draws=451 nodes=1263 orphans=109 objects=4613 mem_mb=106.6
+shot saved: 6_hunt
+OVERLAP OK hunt
+LAYOUT OK hunt width=390
+t=219.3 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=219.3 step=4 fps=20 process_ms=29.03 draws=451 nodes=1263 orphans=6 objects=4349 mem_mb=105.3
+t=220.3 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=220.3 step=4 fps=20 process_ms=28.54 draws=400 nodes=1213 orphans=7 objects=4248 mem_mb=104.9
+shot saved: 6_level_settings
+OVERLAP OK level:settings
+LAYOUT OK level:settings width=390
+t=221.3 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=221.3 step=4 fps=20 process_ms=23.24 draws=400 nodes=1213 orphans=7 objects=4248 mem_mb=104.9
+t=222.3 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=222.3 step=4 fps=20 process_ms=26.02 draws=506 nodes=1396 orphans=8 objects=4812 mem_mb=107.7
+shot saved: 6_dungeon
+OVERLAP OK dungeon
+LAYOUT OK dungeon width=390
+t=223.3 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=223.3 step=4 fps=20 process_ms=43.70 draws=506 nodes=1396 orphans=8 objects=4812 mem_mb=107.7
+t=224.3 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=224.3 step=4 fps=20 process_ms=38.65 draws=407 nodes=1204 orphans=9 objects=4226 mem_mb=105.1
+shot saved: 6_trophies
+OVERLAP OK trophies
+LAYOUT OK trophies width=390
+t=225.3 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=225.3 step=4 fps=20 process_ms=29.01 draws=407 nodes=1204 orphans=9 objects=4226 mem_mb=105.1
+t=226.4 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=226.4 step=4 fps=20 process_ms=26.89 draws=477 nodes=1928 orphans=9 objects=6022 mem_mb=113.6
+shot saved: 6_collection
+OVERLAP OK collection
+LAYOUT OK collection width=390
+t=227.4 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300 }
+PERF t=227.4 step=4 fps=17 process_ms=220.22 draws=477 nodes=1928 orphans=9 objects=6022 mem_mb=113.6
+t=228.5 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=228.5 step=4 fps=20 process_ms=98.55 draws=444 nodes=1389 orphans=9 objects=4756 mem_mb=109.5
+shot saved: 6_collection_zoo
+OVERLAP OK collection:zoo
+LAYOUT OK collection:zoo width=390
+t=229.5 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=229.5 step=4 fps=20 process_ms=34.52 draws=444 nodes=1389 orphans=9 objects=4756 mem_mb=109.5
+t=230.5 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=230.5 step=4 fps=20 process_ms=26.78 draws=457 nodes=1257 orphans=9 objects=4470 mem_mb=108.1
+shot saved: 6_collection_trophies
+OVERLAP OK collection:trophies
+LAYOUT OK collection:trophies width=390
+t=231.5 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=231.5 step=4 fps=20 process_ms=28.19 draws=457 nodes=1257 orphans=9 objects=4470 mem_mb=108.1
+t=232.5 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=232.5 step=4 fps=20 process_ms=31.89 draws=474 nodes=1293 orphans=10 objects=4641 mem_mb=108.9
+shot saved: 6_legacy
+OVERLAP OK legacy
+LAYOUT OK legacy width=390
+t=233.5 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=233.5 step=4 fps=20 process_ms=30.99 draws=474 nodes=1293 orphans=10 objects=4641 mem_mb=108.9
+t=234.5 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=234.5 step=4 fps=20 process_ms=99.57 draws=441 nodes=1423 orphans=10 objects=5059 mem_mb=110.3
+shot saved: 6_wardrobe
+OVERLAP OK wardrobe
+LAYOUT OK wardrobe width=390
+t=235.6 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=235.6 step=4 fps=20 process_ms=55.68 draws=441 nodes=1423 orphans=10 objects=5059 mem_mb=110.3
+t=236.6 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=236.6 step=4 fps=20 process_ms=88.25 draws=527 nodes=1391 orphans=10 objects=4995 mem_mb=111.5
+shot saved: 6_map
+OVERLAP OK map
+LAYOUT OK map width=390
+t=237.7 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=237.7 step=4 fps=20 process_ms=34.03 draws=527 nodes=1391 orphans=10 objects=4995 mem_mb=111.5
+t=238.7 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=238.7 step=4 fps=16 process_ms=255.32 draws=425 nodes=1747 orphans=10 objects=5894 mem_mb=116.1
+shot saved: 6_events
+OVERLAP OK events
+LAYOUT OK events width=390
+t=239.7 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=239.7 step=4 fps=21 process_ms=73.65 draws=425 nodes=1747 orphans=10 objects=5895 mem_mb=116.1
+t=240.7 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=240.7 step=4 fps=20 process_ms=51.59 draws=482 nodes=1448 orphans=11 objects=5139 mem_mb=113.5
+shot saved: 6_shop
+OVERLAP OK shop
+LAYOUT OK shop width=390
+t=241.7 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=241.7 step=4 fps=20 process_ms=38.09 draws=482 nodes=1446 orphans=11 objects=5125 mem_mb=113.4
+t=242.7 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=242.7 step=4 fps=20 process_ms=31.09 draws=416 nodes=1234 orphans=12 objects=4526 mem_mb=111.0
+shot saved: 6_shop_vip
+OVERLAP OK shop:vip
+LAYOUT OK shop:vip width=390
+t=243.7 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=243.7 step=4 fps=20 process_ms=32.33 draws=416 nodes=1234 orphans=12 objects=4526 mem_mb=111.0
+t=244.7 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=244.7 step=4 fps=20 process_ms=28.78 draws=468 nodes=1259 orphans=13 objects=4607 mem_mb=111.2
+shot saved: 6_shop_crystals
+OVERLAP OK shop:crystals
+LAYOUT OK shop:crystals width=390
+t=245.7 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=245.7 step=4 fps=20 process_ms=28.14 draws=468 nodes=1259 orphans=13 objects=4607 mem_mb=111.2
+t=246.7 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=246.7 step=4 fps=20 process_ms=28.76 draws=472 nodes=1354 orphans=14 objects=4923 mem_mb=112.7
+shot saved: 6_shop_market
+OVERLAP OK shop:market
+LAYOUT OK shop:market width=390
+t=247.7 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=247.7 step=4 fps=20 process_ms=31.77 draws=472 nodes=1354 orphans=14 objects=4923 mem_mb=112.7
+t=248.7 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=248.7 step=4 fps=20 process_ms=26.58 draws=432 nodes=1202 orphans=15 objects=4464 mem_mb=110.7
+shot saved: 6_shop_free
+OVERLAP OK shop:free
+LAYOUT OK shop:free width=390
+t=249.7 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=249.7 step=4 fps=20 process_ms=24.87 draws=432 nodes=1202 orphans=15 objects=4464 mem_mb=110.7
+t=250.7 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=250.7 step=4 fps=20 process_ms=36.63 draws=466 nodes=1393 orphans=15 objects=5029 mem_mb=113.3
+shot saved: 6_hunt_alchemy
+OVERLAP OK hunt:alchemy
+LAYOUT OK hunt:alchemy width=390
+t=251.7 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=251.7 step=4 fps=20 process_ms=35.54 draws=466 nodes=1393 orphans=15 objects=5029 mem_mb=113.3
+t=252.7 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=252.7 step=4 fps=20 process_ms=25.91 draws=432 nodes=1225 orphans=15 objects=4514 mem_mb=110.8
+shot saved: 6_hunt_bestiary
+OVERLAP OK hunt:bestiary
+LAYOUT OK hunt:bestiary width=390
+t=253.7 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=253.7 step=4 fps=20 process_ms=24.58 draws=432 nodes=1225 orphans=15 objects=4514 mem_mb=110.8
+t=254.7 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=254.7 step=4 fps=20 process_ms=55.17 draws=483 nodes=1678 orphans=15 objects=5822 mem_mb=116.9
+shot saved: 6_estate
+OVERLAP OK estate
+LAYOUT OK estate width=390
+t=255.8 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 1 }
+PERF t=255.8 step=4 fps=20 process_ms=63.27 draws=483 nodes=1678 orphans=15 objects=5822 mem_mb=116.9
+t=256.8 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2 }
+PERF t=256.8 step=4 fps=20 process_ms=76.14 draws=539 nodes=1370 orphans=15 objects=4961 mem_mb=112.9
+shot saved: 6_estate_orders
+OVERLAP OK estate:orders
+LAYOUT OK estate:orders width=390
+t=257.8 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2 }
+PERF t=257.8 step=4 fps=20 process_ms=35.15 draws=539 nodes=1370 orphans=15 objects=4961 mem_mb=112.9
+t=258.8 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2 }
+PERF t=258.8 step=4 fps=20 process_ms=31.25 draws=495 nodes=1281 orphans=15 objects=4696 mem_mb=111.8
+shot saved: 6_quests_story
+OVERLAP OK quests:story
+LAYOUT OK quests:story width=390
+t=259.8 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2 }
+PERF t=259.8 step=4 fps=20 process_ms=29.88 draws=495 nodes=1281 orphans=15 objects=4696 mem_mb=111.8
+t=260.9 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2 }
+PERF t=260.9 step=4 fps=20 process_ms=58.59 draws=432 nodes=1295 orphans=15 objects=4712 mem_mb=112.1
+shot saved: 6_wild
+OVERLAP OK wild
+LAYOUT OK wild width=390
+t=261.9 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2 }
+PERF t=261.9 step=4 fps=20 process_ms=27.58 draws=432 nodes=1295 orphans=15 objects=4712 mem_mb=112.1
+t=262.9 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2 }
+PERF t=262.9 step=4 fps=20 process_ms=27.89 draws=696 nodes=1254 orphans=15 objects=4607 mem_mb=111.5
+shot saved: 6_talents_estate
+OVERLAP OK talents:estate
+LAYOUT OK talents:estate width=390
+t=263.9 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2 }
+PERF t=263.9 step=4 fps=20 process_ms=33.62 draws=696 nodes=1254 orphans=15 objects=4607 mem_mb=111.5
+t=264.9 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2 }
+PERF t=264.9 step=4 fps=20 process_ms=27.44 draws=420 nodes=1228 orphans=15 objects=4551 mem_mb=111.7
+shot saved: 6_story
+OVERLAP OK story
+LAYOUT OK story width=390
+t=266.0 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2 }
+PERF t=266.0 step=4 fps=20 process_ms=28.09 draws=420 nodes=1228 orphans=15 objects=4551 mem_mb=111.7
+t=267.0 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2 }
+PERF t=267.0 step=4 fps=20 process_ms=25.17 draws=427 nodes=1266 orphans=15 objects=4639 mem_mb=112.0
+shot saved: 6_story_altar
+OVERLAP OK story:altar
+LAYOUT OK story:altar width=390
+t=268.0 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2 }
+PERF t=268.0 step=4 fps=20 process_ms=28.13 draws=427 nodes=1266 orphans=15 objects=4639 mem_mb=112.0
+t=269.0 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2 }
+PERF t=269.0 step=4 fps=20 process_ms=26.33 draws=414 nodes=1202 orphans=15 objects=4485 mem_mb=111.4
+shot saved: 6_collection_diary
+OVERLAP OK collection:diary
+LAYOUT OK collection:diary width=390
+t=270.0 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2 }
+PERF t=270.0 step=4 fps=20 process_ms=26.48 draws=414 nodes=1202 orphans=15 objects=4485 mem_mb=111.4
+t=261.0 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2 }
+PERF t=261.0 step=41 fps=20 process_ms=15.72 draws=320 nodes=1140 orphans=15 objects=4251 mem_mb=110.5
+t=262.0 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2, "planks": 115 }
+PERF t=262.0 step=41 fps=29 process_ms=38.24 draws=464 nodes=1260 orphans=16 objects=4585 mem_mb=111.9
+t=263.0 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2, "planks": 115 }
+PERF t=263.0 step=41 fps=23 process_ms=29.73 draws=464 nodes=1260 orphans=16 objects=4583 mem_mb=111.9
+shot saved: 6_shop_bought
+OVERLAP OK shop_bought
+LAYOUT OK shop_bought width=390
+t=264.0 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2, "planks": 115 }
+PERF t=264.0 step=41 fps=20 process_ms=16.61 draws=464 nodes=1260 orphans=16 objects=4583 mem_mb=111.9
+shot saved: 6_shop_extras
+t=265.0 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2, "planks": 115 }
+PERF t=265.0 step=41 fps=20 process_ms=25.24 draws=438 nodes=1218 orphans=17 objects=4469 mem_mb=111.4
+t=266.0 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2, "planks": 115 }
+PERF t=266.0 step=41 fps=20 process_ms=31.39 draws=438 nodes=1218 orphans=17 objects=4469 mem_mb=111.4
+shot saved: 6_shop_crystals_bought
+t=267.0 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2, "planks": 115 }
+PERF t=267.0 step=41 fps=20 process_ms=16.75 draws=409 nodes=1199 orphans=17 objects=4418 mem_mb=111.2
+t=268.0 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2, "planks": 115 }
+PERF t=268.0 step=41 fps=20 process_ms=30.79 draws=409 nodes=1199 orphans=17 objects=4418 mem_mb=111.2
+shot saved: 6_map_garden
+t=269.0 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2, "planks": 115 }
+PERF t=269.0 step=41 fps=24 process_ms=36.68 draws=558 nodes=1168 orphans=16 objects=4467 mem_mb=113.6
+shot saved: 6_language
+t=270.0 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2, "planks": 115 }
+PERF t=270.0 step=41 fps=27 process_ms=88.77 draws=576 nodes=1284 orphans=16 objects=4748 mem_mb=116.8
+shot saved: 6_quests_ja
+OVERLAP OK quests_ja
+LAYOUT OK quests_ja width=390
+t=271.1 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2, "planks": 115 }
+PERF t=271.1 step=41 fps=20 process_ms=75.62 draws=441 nodes=1236 orphans=17 objects=4606 mem_mb=118.6
+shot saved: 6_settings_hi
+t=272.1 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2, "planks": 115 }
+PERF t=272.1 step=41 fps=20 process_ms=17.06 draws=579 nodes=1290 orphans=17 objects=4832 mem_mb=122.8
+t=273.1 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 2, "planks": 115 }
+PERF t=273.1 step=41 fps=20 process_ms=87.19 draws=579 nodes=1290 orphans=17 objects=4834 mem_mb=123.0
+shot saved: 6_quests_th
+t=274.1 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 3, "planks": 115 }
+PERF t=274.1 step=41 fps=20 process_ms=88.62 draws=563 nodes=1291 orphans=17 objects=4873 mem_mb=123.0
+shot saved: 6_storage_full
+OVERLAP OK storage_full
+LAYOUT OK storage_full width=390
+t=275.1 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 3, "planks": 115 }
+PERF t=275.1 step=41 fps=20 process_ms=42.53 draws=541 nodes=1296 orphans=17 objects=4881 mem_mb=123.1
+t=276.1 pos=(722.8778, 1192.404) pack=0 coins=25000 storage={ "stone": 300, "wheat": 120, "wood": 300, "clay": 300, "coal": 300, "iron": 300, "berries": 300, "fish": 300, "apples": 300, "milk": 3, "planks": 115 }
+PERF t=276.1 step=41 fps=20 process_ms=18.34 draws=563 nodes=1296 orphans=17 objects=4881 mem_mb=123.1
+shot saved: 6_quests_board
+t=277.1 pos=(722.8778, 1192.404) pack=0 coins=26500 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=277.1 step=41 fps=20 process_ms=30.50 draws=366 nodes=1192 orphans=17 objects=4565 mem_mb=121.6
+shot saved: 6_rewards
+t=278.2 pos=(722.8778, 1192.404) pack=0 coins=26500 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=278.2 step=41 fps=29 process_ms=13.55 draws=459 nodes=1561 orphans=17 objects=5519 mem_mb=126.1
+t=279.2 pos=(722.8778, 1192.404) pack=0 coins=26500 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=279.2 step=41 fps=22 process_ms=95.87 draws=459 nodes=1561 orphans=17 objects=5512 mem_mb=126.1
+t=280.2 pos=(722.8778, 1192.404) pack=0 coins=26500 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=280.2 step=41 fps=20 process_ms=17.36 draws=467 nodes=1561 orphans=17 objects=5512 mem_mb=126.1
+shot saved: 6_animals_wild_mid
+t=281.2 pos=(722.8778, 1192.404) pack=0 coins=26500 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=281.2 step=41 fps=20 process_ms=29.70 draws=468 nodes=1561 orphans=17 objects=5512 mem_mb=126.1
+shot saved: 6_animals_wild_end
+t=282.2 pos=(722.8778, 1192.404) pack=0 coins=26500 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=282.2 step=41 fps=20 process_ms=43.61 draws=507 nodes=1241 orphans=18 objects=4732 mem_mb=122.4
+shot saved: 6_chests
+OVERLAP OK chests
+LAYOUT OK chests width=390
+t=283.2 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=283.2 step=41 fps=20 process_ms=42.97 draws=534 nodes=1373 orphans=18 objects=5135 mem_mb=123.8
+shot saved: 6_chest_shake
+t=284.2 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=284.2 step=41 fps=53 process_ms=25.27 draws=533 nodes=1365 orphans=18 objects=5119 mem_mb=123.7
+t=285.2 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=285.2 step=41 fps=56 process_ms=31.34 draws=533 nodes=1365 orphans=18 objects=5089 mem_mb=123.7
+t=286.2 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=286.2 step=41 fps=54 process_ms=30.67 draws=563 nodes=1393 orphans=18 objects=5312 mem_mb=123.8
+t=287.2 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=287.2 step=41 fps=55 process_ms=20.58 draws=592 nodes=1353 orphans=18 objects=5026 mem_mb=123.6
+t=288.3 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=288.3 step=41 fps=53 process_ms=20.57 draws=613 nodes=1353 orphans=18 objects=4994 mem_mb=123.5
+t=289.3 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=289.3 step=41 fps=52 process_ms=23.26 draws=613 nodes=1353 orphans=18 objects=4994 mem_mb=123.5
+t=290.3 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=290.3 step=41 fps=52 process_ms=21.21 draws=613 nodes=1353 orphans=18 objects=4994 mem_mb=123.5
+shot saved: 6_chest_open10
+t=291.3 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=291.3 step=41 fps=52 process_ms=21.10 draws=527 nodes=1266 orphans=18 objects=4843 mem_mb=122.7
+t=292.3 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=292.3 step=41 fps=53 process_ms=36.86 draws=528 nodes=1274 orphans=18 objects=4893 mem_mb=122.7
+t=293.3 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=293.3 step=41 fps=59 process_ms=20.10 draws=528 nodes=1274 orphans=18 objects=4893 mem_mb=122.7
+t=294.3 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=294.3 step=41 fps=54 process_ms=32.24 draws=532 nodes=1302 orphans=18 objects=5063 mem_mb=122.9
+t=295.3 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=295.3 step=41 fps=56 process_ms=20.24 draws=532 nodes=1262 orphans=18 objects=4779 mem_mb=122.6
+t=296.3 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=296.3 step=41 fps=56 process_ms=19.62 draws=532 nodes=1262 orphans=18 objects=4779 mem_mb=122.6
+t=297.3 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=297.3 step=41 fps=57 process_ms=19.74 draws=532 nodes=1262 orphans=18 objects=4779 mem_mb=122.6
+t=298.3 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=298.3 step=41 fps=58 process_ms=19.83 draws=532 nodes=1262 orphans=18 objects=4779 mem_mb=122.6
+shot saved: 6_chest_open1
+t=299.4 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=299.4 step=41 fps=58 process_ms=43.79 draws=440 nodes=1236 orphans=18 objects=4671 mem_mb=122.2
+shot saved: 7_mine_panel
+OVERLAP OK mine
+LAYOUT OK mine width=390
+t=300.4 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=300.4 step=41 fps=25 process_ms=37.59 draws=812 nodes=1272 orphans=18 objects=4768 mem_mb=123.0
+t=301.5 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 3, "planks": 115 }
+PERF t=301.5 step=41 fps=20 process_ms=28.99 draws=812 nodes=1272 orphans=18 objects=4768 mem_mb=123.0
+t=302.5 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=302.5 step=41 fps=20 process_ms=29.44 draws=812 nodes=1275 orphans=18 objects=4781 mem_mb=123.0
+shot saved: 7_mine_board
+t=303.5 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=303.5 step=41 fps=20 process_ms=37.50 draws=804 nodes=1275 orphans=18 objects=4787 mem_mb=123.1
+shot saved: 7_mine_after_tap
+t=304.5 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=304.5 step=41 fps=28 process_ms=39.38 draws=845 nodes=1284 orphans=18 objects=4826 mem_mb=123.3
+t=305.5 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=305.5 step=41 fps=35 process_ms=45.76 draws=845 nodes=1284 orphans=18 objects=4824 mem_mb=123.3
+shot saved: 7_mine_no_moves
+t=306.6 pos=(722.8778, 1192.404) pack=0 coins=35160 storage={ "stone": 325, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=306.6 step=41 fps=34 process_ms=46.03 draws=824 nodes=1280 orphans=18 objects=4803 mem_mb=123.2
+shot saved: 7_mine_win
+t=307.6 pos=(722.8778, 1192.404) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=307.6 step=41 fps=20 process_ms=35.57 draws=472 nodes=1260 orphans=18 objects=4748 mem_mb=122.8
+shot saved: 7_mine_rewards
+t=308.6 pos=(722.8778, 1192.404) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=308.6 step=41 fps=20 process_ms=24.75 draws=824 nodes=1279 orphans=18 objects=4793 mem_mb=123.1
+t=309.6 pos=(722.8778, 1192.404) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=309.6 step=41 fps=20 process_ms=37.07 draws=839 nodes=1279 orphans=18 objects=4791 mem_mb=123.1
+shot saved: 7_mine_crystal
+t=310.6 pos=(722.8778, 1192.404) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=310.6 step=41 fps=20 process_ms=30.14 draws=500 nodes=1277 orphans=18 objects=4810 mem_mb=123.0
+t=311.6 pos=(722.8778, 1192.404) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=311.6 step=41 fps=20 process_ms=52.35 draws=500 nodes=1277 orphans=18 objects=4803 mem_mb=123.0
+t=312.6 pos=(722.8778, 1192.404) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=312.6 step=41 fps=20 process_ms=17.84 draws=500 nodes=1277 orphans=18 objects=4803 mem_mb=123.0
+shot saved: 8_incubator
+OVERLAP OK incubator
+LAYOUT OK incubator width=390
+t=313.6 pos=(722.8778, 1192.404) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=313.6 step=41 fps=20 process_ms=32.45 draws=524 nodes=1277 orphans=18 objects=4803 mem_mb=123.0
+shot saved: 8_incubator_nest
+t=314.6 pos=(722.8778, 1192.404) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=314.6 step=41 fps=20 process_ms=18.43 draws=503 nodes=1275 orphans=18 objects=4797 mem_mb=122.9
+shot saved: 8_incubator_ready
+t=315.6 pos=(722.8778, 1192.404) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=315.6 step=41 fps=20 process_ms=28.77 draws=521 nodes=1303 orphans=18 objects=4902 mem_mb=123.4
+shot saved: 8_hatch_shake
+t=316.6 pos=(722.8778, 1192.404) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=316.6 step=41 fps=37 process_ms=35.93 draws=522 nodes=1303 orphans=18 objects=4902 mem_mb=123.4
+t=317.6 pos=(722.8778, 1192.404) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=317.6 step=41 fps=53 process_ms=31.21 draws=526 nodes=1303 orphans=18 objects=4880 mem_mb=123.4
+t=318.6 pos=(722.8778, 1192.404) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=318.6 step=41 fps=49 process_ms=101.22 draws=520 nodes=1295 orphans=18 objects=4843 mem_mb=123.3
+t=319.6 pos=(722.8778, 1192.404) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=319.6 step=41 fps=53 process_ms=21.04 draws=520 nodes=1295 orphans=18 objects=4841 mem_mb=123.3
+shot saved: 8_hatch_reveal
+t=320.6 pos=(722.8778, 1192.404) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=320.6 step=41 fps=53 process_ms=26.46 draws=530 nodes=1303 orphans=18 objects=4888 mem_mb=123.4
+t=321.6 pos=(722.8778, 1192.404) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=321.6 step=41 fps=49 process_ms=38.59 draws=531 nodes=1303 orphans=18 objects=4877 mem_mb=123.3
+t=322.7 pos=(722.8778, 1192.404) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=322.7 step=41 fps=53 process_ms=20.72 draws=531 nodes=1303 orphans=18 objects=4871 mem_mb=123.3
+shot saved: 8_hatch_plain
+t=323.7 pos=(722.8778, 1192.404) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=323.7 step=41 fps=53 process_ms=21.95 draws=332 nodes=1173 orphans=18 objects=4559 mem_mb=121.7
+t=324.7 pos=(722.8778, 1192.404) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=324.7 step=41 fps=50 process_ms=55.49 draws=344 nodes=1168 orphans=18 objects=4465 mem_mb=121.6
+t=325.7 pos=(722.8778, 1192.404) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=325.7 step=41 fps=60 process_ms=13.89 draws=461 nodes=1286 orphans=18 objects=4780 mem_mb=123.2
+OVERLAP OK story_ch1
+LAYOUT OK story_ch1 width=390
+t=326.7 pos=(722.8778, 1192.404) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=326.7 step=41 fps=60 process_ms=30.22 draws=461 nodes=1286 orphans=18 objects=4780 mem_mb=123.2
+t=327.7 pos=(976.0, 1032.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=327.7 step=41 fps=20 process_ms=96.30 draws=433 nodes=1168 orphans=18 objects=4629 mem_mb=125.1
+OVERLAP OK story_ch2
+LAYOUT OK story_ch2 width=390
+t=328.8 pos=(976.0, 1032.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=328.8 step=41 fps=20 process_ms=17.11 draws=432 nodes=1166 orphans=18 objects=4603 mem_mb=123.4
+t=329.8 pos=(976.0, 1032.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=329.8 step=41 fps=20 process_ms=30.10 draws=433 nodes=1173 orphans=18 objects=4646 mem_mb=124.4
+t=330.8 pos=(432.0, 1448.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 4, "planks": 115 }
+PERF t=330.8 step=41 fps=20 process_ms=91.63 draws=430 nodes=1184 orphans=18 objects=4871 mem_mb=124.6
+OVERLAP OK story_ch3
+LAYOUT OK story_ch3 width=390
+t=331.8 pos=(432.0, 1448.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=331.8 step=41 fps=20 process_ms=18.13 draws=430 nodes=1185 orphans=18 objects=4864 mem_mb=122.3
+t=332.8 pos=(720.0, 968.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=332.8 step=41 fps=20 process_ms=59.66 draws=442 nodes=1238 orphans=18 objects=4941 mem_mb=123.9
+OVERLAP OK story_ch4
+LAYOUT OK story_ch4 width=390
+t=333.8 pos=(720.0, 968.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=333.8 step=41 fps=20 process_ms=17.54 draws=441 nodes=1237 orphans=18 objects=4924 mem_mb=123.1
+t=334.8 pos=(752.0, 1192.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=334.8 step=41 fps=20 process_ms=30.27 draws=438 nodes=1207 orphans=18 objects=5186 mem_mb=124.7
+OVERLAP OK story_ch5
+LAYOUT OK story_ch5 width=390
+t=335.9 pos=(752.0, 1192.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=335.9 step=41 fps=20 process_ms=62.65 draws=460 nodes=1205 orphans=18 objects=4760 mem_mb=122.8
+shot saved: 6_story_reward
+t=336.9 pos=(752.0, 1192.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=336.9 step=41 fps=20 process_ms=18.96 draws=440 nodes=1211 orphans=18 objects=4794 mem_mb=125.1
+t=338.0 pos=(592.0, 1448.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=338.0 step=41 fps=20 process_ms=58.81 draws=441 nodes=1124 orphans=18 objects=4579 mem_mb=124.7
+OVERLAP OK story_ch6
+LAYOUT OK story_ch6 width=390
+t=339.0 pos=(592.0, 1448.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=339.0 step=41 fps=20 process_ms=18.00 draws=441 nodes=1123 orphans=18 objects=4568 mem_mb=123.5
+t=340.0 pos=(720.0, 1448.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=340.0 step=41 fps=20 process_ms=65.82 draws=448 nodes=845 orphans=18 objects=4513 mem_mb=124.2
+OVERLAP OK story_ch7
+LAYOUT OK story_ch7 width=390
+t=341.1 pos=(720.0, 1448.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=341.1 step=41 fps=20 process_ms=18.93 draws=447 nodes=843 orphans=18 objects=4488 mem_mb=121.8
+t=342.1 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=342.1 step=41 fps=20 process_ms=32.06 draws=444 nodes=771 orphans=18 objects=4376 mem_mb=124.0
+OVERLAP OK story_ch8
+LAYOUT OK story_ch8 width=390
+t=343.1 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=343.1 step=41 fps=20 process_ms=51.12 draws=443 nodes=770 orphans=18 objects=4359 mem_mb=123.0
+t=344.1 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=344.1 step=41 fps=20 process_ms=17.31 draws=442 nodes=777 orphans=18 objects=4402 mem_mb=124.6
+t=345.2 pos=(752.0, 1384.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=345.2 step=41 fps=20 process_ms=51.86 draws=443 nodes=851 orphans=18 objects=4697 mem_mb=125.0
+OVERLAP OK story_ch9
+LAYOUT OK story_ch9 width=390
+t=346.2 pos=(752.0, 1384.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=346.2 step=41 fps=20 process_ms=16.80 draws=443 nodes=849 orphans=18 objects=4677 mem_mb=122.6
+t=347.2 pos=(752.0, 1416.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=347.2 step=41 fps=20 process_ms=32.05 draws=460 nodes=741 orphans=18 objects=4461 mem_mb=123.4
+OVERLAP OK story_ch10
+LAYOUT OK story_ch10 width=390
+t=348.2 pos=(752.0, 1416.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=348.2 step=41 fps=20 process_ms=50.26 draws=459 nodes=739 orphans=18 objects=4435 mem_mb=121.8
+t=349.2 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=349.2 step=41 fps=20 process_ms=16.48 draws=442 nodes=689 orphans=18 objects=4603 mem_mb=124.2
+OVERLAP OK story_ch11
+LAYOUT OK story_ch11 width=390
+t=350.2 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=350.2 step=41 fps=20 process_ms=31.03 draws=468 nodes=687 orphans=18 objects=4301 mem_mb=122.8
+t=351.2 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=351.2 step=41 fps=20 process_ms=15.69 draws=468 nodes=687 orphans=18 objects=4301 mem_mb=122.8
+shot saved: 6_story_last
+t=352.2 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=352.2 step=41 fps=20 process_ms=40.01 draws=513 nodes=645 orphans=19 objects=4238 mem_mb=122.5
+t=353.2 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=353.2 step=41 fps=20 process_ms=16.09 draws=544 nodes=645 orphans=19 objects=4238 mem_mb=122.5
+shot saved: 6_chests_packs
+OVERLAP OK chests_packs
+LAYOUT OK chests_packs width=390
+t=354.2 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=354.2 step=41 fps=20 process_ms=40.98 draws=487 nodes=643 orphans=19 objects=4197 mem_mb=122.3
+t=355.2 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=355.2 step=41 fps=20 process_ms=16.46 draws=511 nodes=643 orphans=19 objects=4197 mem_mb=122.3
+shot saved: 8_incubator_pick
+t=300.2 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=300.2 step=5 fps=20 process_ms=17.45 draws=330 nodes=521 orphans=19 objects=3866 mem_mb=120.8
+t=301.3 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=301.3 step=5 fps=25 process_ms=24.34 draws=370 nodes=520 orphans=19 objects=3811 mem_mb=121.8
+shot saved: 6_where_clay
+t=302.3 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=302.3 step=5 fps=30 process_ms=23.60 draws=356 nodes=515 orphans=19 objects=3795 mem_mb=121.7
+t=303.3 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=303.3 step=5 fps=30 process_ms=13.78 draws=378 nodes=536 orphans=19 objects=3857 mem_mb=122.0
+shot saved: 6_dialog
+t=304.4 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=304.4 step=5 fps=30 process_ms=13.23 draws=424 nodes=532 orphans=19 objects=3869 mem_mb=122.1
+shot saved: 6_energy
+t=305.4 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=305.4 step=5 fps=30 process_ms=33.91 draws=330 nodes=503 orphans=19 objects=3757 mem_mb=121.5
+t=306.4 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=306.4 step=5 fps=30 process_ms=22.87 draws=331 nodes=511 orphans=19 objects=3769 mem_mb=121.6
+shot saved: 7_world_level18
+towers: [] palisade: 0 base: (784.0, 1264.0)
+t=307.5 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=307.5 step=5 fps=30 process_ms=11.08 draws=330 nodes=525 orphans=19 objects=3789 mem_mb=121.7
+t=308.5 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=308.5 step=5 fps=30 process_ms=22.77 draws=328 nodes=528 orphans=19 objects=3789 mem_mb=121.7
+t=309.5 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=309.5 step=5 fps=30 process_ms=10.61 draws=330 nodes=528 orphans=19 objects=3789 mem_mb=121.7
+t=310.6 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 5, "planks": 115 }
+PERF t=310.6 step=5 fps=30 process_ms=10.60 draws=329 nodes=528 orphans=19 objects=3789 mem_mb=121.7
+shot saved: 7_raid
+raid live: {  }
+t=400.5 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115 }
+PERF t=400.5 step=6 fps=30 process_ms=10.50 draws=379 nodes=567 orphans=19 objects=3899 mem_mb=122.7
+shot saved: 8_level_up
+t=500.0 pos=(784.0, 1320.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115 }
+PERF t=500.0 step=7 fps=46 process_ms=30.42 draws=351 nodes=532 orphans=19 objects=3831 mem_mb=123.9
+t=501.1 pos=(192.0, 1724.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1 }
+PERF t=501.1 step=7 fps=60 process_ms=21.32 draws=316 nodes=306 orphans=19 objects=3544 mem_mb=123.3
+t=502.1 pos=(192.0, 1724.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1 }
+PERF t=502.1 step=7 fps=44 process_ms=10.37 draws=316 nodes=304 orphans=19 objects=3525 mem_mb=120.9
+shot saved: 9_home
+t=503.1 pos=(160.0, 1334.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1 }
+PERF t=503.1 step=7 fps=30 process_ms=25.83 draws=313 nodes=304 orphans=19 objects=3525 mem_mb=120.9
+t=504.1 pos=(160.0, 1334.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1 }
+PERF t=504.1 step=7 fps=30 process_ms=10.83 draws=310 nodes=304 orphans=19 objects=3526 mem_mb=120.9
+home floor at stairs: homeUpper walkable: true
+shot saved: 9_home_stairs
+t=505.2 pos=(160.0, 1334.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1 }
+PERF t=505.2 step=7 fps=30 process_ms=24.37 draws=318 nodes=304 orphans=19 objects=3525 mem_mb=120.9
+t=506.2 pos=(160.0, 1334.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1 }
+PERF t=506.2 step=7 fps=30 process_ms=9.87 draws=339 nodes=304 orphans=19 objects=3525 mem_mb=120.9
+t=507.2 pos=(160.0, 1334.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1 }
+PERF t=507.2 step=7 fps=30 process_ms=9.19 draws=339 nodes=304 orphans=19 objects=3525 mem_mb=120.9
+shot saved: 9_home_overview
+t=600.8 pos=(596.0, 1144.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1 }
+PERF t=600.8 step=8 fps=30 process_ms=24.38 draws=379 nodes=1214 orphans=19 objects=4820 mem_mb=125.2
+t=601.8 pos=(596.0, 1144.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1 }
+PERF t=601.8 step=8 fps=30 process_ms=12.25 draws=392 nodes=1211 orphans=19 objects=4747 mem_mb=123.7
+t=602.8 pos=(596.0, 1144.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1 }
+PERF t=602.8 step=8 fps=30 process_ms=12.43 draws=392 nodes=1211 orphans=19 objects=4745 mem_mb=123.7
+shot saved: 10_meadow_door
+t=700.8 pos=(320.0, 752.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1 }
+PERF t=700.8 step=9 fps=29 process_ms=88.01 draws=313 nodes=295 orphans=19 objects=3651 mem_mb=122.1
+t=701.8 pos=(320.0, 752.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1 }
+PERF t=701.8 step=9 fps=30 process_ms=11.01 draws=312 nodes=293 orphans=19 objects=3536 mem_mb=120.4
+t=702.8 pos=(320.0, 752.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1 }
+PERF t=702.8 step=9 fps=30 process_ms=74.60 draws=321 nodes=306 orphans=19 objects=3572 mem_mb=120.5
+t=703.9 pos=(320.0, 752.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1 }
+PERF t=703.9 step=9 fps=30 process_ms=10.86 draws=315 nodes=304 orphans=19 objects=3557 mem_mb=120.5
+shot saved: 11_dungeon
+t=704.9 pos=(320.0, 752.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1 }
+PERF t=704.9 step=9 fps=30 process_ms=25.11 draws=315 nodes=304 orphans=19 objects=3557 mem_mb=120.5
+t=705.9 pos=(320.0, 752.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1 }
+PERF t=705.9 step=9 fps=30 process_ms=11.47 draws=317 nodes=310 orphans=19 objects=3599 mem_mb=120.5
+t=707.0 pos=(320.0, 752.0) pack=0 coins=35890 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1 }
+PERF t=707.0 step=9 fps=30 process_ms=11.46 draws=317 nodes=310 orphans=19 objects=3599 mem_mb=120.5
+t=708.0 pos=(320.0, 752.0) pack=0 coins=35922 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1, "slime": 1 }
+PERF t=708.0 step=9 fps=30 process_ms=23.77 draws=318 nodes=311 orphans=19 objects=3623 mem_mb=120.5
+t=709.0 pos=(320.0, 752.0) pack=0 coins=35922 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1, "slime": 1 }
+PERF t=709.0 step=9 fps=30 process_ms=11.39 draws=310 nodes=297 orphans=19 objects=3539 mem_mb=120.4
+t=710.1 pos=(320.0, 752.0) pack=0 coins=35922 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1, "slime": 1 }
+PERF t=710.1 step=9 fps=30 process_ms=10.86 draws=310 nodes=297 orphans=19 objects=3539 mem_mb=120.4
+t=711.1 pos=(320.0, 752.0) pack=0 coins=35922 storage={ "stone": 327, "wheat": 120, "wood": 325, "clay": 300, "coal": 300, "iron": 300, "berries": 325, "fish": 325, "apples": 325, "milk": 6, "planks": 115, "feather": 1, "slime": 1 }
+PERF t=711.1 step=9 fps=30 process_ms=12.66 draws=310 nodes=297 orphans=19 objects=3539 mem_mb=120.4
+shot saved: 12_dungeon_later
+WARNING: 19 RIDs of type "CanvasItem" were leaked.
+     at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2678)
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2514)
