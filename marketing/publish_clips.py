@@ -138,7 +138,9 @@ def tiktok_login(name: str, acc: dict) -> dict:
     state = secrets.token_urlsafe(16)
     url = "https://www.tiktok.com/v2/auth/authorize/?" + urllib.parse.urlencode({
         "client_key": acc["client_key"], "response_type": "code", "state": state,
-        "scope": "user.info.basic,video.upload,video.publish", "redirect_uri": acc["redirect_uri"]})
+        # Черновики во "Входящие" требуют только video.upload; video.publish нужен для "mode": "direct"
+        "scope": "user.info.basic,video.upload" + (",video.publish" if acc.get("mode") == "direct" else ""),
+        "redirect_uri": acc["redirect_uri"]})
     code = ask_code(url, acc["redirect_uri"])
     tok, _ = http("POST", f"{TT}/oauth/token/", data={
         "client_key": acc["client_key"], "client_secret": acc["client_secret"], "code": code,
