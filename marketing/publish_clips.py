@@ -400,7 +400,7 @@ def publish(video: pathlib.Path, names: list[str], a) -> None:
     posted = load(POSTED, [])
     for name in targets(names, meta["lang"]):
         acc = account(name)
-        if any(p["account"] == name and p["clip"] == video.name for p in posted):
+        if any(p["account"] == name and p["clip"] == video.name for p in posted) and not a.force:
             print(f"{name}: {video.name} уже опубликован, пропускаю")
             continue
         last = max((p["at"] for p in posted if p["account"] == name), default=0)
@@ -428,7 +428,7 @@ def main() -> None:
         p.add_argument("--to", nargs="*", help="аккаунты или площадки (tiktok, instagram, youtube); по умолчанию все")
         p.add_argument("--dry-run", action="store_true", help="показать, что уйдёт, ничего не публикуя")
         p.add_argument("--private", action="store_true", help="TikTok и YouTube: приватно, для проверки")
-        p.add_argument("--force", action="store_true", help="не ждать сутки между роликами")
+        p.add_argument("--force", action="store_true", help="не ждать сутки и публиковать повторно")
     sub.add_parser("status", help="что уже опубликовано")
     ck = sub.add_parser("check", help="TikTok: состояние загрузки по publish_id")
     ck.add_argument("account")
