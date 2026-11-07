@@ -29,6 +29,10 @@ func _ready() -> void:
 		return
 	var li := args.find("--lang")
 	L.set_language(args[li + 1] if li >= 0 and li + 1 < args.size() else "en", false)
+	# Музыку и фон окружения в записи глушим: потоковые треки в Movie Maker заикаются.
+	# Чистую музыку из исходного файла накладывает make_clips.py, из игры остаются только эффекты.
+	Sound._music.volume = 0.0
+	Sound._ambience.volume = 0.0
 	print("clip: ", scenario, " lang=", L.code)
 
 

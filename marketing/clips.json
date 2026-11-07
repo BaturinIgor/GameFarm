@@ -1,8 +1,8 @@
 {
-  "_": "Ролики для TikTok, Reels и Shorts. scenario - запись из godot/scripts/debug/clip_driver.gd (walk, chests, hatch, mine, tour); start и duration в секундах от начала записи; hook - крупная подпись первых секунд; caption - текст поста. Подписи в одну строку, переносы make_clips.py расставит сам.",
+  "_": "Ролики для TikTok, Reels и Shorts. scenario - запись из godot/scripts/debug/clip_driver.gd (walk, chests, hatch, mine, tour); start и duration в секундах от начала записи; hook - крупная подпись первых секунд; caption - текст поста. Подписи в одну строку, переносы make_clips.py расставит сам. music - трек игры (GameFarm/Resources/Audio/mus_<music>.m4a). Ролик из нескольких кусков: вместо scenario/start/duration поле parts со списком {scenario, start, duration}.",
   "outro": {
-    "en": "Free on the App Store",
-    "ru": "Бесплатно в App Store"
+    "en": "Play free on iPhone",
+    "ru": "Играй бесплатно на iPhone"
   },
   "hashtags": {
     "en": "#cozygames #farmgame #pixelart #mobilegames #indiegame",
@@ -15,13 +15,14 @@
       "start": 1.0,
       "duration": 16,
       "hook": {
-        "en": "Opening 10 chests at once... wait for the last one",
-        "ru": "Открыл 10 сундуков сразу... дождитесь последнего"
+        "en": "I opened 10 chests at once. Watch the last one!",
+        "ru": "Открыл 10 сундуков разом. Смотри на последний!"
       },
       "caption": {
         "en": "Which reward would you keep? Harvest Hollow, free on iPhone",
         "ru": "Какую награду оставили бы себе? Harvest Hollow, бесплатно на iPhone"
-      }
+      },
+      "music": "expedition"
     },
     {
       "id": "pegasus",
@@ -35,7 +36,8 @@
       "caption": {
         "en": "Hybrid pets hatch from rare eggs. Harvest Hollow, free on iPhone",
         "ru": "Из редких яиц вылупляются гибриды. Harvest Hollow, бесплатно на iPhone"
-      }
+      },
+      "music": "garden"
     },
     {
       "id": "mine",
@@ -43,13 +45,14 @@
       "start": 0.8,
       "duration": 24,
       "hook": {
-        "en": "Can you clear this mine floor in 22 moves?",
-        "ru": "Пройдёшь этот этаж шахты за 22 хода?"
+        "en": "Could you clear this floor in 22 moves?",
+        "ru": "Пройдёшь этот этаж за 22 хода?"
       },
       "caption": {
         "en": "Blast groups of ore, keep the dynamite for the end. Harvest Hollow",
         "ru": "Взрывай группы руды, динамит береги на конец. Harvest Hollow"
-      }
+      },
+      "music": "caves"
     },
     {
       "id": "farm_asmr",
@@ -63,7 +66,8 @@
       "caption": {
         "en": "Chop, mine, gather, sell. Harvest Hollow, free on iPhone",
         "ru": "Руби, копай, собирай, продавай. Harvest Hollow, бесплатно на iPhone"
-      }
+      },
+      "music": "meadow"
     },
     {
       "id": "tour",
@@ -77,7 +81,51 @@
       "caption": {
         "en": "Pets, garden, outfits, events and a whole estate. Harvest Hollow",
         "ru": "Звери, сад, образы, ивенты и целая усадьба. Harvest Hollow"
-      }
+      },
+      "music": "meadow"
+    },
+    {
+      "id": "best_of",
+      "parts": [
+        {
+          "scenario": "chests",
+          "start": 1.5,
+          "duration": 9
+        },
+        {
+          "scenario": "hatch",
+          "start": 2.5,
+          "duration": 8
+        },
+        {
+          "scenario": "mine",
+          "start": 1.5,
+          "duration": 10
+        },
+        {
+          "scenario": "walk",
+          "start": 1.0,
+          "duration": 7
+        },
+        {
+          "scenario": "tour",
+          "start": 0.6,
+          "duration": 10
+        }
+      ],
+      "hook": {
+        "en": "Chests, rare eggs, a mine and a whole farm in one game",
+        "ru": "Сундуки, редкие яйца, шахта и целая ферма в одной игре"
+      },
+      "caption": {
+        "en": "A cozy farm with a surprise in every chest. Harvest Hollow, free on iPhone",
+        "ru": "Уютная ферма с сюрпризом в каждом сундуке. Harvest Hollow, бесплатно на iPhone"
+      },
+      "music": "meadow"
     }
-  ]
+  ],
+  "cta": {
+    "en": "Link in bio",
+    "ru": "Ссылка в профиле"
+  }
 }
