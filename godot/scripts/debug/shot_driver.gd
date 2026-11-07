@@ -8,7 +8,7 @@ const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", 
 	"dungeon", "trophies", "collection", "collection:zoo", "collection:trophies", "legacy", "wardrobe", "map", "map:ember", "map:azure", "events", "shop",
 	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story", "wild", "talents:estate",
 	"story", "story:altar", "collection:diary", "alliance:find", "alliance:create", "alliance:main", "alliance:events", "alliance:chat",
-	"alliance:members", "alliance:top"]
+	"alliance:members", "alliance:top", "alliance:players"]
 
 var dir := "/tmp/shots"
 var main: Node
@@ -760,6 +760,8 @@ func _alliance_demo(w: String) -> void:
 		al.demo = false
 		al.data = {}
 		al.ev = {}
+		al.powers = {}
+		al.power_top = []
 		Game.save["alliance"] = {}
 		Game.recalc()
 		return
@@ -814,5 +816,12 @@ func _alliance_demo(w: String) -> void:
 			{"place": 1, "id": 2, "name": "Звёздные пахари", "tag": "STAR", "emblem": 0, "level": 12, "week_xp": 5400, "me": false},
 			{"place": 2, "id": 1, "name": "Green Valley", "tag": "GV", "emblem": 6, "level": 7, "week_xp": 2100, "me": true},
 			{"place": 3, "id": 3, "name": "Moonlit Orchard", "tag": "MOON", "emblem": 5, "level": 3, "week_xp": 900, "me": false},
+		]
+		al.powers = {"a": Power.total(), "b": 14200, "c": 6100, "d": 2300}
+		al.power_top = [
+			{"place": 1, "name": "Masha", "level": 31, "power": 14200, "tag": "GV", "me": false},
+			{"place": 2, "name": "Kenji", "level": 18, "power": 6100, "tag": "GV", "me": false},
+			{"place": 3, "name": "Pierre", "level": 22, "power": 5800, "tag": null, "me": false},
+			{"place": 57, "name": Game.rating.player_name(), "level": 20, "power": Power.total(), "tag": "GV", "me": true},
 		]
 	Game.recalc()

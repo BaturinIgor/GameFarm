@@ -273,6 +273,13 @@ func _row(id: String, mode: String) -> void:
 		srow.add_theme_constant_override("separation", 6)
 		col.add_child(srow)
 		srow.add_child(UiKit.stars(stars, Animals.MAX_STARS, 12))
+		# Сила зверя в мощи игрока и сколько добавит следующая звезда
+		var pw := Power.animal(id)
+		srow.add_child(UiKit.icon("fist", 14))
+		var ptext := L.t("power.value", [Fmt.n(pw)])
+		if stars < Animals.MAX_STARS:
+			ptext += "  " + L.t("power.nextStar", [Fmt.n(Power.animal(id, 1) - pw)])
+		srow.add_child(UiKit.label(ptext, 12, UiKit.INK_SOFT))
 	for e in Animals.effects(id):
 		col.add_child(effect_line(e, m))
 	var where := Animals.wild_location(id)

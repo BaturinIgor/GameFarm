@@ -1,6 +1,6 @@
 -- События альянса Harvest Hollow (шаг 2): страж альянса, задания недели, награды за место в неделе.
 -- Запуск: Supabase -> SQL Editor -> вставить файл целиком -> Run. Повторный запуск безопасен.
--- Нужен уже выполненный alliances.sql.
+-- Нужны уже выполненные alliances.sql и power.sql.
 --
 -- Неделя та же, что у альянсов (_al_week: UTC, с понедельника).
 -- Страж: у альянса на неделю свой страж, ступень 1, 2, 3...; убили - сразу следующий, сильнее.
@@ -212,7 +212,8 @@ begin
   elsif me.day_hits >= _al_free_hits(a.talents) then
     raise exception 'limit';
   end if;
-  dmg := round((60 + 8 * greatest(1, least(p_level, 200)))
+  -- Урон: уровень, мощь (+1 за каждые 100, power.sql), ранг «Натиска» и разброс 0.85-1.15
+  dmg := round((60 + 8 * greatest(1, least(p_level, 200)) + _power_of(uid) / 100)
          * (1 + 0.02 * _al_rank('guard', coalesce((a.talents ->> 'guard')::int, 0)))
          * (0.85 + random() * 0.3));
   tier := w.boss_tier;

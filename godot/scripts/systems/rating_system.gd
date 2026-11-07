@@ -16,6 +16,7 @@ var _auth := {}
 var _sent: Dictionary = {}       ## ключ -> последние отправленные очки
 var _busy := false
 var _fetching: Dictionary = {}
+var _power_at := -1000.0
 
 
 func defaults(save: Dictionary) -> void:
@@ -99,7 +100,20 @@ func tick() -> void:
 							Game.save["ratingJoined"] = joined.slice(joined.size() - 40)
 						Game.mark_dirty()
 		await _claim_finished()
+		await _submit_power()
 	_busy = false
+
+
+## Мощь в рейтинг игроков: если изменилась, не чаще раза в Power.SUBMIT_EVERY.
+func _submit_power() -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	var pw := Power.total()
+	if int(_sent.get("power", -1)) == pw or now - _power_at < Power.SUBMIT_EVERY:
+		return
+	_power_at = now
+	var res = await _rpc("submit_power", {"p_power": pw, "p_name": player_name(), "p_level": Game.level})
+	if res != null:
+		_sent["power"] = pw
 
 
 ## Ивенты кончились: награда за итоговое место.

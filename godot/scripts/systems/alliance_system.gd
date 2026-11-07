@@ -19,6 +19,11 @@ var _last_id := 0
 ## Результаты поиска и рейтинга.
 var found: Array = []
 var top: Array = []
+## Рейтинг альянсов по силе и игроков по мощи.
+var strength_top: Array = []
+var power_top: Array = []
+## Мощь участников моего альянса: id -> мощь.
+var powers: Dictionary = {}
 var _loaded_at := -100.0
 ## События альянса на эту неделю (ответ al_events): страж, задания, место. Пусто - не загружено.
 var ev: Dictionary = {}
@@ -127,6 +132,7 @@ func refresh(force := false) -> void:
 	error = ""
 	_take(res if res is Dictionary else {})
 	if in_alliance():
+		await fetch_powers()
 		await refresh_events()
 
 
@@ -164,6 +170,45 @@ func search(query: String) -> void:
 	found = res if res is Array else []
 	error = "" if res != null else "network"
 	Game.changed.emit()
+
+
+func fetch_powers() -> void:
+	var res: Variant = await Game.rating.call_rpc("al_member_powers", {})
+	if res is Array:
+		powers.clear()
+		for x in res:
+			if x is Dictionary:
+				powers[str(x.get("id", ""))] = int(x.get("power", 0))
+		Game.changed.emit()
+
+
+## Сила моего альянса: сумма мощи 30 самых сильных (как _al_strength).
+func strength() -> int:
+	var list: Array = powers.values()
+	list.sort()
+	list.reverse()
+	var sum := 0
+	for i in mini(Power.ALLIANCE_TOP, list.size()):
+		sum += int(list[i])
+	return sum
+
+
+func fetch_strength_top() -> void:
+	if demo:
+		return
+	var res: Variant = await Game.rating.call_rpc("al_strength_top", {})
+	if res is Array:
+		strength_top = res
+		Game.changed.emit()
+
+
+func fetch_power_top() -> void:
+	if demo:
+		return
+	var res: Variant = await Game.rating.call_rpc("power_top", {})
+	if res is Array:
+		power_top = res
+		Game.changed.emit()
 
 
 func fetch_top() -> void:

@@ -7,6 +7,8 @@ extends Sheet
 var tab := "main"
 ## Каким способом вкладывать в таланты: free, coins, gems.
 var give_kind := "free"
+## Какой рейтинг открыт: week - альянсы за неделю, strength - альянсы по силе, players - игроки по мощи.
+var top_kind := "week"
 ## Создание альянса: выбранная эмблема.
 var emblem := 0
 
@@ -28,6 +30,10 @@ func _init(start_tab := "") -> void:
 	title_key = "alliance.title"
 	if start_tab != "":
 		tab = start_tab
+	# "players" и "strength" - вкладка рейтинга с нужным списком
+	if start_tab in ["players", "strength"]:
+		tab = "top"
+		top_kind = start_tab
 	_search.placeholder_text = L.t("alliance.searchHint")
 	_search.max_length = 20
 	_search.text_submitted.connect(func(t: String) -> void: Game.alliance.search(t))
@@ -111,7 +117,7 @@ func build_top() -> void:
 		elif id == "events":
 			Game.alliance.refresh_events()
 		elif id == "top":
-			Game.alliance.fetch_top()
+			_fetch_top()
 		scroll_to_top()))
 
 
@@ -332,6 +338,12 @@ func _main() -> void:
 	var lvl := al.level()
 	var members: Array = d.get("members", [])
 	col.add_child(_small(L.t("alliance.levelInfo", [lvl, members.size(), int(d.get("cap", Alliances.cap_of(d.get("talents", {}))))])))
+	if not al.powers.is_empty():
+		var srow := HBoxContainer.new()
+		srow.add_theme_constant_override("separation", 4)
+		srow.add_child(UiKit.icon("fist", 14))
+		srow.add_child(UiKit.label(L.t("alliance.strength", [Fmt.n(al.strength())]), 12, UiKit.INK_SOFT))
+		col.add_child(srow)
 	var xp := int(d.get("xp", 0))
 	if lvl < Alliances.MAX_LEVEL:
 		var from := Alliances.xp_for(lvl)
@@ -513,6 +525,14 @@ func _members() -> void:
 		col.add_child(UiKit.label(str(m.get("name", "")) + ("  (" + L.t("alliance.you") + ")" if bool(m.get("me", false)) else ""), 14))
 		col.add_child(_small(L.t("alliance.memberInfo", [L.t("alliance.role." + r), int(m.get("level", 1)),
 			Fmt.n(int(m.get("week", 0))), Fmt.n(int(m.get("total", 0)))])))
+		var mid := str(m.get("id", ""))
+		var pw := Power.total() if bool(m.get("me", false)) else int(al.powers.get(mid, -1))
+		if pw >= 0:
+			var prow := HBoxContainer.new()
+			prow.add_theme_constant_override("separation", 4)
+			prow.add_child(UiKit.icon("fist", 14))
+			prow.add_child(UiKit.label(L.t("power.value", [Fmt.n(pw)]), 12, UiKit.INK_SOFT))
+			col.add_child(prow)
 		if bool(m.get("me", false)):
 			continue
 		var can_manage := me_role == "leader" or (me_role == "officer" and r == "member")
@@ -537,11 +557,35 @@ func _manage(uid: String, name: String, r: String) -> void:
 			func() -> void: Game.alliance.kick(uid))
 
 
+func _fetch_top() -> void:
+	match top_kind:
+		"strength": Game.alliance.fetch_strength_top()
+		"players": Game.alliance.fetch_power_top()
+		_: Game.alliance.fetch_top()
+
+
 func _top() -> void:
-	content.add_child(_small(L.t("alliance.topHint")))
-	if Game.alliance.top.is_empty():
+	var al := Game.alliance
+	var kinds := [["week", L.t("alliance.top.week")], ["strength", L.t("alliance.top.strength")],
+		["players", L.t("alliance.top.players")]]
+	content.add_child(UiKit.tabs(kinds, top_kind, func(id: String) -> void:
+		top_kind = id
+		_fetch_top()
+		_dirty = true))
+	var list: Array
+	match top_kind:
+		"strength":
+			content.add_child(_small(L.t("alliance.top.strengthHint", [Power.ALLIANCE_TOP])))
+			list = al.strength_top
+		"players":
+			content.add_child(_small(L.t("alliance.top.playersHint", [Fmt.n(Power.total())])))
+			list = al.power_top
+		_:
+			content.add_child(_small(L.t("alliance.topHint")))
+			list = al.top
+	if list.is_empty():
 		content.add_child(_note(L.t("alliance.loading")))
-	for x in Game.alliance.top:
+	for x in list:
 		var a: Dictionary = x
 		var p := PanelContainer.new()
 		var tint := Color("f6e7b0") if bool(a.get("me", false)) else UiKit.PARCHMENT_LIGHT
@@ -553,13 +597,24 @@ func _top() -> void:
 		var place := UiKit.label("#%d" % int(a.get("place", 0)), 14)
 		place.custom_minimum_size = Vector2(40, 0)
 		row.add_child(place)
-		row.add_child(_emblem(int(a.get("emblem", 0)), 26))
-		var n := UiKit.label("[%s] %s" % [a.get("tag", ""), a.get("name", "")], 13)
-		n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		n.clip_text = true
-		row.add_child(n)
+		var value := 0
+		if top_kind == "players":
+			row.add_child(UiKit.icon("fist", 22))
+			var tag := str(a.get("tag", "")) if a.get("tag") != null else ""
+			var n := UiKit.label(("[%s] " % tag if tag != "" else "") + str(a.get("name", "")), 13)
+			n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			n.clip_text = true
+			row.add_child(n)
+			value = int(a.get("power", 0))
+		else:
+			row.add_child(_emblem(int(a.get("emblem", 0)), 26))
+			var n := UiKit.label("[%s] %s" % [a.get("tag", ""), a.get("name", "")], 13)
+			n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			n.clip_text = true
+			row.add_child(n)
+			value = int(a.get("strength" if top_kind == "strength" else "week_xp", 0))
 		row.add_child(UiKit.label(L.t("common.lvl", [int(a.get("level", 1))]), 12, UiKit.INK_SOFT))
-		var pts := UiKit.label(Fmt.n(int(a.get("week_xp", 0))), 13)
+		var pts := UiKit.label(Fmt.n(value), 13)
 		pts.custom_minimum_size = Vector2(56, 0)
 		pts.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		row.add_child(pts)
@@ -619,6 +674,7 @@ func _events() -> void:
 		more.pressed.connect(func() -> void: Game.alliance.attack(true))
 		btns.add_child(more)
 	c.add_child(_small(L.t("alliance.ev.bossHint", [al.free_hits(), Alliances.talent_name("guard")])))
+	c.add_child(_small(L.t("alliance.ev.powerHint", [Fmt.n(Power.total() / 100)])))
 	for t in ev.get("unclaimed", []):
 		_claim_row(L.t("alliance.ev.bossReward", [int(t)]), "boss", int(t))
 

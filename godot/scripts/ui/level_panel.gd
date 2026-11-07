@@ -48,6 +48,7 @@ func build() -> void:
 		_settings()
 		return
 	_progress_card()
+	_power_card()
 	_bonuses_card()
 	_upcoming_card()
 	_stats_card()
@@ -189,6 +190,30 @@ func _progress_card() -> void:
 		mbar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		col.add_child(mbar)
 		col.add_child(_wrap(L.t("level.masteryHint", [Game.mastery_points()]), 12, UiKit.INK_SOFT))
+
+
+# MARK: Мощь
+
+func _power_card() -> void:
+	var parts := Power.breakdown()
+	section_title(L.t("power.title"))
+	var c := _card(UiKit.GOLD_DARK)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	c.add_child(row)
+	row.add_child(UiKit.icon("fist", 34))
+	var total := UiKit.title(Fmt.n(Power.total()), 24)
+	total.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	total.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(total)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+	c.add_child(grid)
+	for p in [["star", "level"], ["sword", "gear"], ["book", "talents"], ["paw", "animals"]]:
+		grid.add_child(_stat_tile(p[0], L.t("power.part." + p[1]), Fmt.n(int(parts[p[1]]))))
+	c.add_child(_wrap(L.t("power.hint"), 12, UiKit.INK_SOFT))
 
 
 # MARK: Характеристики
