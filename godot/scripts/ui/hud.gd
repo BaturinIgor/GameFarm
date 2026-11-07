@@ -744,6 +744,8 @@ func open_window(w: Control) -> void:
 			(w as Sheet).nav_sub = where[1]
 	_window = w
 	root.add_child(w)
+	# Подсказки поверх окна: иначе, например, «Покупки восстановлены» пряталось под магазином
+	root.move_child(_toasts, -1)
 	Sound.set_window_open(true)
 
 
