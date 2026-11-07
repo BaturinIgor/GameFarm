@@ -442,9 +442,9 @@ def main() -> None:
         p.add_argument("--private", action="store_true", help="TikTok и YouTube: приватно, для проверки")
         p.add_argument("--force", action="store_true", help="не ждать сутки и публиковать повторно")
     sub.add_parser("status", help="что уже опубликовано")
-    ck = sub.add_parser("check", help="TikTok: состояние загрузки по publish_id")
+    ck = sub.add_parser("check", help="TikTok: состояние загрузки по publish_id (без него - настройки аккаунта)")
     ck.add_argument("account")
-    ck.add_argument("publish_id")
+    ck.add_argument("publish_id", nargs="?")
     a = ap.parse_args()
 
     if a.cmd == "login":
@@ -456,8 +456,12 @@ def main() -> None:
     elif a.cmd == "check":
         acc = account(a.account)
         token = tiktok_token(a.account, acc, load(TOKENS, {}))
-        st, _ = http("POST", f"{TT}/post/publish/status/fetch/", json_body={"publish_id": a.publish_id},
-                     headers={"Authorization": f"Bearer {token}"})
+        auth = {"Authorization": f"Bearer {token}"}
+        if a.publish_id:
+            st, _ = http("POST", f"{TT}/post/publish/status/fetch/", json_body={"publish_id": a.publish_id}, headers=auth)
+        else:
+            # Что TikTok разрешает этому аккаунту: у закрытого нет PUBLIC_TO_EVERYONE
+            st, _ = http("POST", f"{TT}/post/publish/creator_info/query/", json_body={}, headers=auth)
         print(json.dumps(st, ensure_ascii=False, indent=2))
     elif a.cmd == "post":
         publish(a.path, a.to, a)
