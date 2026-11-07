@@ -96,7 +96,17 @@ func _load_bank() -> void:
 		_bank[sfx] = list
 
 
+## Часы звуков. Обычно реальное время, а при записи роликов (Movie Maker, --fixed-fps) время игры:
+## кадры там считаются дольше реального времени, и паузы между звуками по реальным часам
+## истекали раньше, чем в ролике, из-за чего эффекты накладывались друг на друга.
+static var _game_clock := 0.0
+
+static func _recording() -> bool:
+	return Engine.get_write_movie_path() != ""
+
 static func _now() -> float:
+	if _recording():
+		return _game_clock
 	return Time.get_ticks_msec() / 1000.0
 
 
@@ -146,6 +156,8 @@ func play(sfx: String, volume := 1.0) -> void:
 		index = (index + 1 + randi() % (count - 1)) % count
 	_last_variant[sfx] = index
 	var rate := 1.0 if sfx in STEADY else randf_range(0.94, 1.06)
+	if _recording():
+		print("sfx %.2f %s" % [now, sfx])
 	_play_voice(list[index], clampf(volume * _gain(sfx), 0.0, 1.0), rate)
 
 
@@ -239,6 +251,7 @@ func play_ambience(track: String) -> void:
 
 
 func _process(delta: float) -> void:
+	_game_clock += delta
 	var id := Game.current
 	if id != _location:
 		_location = id

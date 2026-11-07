@@ -309,6 +309,11 @@ def main() -> None:
                 if a.lang and lang not in a.lang:
                     continue
                 out = a.out / f"{clip['id']}_{lang}.mp4"
+                missing = [p["scenario"] for p in clip.get("parts", []) if not (a.raw / f"{p['scenario']}_{lang}.avi").exists()]
+                if missing:
+                    # Частичный прогон (не все сценарии): такой ролик пропускаем
+                    print(f"{out.name}: пропуск, нет записей {', '.join(missing)}", flush=True)
+                    continue
                 print(f"{out.name} <- {raw.name}", flush=True)
                 if "parts" in clip:
                     raw = join_parts(a.raw, clip, lang, tmp)
