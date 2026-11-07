@@ -235,7 +235,15 @@ def tiktok_post(name: str, acc: dict, tokens: dict, video: pathlib.Path, meta: d
                               "disable_comment": False, "disable_duet": False, "disable_stitch": False,
                               "video_cover_timestamp_ms": 1500},
                 "source_info": source}
-        init, _ = http("POST", f"{TT}/post/publish/video/init/", json_body=body, headers=auth)
+        try:
+            init, _ = http("POST", f"{TT}/post/publish/video/init/", json_body=body, headers=auth)
+        except SystemExit as e:
+            # До аудита приложения TikTok принимает только "только для меня"
+            if "unaudited_client" not in str(e) or privacy == "SELF_ONLY":
+                raise
+            print(f"  {name}: приложение ещё не прошло проверку TikTok, публикую «только для меня»", flush=True)
+            body["post_info"]["privacy_level"] = "SELF_ONLY"
+            init, _ = http("POST", f"{TT}/post/publish/video/init/", json_body=body, headers=auth)
     else:
         init, _ = http("POST", f"{TT}/post/publish/inbox/video/init/", json_body={"source_info": source}, headers=auth)
     data = init["data"]
