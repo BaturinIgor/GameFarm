@@ -18,29 +18,32 @@ var _chat := LineEdit.new()
 var _chat_row := HBoxContainer.new()
 var _poll: Timer
 var _seen_msgs := 0
+## Форма создания: превью, подсказка и кнопки обновляются на лету.
+var _preview: Label
+var _hint: Label
+var _create_buttons: Array = []
 
 
 func _init(start_tab := "") -> void:
 	title_key = "alliance.title"
 	if start_tab != "":
 		tab = start_tab
-	for e in [_search, _name, _tag, _about, _chat]:
-		e.add_theme_font_size_override("font_size", 14)
-		e.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_search.placeholder_text = L.t("alliance.searchHint")
 	_search.max_length = 20
 	_search.text_submitted.connect(func(t: String) -> void: Game.alliance.search(t))
-	_name.placeholder_text = L.t("alliance.nameHint")
+	_name.placeholder_text = L.t("alliance.field.nameExample")
 	_name.max_length = 20
-	_tag.placeholder_text = L.t("alliance.tagHint")
+	_tag.placeholder_text = "GV"
 	_tag.max_length = 4
 	_about.placeholder_text = L.t("alliance.aboutHint")
 	_about.max_length = 120
 	_chat.placeholder_text = L.t("alliance.chatHint")
 	_chat.max_length = Alliances.MSG_LEN
 	_chat.text_submitted.connect(func(_t: String) -> void: _send())
+	_tag.text_changed.connect(_on_tag_typed)
+	_name.text_changed.connect(func(_t: String) -> void: _update_create())
 	_chat_row.add_theme_constant_override("separation", 6)
-	_chat_row.add_child(_chat)
+	_chat_row.add_child(UiKit.input(_chat, "scroll"))
 	var send := UiKit.button(L.t("alliance.send"), "green", 13, true)
 	send.pressed.connect(_send)
 	_chat_row.add_child(send)
@@ -145,8 +148,9 @@ func _find() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
 	c.add_child(row)
-	row.add_child(_search)
+	row.add_child(UiKit.input(_search, "compass"))
 	var go := UiKit.button(L.t("alliance.search"), "wood", 13, true)
+	go.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	go.pressed.connect(func() -> void: Game.alliance.search(_search.text))
 	row.add_child(go)
 	var make := UiKit.button(L.t("alliance.create"), "orange", 14)
@@ -191,11 +195,35 @@ func _alliance_row(a: Dictionary) -> void:
 
 
 func _create() -> void:
+	_create_buttons.clear()
 	var c := card()
 	c.add_child(UiKit.label(L.t("alliance.create"), 16))
-	c.add_child(_name)
-	c.add_child(_tag)
-	c.add_child(_about)
+	# Как альянс будет выглядеть в списках: эмблема, тег и название
+	var prev := PanelContainer.new()
+	prev.add_theme_stylebox_override("panel", UiKit.box(Color("f6e7b0"), Color(UiKit.WOOD_DARK, 0.4), 12, 2, false))
+	c.add_child(prev)
+	var prow := HBoxContainer.new()
+	prow.add_theme_constant_override("separation", 10)
+	prev.add_child(prow)
+	prow.add_child(_emblem(emblem, 44))
+	_preview = UiKit.label("", 16)
+	_preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_preview.clip_text = true
+	_preview.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	prow.add_child(_preview)
+	var names := HBoxContainer.new()
+	names.add_theme_constant_override("separation", 8)
+	c.add_child(names)
+	names.add_child(UiKit.input(_name, "crown", L.t("alliance.field.name")))
+	var tag_box := UiKit.input(_tag, "", L.t("alliance.field.tag"))
+	tag_box.size_flags_horizontal = Control.SIZE_FILL
+	tag_box.custom_minimum_size.x = 104
+	names.add_child(tag_box)
+	c.add_child(_small(L.t("alliance.tagHint")))
+	c.add_child(UiKit.input(_about, "scroll", L.t("alliance.field.about")))
+	_hint = _small("")
+	_hint.add_theme_color_override("font_color", UiKit.BAD)
+	c.add_child(_hint)
 	c.add_child(_small(L.t("alliance.emblem")))
 	var grid := GridContainer.new()
 	grid.columns = 8
@@ -226,16 +254,56 @@ func _create() -> void:
 		b.icon = UiKit.icon("coin" if with_coins else "gem", 18).texture
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.disabled = not Game.alliance.can_create(with_coins) or Game.alliance.busy
+		b.set_meta("can", not b.disabled)
+		_create_buttons.append(b)
 		var wc: bool = with_coins
 		b.pressed.connect(func() -> void:
 			Game.alliance.create(_name.text, _tag.text, emblem, _about.text, wc))
 		row.add_child(b)
 	c.add_child(_small(L.t("alliance.createRules")))
+	_update_create()
 	var back := UiKit.button(L.t("alliance.back"), "wood", 13, true)
 	back.pressed.connect(func() -> void:
 		tab = "find"
 		_dirty = true)
 	content.add_child(back)
+
+
+## Тег: только латинские буквы и цифры, сразу заглавными (как проверяет сервер).
+func _on_tag_typed(t: String) -> void:
+	var clean := ""
+	for ch in t.to_upper():
+		if (ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9"):
+			clean += ch
+	if clean != t:
+		var caret := _tag.caret_column
+		_tag.text = clean
+		_tag.caret_column = mini(caret, clean.length())
+	_update_create()
+
+
+## Проверка формы на лету: превью, подсказка, кнопки создания. Без перестройки окна (иначе пропадёт клавиатура).
+func _update_create() -> void:
+	var name_ok := _name.text.strip_edges().length() >= 3
+	var tag_ok := _tag.text.length() >= 2
+	if is_instance_valid(_preview):
+		var tag := _tag.text if _tag.text != "" else "TAG"
+		var nm := _name.text.strip_edges() if _name.text.strip_edges() != "" else L.t("alliance.field.name")
+		_preview.text = "[%s] %s" % [tag, nm]
+		_preview.modulate = Color.WHITE if name_ok and tag_ok else Color(1, 1, 1, 0.55)
+	UiKit.input_bad(_name, _name.text != "" and not name_ok)
+	UiKit.input_bad(_tag, _tag.text != "" and not tag_ok)
+	if is_instance_valid(_hint):
+		var msg := ""
+		if _name.text != "" and not name_ok:
+			msg = L.t("alliance.field.nameShort")
+		elif _tag.text != "" and not tag_ok:
+			msg = L.t("alliance.field.tagShort")
+		_hint.text = msg
+		_hint.visible = msg != ""
+	for b in _create_buttons:
+		if is_instance_valid(b):
+			b.disabled = not (bool(b.get_meta("can", false)) and name_ok and tag_ok)
 
 
 ## Что такое альянс (для тех, кто ещё не вступил).
