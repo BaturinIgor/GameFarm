@@ -2,7 +2,8 @@ class_name FarmEventSystem
 extends RefCounted
 ## Фарм-ивенты на основных локациях (данные в data/farm_events.gd). Идут одновременно с праздником.
 ## В Game.save: farmKey, farmPoints, farmClaimed (ступени), farmSeen, farmBest (лучший результат по ивенту).
-## Очки: ивентовые монстры (MonstersFeature зовёт on_farm_kill) и точки ресурсов (World зовёт on_spot).
+## Очки: ивентовые монстры (MonstersFeature зовёт on_farm_kill), точки ресурсов (World зовёт on_spot)
+## и дела по всей игре в task-ивентах (on_event).
 
 
 func defaults(save: Dictionary) -> void:
@@ -129,6 +130,16 @@ func on_spot(tool: String) -> int:
 		return 0
 	add(FarmEvents.SPOT_POINTS)
 	return FarmEvents.SPOT_POINTS
+
+
+## Task-ивент: очки за дела по всей игре.
+func on_event(name: String, data: Dictionary) -> void:
+	if not is_open():
+		return
+	var event := event_id()
+	if FarmEvents.kind(event) != "task":
+		return
+	add(FarmEvents.action_points(event, name, data))
 
 
 # MARK: Награды

@@ -10,6 +10,14 @@ func _ready() -> void:
 	if "--check-scripts" in OS.get_cmdline_user_args():
 		get_tree().quit(1 if not CheckScripts.run().is_empty() else 0)
 		return
+	# Список достижений и таблиц Game Center для tools/appstore/asc_gamecenter.py
+	var gi := OS.get_cmdline_user_args().find("--gc-manifest")
+	if gi >= 0:
+		var f := FileAccess.open(OS.get_cmdline_user_args()[gi + 1], FileAccess.WRITE)
+		f.store_string(JSON.stringify(GCenter.manifest(), " ", false) + "\n")
+		f.close()
+		get_tree().quit()
+		return
 	# Снимки в CI - на русском: длинные подписи лучше показывают, что не помещается
 	if "--shots" in OS.get_cmdline_user_args():
 		L.set_language("ru", false)
@@ -37,6 +45,9 @@ func _ready() -> void:
 	OfflineOverlay.check()
 	CalendarPanel.check()
 	OfferPopup.check()
+	# Игра с другого устройства в iCloud и вопрос про уведомления (только на iOS с плагинами)
+	Cloud.check()
+	Notify.maybe_ask()
 
 	var fade_layer := CanvasLayer.new()
 	fade_layer.layer = 50

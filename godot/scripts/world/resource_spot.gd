@@ -172,6 +172,13 @@ func _tree(name: String, dead_name: String, glow = null, glow_alpha := 0.4) -> v
 	_add(_dead_art, dead_name)
 
 
+## Перекрасить живой вид точки (спрайты; свечение не трогаем).
+func _tint_alive(c: Color) -> void:
+	for ch in _alive_art.get_children():
+		if ch is Sprite2D:
+			ch.modulate = c
+
+
 func _ore(name: String, chunk: String, glow = null, glow_alpha := 0.3) -> void:
 	if glow != null:
 		_alive_art.add_child(Fx.glow(glow, 76, 14, glow_alpha))
@@ -276,6 +283,31 @@ func _build_art() -> void:
 		"iceBlock": _ore("ice_block", "chunk_ice")
 		"starRock": _ore("ore_star", "chunk_star", Color(1, 0.92, 0.5), 0.45)
 		"sulfurVent": _ore("ore_sulfur", "chunk_sulfur", Res.ore_color("sulfur"), 0.25)
+		# Дальние планеты (Planets.NODE): перекраска спрайтов пака
+		"emberVein":
+			_ore("ore_ruby", "chunk_ruby", Res.ore_color("emberstone"), 0.5)
+			_tint_alive(Color(1.0, 0.62, 0.35))
+		"sunTree":
+			_tree("tree_golden", "tree_golden_bare", Color(1, 0.6, 0.2), 0.45)
+			_tint_alive(Color(1.0, 0.78, 0.5))
+		"phoenixNest":
+			_alive_art.add_child(Fx.glow(Color(1, 0.35, 0.15), 64, 12, 0.6))
+			_add(_alive_art, "flowers_red", -4)
+			_add(_alive_art, "chunk_ruby", 9, -2)
+			_add(_dead_art, "tuft1")
+		"starBloom":
+			_alive_art.add_child(Fx.glow(Color(0.75, 0.8, 1), 64, 12, 0.6))
+			_add(_alive_art, "bush_cloud_star")
+			_tint_alive(Color(0.82, 0.86, 1.0))
+			_add(_dead_art, "bush_cloud")
+		"frostCrystal":
+			_alive_art.add_child(Fx.glow(Res.ore_color("frostglass"), 80, 16, 0.5))
+			_add(_alive_art, "crystal_diamond", -4)
+			_add(_alive_art, "chunk_ice", 12, -3)
+			_add(_dead_art, "rubble")
+		"reefGeode":
+			_ore("ore_diamond", "chunk_diamond", Res.ore_color("azurite"), 0.5)
+			_tint_alive(Color(0.55, 0.7, 1.0))
 		"coral":
 			_add(_alive_art, "coral")
 			_add(_dead_art, "rubble")

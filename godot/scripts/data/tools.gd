@@ -78,8 +78,8 @@ const COSTS := {
 		6: {"coins": 12000, "items": [["wood", 1200], ["diamond", 8], ["ice", 60]]},
 		7: {"coins": 30000, "items": [["wood", 2000], ["sulfur", 40], ["pearl", 10]]},
 		8: {"coins": 80000, "items": [["wood", 4000], ["obsidian", 60], ["ruby", 10]]},
-		9: {"coins": 150000, "items": [["wood", 6000], ["essence", 40], ["stardust", 10]]},
-		10: {"coins": 300000, "items": [["wood", 10000], ["essence", 100], ["stardust", 25]]},
+		9: {"coins": 150000, "items": [["wood", 6000], ["essence", 40], ["resin", 30]]},
+		10: {"coins": 300000, "items": [["wood", 10000], ["resin", 60], ["starlight", 30]]},
 	},
 	"pickaxe": {
 		2: {"coins": 40, "items": [["wood", 25], ["stone", 40]]},
@@ -89,8 +89,8 @@ const COSTS := {
 		6: {"coins": 12000, "items": [["gold", 120], ["diamond", 12], ["ice", 80]]},
 		7: {"coins": 30000, "items": [["crystal", 30], ["sulfur", 60], ["coral", 30]]},
 		8: {"coins": 80000, "items": [["obsidian", 80], ["ruby", 20]]},
-		9: {"coins": 150000, "items": [["obsidian", 150], ["essence", 40], ["stardust", 10]]},
-		10: {"coins": 300000, "items": [["ruby", 40], ["essence", 100], ["stardust", 25]]},
+		9: {"coins": 150000, "items": [["obsidian", 150], ["essence", 40], ["emberstone", 30]]},
+		10: {"coins": 300000, "items": [["ruby", 40], ["emberstone", 60], ["azurite", 30]]},
 	},
 	"rod": {
 		2: {"coins": 500, "items": [["wood", 100], ["bamboo", 40], ["fish", 30]]},
@@ -100,8 +100,8 @@ const COSTS := {
 		6: {"coins": 25000, "items": [["crystal", 15], ["fish", 500]]},
 		7: {"coins": 40000, "items": [["sulfur", 40], ["pearl", 20], ["fish", 800]]},
 		8: {"coins": 90000, "items": [["ruby", 15], ["pearl", 40], ["fish", 1500]]},
-		9: {"coins": 160000, "items": [["fish", 2500], ["essence", 40], ["pearl", 60]]},
-		10: {"coins": 320000, "items": [["fish", 4000], ["essence", 100], ["stardust", 25]]},
+		9: {"coins": 160000, "items": [["fish", 2500], ["essence", 40], ["starlight", 30]]},
+		10: {"coins": 320000, "items": [["fish", 4000], ["starlight", 60], ["azurite", 30]]},
 	},
 	"sword": {
 		2: {"coins": 60, "items": [["wood", 30], ["slime", 8]]},
@@ -111,8 +111,8 @@ const COSTS := {
 		6: {"coins": 12000, "items": [["diamond", 6], ["slime", 150]]},
 		7: {"coins": 30000, "items": [["obsidian", 30], ["bone", 200]]},
 		8: {"coins": 80000, "items": [["ruby", 10], ["bone", 400]]},
-		9: {"coins": 150000, "items": [["tusk", 300], ["essence", 60], ["ruby", 20]]},
-		10: {"coins": 300000, "items": [["essence", 150], ["stardust", 30], ["ruby", 30]]},
+		9: {"coins": 150000, "items": [["tusk", 300], ["essence", 60], ["phoenixFeather", 30]]},
+		10: {"coins": 300000, "items": [["essence", 150], ["phoenixFeather", 60], ["frostglass", 30]]},
 	},
 	"armor": {
 		2: {"coins": 80, "items": [["wool", 6], ["slime", 8]]},
@@ -122,8 +122,8 @@ const COSTS := {
 		6: {"coins": 14000, "items": [["diamond", 8], ["slime", 200]]},
 		7: {"coins": 32000, "items": [["obsidian", 40], ["bone", 250]]},
 		8: {"coins": 85000, "items": [["ruby", 12], ["bone", 500]]},
-		9: {"coins": 160000, "items": [["tusk", 300], ["essence", 60], ["obsidian", 100]]},
-		10: {"coins": 320000, "items": [["essence", 150], ["stardust", 30]]},
+		9: {"coins": 160000, "items": [["tusk", 300], ["essence", 60], ["emberstone", 30]]},
+		10: {"coins": 320000, "items": [["essence", 150], ["frostglass", 60]]},
 	},
 	"helmet": {
 		2: {"coins": 100, "items": [["iron", 10], ["slime", 10]]},
@@ -133,8 +133,8 @@ const COSTS := {
 		6: {"coins": 15000, "items": [["crystal", 10], ["tusk", 60]]},
 		7: {"coins": 35000, "items": [["obsidian", 40], ["tusk", 120]]},
 		8: {"coins": 90000, "items": [["ruby", 10], ["essence", 20]]},
-		9: {"coins": 160000, "items": [["essence", 60], ["tusk", 300]]},
-		10: {"coins": 320000, "items": [["essence", 150], ["stardust", 30]]},
+		9: {"coins": 160000, "items": [["essence", 60], ["frostglass", 30]]},
+		10: {"coins": 320000, "items": [["essence", 150], ["azurite", 60]]},
 	},
 	"boots": {
 		2: {"coins": 90, "items": [["wool", 10], ["slime", 6]]},
@@ -144,8 +144,8 @@ const COSTS := {
 		6: {"coins": 14000, "items": [["ice", 80], ["tusk", 50]]},
 		7: {"coins": 33000, "items": [["coral", 40], ["tusk", 100]]},
 		8: {"coins": 85000, "items": [["cloud", 40], ["essence", 20]]},
-		9: {"coins": 150000, "items": [["essence", 60], ["feather", 200]]},
-		10: {"coins": 300000, "items": [["essence", 150], ["stardust", 25]]},
+		9: {"coins": 150000, "items": [["essence", 60], ["starlight", 30]]},
+		10: {"coins": 300000, "items": [["essence", 150], ["phoenixFeather", 60]]},
 	},
 }
 

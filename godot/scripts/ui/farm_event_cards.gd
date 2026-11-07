@@ -60,6 +60,12 @@ static func _banner(run: Dictionary) -> Control:
 static func _goal_text(event: String) -> String:
 	if FarmEvents.kind(event) == "hunt":
 		return L.t("farm.goal.hunt", [FarmEvents.KILL_POINTS])
+	if FarmEvents.kind(event) == "task":
+		var lines: Array = []
+		var acts: Dictionary = FarmEvents.ACTIONS[event]
+		for a in acts:
+			lines.append(L.t("farm.act." + a, [acts[a]]))
+		return "\n".join(lines)
 	return L.t("farm.goal." + str(FarmEvents.TOOL[event]), [FarmEvents.SPOT_POINTS])
 
 

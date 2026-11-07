@@ -54,3 +54,10 @@ static func seconds(s: float) -> String:
 	var h := m / 60
 	var rest := m % 60
 	return L.t("time.hour", [h]) if rest == 0 else L.t("time.hourMin", [h, rest])
+
+
+## Местное время по unix-секундам: "18:30".
+static func clock(unix: int) -> String:
+	var bias := int(Time.get_time_zone_from_system().get("bias", 0))
+	var d := Time.get_time_dict_from_unix_time(unix + bias * 60)
+	return "%02d:%02d" % [int(d["hour"]), int(d["minute"])]

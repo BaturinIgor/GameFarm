@@ -490,6 +490,111 @@ static func count_badge(n: int) -> PanelContainer:
 	return p
 
 
+# MARK: Поле ввода
+
+## Поле ввода в стиле игры: углублённый пергамент в деревянной рамке, слева значок, справа счётчик букв
+## и крестик очистки, при вводе рамка светится золотом. Над полем - подпись (если есть).
+## Сам LineEdit можно держать между перерисовками окна: обёртка строится заново, сигналы подключаются один раз.
+static func input(edit: LineEdit, icon_name := "", caption := "") -> Control:
+	_style_edit(edit)
+	var box := PanelContainer.new()
+	box.add_theme_stylebox_override("panel", input_style(edit.has_focus()))
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.mouse_filter = Control.MOUSE_FILTER_PASS
+	# Нажатие по рамке (мимо текста) - тоже в поле
+	box.gui_input.connect(func(e: InputEvent) -> void:
+		if e is InputEventMouseButton and e.pressed and is_instance_valid(edit) and edit.editable:
+			edit.grab_focus())
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	box.add_child(row)
+	if icon_name != "":
+		var ic := icon(icon_name, 22)
+		ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(ic)
+	if edit.get_parent() != null:
+		edit.get_parent().remove_child(edit)
+	row.add_child(edit)
+	var counter: Label = null
+	if edit.max_length > 0:
+		counter = label("", 11, INK_SOFT)
+		counter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(counter)
+	edit.set_meta("kit_box", box)
+	edit.set_meta("kit_counter", counter)
+	_update_input(edit)
+	if caption == "":
+		return box
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 3)
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var cap := label(caption, 12, INK_SOFT)
+	v.add_child(cap)
+	v.add_child(box)
+	return v
+
+
+## Рамка поля: обычная или подсвеченная (идёт ввод), красная - ошибка.
+static func input_style(focused: bool, bad := false) -> GameStyle:
+	var s := GameStyle.make(Color("ead6ad"), Color("fffaf0"), 12.0)
+	s.border_width = 3.0
+	s.border_color = BAD if bad else (GOLD if focused else WOOD_LIGHT)
+	s.outline = GOLD_DARK if focused and not bad else WOOD_DARK
+	s.outline_width = 2.0
+	s.shadow_offset = 2.0
+	s.shadow_color = Color(OUTLINE, 0.3)
+	s.content_margin_left = 12
+	s.content_margin_right = 10
+	s.content_margin_top = 7
+	s.content_margin_bottom = 9
+	return s
+
+
+## Отметить поле ошибкой (красная рамка) или снять отметку.
+static func input_bad(edit: LineEdit, bad: bool) -> void:
+	edit.set_meta("kit_bad", bad)
+	_update_input(edit)
+
+
+static func _style_edit(edit: LineEdit) -> void:
+	if edit.has_meta("kit_styled"):
+		return
+	edit.set_meta("kit_styled", true)
+	for st in ["normal", "focus", "read_only"]:
+		edit.add_theme_stylebox_override(st, StyleBoxEmpty.new())
+	edit.add_theme_font_override("font", font())
+	edit.add_theme_font_size_override("font_size", 16)
+	edit.add_theme_color_override("font_color", INK)
+	edit.add_theme_color_override("font_uneditable_color", INK_SOFT)
+	edit.add_theme_color_override("font_placeholder_color", Color(INK_SOFT, 0.55))
+	edit.add_theme_color_override("font_selected_color", INK)
+	edit.add_theme_color_override("selection_color", Color(GOLD, 0.55))
+	edit.add_theme_color_override("caret_color", WOOD_DARK)
+	edit.add_theme_color_override("clear_button_color", Color(INK_SOFT, 0.8))
+	edit.add_theme_color_override("clear_button_color_pressed", INK)
+	edit.add_theme_constant_override("caret_width", 2)
+	edit.clear_button_enabled = true
+	edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	edit.custom_minimum_size.y = 30
+	edit.focus_entered.connect(func() -> void: _update_input(edit))
+	edit.focus_exited.connect(func() -> void: _update_input(edit))
+	edit.text_changed.connect(func(_t: String) -> void: _update_input(edit))
+
+
+static func _update_input(edit: LineEdit) -> void:
+	var box: Variant = edit.get_meta("kit_box", null)
+	if box is PanelContainer and is_instance_valid(box):
+		(box as PanelContainer).add_theme_stylebox_override("panel",
+			input_style(edit.has_focus(), bool(edit.get_meta("kit_bad", false))))
+	var counter: Variant = edit.get_meta("kit_counter", null)
+	if counter is Label and is_instance_valid(counter):
+		var n := edit.text.length()
+		var c := counter as Label
+		c.text = "%d/%d" % [n, edit.max_length]
+		c.visible = edit.has_focus() or n > 0
+		c.label_settings.font_color = GOLD_DARK if n >= edit.max_length else INK_SOFT
+
+
 ## Деревянная "плашка" (woodPill в iOS): светлее сверху, светлая черта внутри, контур и тень.
 static func pill_style() -> GameStyle:
 	var s := GameStyle.make(WOOD.lerp(Color.WHITE, 0.18), WOOD, 14.0)

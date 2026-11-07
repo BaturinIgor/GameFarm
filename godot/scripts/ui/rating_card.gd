@@ -108,10 +108,10 @@ static func _name_row() -> Control:
 	var edit := LineEdit.new()
 	edit.text = Game.rating.player_name()
 	edit.max_length = 16
-	edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	edit.add_theme_font_size_override("font_size", 13)
-	row.add_child(edit)
+	edit.placeholder_text = L.t("rating.nameHint")
+	row.add_child(UiKit.input(edit, "star"))
 	var save := UiKit.button(L.t("rating.rename"), "green", 12, true)
+	save.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	save.pressed.connect(func() -> void: Game.rating.rename(edit.text))
 	row.add_child(save)
 	return row
