@@ -236,6 +236,9 @@ jobs:
             printf '%s' "$ASC_KEY_P8" | base64 --decode > "$KEY"
           fi
           AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+          # Старые сертификаты «Created via API» от прошлых сборок занимают лимит команды (10)
+          python3 tools/appstore/asc_ci_certs.py --issuer "$ASC_ISSUER_ID" --key-id "$ASC_KEY_ID" --key "$KEY" \
+            || echo "::warning::Не удалось удалить старые сертификаты разработчика CI"
           ARCHIVE="$RUNNER_TEMP/HarvestHollow.xcarchive"
           xcodebuild \
             -project build-ios/HarvestHollow.xcodeproj \
@@ -253,7 +256,10 @@ jobs:
           status=$?
           grep -E "error:|fatal error" appstore.log | sort -u | head -60 | sed 's/^/::error::/' || true
           tail -30 appstore.log
-          [ $status -eq 0 ] || exit $status
+          if [ $status -ne 0 ]; then
+            python3 tools/appstore/asc_ci_certs.py --issuer "$ASC_ISSUER_ID" --key-id "$ASC_KEY_ID" --key "$KEY" || true
+            exit $status
+          fi
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -275,6 +281,9 @@ jobs:
             "${AUTH[@]}" >> appstore.log 2>&1
           status=$?
           tail -40 appstore.log
+          # Сертификат разработчика, созданный этой сборкой, больше не нужен: у команды их не больше 10
+          python3 tools/appstore/asc_ci_certs.py --issuer "$ASC_ISSUER_ID" --key-id "$ASC_KEY_ID" --key "$KEY" \
+            || echo "::warning::Не удалось удалить сертификаты разработчика CI"
           rm -rf "$KEY_DIR"
           [ $status -eq 0 ] || { echo "::error::Экспорт или загрузка не прошли, см. appstore.log"; exit $status; }
           echo "::notice::Сборка 1.0.0 (${{ github.run_number }}) отправлена в App Store Connect. Через 10-30 минут появится в TestFlight."
