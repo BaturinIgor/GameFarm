@@ -84,6 +84,45 @@ def http(method: str, url: str, *, data=None, json_body=None, headers=None, raw=
     return (json.loads(payload) if payload.strip() else {}), hdrs
 
 
+def upload_file(url: str, video: pathlib.Path, headers: dict) -> None:
+    """PUT файла кусками по 1 МБ. Если сервер оборвал загрузку (Broken pipe), читаем, что он ответил,
+    и пробуем ещё раз: так видно настоящую причину, а не только обрыв."""
+    import http.client
+    import ssl
+    u = urllib.parse.urlsplit(url)
+    path = u.path + ("?" + u.query if u.query else "")
+    last = ""
+    for attempt in range(3):
+        conn = http.client.HTTPSConnection(u.hostname, u.port or 443, timeout=300, context=ssl.create_default_context())
+        try:
+            conn.putrequest("PUT", path, skip_accept_encoding=True)
+            for k, v in headers.items():
+                conn.putheader(k, v)
+            conn.endheaders()
+            with open(video, "rb") as f:
+                while block := f.read(1024 * 1024):
+                    conn.send(block)
+            r = conn.getresponse()
+            body = r.read().decode(errors="replace")[:800]
+            if r.status < 300:
+                return
+            last = f"HTTP {r.status}: {body}"
+        except (BrokenPipeError, ConnectionResetError, ssl.SSLError, OSError) as e:
+            last = f"{type(e).__name__}: {e}"
+            if isinstance(e, (BrokenPipeError, ConnectionResetError)):
+                try:
+                    r = conn.getresponse()
+                    last += f" | сервер ответил HTTP {r.status}: {r.read().decode(errors='replace')[:800]}"
+                except Exception:
+                    pass
+        finally:
+            conn.close()
+        if attempt < 2:
+            print(f"  загрузка оборвалась ({last}), попытка {attempt + 2} из 3...", flush=True)
+            time.sleep(3)
+    raise SystemExit(f"PUT {u.hostname} не удался: {last}")
+
+
 def accounts() -> dict:
     if not ACCOUNTS.exists():
         raise SystemExit(f"Нет {ACCOUNTS}. Скопируйте accounts.example.json и впишите ключи приложений.")
@@ -200,7 +239,7 @@ def tiktok_post(name: str, acc: dict, tokens: dict, video: pathlib.Path, meta: d
     else:
         init, _ = http("POST", f"{TT}/post/publish/inbox/video/init/", json_body={"source_info": source}, headers=auth)
     data = init["data"]
-    http("PUT", data["upload_url"], data=video.read_bytes(), raw=True, headers={
+    upload_file(data["upload_url"], video, {
         "Content-Type": "video/mp4", "Content-Length": str(size), "Content-Range": f"bytes 0-{size - 1}/{size}"})
     for _ in range(60):
         st, _ = http("POST", f"{TT}/post/publish/status/fetch/", json_body={"publish_id": data["publish_id"]}, headers=auth)
