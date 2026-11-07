@@ -4,23 +4,33 @@ extends "res://tests/test_case.gd"
 
 func test_levels_and_caps() -> void:
 	eq(Alliances.level_of(0), 1)
-	eq(Alliances.level_of(399), 1)
-	eq(Alliances.level_of(400), 2, "на 2 уровень - 400 опыта, как _al_level")
-	eq(Alliances.cap_of(0), 25)
-	eq(Alliances.cap_of(Alliances.xp_for(16)), 100, "100 мест на 16 уровне")
+	eq(Alliances.level_of(699), 1)
+	eq(Alliances.level_of(700), 2, "на 2 уровень - 700 опыта, как _al_level")
+	eq(Alliances.level_of(214000), 29, "проверено на локальной базе")
 	eq(Alliances.level_of(10_000_000), Alliances.MAX_LEVEL)
+	eq(Alliances.cap_of({}), 25, "альянс начинает с 25 мест")
+	eq(Alliances.cap_of({"seats": Alliances.points_for("seats", 4)}), 45)
+	eq(Alliances.cap_of({"seats": Alliances.talent_max("seats")}), 100, "все ранги «Мест» - 100 мест")
 
 
 func test_talent_ranks() -> void:
-	eq(Alliances.talent_max("harvest"), 3300, "как _al_talent_max: 60 * 55")
-	eq(Alliances.talent_max("garden"), 4950)
-	eq(Alliances.talent_max("workshop"), 6600)
-	eq(Alliances.talent_max("fortune"), 9900)
-	eq(Alliances.rank_of("harvest", 59), 0)
-	eq(Alliances.rank_of("harvest", 60), 1)
-	eq(Alliances.rank_of("harvest", 3300), Alliances.MAX_RANK)
+	eq(Alliances.TALENTS.size(), 24)
+	eq(Alliances.talent_max("harvest"), 4800, "как _al_talent_max: 40 * 120")
+	eq(Alliances.talent_max("seats"), 9600)
+	eq(Alliances.talent_max("rest"), 14400)
+	var total := 0
+	for id in Alliances.TALENTS:
+		total += Alliances.talent_max(id)
+	eq(total, 220800, "всё дерево, как на сервере")
+	eq(Alliances.rank_of("harvest", 39), 0)
+	eq(Alliances.rank_of("harvest", 40), 1)
+	eq(Alliances.rank_of("harvest", 4800), Alliances.MAX_RANK)
+	for lvl in Alliances.ROWS:
+		eq(Alliances.row(lvl).size(), 6, "в ряду %d шесть талантов" % lvl)
 	for id in Alliances.TALENTS:
 		check(L.t("alliance.talent." + id) != "alliance.talent." + id, "есть название таланта %s" % id)
+		check(L.t("alliance.talent." + id + ".text").contains("{0}"), "в описании %s есть {0}" % id)
+		check(not Alliances.talent_text(id, 15).contains("{0}"), "описание %s подставляется" % id)
 
 
 func test_costs() -> void:
@@ -33,9 +43,9 @@ func test_costs() -> void:
 
 func test_talent_bonus_applies() -> void:
 	var before := Game.stats.yield_all
-	Game.save["alliance"] = {"id": 7, "name": "T", "tag": "T", "emblem": 0, "talents": {"harvest": 3300, "strength": 60}}
+	Game.save["alliance"] = {"id": 7, "name": "T", "tag": "T", "emblem": 0, "talents": {"harvest": 4800, "strength": 40}}
 	Game.recalc()
-	near(Game.stats.yield_all, before + 0.10, 0.0001, "10 рангов урожая - +10% добычи")
+	near(Game.stats.yield_all, before + 0.15, 0.0001, "15 рангов урожая - +15% добычи")
 	eq(Game.alliance.rank("strength"), 1)
 	# Вышел из альянса - бонусов нет
 	Game.save["alliance"] = {}

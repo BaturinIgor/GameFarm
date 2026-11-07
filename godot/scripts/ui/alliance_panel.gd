@@ -331,7 +331,7 @@ func _main() -> void:
 	col.add_child(UiKit.label("[%s] %s" % [d.get("tag", ""), d.get("name", "")], 17))
 	var lvl := al.level()
 	var members: Array = d.get("members", [])
-	col.add_child(_small(L.t("alliance.levelInfo", [lvl, members.size(), int(d.get("cap", 25))])))
+	col.add_child(_small(L.t("alliance.levelInfo", [lvl, members.size(), int(d.get("cap", Alliances.cap_of(d.get("talents", {}))))])))
 	var xp := int(d.get("xp", 0))
 	if lvl < Alliances.MAX_LEVEL:
 		var from := Alliances.xp_for(lvl)
@@ -367,13 +367,34 @@ func _main() -> void:
 			give_kind = kk
 			_dirty = true)
 		krow.add_child(b)
-	for id in Alliances.TALENTS:
-		_talent_row(id)
+	# 4 ряда: открытые - по таланту на строку, закрытый ряд - одна карточка со значками
+	for i in Alliances.ROWS.size():
+		var need: int = Alliances.ROWS[i]
+		content.add_child(UiKit.label(L.t("alliance.talentRow", [i + 1, need]), 14, UiKit.INK_SOFT))
+		if al.level() >= need:
+			for id in Alliances.row(need):
+				_talent_row(id)
+		else:
+			_locked_row(need)
 	var leave := UiKit.button(L.t("alliance.leave"), "red", 13, true)
 	leave.pressed.connect(func() -> void:
 		ConfirmPopup.ask("px:crown", L.t("alliance.leave"), L.t("alliance.leaveText"), L.t("alliance.leave"), "red",
 			func() -> void: Game.alliance.leave()))
 	content.add_child(leave)
+
+
+func _locked_row(need: int) -> void:
+	var v := card()
+	var icons := HFlowContainer.new()
+	icons.add_theme_constant_override("h_separation", 10)
+	v.add_child(icons)
+	for id in Alliances.row(need):
+		var ic := UiKit.icon(str(Alliances.TALENTS[id]["icon"]), 28)
+		ic.modulate = Color(1, 1, 1, 0.4)
+		icons.add_child(ic)
+	var names: Array = Alliances.row(need).map(func(id: String) -> String: return Alliances.talent_name(id))
+	v.add_child(_small(", ".join(names)))
+	v.add_child(_small(L.t("alliance.talentLocked", [need])))
 
 
 func _talent_row(id: String) -> void:
@@ -583,7 +604,7 @@ func _events() -> void:
 	btns.add_theme_constant_override("separation", 6)
 	c.add_child(btns)
 	if al.hits_left() > 0:
-		var hit := UiKit.button(L.t("alliance.ev.hit.free", [al.hits_left(), AllianceEvents.FREE_HITS]), "green", 14)
+		var hit := UiKit.button(L.t("alliance.ev.hit.free", [al.hits_left(), al.free_hits()]), "green", 14)
 		hit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		hit.disabled = al.busy
 		hit.pressed.connect(func() -> void: Game.alliance.attack(false))
@@ -597,7 +618,7 @@ func _events() -> void:
 		more.disabled = not al.can_attack(true)
 		more.pressed.connect(func() -> void: Game.alliance.attack(true))
 		btns.add_child(more)
-	c.add_child(_small(L.t("alliance.ev.bossHint", [AllianceEvents.FREE_HITS, Alliances.talent_name("strength")])))
+	c.add_child(_small(L.t("alliance.ev.bossHint", [al.free_hits(), Alliances.talent_name("guard")])))
 	for t in ev.get("unclaimed", []):
 		_claim_row(L.t("alliance.ev.bossReward", [int(t)]), "boss", int(t))
 

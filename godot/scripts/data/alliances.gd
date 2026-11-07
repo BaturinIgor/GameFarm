@@ -14,10 +14,9 @@ const FREE_PER_DAY := 20
 const COINS_PER_DAY := 20
 const GEM_BASE := 5
 const GEM_STEP := 5
-## Уровни альянса и места.
-const MAX_LEVEL := 20
+## Уровни альянса и места: альянс начинает с 25 мест, талант «Места» даёт +5 за ранг, до 100.
+const MAX_LEVEL := 30
 const BASE_CAP := 25
-const CAP_PER_LEVEL := 5
 const MAX_CAP := 100
 ## Чат: длина сообщения и как часто обновлять открытый чат (секунды).
 const MSG_LEN := 200
@@ -28,28 +27,47 @@ const EMBLEM_COLORS := [Color("e8b04a"), Color("6fc06a"), Color("5aa8e0"), Color
 	Color("5ad2c8"), Color("e0905a"), Color("9aa0aa"), Color("f07ab0"), Color("8a6ae0"), Color("6a9a4a"), Color("d0a070"),
 	Color("4a7ab0"), Color("b04a4a"), Color("70c0f0")]
 
-## Таланты альянса: с какого уровня открыт, иконка, сила за ранг (доля) и множитель цены ранга.
-## Каждый вклад - одно очко в выбранный талант и одно очко опыта альянсу.
+## Таланты альянса: 4 ряда по 6, ряд открывается на уровне альянса 1, 5, 12, 20 и дороже в 1, 1.5, 2, 3 раза.
+## level - с какого уровня открыт, per_rank - сила за ранг, tier - множитель цены, unit - как писать силу
+## (pct - проценты, flat - число, hours - часы, hit - удары). Каждый вклад - очко в талант и очко опыта альянсу.
 const TALENTS := {
-	"harvest": {"level": 1, "icon": "basket", "per_rank": 0.01, "tier": 1.0},
-	"strength": {"level": 1, "icon": "fist", "per_rank": 0.02, "tier": 1.0},
-	"garden": {"level": 3, "icon": "sprout", "per_rank": 0.02, "tier": 1.5},
-	"beasts": {"level": 3, "icon": "paw", "per_rank": 0.02, "tier": 1.5},
-	"workshop": {"level": 6, "icon": "hammer", "per_rank": 0.02, "tier": 2.0},
-	"vitality": {"level": 6, "icon": "heart_plus", "per_rank": 0.02, "tier": 2.0},
-	"fortune": {"level": 10, "icon": "clover", "per_rank": 0.005, "tier": 3.0},
-	"thrift": {"level": 10, "icon": "coin", "per_rank": 0.01, "tier": 3.0},
+	"harvest": {"level": 1, "icon": "basket", "per_rank": 0.01, "tier": 1.0, "unit": "pct"},
+	"strength": {"level": 1, "icon": "fist", "per_rank": 0.015, "tier": 1.0, "unit": "pct"},
+	"garden": {"level": 1, "icon": "sprout", "per_rank": 0.015, "tier": 1.0, "unit": "pct"},
+	"beasts": {"level": 1, "icon": "paw", "per_rank": 0.015, "tier": 1.0, "unit": "pct"},
+	"seats": {"level": 1, "icon": "crown", "per_rank": 5.0, "tier": 2.0, "unit": "flat"},
+	"guard": {"level": 1, "icon": "sword", "per_rank": 0.02, "tier": 1.0, "unit": "pct"},
+	"workshop": {"level": 5, "icon": "hammer", "per_rank": 0.012, "tier": 1.5, "unit": "pct"},
+	"vitality": {"level": 5, "icon": "heart_plus", "per_rank": 0.015, "tier": 1.5, "unit": "pct"},
+	"swift": {"level": 5, "icon": "boots", "per_rank": 0.01, "tier": 1.5, "unit": "pct"},
+	"scholar": {"level": 5, "icon": "book", "per_rank": 0.01, "tier": 1.5, "unit": "pct"},
+	"merchant": {"level": 5, "icon": "coin", "per_rank": 0.01, "tier": 1.5, "unit": "pct"},
+	"warcry": {"level": 5, "icon": "flame", "per_rank": 0.2, "tier": 1.5, "unit": "hit"},
+	"fortune": {"level": 12, "icon": "clover", "per_rank": 0.004, "tier": 2.0, "unit": "pct"},
+	"thrift": {"level": 12, "icon": "tag", "per_rank": 0.008, "tier": 2.0, "unit": "pct"},
+	"tamer": {"level": 12, "icon": "lasso", "per_rank": 0.015, "tier": 2.0, "unit": "pct"},
+	"crit": {"level": 12, "icon": "target", "per_rank": 0.003, "tier": 2.0, "unit": "pct"},
+	"bounty": {"level": 12, "icon": "chest", "per_rank": 0.03, "tier": 2.0, "unit": "pct"},
+	"gold": {"level": 12, "icon": "goldenApple", "per_rank": 0.01, "tier": 2.0, "unit": "pct"},
+	"rest": {"level": 20, "icon": "moon", "per_rank": 0.2, "tier": 3.0, "unit": "hours"},
+	"gems": {"level": 20, "icon": "gem", "per_rank": 0.001, "tier": 3.0, "unit": "pct"},
+	"helpers": {"level": 20, "icon": "heart", "per_rank": 0.015, "tier": 3.0, "unit": "pct"},
+	"regrow": {"level": 20, "icon": "wheat", "per_rank": 0.006, "tier": 3.0, "unit": "pct"},
+	"packs": {"level": 20, "icon": "bag", "per_rank": 3.0, "tier": 3.0, "unit": "flat"},
+	"ranch": {"level": 20, "icon": "sunflower", "per_rank": 0.004, "tier": 3.0, "unit": "pct"},
 }
-const MAX_RANK := 10
-## Очков на ранг r: RANK_BASE * r * tier (сумма до 10 ранга - RANK_BASE * 55 * tier).
-const RANK_BASE := 60
+## Ряды талантов: уровни, с которых они открываются.
+const ROWS := [1, 5, 12, 20]
+const MAX_RANK := 15
+## Очков от начала до ранга r: RANK_BASE * r(r+1)/2 * tier (до 15 ранга - RANK_BASE * 120 * tier).
+const RANK_BASE := 40
 
 
 # MARK: Уровень
 
-## Опыт до уровня lvl (на 2 уровень - 400).
+## Опыт до уровня lvl (на 2 уровень - 700, как _al_level).
 static func xp_for(lvl: int) -> int:
-	return 0 if lvl <= 1 else int(ceil(400.0 * pow(float(lvl - 1), 1.7)))
+	return 0 if lvl <= 1 else int(ceil(700.0 * pow(float(lvl - 1), 1.7)))
 
 
 static func level_of(xp: int) -> int:
@@ -59,8 +77,9 @@ static func level_of(xp: int) -> int:
 	return l
 
 
-static func cap_of(xp: int) -> int:
-	return mini(MAX_CAP, BASE_CAP + CAP_PER_LEVEL * (level_of(xp) - 1))
+## Мест в альянсе по очкам талантов (как _al_cap).
+static func cap_of(talents: Dictionary) -> int:
+	return mini(MAX_CAP, BASE_CAP + int(value("seats", rank_of("seats", int(talents.get("seats", 0))))))
 
 
 # MARK: Таланты
@@ -69,10 +88,15 @@ static func talent_level(id: String) -> int:
 	return int(TALENTS.get(id, {}).get("level", 99))
 
 
-## Очков от начала до ранга r (как _al_talent_max в SQL для r = 10).
+## Очков от начала до ранга r (как _al_talent_points).
 static func points_for(id: String, r: int) -> int:
 	var tier := float(TALENTS.get(id, {}).get("tier", 1.0))
-	return int(float(RANK_BASE * r * (r + 1) / 2) * tier)
+	return int(floor(float(RANK_BASE * r * (r + 1) / 2) * tier))
+
+
+## Таланты ряда (в порядке объявления).
+static func row(open_level: int) -> Array:
+	return TALENTS.keys().filter(func(id: String) -> bool: return talent_level(id) == open_level)
 
 
 static func talent_max(id: String) -> int:
@@ -96,7 +120,14 @@ static func talent_name(id: String) -> String:
 
 
 static func talent_text(id: String, rank: int) -> String:
-	return L.t("alliance.talent." + id + ".text", [Fmt.pct(value(id, maxi(1, rank)))])
+	var v := value(id, maxi(1, rank))
+	var shown := ""
+	match str(TALENTS.get(id, {}).get("unit", "pct")):
+		"flat": shown = str(int(round(v)))
+		"hours": shown = "%.1f" % v
+		"hit": shown = str(int(floor(v)))
+		_: shown = Fmt.pct(v)
+	return L.t("alliance.talent." + id + ".text", [shown])
 
 
 # MARK: Цены вкладов

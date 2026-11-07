@@ -778,9 +778,9 @@ func _alliance_demo(w: String) -> void:
 			{"id": 3, "name": "Moonlit Orchard", "tag": "MOON", "emblem": 5, "about": "", "min_level": 10, "level": 3, "members": 12, "cap": 35},
 		]
 	else:
-		var talents := {"harvest": 1650, "strength": 900, "garden": 700, "beasts": 120, "workshop": 300}
+		var talents := {"harvest": 1650, "strength": 900, "garden": 700, "beasts": 120, "seats": 1200, "guard": 300, "workshop": 300, "warcry": 200}
 		al.data = {"id": 1, "name": "Green Valley", "tag": "GV", "emblem": 6, "about": "Friendly farmers. 20 free contributions every day!",
-			"min_level": 10, "xp": 9800, "week_xp": 2100, "cap": 55, "talents": talents, "role": "leader",
+			"min_level": 10, "xp": 9800, "week_xp": 2100, "cap": 45, "talents": talents, "role": "leader",
 			"day": {"free": 8, "coins": 0, "gems": 6},
 			"members": [
 				{"id": "a", "name": Game.rating.player_name(), "level": 20, "role": "leader", "week": 140, "total": 2900, "me": true},

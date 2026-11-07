@@ -35,8 +35,9 @@ static func boss_hp(tier: int, members: int) -> int:
 
 
 ## Урон удара без случайности (сервер добавляет разброс 0.85-1.15).
-static func hit_damage(level: int, strength_rank: int) -> int:
-	return int(round(float(60 + 8 * clampi(level, 1, 200)) * (1.0 + 0.02 * float(strength_rank))))
+## guard_rank - ранг таланта «Натиск» (+2% за ранг).
+static func hit_damage(level: int, guard_rank: int) -> int:
+	return int(round(float(60 + 8 * clampi(level, 1, 200)) * (1.0 + 0.02 * float(guard_rank))))
 
 
 static func boss_kind(tier: int) -> String:
@@ -64,6 +65,16 @@ static func place_reward(place: int, level: int) -> Dictionary:
 		if place <= int(p[0]):
 			return {"crystals": int(p[1]), "coins": Events.coins(int(p[1]) * 20, level), "key": str(p[2])}
 	return {}
+
+
+## Награда с бонусом «Трофеев»: кристаллы и монеты больше на долю bonus.
+static func with_bounty(r: Dictionary, bonus: float) -> Dictionary:
+	if r.is_empty() or bonus <= 0.0:
+		return r
+	var out := r.duplicate()
+	for k in ["crystals", "coins"]:
+		out[k] = int(round(float(r.get(k, 0)) * (1.0 + bonus)))
+	return out
 
 
 static func kind_name(kind: String) -> String:

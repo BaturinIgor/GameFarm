@@ -745,8 +745,20 @@ func recalc() -> void:
 		s.animal_mult += alliance.bonus("beasts")
 		s.producer_mult = minf(Stats.MAX_PRODUCER, s.producer_mult * (1.0 + alliance.bonus("workshop")))
 		s.hp_mult *= 1.0 + alliance.bonus("vitality")
+		speed_bonus += alliance.bonus("swift")
+		xp_bonus += alliance.bonus("scholar")
+		sell_bonus += alliance.bonus("merchant")
 		s.double_chance += alliance.bonus("fortune")
 		s.discount *= 1.0 - alliance.bonus("thrift")
+		s.tame_mult *= 1.0 - alliance.bonus("tamer")
+		crit_bonus += alliance.bonus("crit")
+		s.gold_mult *= 1.0 + alliance.bonus("gold")
+		s.offline_hours += alliance.bonus("rest")
+		s.gem_chance += alliance.bonus("gems")
+		s.helper_mult = minf(Stats.MAX_HELPER, s.helper_mult * (1.0 + alliance.bonus("helpers")))
+		s.regrow_chance += alliance.bonus("regrow")
+		capacity += alliance.bonus("packs")
+		s.double_product_chance += alliance.bonus("ranch")
 
 	var strider := 1.25 if r.call("strider") > 0 else 1.0
 	capacity *= (1.0 + 0.1 * r.call("packMaster")) * strider

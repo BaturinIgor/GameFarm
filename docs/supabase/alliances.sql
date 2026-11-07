@@ -94,29 +94,42 @@ create or replace function public._al_week() returns int language sql stable as 
   select floor((floor(extract(epoch from now()) / 86400) + 3) / 7.0)::int
 $$;
 
--- Уровень альянса по опыту: на уровень L нужно 400 * (L-1)^1.7 опыта, до 20 уровня.
+-- Уровень альянса по опыту: на уровень L нужно 700 * (L-1)^1.7 опыта, до 30 уровня.
 create or replace function public._al_level(p_xp bigint) returns int language sql immutable as $$
-  select least(20, 1 + coalesce((select max(l) from generate_series(1, 19) l where 400 * power(l, 1.7) <= p_xp), 0))
-$$;
--- Мест: 25 на первом уровне, +5 за уровень, не больше 100.
-create or replace function public._al_cap(p_xp bigint) returns int language sql immutable as $$
-  select least(100, 25 + 5 * (public._al_level(p_xp) - 1))
+  select least(30, 1 + coalesce((select max(l) from generate_series(1, 29) l where 700 * power(l, 1.7) <= p_xp), 0))
 $$;
 
--- Таланты: id -> с какого уровня альянса открыт.
+-- Таланты: 4 ряда по 6. Ряд открывается на уровне альянса 1, 5, 12, 20 и дороже в 1, 1.5, 2, 3 раза.
+-- Места (seats) стоят как талант второго ряда.
 create or replace function public._al_talent_level(p_talent text) returns int language sql immutable as $$
-  select case p_talent
-    when 'harvest' then 1 when 'strength' then 1
-    when 'garden' then 3 when 'beasts' then 3
-    when 'workshop' then 6 when 'vitality' then 6
-    when 'fortune' then 10 when 'thrift' then 10
+  select case
+    when p_talent in ('harvest', 'strength', 'garden', 'beasts', 'seats', 'guard') then 1
+    when p_talent in ('workshop', 'vitality', 'swift', 'scholar', 'merchant', 'warcry') then 5
+    when p_talent in ('fortune', 'thrift', 'tamer', 'crit', 'bounty', 'gold') then 12
+    when p_talent in ('rest', 'gems', 'helpers', 'regrow', 'packs', 'ranch') then 20
     else null end
 $$;
--- Сколько очков нужно на все 10 рангов таланта (дальше вклад в него не принимается).
+create or replace function public._al_talent_tier(p_talent text) returns numeric language sql immutable as $$
+  select case when p_talent = 'seats' then 2.0
+              when public._al_talent_level(p_talent) >= 20 then 3.0
+              when public._al_talent_level(p_talent) >= 12 then 2.0
+              when public._al_talent_level(p_talent) >= 5 then 1.5 else 1.0 end
+$$;
+-- Очков от начала до ранга r: 40 * r(r+1)/2 * tier (как Alliances.points_for).
+create or replace function public._al_talent_points(p_talent text, p_rank int) returns int language sql immutable as $$
+  select floor(40 * p_rank * (p_rank + 1) / 2 * public._al_talent_tier(p_talent))::int
+$$;
+-- Сколько очков нужно на все 15 рангов (дальше вклад в талант не принимается).
 create or replace function public._al_talent_max(p_talent text) returns int language sql immutable as $$
-  select (60 * 55 * case when public._al_talent_level(p_talent) >= 10 then 3
-                         when public._al_talent_level(p_talent) >= 6 then 2
-                         when public._al_talent_level(p_talent) >= 3 then 1.5 else 1 end)::int
+  select public._al_talent_points(p_talent, 15)
+$$;
+-- Ранг таланта по очкам.
+create or replace function public._al_rank(p_talent text, p_points int) returns int language sql immutable as $$
+  select coalesce(max(r), 0) from generate_series(1, 15) r where p_points >= public._al_talent_points(p_talent, r)
+$$;
+-- Мест: 25, и +5 за каждый ранг таланта «Места», не больше 100.
+create or replace function public._al_cap(p_talents jsonb) returns int language sql immutable as $$
+  select least(100, 25 + 5 * public._al_rank('seats', coalesce((p_talents ->> 'seats')::int, 0)))
 $$;
 
 create or replace function public._al_clean(p_text text, p_len int) returns text language sql stable as $$
@@ -164,7 +177,7 @@ begin
   select * into m from alliance_members where user_id = uid;
   return jsonb_build_object(
     'id', a.id, 'name', a.name, 'tag', a.tag, 'emblem', a.emblem, 'about', a.about, 'min_level', a.min_level,
-    'xp', a.xp, 'week_xp', a.week_xp, 'level', _al_level(a.xp), 'cap', _al_cap(a.xp), 'talents', a.talents,
+    'xp', a.xp, 'week_xp', a.week_xp, 'level', _al_level(a.xp), 'cap', _al_cap(a.talents), 'talents', a.talents,
     'role', m.role,
     'day', jsonb_build_object('free', case when m.day_key = _al_day() then m.day_free else 0 end,
                               'coins', case when m.day_key = _al_day() then m.day_coins else 0 end,
@@ -180,7 +193,7 @@ create or replace function public.al_search(p_query text, p_level int)
 returns table (id bigint, name text, tag text, emblem int, about text, min_level int, level int, members bigint, cap int)
 language sql stable security definer set search_path = public as $$
   select a.id, a.name, a.tag, a.emblem, a.about, a.min_level, _al_level(a.xp),
-         (select count(*) from alliance_members m where m.alliance_id = a.id), _al_cap(a.xp)
+         (select count(*) from alliance_members m where m.alliance_id = a.id), _al_cap(a.talents)
     from alliances a
    where (coalesce(p_query, '') = '' or a.name ilike '%' || p_query || '%' or a.tag ilike p_query)
      and (coalesce(p_query, '') <> '' or a.min_level <= greatest(1, p_level))
@@ -253,7 +266,7 @@ begin
   if not found then raise exception 'no alliance'; end if;
   if p_level < a.min_level then raise exception 'level too low'; end if;
   select count(*) into n from alliance_members where alliance_id = a.id;
-  if n >= _al_cap(a.xp) then raise exception 'full'; end if;
+  if n >= _al_cap(a.talents) then raise exception 'full'; end if;
   insert into alliance_members (user_id, alliance_id, name, level, week_key)
   values (uid, a.id, _rating_clean_name(p_player), greatest(1, least(p_level, 200)), _al_week());
   perform _al_system(a.id, 'join', _rating_clean_name(p_player), '');

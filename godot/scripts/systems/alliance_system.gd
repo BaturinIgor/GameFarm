@@ -341,8 +341,13 @@ func refresh_events() -> void:
 		Game.changed.emit()
 
 
+## Бесплатных ударов в день: 3 и +1 за каждые 5 рангов «Боевого клича» (как _al_free_hits).
+func free_hits() -> int:
+	return int(ev.get("free_hits", AllianceEvents.FREE_HITS + rank("warcry") / 5))
+
+
 func hits_left() -> int:
-	return maxi(0, AllianceEvents.FREE_HITS - int(ev.get("hits", AllianceEvents.FREE_HITS)))
+	return maxi(0, free_hits() - int(ev.get("hits", free_hits())))
 
 
 func extra_left() -> int:
@@ -405,12 +410,14 @@ func task_ready(t: Dictionary) -> bool:
 		and float(t.get("mine", 0)) >= float(t.get("share", 1)) * AllianceEvents.MIN_SHARE
 
 
+## Награда с бонусом таланта «Трофеи» (кристаллы и монеты).
 func reward_for(what: String, ref: int) -> Dictionary:
+	var r := {}
 	match what:
-		"boss": return AllianceEvents.boss_reward(ref, Game.level)
-		"task": return AllianceEvents.task_reward(Game.level)
-		"place": return AllianceEvents.place_reward(int(ev.get("last_place", 1000000)), Game.level)
-	return {}
+		"boss": r = AllianceEvents.boss_reward(ref, Game.level)
+		"task": r = AllianceEvents.task_reward(Game.level)
+		"place": r = AllianceEvents.place_reward(int(ev.get("last_place", 1000000)), Game.level)
+	return AllianceEvents.with_bounty(r, bonus("bounty"))
 
 
 func claim(what: String, ref: int) -> void:

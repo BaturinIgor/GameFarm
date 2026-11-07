@@ -4,7 +4,7 @@
 --
 -- Неделя та же, что у альянсов (_al_week: UTC, с понедельника).
 -- Страж: у альянса на неделю свой страж, ступень 1, 2, 3...; убили - сразу следующий, сильнее.
---   У каждого участника 3 бесплатных удара в день и 5 за кристаллы. Сила удара считается здесь.
+--   У каждого участника 3 бесплатных удара в день (больше с талантом «Боевой клич») и 5 за кристаллы. Сила удара считается здесь.
 --   За каждую ступень, по которой участник ударил хотя бы раз, - награда.
 -- Задания: 3 общих цели на неделю (из 8 видов), цель растёт с числом участников на начало недели.
 --   Игра присылает счётчики пачками, вклад одного игрока в цель не больше 3 его долей.
@@ -75,12 +75,10 @@ $$;
 create or replace function public._al_boss_hp(p_tier int, p_members int) returns bigint language sql immutable as $$
   select round(4000 * power(p_tier, 1.6) * greatest(5, p_members) / 10.0)::bigint
 $$;
--- Ранг таланта по очкам (как Alliances.rank_of): на ранг r нужно 60 * r(r+1)/2 * tier.
-create or replace function public._al_rank(p_talent text, p_points int) returns int language sql immutable as $$
-  select coalesce(max(r), 0) from generate_series(1, 10) r
-   where p_points >= floor(60 * r * (r + 1) / 2 * case when public._al_talent_level(p_talent) >= 10 then 3
-                         when public._al_talent_level(p_talent) >= 6 then 2
-                         when public._al_talent_level(p_talent) >= 3 then 1.5 else 1 end)
+-- Ранг таланта (_al_rank) и места (_al_cap) - в alliances.sql.
+-- Бесплатных ударов в день: 3 и ещё один за каждые 5 рангов таланта «Боевой клич».
+create or replace function public._al_free_hits(p_talents jsonb) returns int language sql immutable as $$
+  select 3 + public._al_rank('warcry', coalesce((p_talents ->> 'warcry')::int, 0)) / 5
 $$;
 
 -- Опыт альянсу (и в неделю) с сообщением в чат о новом уровне.
@@ -186,6 +184,7 @@ begin
     'week', wk, 'ends', ((wk + 1) * 7 - 3) * 86400,
     'members', w.members, 'tier', w.boss_tier, 'hp', w.boss_hp, 'max_hp', _al_boss_hp(w.boss_tier, w.members),
     'hits', me.day_hits, 'extra', me.day_extra, 'damage', me.damage,
+    'free_hits', _al_free_hits((select talents from alliances where id = m.alliance_id)),
     'unclaimed', (select coalesce(jsonb_agg(t order by t), '[]'::jsonb) from unnest(me.boss_tiers) t
                    where t < w.boss_tier and not t = any(me.boss_claimed)),
     'tasks', tasks,
@@ -207,14 +206,14 @@ begin
   perform _al_roll(m.alliance_id);
   w := _al_week_row(m.alliance_id);
   me := _al_me_week(uid, m.alliance_id);
+  select * into a from alliances where id = m.alliance_id;
   if p_extra then
     if me.day_extra >= 5 then raise exception 'limit'; end if;
-  elsif me.day_hits >= 3 then
+  elsif me.day_hits >= _al_free_hits(a.talents) then
     raise exception 'limit';
   end if;
-  select * into a from alliances where id = m.alliance_id;
   dmg := round((60 + 8 * greatest(1, least(p_level, 200)))
-         * (1 + 0.02 * _al_rank('strength', coalesce((a.talents ->> 'strength')::int, 0)))
+         * (1 + 0.02 * _al_rank('guard', coalesce((a.talents ->> 'guard')::int, 0)))
          * (0.85 + random() * 0.3));
   tier := w.boss_tier;
   update alliance_week_members set
