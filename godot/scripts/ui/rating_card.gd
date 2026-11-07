@@ -101,20 +101,12 @@ static func _row(r: Dictionary, mine: bool) -> Control:
 	return p
 
 
-## Имя в таблицах и кнопка смены.
+## Имя в таблицах. Имена только автоматические (Farmer1234): свободный ввод виден другим игрокам,
+## а это пользовательский контент, которому App Store требует фильтр и жалобы.
 static func _name_row() -> Control:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 6)
-	var edit := LineEdit.new()
-	edit.text = Game.rating.player_name()
-	edit.max_length = 16
-	edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	edit.add_theme_font_size_override("font_size", 13)
-	row.add_child(edit)
-	var save := UiKit.button(L.t("rating.rename"), "green", 12, true)
-	save.pressed.connect(func() -> void: Game.rating.rename(edit.text))
-	row.add_child(save)
-	return row
+	var name := UiKit.label(Game.rating.player_name(), 13, UiKit.INK)
+	name.clip_text = true
+	return name
 
 
 ## Таблица наград: лига и мир.
