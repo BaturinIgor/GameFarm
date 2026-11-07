@@ -1,0 +1,88 @@
+name: Marketing clips
+
+# Ролики 9:16 для TikTok, Reels и Shorts: игра сама играет сценарии (godot/scripts/debug/clip_driver.gd),
+# Godot Movie Maker пишет видео, marketing/make_clips.py добавляет подписи и финальную плашку.
+# Готовые mp4 и json с подписями - в артефакте "clips" этого запуска.
+on:
+  workflow_dispatch:
+    inputs:
+      langs:
+        description: "Языки через пробел"
+        required: false
+        default: "en ru"
+      scenarios:
+        description: "Сценарии через пробел: walk chests hatch mine tour"
+        required: false
+        default: "walk chests hatch mine tour"
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: "4.5.1"
+
+jobs:
+  clips:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare assets
+        timeout-minutes: 15
+        env:
+          ASSETS_KEY: ${{ secrets.ASSETS_KEY }}
+        run: |
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update -qq
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y -qq ffmpeg xvfb > /dev/null
+          python3 -c "import PIL" 2> /dev/null || python3 -m pip install -q --break-system-packages pillow
+          sh tools/godot_sync.sh
+
+      - name: Cache Godot
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: ~/godot-bin
+          key: godot-editor-${{ env.GODOT_VERSION }}-v1
+
+      - name: Download Godot
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot-bin
+          curl -fsSL -o /tmp/godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q /tmp/godot.zip -d ~/godot-bin
+          mv ~/godot-bin/Godot_v${GODOT_VERSION}-stable_linux.x86_64 ~/godot-bin/godot
+
+      - name: Import project
+        run: ~/godot-bin/godot --headless --path godot --import > import.log 2>&1 || (tail -40 import.log; exit 1)
+
+      - name: Record gameplay
+        run: |
+          mkdir -p raw
+          for lang in ${{ github.event.inputs.langs }}; do
+            for s in ${{ github.event.inputs.scenarios }}; do
+              # Каждый сценарий с чистого сохранения
+              rm -rf ~/.local/share/godot/app_userdata
+              echo "== $s $lang"
+              timeout 600 xvfb-run -a -s "-screen 0 1080x1920x24" ~/godot-bin/godot --path godot \
+                --rendering-driver opengl3 --resolution 1080x1920 --fixed-fps 30 \
+                --write-movie "$GITHUB_WORKSPACE/raw/${s}_${lang}.avi" -- --clip "$s" --lang "$lang" > "rec_${s}_${lang}.log" 2>&1 || true
+              grep -E "clip|SCRIPT ERROR" "rec_${s}_${lang}.log" | head -10
+            done
+          done
+          ls -la raw
+
+      - name: Cut clips
+        run: python3 marketing/make_clips.py raw clips
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clips
+          path: clips/
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: clip-logs
+          path: "*.log"

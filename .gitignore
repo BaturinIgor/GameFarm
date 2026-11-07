@@ -7,3 +7,4 @@ __pycache__/
 build.log
 build/
 godot/ios/plugins/
+marketing/accounts.json
