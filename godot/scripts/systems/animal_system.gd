@@ -47,6 +47,15 @@ func defaults(save: Dictionary) -> void:
 			levels[id] = int(raw_levels[key])
 	save["awaken"] = levels
 
+	var fed := {}
+	var raw_fed: Variant = save.get("animalLevels", {})
+	if raw_fed is Dictionary:
+		for key in raw_fed:
+			var id := Animals.from(str(key))
+			if id != "" and animals.has(id):
+				fed[id] = clampi(int(raw_fed[key]), 1, Animals.MAX_LEVEL)
+	save["animalLevels"] = fed
+
 	var rare: Array = []
 	for raw_id in save.get("shiny", []):
 		var id := Animals.from(str(raw_id))
@@ -100,9 +109,10 @@ func buy_slot() -> bool:
 	return true
 
 
-## Сила зверя для текстов в окнах: звёзды и общий бонус к зверям.
+## Сила зверя для текстов в окнах: звёзды, общий бонус к зверям, пробуждение, окрас и уровень (как в recalc).
 func multiplier(id: String, extra_stars := 0) -> float:
-	return Game.stats.star_multiplier(maxi(1, stars(id) + extra_stars)) * Game.stats.animal_mult
+	return minf(Stats.MAX_ANIMAL + Game.stats.cap_animal,
+		Game.stats.star_multiplier(maxi(1, stars(id) + extra_stars)) * Game.stats.animal_mult * boost(id))
 
 
 ## Эффекты зверя: [{"type": "xp", "v": 0.1}, {"type": "yield", "cat": "wood", "v": 0.1}, ...].
@@ -260,9 +270,47 @@ func is_shiny(id: String) -> bool:
 	return id in Game.save.get("shiny", [])
 
 
-## Множитель пробуждения и редкого окраса.
+## Множитель пробуждения, редкого окраса и уровня.
 func boost(id: String) -> float:
-	return Animals.awaken_multiplier(awaken_level(id)) * (1.0 + Animals.SHINY_BONUS if is_shiny(id) else 1.0)
+	return Animals.awaken_multiplier(awaken_level(id)) * (1.0 + Animals.SHINY_BONUS if is_shiny(id) else 1.0) \
+		* Animals.level_multiplier(level(id))
+
+
+# MARK: Уровни (корм)
+
+func level(id: String) -> int:
+	return clampi(int(Game.save.get("animalLevels", {}).get(id, 1)), 1, Animals.MAX_LEVEL)
+
+
+## До какого уровня можно докормить: 6 уровней за каждую звезду.
+func level_cap(id: String) -> int:
+	return mini(Animals.MAX_LEVEL, Animals.LEVELS_PER_STAR * stars(id))
+
+
+## Цена следующего уровня ({} - нельзя: нет зверя или упёрлись в звёзды).
+func feed_cost(id: String) -> Dictionary:
+	if stars(id) <= 0 or level(id) >= level_cap(id):
+		return {}
+	return Animals.feed_cost(level(id))
+
+
+func can_feed(id: String) -> bool:
+	var cost := feed_cost(id)
+	return not cost.is_empty() and Game.can_afford(cost)
+
+
+func feed(id: String) -> void:
+	if not can_feed(id):
+		return
+	Game.pay(feed_cost(id))
+	if not Game.save.get("animalLevels") is Dictionary:
+		Game.save["animalLevels"] = {}
+	Game.save["animalLevels"][id] = level(id) + 1
+	Game.recalc()
+	Sound.play("levelUp" if level(id) % Animals.LEVELS_PER_STAR == 0 else "coin")
+	Game.show_toast("an:" + id, L.t("toast.animalLevel", [Animals.name_of(id), level(id)]))
+	Game.emit_event("feedAnimal", {"animal": id})
+	Game.mark_dirty()
 
 
 ## Цена следующего пробуждения ({} - нельзя: не 5 звёзд или уже золото).

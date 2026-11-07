@@ -32,3 +32,27 @@ func test_recommended() -> void:
 		check(r >= prev, "рекомендуемая мощь не падает с уровнем")
 		eq(r % 50, 0, "круглое число")
 		prev = r
+
+
+func test_animal_levels() -> void:
+	fresh({"animals": {"chicken": 1}, "coins": 1000000})
+	var a := Game.animals
+	eq(a.level("chicken"), 1)
+	eq(a.level_cap("chicken"), 6, "6 уровней за звезду")
+	var cost := a.feed_cost("chicken")
+	eq(cost["items"][0][0], "wheat", "первые уровни - пшеница")
+	eq(a.can_feed("chicken"), false, "без корма нельзя")
+	Game.save["storage"]["wheat"] = 1000
+	Game.save["storage"]["carrots"] = 1000
+	var p0 := Power.animal("chicken")
+	var b0 := a.boost("chicken")
+	for i in 10:
+		a.feed("chicken")
+	eq(a.level("chicken"), 6, "дальше 6 уровня не кормится без второй звезды")
+	near(a.boost("chicken"), b0 * 1.05, 0.0001, "+1% за уровень")
+	eq(Power.animal("chicken") - p0, 5 * Power.PER_ANIMAL_LEVEL)
+	check(int(Game.save["storage"]["wheat"]) < 1000, "корм списан")
+	fresh({"animalLevels": {"chicken": 99, "bogus": 3}, "animals": {"chicken": 5}})
+	eq(Game.save["animalLevels"], {"chicken": 30}, "уровни в сохранении чистятся")
+	for l in range(1, Animals.MAX_LEVEL):
+		check(Farming.CROPS.values().any(func(c: Dictionary) -> bool: return c["produce"] == Animals.feed_cost(l)["items"][0][0]), "корм уровня %d - урожай" % l)

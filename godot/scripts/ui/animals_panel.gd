@@ -295,8 +295,44 @@ func _row(id: String, mode: String) -> void:
 		"wild": _wild_actions(c, id, stars)
 
 
+## Уровень зверя: полоса до предела по звёздам, корм и кнопка «Покормить».
+func _feed_row(c: VBoxContainer, id: String) -> void:
+	var a := Game.animals
+	var lvl := a.level(id)
+	var cap := a.level_cap(id)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 4)
+	c.add_child(box)
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 6)
+	box.add_child(head)
+	var title := UiKit.label(L.t("animals.level", [lvl, Animals.MAX_LEVEL]), 13)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(title)
+	if lvl > 1:
+		head.add_child(UiKit.label(L.t("animals.levelBonus", [Fmt.pct(Animals.level_multiplier(lvl) - 1.0)]), 12,
+			UiKit.TONES["green"][2]))
+	box.add_child(UiKit.bar(float(lvl) / float(Animals.MAX_LEVEL), "green", 200, 8, ""))
+	var cost := a.feed_cost(id)
+	if cost.is_empty():
+		if lvl < Animals.MAX_LEVEL:
+			box.add_child(_wrap(UiKit.label(L.t("animals.levelCap", [cap]), 12, UiKit.INK_SOFT)))
+		return
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	box.add_child(row)
+	var cv := UiKit.cost_view(cost)
+	cv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(cv)
+	var fb := UiKit.button(L.t("animals.feed"), "green", 13, true)
+	fb.disabled = not a.can_feed(id)
+	fb.pressed.connect(func() -> void: Game.animals.feed(id))
+	row.add_child(fb)
+
+
 func _mine_actions(c: VBoxContainer, id: String) -> void:
 	var a := Game.animals
+	_feed_row(c, id)
 	var cost := a.awaken_cost(id)
 	if not cost.is_empty():
 		var box := VBoxContainer.new()
