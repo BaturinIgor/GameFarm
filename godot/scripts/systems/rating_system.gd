@@ -20,7 +20,8 @@ var _fetching: Dictionary = {}
 
 func defaults(save: Dictionary) -> void:
 	var name := str(save.get("ratingName", ""))
-	if name == "":
+	# Только автоматические имена: выбранное раньше вручную заменяется
+	if not RegEx.create_from_string("^Farmer\\d{4}$").search(name):
 		name = "Farmer%04d" % (randi() % 10000)
 	save["ratingName"] = name
 	for key in ["ratingJoined", "ratingDone"]:
