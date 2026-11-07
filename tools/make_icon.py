@@ -411,30 +411,29 @@ CHICKEN = [
     "...y.y....",
     "..yy.yy...",
 ]
-# Флаг: полотно вбок от древка с раздвоенным хвостом, корона на полотне
+# Полотно 7 клеток, корона по центру (по клетке поля с обеих сторон)
 BN = {"O": OUT, "Y": "#ffc825", "t": "#743f39", "B": "#3a6fd0", "b": "#24408a"}
 BANNER = [
-    "OOO.........",
-    "OYO.........",
-    "OtOOOOOOOOOO",
-    "OtOBBBBBBBBO",
-    "OtOBYBYBYBBO",
-    "OtOBYYYYYBO.",
-    "OtOBYYYYYO..",
-    "OtOBBBBBBBO.",
-    "OtObbbbbbbbO",
-    "OtOOOOOOOOOO",
-    "OtO.........",
-    "OtO.........",
-    "OtO.........",
-    "OtO.........",
-    "OtO.........",
-    "OtO.........",
-    "OtO.........",
-    "OtO.........",
-    "OtO.........",
-    "OtO.........",
-    "OOO.........",
+    "OOO........",
+    "OYO........",
+    "OtOOOOOOOOO",
+    "OtOBBBBBBBO",
+    "OtOBYBYBYBO",
+    "OtOBYYYYYBO",
+    "OtOBYYYYYBO",
+    "OtOBBBBBBBO",
+    "OtOBBBBBBbO",
+    "OtOBBBBBBbO",
+    "OtOBBBOBBbO",
+    "OtOBBO.OBbO",
+    "OtOBO...ObO",
+    "OtOO.....OO",
+    "OtO........",
+    "OtO........",
+    "OtO........",
+    "OtO........",
+    "OtO........",
+    "OOO........",
 ]
 
 
@@ -473,16 +472,16 @@ def main(path):
     stars(img)
     hills(img)
     meadow(img)
-    img.alpha_composite(sprite(BANNER, BN).resize((24, 42), Image.NEAREST), (34, 13))
-    img.alpha_composite(sprite(PHOENIX, PH), (26, 3))
-    hero_with_axe(img, 14, 25)
-    shadow(img, 13, 57, 5, 1.2, 0.55)
-    img.alpha_composite(sprite(CHICKEN, CH), (7, 47))
+    img.alpha_composite(sprite(BANNER, BN).resize((22, 40), Image.NEAREST), (37, 18))
+    img.alpha_composite(sprite(PHOENIX, PH), (29, 8))
+    hero_with_axe(img, 14, 27)
+    shadow(img, 13, 59, 5, 1.2, 0.55)
+    img.alpha_composite(sprite(CHICKEN, CH), (7, 49))
     # кадр 56x56 крупнее сцены, затем 1024x1024
-    x0, y0, size = 4, 2, 56
+    x0, y0, size = 4, 8, 56
     big = img.crop((x0, y0, x0 + size, y0 + size)).resize((1024, 1024), Image.NEAREST)
     k = 1024 / size
-    big = glow(big, (35.5 - x0) * k, (8.5 - y0) * k, 14 * k, (255, 190, 90), 0.6)
+    big = glow(big, (38.5 - x0) * k, (13.5 - y0) * k, 14 * k, (255, 190, 90), 0.6)
     big.convert("RGB").save(path)
     print("ok", path)
 
