@@ -1,9 +1,8 @@
-"""Иконка Harvest Hollow: ночь, знамя альянса с Хранителем-фениксом, герой с топором и курица.
+"""Иконка Harvest Hollow: вечер на ферме, домик с дымом, знамя альянса, фермер с топором и курица.
 
     python3 tools/make_icon.py <out.png>
 
-Рисуется пикселями 64x64 вручную (без графики паков), потом увеличивается в 16 раз
-и получает мягкое свечение Хранителя.
+Рисуется пикселями 64x64 вручную (без графики паков) и увеличивается ровно в 16 раз.
 """
 import math
 import random
@@ -465,24 +464,73 @@ def hero_with_axe(img, hx, hy):
         px[x, y] = hexc(OUT)
 
 
+# Флаг альянса с короной на древке
+FLAG = [
+    "OOOOOOOOOO",
+    "OBBBBBBBBO",
+    "OBYBYBYBBO",
+    "OBYYYYYBBO",
+    "OBBBBBBBbO",
+    "OBBBBBBbO.",
+    "OOOOOOOO..",
+]
+
+
+def rect(img, x0, y0, x1, y1, col):
+    px = img.load()
+    for y in range(y0, y1 + 1):
+        for x in range(x0, x1 + 1):
+            if 0 <= x < img.width and 0 <= y < img.height:
+                px[x, y] = hexc(col)
+
+
+def star_glow(img, cx, cy):
+    """Свечение звезды кольцами по той же сетке 64x64 (без размытия)."""
+    px = img.load()
+    for y in range(N):
+        for x in range(N):
+            d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
+            k = 0.34 if d < 6 else 0.2 if d < 9 else 0.09 if d < 12 else 0
+            if k:
+                r, g, b, _ = px[x, y]
+                px[x, y] = (round(r + (255 - r) * k), round(g + (200 - g) * k), round(b + (110 - b) * k), 255)
+
+
 def main(path):
-    """Ночь, крупно: знамя альянса, на нём сияющий Хранитель, перед ним герой с топором и курица."""
+    """Вечер на ферме: домик с дымом, знамя альянса, фермер с топором и курица. Вся картинка - одна сетка 64x64,
+    увеличенная ровно в 16 раз: пиксели одного размера, без размытия."""
     img = Image.new("RGBA", (N, N))
     sky(img)
     stars(img)
     hills(img)
     meadow(img)
-    img.alpha_composite(sprite(BANNER, BN).resize((22, 40), Image.NEAREST), (37, 18))
-    img.alpha_composite(sprite(PHOENIX, PH), (29, 8))
-    hero_with_axe(img, 14, 27)
-    shadow(img, 13, 59, 5, 1.2, 0.55)
-    img.alpha_composite(sprite(CHICKEN, CH), (7, 49))
-    # кадр 56x56 крупнее сцены, затем 1024x1024
-    x0, y0, size = 4, 8, 56
-    big = img.crop((x0, y0, x0 + size, y0 + size)).resize((1024, 1024), Image.NEAREST)
-    k = 1024 / size
-    big = glow(big, (38.5 - x0) * k, (13.5 - y0) * k, 14 * k, (255, 190, 90), 0.6)
-    big.convert("RGB").save(path)
+    star_glow(img, 53, 8)
+    paint(img, BIG_STAR, 47, 3)
+    house(img, 1, 20)
+    # ровное окно: по два ряда стекла сверху и снизу
+    px = img.load()
+    for y in range(36, 43):
+        for x in range(15, 22):
+            if x in (15, 21) or y in (36, 42):
+                c = OUT
+            elif x == 18 or y == 39:
+                c = "#743f39"
+            else:
+                c = "#fee761" if (x + y) % 4 else "#ffc825"
+            px[x, y] = hexc(c)
+    smoke(img, 20, 18)
+    # знамя альянса на древке, стоит на одной линии с домом
+    rect(img, 29, 18, 29, 44, OUT)
+    rect(img, 30, 18, 30, 44, "#743f39")
+    rect(img, 31, 18, 31, 44, OUT)
+    rect(img, 29, 17, 31, 17, OUT)
+    rect(img, 30, 17, 30, 17, "#ffc825")
+    rect(img, 28, 45, 32, 45, OUT)
+    paint(img, FLAG, 31, 19, BN)
+    hero_with_axe(img, 32, 26)
+    shadow(img, 13, 58, 5, 1.0, 0.6)
+    paint(img, CHICKEN, 8, 48, CH)
+    img.resize((N * SCALE, N * SCALE), Image.NEAREST).convert("RGB").save(path)
     print("ok", path)
 
 
