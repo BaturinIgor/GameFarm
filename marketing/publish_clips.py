@@ -453,6 +453,14 @@ def main() -> None:
         tokens[a.account] = PLATFORMS[acc["platform"]][0](a.account, acc)
         save(TOKENS, tokens)
         print(f"{a.account}: вход выполнен, токен в {TOKENS}")
+        if acc["platform"] == "tiktok":
+            # Показываем, в какой аккаунт вошли: при входе по QR легко отсканировать не тем аккаунтом
+            try:
+                me, _ = http("GET", f"{TT}/user/info/?fields=display_name",
+                             headers={"Authorization": f"Bearer {tokens[a.account]['access_token']}"})
+                print(f"{a.account}: это аккаунт «{me['data']['user']['display_name']}». Если не тот - войдите заново.")
+            except SystemExit:
+                pass
     elif a.cmd == "check":
         acc = account(a.account)
         token = tiktok_token(a.account, acc, load(TOKENS, {}))
