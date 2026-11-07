@@ -16,7 +16,7 @@ on:
         default: "walk chests hatch mine tour"
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   GODOT_VERSION: "4.5.1"
@@ -74,6 +74,21 @@ jobs:
 
       - name: Cut clips
         run: python3 marketing/make_clips.py raw clips
+
+      # Для проверки без скачивания архива: ролики и раскадровки (кадр каждые 1,5 с) в ветке ci-clips
+      - name: Preview branch
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/pv
+          cp clips/* /tmp/pv/
+          for f in clips/*.mp4; do
+            ffmpeg -v error -y -i "$f" -vf "fps=2/3,scale=216:-1,tile=13x1" -frames:v 1 "/tmp/pv/$(basename "$f" .mp4)_sheet.png"
+          done
+          cd /tmp/pv
+          git init -q -b ci-clips
+          git add .
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "clips run ${{ github.run_id }}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-clips
 
       - uses: actions/upload-artifact@v4
         with:

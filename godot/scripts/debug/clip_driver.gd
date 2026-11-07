@@ -162,7 +162,7 @@ func _hatch() -> void:
 				HatchOverlay.show_result(Game.incubator.hatch())
 				_step = 4
 		4:
-			if _time > 12.0:
+			if _time > 14.5:
 				_done()
 
 

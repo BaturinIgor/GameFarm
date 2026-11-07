@@ -33,8 +33,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 FONTS = ROOT / "godot" / "fonts"
 MUSIC = ROOT / "GameFarm" / "Resources" / "Audio"
-LOGO = ROOT / "godot" / "assets" / "splash.png"  # логотип с названием, его рисует tools/make_splash.py
-ICON = ROOT / "godot" / "assets" / "app_icon.png"
+ICON = ROOT / "marketing" / "assets" / "app_icon.png"
 W, H, FPS = 1080, 1920, 30
 OUTRO = 3.2  # секунды финальной заставки
 GAME_W, GAME_H, GAME_Y = 840, 1493, 372  # окно с геймплеем
@@ -172,20 +171,16 @@ def make_frame_and_mask(frame_path: pathlib.Path, mask_path: pathlib.Path) -> No
 
 
 def make_logo(path: pathlib.Path) -> None:
-    """Логотип с названием из заставки игры; если его нет - иконка и название текстом."""
-    if LOGO.exists():
-        logo = Image.open(LOGO).convert("RGBA")
-        logo = logo.crop(logo.getbbox())
-        k = min(740 / logo.width, 900 / logo.height)
-        logo = logo.resize((int(logo.width * k), int(logo.height * k)), Image.LANCZOS)
-    else:
-        icon = Image.open(ICON).convert("RGBA").resize((420, 420), Image.LANCZOS)
-        logo = Image.new("RGBA", (860, 700), (0, 0, 0, 0))
-        m = Image.new("L", icon.size, 0)
-        ImageDraw.Draw(m).rounded_rectangle((0, 0, 419, 419), 90, fill=255)
-        logo.paste(icon, (220, 0), m)
-        ImageDraw.Draw(logo).text((430, 600), "Harvest Hollow", font=font("en", 110), fill=(255, 220, 110),
-                                   stroke_width=10, stroke_fill=DARK, anchor="mm")
+    """Логотип как на заставке игры: иконка и название. Иконка - marketing/assets/app_icon.png
+    (актуальная, из релиза 1.1), логотип рисует тот же tools/make_splash.py, что и заставку."""
+    icon = ICON if ICON.exists() else ROOT / "godot" / "assets" / "app_icon.png"
+    tmp = path.with_name("splash_logo.png")
+    subprocess.run([sys.executable, str(ROOT / "tools" / "make_splash.py"), str(icon),
+                    str(FONTS / "Nunito-900.ttf"), str(tmp)], check=True, stdout=subprocess.DEVNULL)
+    logo = Image.open(tmp).convert("RGBA")
+    logo = logo.crop(logo.getbbox())
+    k = min(740 / logo.width, 900 / logo.height)
+    logo = logo.resize((int(logo.width * k), int(logo.height * k)), Image.LANCZOS)
     logo.save(path)
 
 

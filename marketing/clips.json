@@ -1,5 +1,5 @@
 {
-  "_": "Ролики для TikTok, Reels и Shorts. scenario - запись из godot/scripts/debug/clip_driver.gd (walk, chests, hatch, mine, tour); start и duration в секундах от начала записи; hook - крупная подпись первых секунд; caption - текст поста. Подписи в одну строку, переносы make_clips.py расставит сам. music - трек игры (GameFarm/Resources/Audio/mus_<music>.m4a). Ролик из нескольких кусков: вместо scenario/start/duration поле parts со списком {scenario, start, duration}.",
+  "_": "Ролики для TikTok, Reels и Shorts. scenario - запись из godot/scripts/debug/clip_driver.gd (walk, chests, hatch, mine, tour); start и duration в секундах от начала записи; hook - вопрос на карточке сверху; к длине добавляется 3,2 с финальной заставки, итог 15-20 с; caption - текст поста. Подписи в одну строку, переносы make_clips.py расставит сам. music - трек игры (GameFarm/Resources/Audio/mus_<music>.m4a). Ролик из нескольких кусков: вместо scenario/start/duration поле parts со списком {scenario, start, duration}.",
   "outro": {
     "en": "Play free on iPhone",
     "ru": "Играй бесплатно на iPhone"
@@ -13,7 +13,7 @@
       "id": "chests10",
       "scenario": "chests",
       "start": 1.0,
-      "duration": 16,
+      "duration": 14,
       "hook": {
         "en": "I opened 10 chests at once. Watch the last one!",
         "ru": "Открыл 10 сундуков разом. Смотри на последний!"
@@ -27,8 +27,8 @@
     {
       "id": "pegasus",
       "scenario": "hatch",
-      "start": 0.5,
-      "duration": 11,
+      "start": 1.0,
+      "duration": 12.5,
       "hook": {
         "en": "I hatched a golden egg and got THIS",
         "ru": "Вылупил золотое яйцо, а там ВОТ ЭТО"
@@ -41,9 +41,6 @@
     },
     {
       "id": "mine",
-      "scenario": "mine",
-      "start": 0.8,
-      "duration": 24,
       "hook": {
         "en": "Could you clear this floor in 22 moves?",
         "ru": "Пройдёшь этот этаж за 22 хода?"
@@ -52,16 +49,28 @@
         "en": "Blast groups of ore, keep the dynamite for the end. Harvest Hollow",
         "ru": "Взрывай группы руды, динамит береги на конец. Harvest Hollow"
       },
-      "music": "caves"
+      "music": "caves",
+      "parts": [
+        {
+          "scenario": "mine",
+          "start": 0.8,
+          "duration": 8
+        },
+        {
+          "scenario": "mine",
+          "start": 18.5,
+          "duration": 6.5
+        }
+      ]
     },
     {
       "id": "farm_asmr",
       "scenario": "walk",
       "start": 0.5,
-      "duration": 14,
+      "duration": 13,
       "hook": {
-        "en": "5 cozy minutes on my pixel farm",
-        "ru": "Уютные 5 минут на моей пиксельной ферме"
+        "en": "One cozy minute on my pixel farm",
+        "ru": "Уютная минутка на моей пиксельной ферме"
       },
       "caption": {
         "en": "Chop, mine, gather, sell. Harvest Hollow, free on iPhone",
@@ -73,7 +82,7 @@
       "id": "tour",
       "scenario": "tour",
       "start": 0.6,
-      "duration": 17,
+      "duration": 14,
       "hook": {
         "en": "Everything you can do in my cozy farm game",
         "ru": "Всё, что есть в моей уютной ферме"
@@ -89,28 +98,28 @@
       "parts": [
         {
           "scenario": "chests",
-          "start": 1.5,
-          "duration": 9
+          "start": 9.0,
+          "duration": 3.5
         },
         {
           "scenario": "hatch",
-          "start": 2.5,
-          "duration": 8
+          "start": 4.0,
+          "duration": 3.5
         },
         {
           "scenario": "mine",
-          "start": 1.5,
-          "duration": 10
+          "start": 2.0,
+          "duration": 3
         },
         {
           "scenario": "walk",
-          "start": 1.0,
-          "duration": 7
+          "start": 3.0,
+          "duration": 3
         },
         {
           "scenario": "tour",
-          "start": 0.6,
-          "duration": 10
+          "start": 3.1,
+          "duration": 3
         }
       ],
       "hook": {
