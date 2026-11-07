@@ -762,6 +762,7 @@ func _alliance_demo(w: String) -> void:
 		al.ev = {}
 		al.powers = {}
 		al.power_top = []
+		al.pet = {}
 		Game.save["alliance"] = {}
 		Game.recalc()
 		return
@@ -818,6 +819,11 @@ func _alliance_demo(w: String) -> void:
 			{"place": 3, "id": 3, "name": "Moonlit Orchard", "tag": "MOON", "emblem": 5, "level": 3, "week_xp": 900, "me": false},
 		]
 		al.powers = {"a": Power.total(), "b": 14200, "c": 6100, "d": 2300}
+		var day := int(Time.get_unix_time_from_system()) / 86400
+		al.pet = {"kind": "phoenixChick", "xp": 2100, "stage": AlliancePet.stage_of(2100), "day": day,
+			"cravings": AlliancePet.cravings(day), "fed": 3, "total": 140, "ends": (day + 1) * 86400,
+			"top": [{"name": "Masha", "total": 420}, {"name": Game.rating.player_name(), "total": 140}]}
+		Game.save["alliance"]["petStage"] = al.pet["stage"]
 		al.power_top = [
 			{"place": 1, "name": "Masha", "level": 31, "power": 14200, "tag": "GV", "me": false},
 			{"place": 2, "name": "Kenji", "level": 18, "power": 6100, "tag": "GV", "me": false},

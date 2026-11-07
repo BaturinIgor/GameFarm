@@ -759,6 +759,9 @@ func recalc() -> void:
 		s.regrow_chance += alliance.bonus("regrow")
 		capacity += alliance.bonus("packs")
 		s.double_product_chance += alliance.bonus("ranch")
+		# Хранитель альянса: +1% к добыче и опыту за стадию
+		s.yield_all += AlliancePet.bonus(alliance.pet_stage())
+		xp_bonus += AlliancePet.bonus(alliance.pet_stage())
 
 	var strider := 1.25 if r.call("strider") > 0 else 1.0
 	capacity *= (1.0 + 0.1 * r.call("packMaster")) * strider

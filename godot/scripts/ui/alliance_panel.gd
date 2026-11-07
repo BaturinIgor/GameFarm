@@ -353,6 +353,7 @@ func _main() -> void:
 	if str(d.get("about", "")) != "":
 		c.add_child(_small(str(d["about"])))
 	# Как вкладывать: бесплатно, за монеты, за кристаллы
+	_pet_card()
 	section_title(L.t("alliance.talents"))
 	var kinds := card()
 	kinds.add_child(_small(L.t("alliance.giveHint")))
@@ -393,6 +394,82 @@ func _main() -> void:
 		ConfirmPopup.ask("px:crown", L.t("alliance.leave"), L.t("alliance.leaveText"), L.t("alliance.leave"), "red",
 			func() -> void: Game.alliance.leave()))
 	content.add_child(leave)
+
+
+## Хранитель альянса: зверь растёт от угощений, которые приносят все участники.
+func _pet_card() -> void:
+	var al := Game.alliance
+	var pet := al.pet
+	section_title(L.t("alliance.pet.title"))
+	var c := card()
+	if pet.is_empty():
+		c.add_child(_note(L.t("alliance.loading")))
+		return
+	var kind := str(pet.get("kind", "phoenixChick"))
+	var stage := int(pet.get("stage", 1))
+	var xp := int(pet.get("xp", 0))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	c.add_child(row)
+	var frame := PanelContainer.new()
+	frame.add_theme_stylebox_override("panel", AnimalsPanel.awaken_frame(clampi((stage - 1) / 3 + 1, 1, Animals.AWAKEN_MAX) if stage > 1 else 0))
+	frame.custom_minimum_size = Vector2(84, 84)
+	frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var ic := AnimalsPanel.animal_icon(kind, AlliancePet.size_for(stage))
+	ic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	frame.add_child(ic)
+	row.add_child(frame)
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_theme_constant_override("separation", 3)
+	row.add_child(col)
+	var name := UiKit.label(L.t("alliance.pet.stage", [Animals.name_of(kind), stage, AlliancePet.MAX_STAGE]), 15)
+	name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(name)
+	if stage < AlliancePet.MAX_STAGE:
+		var from := AlliancePet.xp_for(stage)
+		var to := AlliancePet.xp_for(stage + 1)
+		col.add_child(UiKit.bar(float(xp - from) / float(maxi(1, to - from)), "gold", 160, 12,
+			"%s / %s" % [Fmt.n(xp - from), Fmt.n(to - from)]))
+	col.add_child(_small(L.t("alliance.pet.bonus", [Fmt.pct(AlliancePet.bonus(stage)), Fmt.pct(AlliancePet.bonus(stage + 1))])
+		if stage < AlliancePet.MAX_STAGE else L.t("alliance.pet.bonusMax", [Fmt.pct(AlliancePet.bonus(stage))])))
+	# Глава выбирает вид, пока Хранителя не кормили
+	if xp == 0 and al.is_leader():
+		c.add_child(_small(L.t("alliance.pet.choose")))
+		var kinds := HBoxContainer.new()
+		kinds.add_theme_constant_override("separation", 6)
+		c.add_child(kinds)
+		for k in AlliancePet.KINDS:
+			var b := UiKit.button("", "green" if k == kind else "wood", 12, true)
+			b.icon = AnimalsPanel.animal_icon(k, 28).texture
+			b.expand_icon = true
+			b.custom_minimum_size = Vector2(0, 48)
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var kk: String = k
+			b.pressed.connect(func() -> void: Game.alliance.choose_pet(kk))
+			kinds.add_child(b)
+	# Угощения дня
+	var left := float(int(pet.get("ends", 0)) - int(Time.get_unix_time_from_system()))
+	c.add_child(_small(L.t("alliance.pet.hint", [al.pet_fed(), AlliancePet.PORTIONS, EventsPanel.long_countdown(maxf(0.0, left))])))
+	var items: Array = pet.get("cravings", [])
+	for slot in items.size():
+		var cost := al.pet_cost(slot)
+		var r := HBoxContainer.new()
+		r.add_theme_constant_override("separation", 8)
+		c.add_child(r)
+		var cv := UiKit.cost_view(cost)
+		cv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		r.add_child(cv)
+		var b := UiKit.button(L.t("alliance.pet.give", [AlliancePet.xp_per_portion(slot)]), "green", 13, true)
+		b.disabled = not al.can_feed_pet(slot)
+		var sl: int = slot
+		b.pressed.connect(func() -> void: Game.alliance.feed_pet(sl))
+		r.add_child(b)
+	var top: Array = pet.get("top", [])
+	if not top.is_empty():
+		var names: Array = top.map(func(x: Dictionary) -> String: return "%s %s" % [str(x.get("name", "")), Fmt.n(int(x.get("total", 0)))])
+		c.add_child(_small(L.t("alliance.pet.top", [", ".join(names)])))
 
 
 func _locked_row(need: int) -> void:

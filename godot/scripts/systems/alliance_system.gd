@@ -24,6 +24,8 @@ var strength_top: Array = []
 var power_top: Array = []
 ## Мощь участников моего альянса: id -> мощь.
 var powers: Dictionary = {}
+## Хранитель альянса (ответ al_pet): kind, xp, stage, day, cravings, fed, total, ends, top.
+var pet: Dictionary = {}
 var _loaded_at := -100.0
 ## События альянса на эту неделю (ответ al_events): страж, задания, место. Пусто - не загружено.
 var ev: Dictionary = {}
@@ -44,6 +46,7 @@ func defaults(save: Dictionary) -> void:
 	save["alliance"] = {} if int(a.get("id", 0)) <= 0 else {
 		"id": int(a["id"]), "name": str(a.get("name", "")), "tag": str(a.get("tag", "")),
 		"emblem": int(a.get("emblem", 0)), "talents": talents,
+		"petStage": clampi(int(a.get("petStage", 1)), 1, AlliancePet.MAX_STAGE),
 	}
 	save["allianceSeen"] = bool(save.get("allianceSeen", false))
 	# Счётчики для заданий альянса, ещё не отправленные на сервер
@@ -133,6 +136,7 @@ func refresh(force := false) -> void:
 	_take(res if res is Dictionary else {})
 	if in_alliance():
 		await fetch_powers()
+		await fetch_pet()
 		await refresh_events()
 
 
@@ -142,6 +146,7 @@ func _take(d: Dictionary) -> void:
 	if d.is_empty():
 		Game.save["alliance"] = {}
 		Game.save["alliancePending"] = {}
+		pet = {}
 		ev = {}
 		messages.clear()
 		_last_id = 0
@@ -154,8 +159,9 @@ func _take(d: Dictionary) -> void:
 		if raw is Dictionary:
 			for k in raw:
 				talents[str(k)] = int(raw[k])
+		var stage := int(Game.save.get("alliance", {}).get("petStage", 1)) if was == int(d.get("id", 0)) else 1
 		Game.save["alliance"] = {"id": int(d["id"]), "name": str(d.get("name", "")), "tag": str(d.get("tag", "")),
-			"emblem": int(d.get("emblem", 0)), "talents": talents}
+			"emblem": int(d.get("emblem", 0)), "talents": talents, "petStage": stage}
 	Game.recalc()
 	Game.mark_dirty()
 	Game.changed.emit()
@@ -170,6 +176,84 @@ func search(query: String) -> void:
 	found = res if res is Array else []
 	error = "" if res != null else "network"
 	Game.changed.emit()
+
+
+# MARK: Хранитель альянса
+
+func fetch_pet() -> void:
+	if demo or not in_alliance():
+		return
+	var res: Variant = await Game.rating.call_rpc("al_pet", {})
+	if res is Dictionary:
+		pet = res
+		_set_pet_stage(int(res.get("stage", 1)))
+		Game.changed.emit()
+
+
+func pet_stage() -> int:
+	return int(Game.save.get("alliance", {}).get("petStage", 1)) if in_alliance() else 1
+
+
+func _set_pet_stage(stage: int) -> void:
+	if not in_alliance() or stage == pet_stage():
+		return
+	Game.save["alliance"]["petStage"] = clampi(stage, 1, AlliancePet.MAX_STAGE)
+	Game.recalc()
+	Game.mark_dirty()
+
+
+func pet_fed() -> int:
+	return int(pet.get("fed", 0))
+
+
+## Цена порции угощения slot (0 простое, 1 среднее, 2 редкое).
+func pet_cost(slot: int) -> Dictionary:
+	var items: Array = pet.get("cravings", [])
+	if slot >= items.size():
+		return {}
+	return {"items": [[str(items[slot]), AlliancePet.portion(slot, Game.level)]]}
+
+
+func can_feed_pet(slot: int) -> bool:
+	var cost := pet_cost(slot)
+	return not busy and not cost.is_empty() and pet_fed() < AlliancePet.PORTIONS and Game.can_afford(cost)
+
+
+## Порция Хранителю: сервер считает опыт, продукты списываются после успеха.
+func feed_pet(slot: int) -> void:
+	if not can_feed_pet(slot):
+		return
+	var cost := pet_cost(slot)
+	busy = true
+	var res: Variant = await Game.rating.call_rpc("al_pet_feed", {"p_slot": slot, "p_count": 1})
+	busy = false
+	if not res is Dictionary:
+		_fail()
+		await fetch_pet()
+		return
+	Game.pay(cost)
+	pet["xp"] = int(res.get("xp", 0))
+	pet["stage"] = int(res.get("stage", 1))
+	pet["fed"] = int(res.get("fed", 0))
+	pet["total"] = int(pet.get("total", 0)) + int(res.get("gain", 0))
+	var grew := int(res.get("stage", 1)) > pet_stage()
+	_set_pet_stage(int(res.get("stage", 1)))
+	Sound.play("levelUp" if grew else "coin")
+	Game.show_toast("an:" + str(pet.get("kind", "phoenixChick")), L.t("alliance.pet.fed", [int(res.get("gain", 0))]))
+	Game.emit_event("allianceFeed", {})
+	Game.mark_dirty()
+	Game.changed.emit()
+
+
+func choose_pet(kind: String) -> void:
+	if busy or not kind in AlliancePet.KINDS:
+		return
+	busy = true
+	var res: Variant = await Game.rating.call_rpc("al_pet_kind", {"p_kind": kind})
+	busy = false
+	if res == null:
+		_fail()
+	await fetch_pet()
 
 
 func fetch_powers() -> void:
@@ -305,7 +389,7 @@ func _act(fn: String, args: Dictionary) -> bool:
 func _fail() -> void:
 	var e := Game.rating.last_error
 	error = e if e in ["limit", "full", "level too low", "name taken", "tag taken", "bad name", "talent locked",
-		"talent maxed", "too fast", "already in alliance", "not allowed"] else "network"
+		"talent maxed", "too fast", "already in alliance", "not allowed", "pet fed"] else "network"
 	Game.changed.emit()
 
 
@@ -582,4 +666,7 @@ static func system_text(m: Dictionary) -> String:
 		"create": return L.t("alliance.sys.create", [str(m.get("name", "")), str(m.get("body", ""))])
 		"join", "leave", "kick": return L.t("alliance.sys." + kind, [str(m.get("name", ""))])
 		"level": return L.t("alliance.sys.level", [str(m.get("body", ""))])
+		"boss": return L.t("alliance.sys.boss", [str(m.get("body", ""))])
+		"task": return L.t("alliance.sys.task", [AllianceEvents.kind_name(str(m.get("body", "")))])
+		"pet": return L.t("alliance.sys.pet", [str(m.get("body", ""))])
 	return str(m.get("body", ""))
