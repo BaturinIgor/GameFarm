@@ -11,9 +11,9 @@ on:
         required: false
         default: "en ru"
       scenarios:
-        description: "Сценарии через пробел: walk chests hatch mine tour"
+        description: "Сценарии через пробел: walk chests hatch mine tour и локации hills lake swamp desert snow caves island volcano sky garden"
         required: false
-        default: "walk chests hatch mine tour"
+        default: "walk chests hatch mine tour hills lake swamp desert snow caves island volcano sky garden"
 
 permissions:
   contents: write
@@ -24,7 +24,7 @@ env:
 jobs:
   clips:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
 

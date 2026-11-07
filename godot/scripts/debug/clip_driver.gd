@@ -6,6 +6,8 @@ extends Node
 
 const ORIGIN := Vector2(195, 620)
 const SCENARIOS := ["walk", "chests", "hatch", "mine", "tour"]
+## Прогулка с добычей по другим локациям: сценарий называется как локация (-- --clip desert)
+const PLACES := ["hills", "lake", "swamp", "desert", "snow", "caves", "island", "volcano", "sky", "garden"]
 ## Окна для обзора "tour": по 2,5 секунды на каждое
 const TOUR := ["animals", "garden", "wardrobe", "events", "talents", "estate", "collection:zoo"]
 
@@ -23,7 +25,7 @@ func _ready() -> void:
 	var i := args.find("--clip")
 	if i >= 0 and i + 1 < args.size():
 		scenario = args[i + 1]
-	if not scenario in SCENARIOS:
+	if not scenario in SCENARIOS and not scenario in PLACES:
 		push_error("clip: unknown scenario %s, known: %s" % [scenario, SCENARIOS])
 		get_tree().quit(2)
 		return
@@ -55,7 +57,7 @@ func _process(delta: float) -> void:
 		_step = 1
 		_time = 0.0
 		return
-	call("_" + scenario)
+	call("_visit" if scenario in PLACES else "_" + scenario)
 
 
 func _done() -> void:
@@ -77,8 +79,33 @@ func _prepare() -> void:
 	for a in ["chicken", "cow", "sheep", "horse", "swan"]:
 		Game.save["animals"][a] = 3
 	Game.save["active"] = ["cow", "chicken"]
+	if scenario in PLACES:
+		Game.save["level"] = 60
+		for t in ["axe", "pickaxe", "rod", "sword", "armor"]:
+			Game.save["tools"][t] = 8
+		Game.save["current"] = scenario
+		if not scenario in Game.world_map.reachable:
+			Game.world_map.reachable.append(scenario)
 	Game.recalc()
 	Game.mark_dirty()
+
+
+## Другая локация: мир перестраивается, герой бегает от ресурса к ресурсу и добывает.
+func _visit() -> void:
+	var world: World = main.world
+	match _step:
+		1:
+			if _time > 1.2 and world.loaded == scenario:
+				_touch(ORIGIN, true)
+				_step = 2
+		2:
+			var target := _nearest(world)
+			if target != null:
+				var d := target.position - world.player.position
+				_drag(ORIGIN + (d.normalized() * 50.0 if d.length() > 40.0 else Vector2.ZERO))
+			if _time > 19.0:
+				_touch(ORIGIN, false)
+				_done()
 
 
 ## Прогулка: герой идёт к ближайшим ресурсам, добывает и несёт добычу на склад.

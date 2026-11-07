@@ -131,6 +131,300 @@
         "ru": "Уютная ферма с сюрпризом в каждом сундуке. Harvest Hollow, бесплатно на iPhone"
       },
       "music": "meadow"
+    },
+    {
+      "id": "chests10_b",
+      "scenario": "chests",
+      "start": 1.0,
+      "duration": 14,
+      "hook": {
+        "en": "Rate my luck: 10 chests, one tap",
+        "ru": "Оцени удачу: 10 сундуков за одно нажатие"
+      },
+      "caption": {
+        "en": "Rainbow drop or nothing? Harvest Hollow, free on iPhone",
+        "ru": "Радужная награда или пусто? Harvest Hollow, бесплатно на iPhone"
+      },
+      "music": "expedition"
+    },
+    {
+      "id": "pegasus_b",
+      "scenario": "hatch",
+      "start": 1.0,
+      "duration": 12.5,
+      "hook": {
+        "en": "What hatches from a GOLDEN egg?",
+        "ru": "Кто вылупится из ЗОЛОТОГО яйца?"
+      },
+      "caption": {
+        "en": "Guess before the reveal! Harvest Hollow, free on iPhone",
+        "ru": "Угадай до конца ролика! Harvest Hollow, бесплатно на iPhone"
+      },
+      "music": "garden"
+    },
+    {
+      "id": "mine_b",
+      "parts": [
+        {
+          "scenario": "mine",
+          "start": 6.0,
+          "duration": 7
+        },
+        {
+          "scenario": "mine",
+          "start": 18.5,
+          "duration": 6.5
+        }
+      ],
+      "hook": {
+        "en": "This mine puzzle is weirdly satisfying",
+        "ru": "Эта шахта залипательная, проверь сам"
+      },
+      "caption": {
+        "en": "Big groups leave dynamite. Harvest Hollow, free on iPhone",
+        "ru": "Большие группы оставляют динамит. Harvest Hollow, бесплатно на iPhone"
+      },
+      "music": "caves"
+    },
+    {
+      "id": "farm_asmr_b",
+      "scenario": "walk",
+      "start": 4.0,
+      "duration": 13,
+      "hook": {
+        "en": "POV: you finally have time to relax",
+        "ru": "POV: наконец-то можно расслабиться"
+      },
+      "caption": {
+        "en": "No timers that punish you, just a cozy farm. Harvest Hollow",
+        "ru": "Никакой спешки, просто уютная ферма. Harvest Hollow"
+      },
+      "music": "meadow"
+    },
+    {
+      "id": "tour_b",
+      "scenario": "tour",
+      "start": 5.6,
+      "duration": 13,
+      "hook": {
+        "en": "Wait, this farm game has all of THIS?",
+        "ru": "Подожди, в этой ферме ещё и ЭТО есть?"
+      },
+      "caption": {
+        "en": "Pets, talents, an estate and events. Harvest Hollow, free on iPhone",
+        "ru": "Звери, таланты, усадьба и ивенты. Harvest Hollow, бесплатно на iPhone"
+      },
+      "music": "meadow"
+    },
+    {
+      "id": "visit_hills",
+      "scenario": "hills",
+      "start": 2.0,
+      "duration": 13,
+      "hook": {
+        "en": "Rocky hills hide the best ore",
+        "ru": "В каменных холмах лучшая руда"
+      },
+      "caption": {
+        "en": "10 locations to explore, chop and mine. Harvest Hollow, free on iPhone",
+        "ru": "10 локаций, где можно рубить и копать. Harvest Hollow, бесплатно на iPhone"
+      },
+      "music": "hills"
+    },
+    {
+      "id": "visit_lake",
+      "scenario": "lake",
+      "start": 2.0,
+      "duration": 13,
+      "hook": {
+        "en": "Fishing at the quiet lake",
+        "ru": "Рыбалка на тихом озере"
+      },
+      "caption": {
+        "en": "10 locations to explore, chop and mine. Harvest Hollow, free on iPhone",
+        "ru": "10 локаций, где можно рубить и копать. Harvest Hollow, бесплатно на iPhone"
+      },
+      "music": "lake"
+    },
+    {
+      "id": "visit_swamp",
+      "scenario": "swamp",
+      "start": 2.0,
+      "duration": 13,
+      "hook": {
+        "en": "Would you farm in a foggy swamp?",
+        "ru": "Стал бы фермерить на туманном болоте?"
+      },
+      "caption": {
+        "en": "10 locations to explore, chop and mine. Harvest Hollow, free on iPhone",
+        "ru": "10 локаций, где можно рубить и копать. Harvest Hollow, бесплатно на iPhone"
+      },
+      "music": "swamp"
+    },
+    {
+      "id": "visit_desert",
+      "scenario": "desert",
+      "start": 2.0,
+      "duration": 13,
+      "hook": {
+        "en": "My farmer went to the desert",
+        "ru": "Мой фермер отправился в пустыню"
+      },
+      "caption": {
+        "en": "10 locations to explore, chop and mine. Harvest Hollow, free on iPhone",
+        "ru": "10 локаций, где можно рубить и копать. Harvest Hollow, бесплатно на iPhone"
+      },
+      "music": "desert"
+    },
+    {
+      "id": "visit_snow",
+      "scenario": "snow",
+      "start": 2.0,
+      "duration": 13,
+      "hook": {
+        "en": "Farming on a snowy peak? Yes",
+        "ru": "Ферма на снежной вершине? Да!"
+      },
+      "caption": {
+        "en": "10 locations to explore, chop and mine. Harvest Hollow, free on iPhone",
+        "ru": "10 локаций, где можно рубить и копать. Harvest Hollow, бесплатно на iPhone"
+      },
+      "music": "snow"
+    },
+    {
+      "id": "visit_caves",
+      "scenario": "caves",
+      "start": 2.0,
+      "duration": 13,
+      "hook": {
+        "en": "Crystal caves full of gems",
+        "ru": "Кристальные пещеры полны самоцветов"
+      },
+      "caption": {
+        "en": "10 locations to explore, chop and mine. Harvest Hollow, free on iPhone",
+        "ru": "10 локаций, где можно рубить и копать. Harvest Hollow, бесплатно на iPhone"
+      },
+      "music": "caves"
+    },
+    {
+      "id": "visit_island",
+      "scenario": "island",
+      "start": 2.0,
+      "duration": 13,
+      "hook": {
+        "en": "A tropical island in a farm game",
+        "ru": "Тропический остров в игре про ферму"
+      },
+      "caption": {
+        "en": "10 locations to explore, chop and mine. Harvest Hollow, free on iPhone",
+        "ru": "10 локаций, где можно рубить и копать. Harvest Hollow, бесплатно на iPhone"
+      },
+      "music": "island"
+    },
+    {
+      "id": "visit_volcano",
+      "scenario": "volcano",
+      "start": 2.0,
+      "duration": 13,
+      "hook": {
+        "en": "Mining next to an active volcano",
+        "ru": "Добыча у самого вулкана"
+      },
+      "caption": {
+        "en": "10 locations to explore, chop and mine. Harvest Hollow, free on iPhone",
+        "ru": "10 локаций, где можно рубить и копать. Harvest Hollow, бесплатно на iPhone"
+      },
+      "music": "volcano"
+    },
+    {
+      "id": "visit_sky",
+      "scenario": "sky",
+      "start": 2.0,
+      "duration": 13,
+      "hook": {
+        "en": "Islands in the sky: the last location",
+        "ru": "Небесные острова: последняя локация"
+      },
+      "caption": {
+        "en": "10 locations to explore, chop and mine. Harvest Hollow, free on iPhone",
+        "ru": "10 локаций, где можно рубить и копать. Harvest Hollow, бесплатно на iPhone"
+      },
+      "music": "sky"
+    },
+    {
+      "id": "visit_garden",
+      "scenario": "garden",
+      "start": 2.0,
+      "duration": 13,
+      "hook": {
+        "en": "The royal garden with capybaras",
+        "ru": "Королевский сад с капибарами"
+      },
+      "caption": {
+        "en": "10 locations to explore, chop and mine. Harvest Hollow, free on iPhone",
+        "ru": "10 локаций, где можно рубить и копать. Harvest Hollow, бесплатно на iPhone"
+      },
+      "music": "garden"
+    },
+    {
+      "id": "visit_snow_b",
+      "scenario": "snow",
+      "start": 6.0,
+      "duration": 13,
+      "hook": {
+        "en": "Snow, ore and a tiny farmer",
+        "ru": "Снег, руда и маленький фермер"
+      },
+      "caption": {
+        "en": "From a meadow to the sky. Harvest Hollow, free on iPhone",
+        "ru": "От поляны до небес. Harvest Hollow, бесплатно на iPhone"
+      },
+      "music": "snow"
+    },
+    {
+      "id": "visit_volcano_b",
+      "scenario": "volcano",
+      "start": 6.0,
+      "duration": 13,
+      "hook": {
+        "en": "Hot ore straight from the volcano",
+        "ru": "Горячая руда прямо из вулкана"
+      },
+      "caption": {
+        "en": "From a meadow to the sky. Harvest Hollow, free on iPhone",
+        "ru": "От поляны до небес. Harvest Hollow, бесплатно на iPhone"
+      },
+      "music": "volcano"
+    },
+    {
+      "id": "visit_island_b",
+      "scenario": "island",
+      "start": 6.0,
+      "duration": 13,
+      "hook": {
+        "en": "Cozy vibes on a pixel island",
+        "ru": "Уютный вайб на пиксельном острове"
+      },
+      "caption": {
+        "en": "From a meadow to the sky. Harvest Hollow, free on iPhone",
+        "ru": "От поляны до небес. Harvest Hollow, бесплатно на iPhone"
+      },
+      "music": "island"
+    },
+    {
+      "id": "visit_sky_b",
+      "scenario": "sky",
+      "start": 6.0,
+      "duration": 13,
+      "hook": {
+        "en": "How high can a farmer climb?",
+        "ru": "Как высоко заберётся фермер?"
+      },
+      "caption": {
+        "en": "From a meadow to the sky. Harvest Hollow, free on iPhone",
+        "ru": "От поляны до небес. Harvest Hollow, бесплатно на iPhone"
+      },
+      "music": "sky"
     }
   ],
   "cta": {
