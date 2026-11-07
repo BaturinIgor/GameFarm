@@ -1606,6 +1606,7 @@
  "power.part.gear": "Teçhizat",
  "power.part.level": "Seviye",
  "power.part.talents": "Yetenekler",
+ "power.recommended": "Önerilen güç {0}",
  "power.title": "Güç",
  "power.value": "Güç {0}",
  "preview.bought": "{0} artık senin!",

@@ -1606,6 +1606,7 @@
  "power.part.gear": "Equipaggiamento",
  "power.part.level": "Livello",
  "power.part.talents": "Talenti",
+ "power.recommended": "Potenza consigliata {0}",
  "power.title": "Potenza",
  "power.value": "Potenza {0}",
  "preview.bought": "Ora hai {0}!",

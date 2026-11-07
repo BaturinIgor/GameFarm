@@ -23,3 +23,12 @@ func test_total_grows_with_animals() -> void:
 	Game.animals.add_star("chicken", 1)
 	eq(Power.total() - before, Power.PER_STAR, "звезда добавляет мощь")
 	eq(AllianceEvents.hit_damage(10, Power.total(), 0), 60 + 80 + Power.total() / 100)
+
+
+func test_recommended() -> void:
+	var prev := 0
+	for l in range(1, 61):
+		var r := Power.recommended(l)
+		check(r >= prev, "рекомендуемая мощь не падает с уровнем")
+		eq(r % 50, 0, "круглое число")
+		prev = r

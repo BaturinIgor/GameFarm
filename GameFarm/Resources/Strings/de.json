@@ -1606,6 +1606,7 @@
  "power.part.gear": "Ausrüstung",
  "power.part.level": "Stufe",
  "power.part.talents": "Talente",
+ "power.recommended": "Empfohlene Macht {0}",
  "power.title": "Macht",
  "power.value": "Macht {0}",
  "preview.bought": "{0} gehört jetzt dir!",

@@ -1606,6 +1606,7 @@
  "power.part.gear": "裝備",
  "power.part.level": "等級",
  "power.part.talents": "天賦",
+ "power.recommended": "推薦戰力 {0}",
  "power.title": "戰力",
  "power.value": "戰力 {0}",
  "preview.bought": "{0} 現在是你的了！",

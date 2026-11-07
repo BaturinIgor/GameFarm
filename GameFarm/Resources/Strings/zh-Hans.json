@@ -1606,6 +1606,7 @@
  "power.part.gear": "装备",
  "power.part.level": "等级",
  "power.part.talents": "天赋",
+ "power.recommended": "推荐战力 {0}",
  "power.title": "战力",
  "power.value": "战力 {0}",
  "preview.bought": "{0}现在是你的了！",

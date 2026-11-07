@@ -1606,6 +1606,7 @@
  "power.part.gear": "装備",
  "power.part.level": "レベル",
  "power.part.talents": "タレント",
+ "power.recommended": "推奨戦力 {0}",
  "power.title": "戦力",
  "power.value": "戦力 {0}",
  "preview.bought": "{0}が手に入ったよ！",

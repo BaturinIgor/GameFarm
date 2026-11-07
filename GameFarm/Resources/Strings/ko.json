@@ -1606,6 +1606,7 @@
  "power.part.gear": "장비",
  "power.part.level": "레벨",
  "power.part.talents": "재능",
+ "power.recommended": "권장 전투력 {0}",
  "power.title": "전투력",
  "power.value": "전투력 {0}",
  "preview.bought": "{0}, 이제 네 거야!",

@@ -1606,6 +1606,7 @@
  "power.part.gear": "Ekwipunek",
  "power.part.level": "Poziom",
  "power.part.talents": "Talenty",
+ "power.recommended": "Zalecana moc {0}",
  "power.title": "Moc",
  "power.value": "Moc {0}",
  "preview.bought": "Masz już {0}!",

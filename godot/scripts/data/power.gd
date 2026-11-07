@@ -57,3 +57,10 @@ static func total() -> int:
 	for v in breakdown().values():
 		sum += int(v)
 	return mini(MAX, sum)
+
+
+## Какая мощь обычно у игрока уровня level (для «рекомендуемой мощи» подземелий): уровень, снаряжение
+## и таланты по уровню, несколько зверей.
+static func recommended(level: int) -> int:
+	var l := maxi(1, level)
+	return int(round((150.0 * float(l) + 2.0 * float(l * l)) / 50.0)) * 50

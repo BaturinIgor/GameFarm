@@ -1606,6 +1606,7 @@
  "power.part.gear": "อุปกรณ์",
  "power.part.level": "เลเวล",
  "power.part.talents": "พรสวรรค์",
+ "power.recommended": "พลังที่แนะนำ {0}",
  "power.title": "พลัง",
  "power.value": "พลัง {0}",
  "preview.bought": "{0} เป็นของคุณแล้ว!",

@@ -1606,6 +1606,7 @@
  "power.part.gear": "Снаряжение",
  "power.part.level": "Уровень",
  "power.part.talents": "Таланты",
+ "power.recommended": "Рекомендуемая мощь {0}",
  "power.title": "Мощь",
  "power.value": "Мощь {0}",
  "preview.bought": "{0} теперь твоё!",

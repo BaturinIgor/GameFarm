@@ -1606,6 +1606,7 @@
  "power.part.gear": "Gear",
  "power.part.level": "Level",
  "power.part.talents": "Talents",
+ "power.recommended": "Recommended power {0}",
  "power.title": "Power",
  "power.value": "Power {0}",
  "preview.bought": "{0} is yours now!",
