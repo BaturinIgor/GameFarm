@@ -28,6 +28,15 @@ import urllib.parse
 import urllib.request
 import webbrowser
 
+# Сертификаты из системы (Связка ключей macOS), а не только из набора Python: если VPN или антивирус
+# проверяют HTTPS своим сертификатом, Python иначе падает с CERTIFICATE_VERIFY_FAILED.
+# Ставится один раз: python3 -m pip install truststore
+try:
+    import truststore
+    truststore.inject_into_ssl()
+except ImportError:
+    pass
+
 HERE = pathlib.Path(__file__).resolve().parent
 ACCOUNTS = HERE / "accounts.json"
 STATE_DIR = pathlib.Path.home() / ".harvest-hollow"

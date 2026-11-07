@@ -242,11 +242,17 @@ func set_window_open(open: bool) -> void:
 
 ## Плавно (около 1.2 с) переключает музыку. "" глушит. Тот же трек не перезапускается.
 func play_music(track: String) -> void:
+	# При записи роликов музыки и фона из игры нет: Movie Maker пишет потоковые треки рывками
+	# (0,15 с звука через 0,12 с тишины), чистую музыку накладывает marketing/make_clips.py
+	if _recording():
+		return
 	_music.select("" if track == "" else "mus_" + track, music_on and not _app_paused)
 
 
 ## Плавно переключает фон окружения. "" выключает.
 func play_ambience(track: String) -> void:
+	if _recording():
+		return
 	_ambience.select("" if track == "" else "amb_" + track, sfx_on and not _app_paused)
 
 
