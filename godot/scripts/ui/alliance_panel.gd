@@ -675,6 +675,7 @@ func _members() -> void:
 	var al := Game.alliance
 	var me_role := al.role()
 	_guests_card()
+	_mentor_card()
 	for x in al.data.get("members", []):
 		var m: Dictionary = x
 		var v := card()
@@ -702,6 +703,15 @@ func _members() -> void:
 			col.add_child(prow)
 		if bool(m.get("me", false)):
 			continue
+		if al.can_pick_mentor(m):
+			var pick := UiKit.button(L.t("mentor.pick"), "orange", 12, true)
+			pick.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			var mid_pick := str(m.get("id", ""))
+			var mname := str(m.get("name", ""))
+			pick.pressed.connect(func() -> void:
+				ConfirmPopup.ask("px:star", mname, L.t("mentor.pickText", [mname]), L.t("mentor.pick"), "orange",
+					func() -> void: al.pick_mentor(mid_pick)))
+			row.add_child(pick)
 		var visit := UiKit.button(L.t("guests.send"), "green", 12, true)
 		visit.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		visit.disabled = al.guests_away().size() >= al.guest_slots()
@@ -784,6 +794,66 @@ func _guests_card() -> void:
 			else:
 				Sound.play("purchase"))
 		row.add_child(pb)
+
+
+## Наставник: ученик до 15 уровня выбирает наставника от 25 уровня, ступени ученика дают награды обоим.
+func _mentor_card() -> void:
+	var al := Game.alliance
+	if al.mentor.is_empty():
+		return
+	var me := al.my_mentor()
+	var list := al.apprentices()
+	if me.is_empty() and list.is_empty() and Game.level > Mentor.APPRENTICE_MAX and Game.level < Mentor.MENTOR_LEVEL:
+		return
+	var c := card()
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 8)
+	c.add_child(head)
+	head.add_child(UiKit.icon("book", 24))
+	head.add_child(UiKit.label(L.t("mentor.title"), 15))
+	if not me.is_empty():
+		c.add_child(UiKit.label(L.t("mentor.yours", [str(me.get("name", "")), int(me.get("level", 1))]), 13))
+		_mentor_steps(c, "", int(me.get("start", 1)), Game.level, me.get("claimed", []), false)
+	elif Game.level <= Mentor.APPRENTICE_MAX:
+		c.add_child(_small(L.t("mentor.findHint", [Mentor.MENTOR_LEVEL])))
+	if Game.level >= Mentor.MENTOR_LEVEL or not list.is_empty():
+		c.add_child(_small(L.t("mentor.teachHint", [Mentor.APPRENTICE_MAX, list.size(), Mentor.MAX_APPRENTICES])))
+		for x in list:
+			var a: Dictionary = x
+			var row := HBoxContainer.new()
+			row.add_theme_constant_override("separation", 8)
+			c.add_child(row)
+			var nl := UiKit.label(L.t("mentor.apprentice", [str(a.get("name", "")), int(a.get("level", 1))]), 13)
+			nl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			row.add_child(nl)
+			if not bool(a.get("gift", false)):
+				var gb := ShopPanel.crystal_button(Mentor.GIFT_CRYSTALS, "purple", true)
+				var gid := str(a.get("id", ""))
+				gb.pressed.connect(func() -> void:
+					if Game.shop.crystals() < Mentor.GIFT_CRYSTALS:
+						Game.show_toast("px:gem", L.t("crystals.notEnough", [Fmt.n(Mentor.GIFT_CRYSTALS - Game.shop.crystals())]))
+						return
+					al.gift_apprentice(gid))
+				row.add_child(gb)
+			_mentor_steps(c, str(a.get("id", "")), int(a.get("start", 1)), int(a.get("level", 1)), a.get("claimed", []), true)
+		if not list.is_empty():
+			c.add_child(_small(L.t("mentor.giftHint")))
+
+
+## Ступени ученика: готовые к награде - кнопками, следующая - строкой.
+func _mentor_steps(c: VBoxContainer, apprentice_id: String, start: int, level: int, claimed: Array, as_mentor: bool) -> void:
+	var al := Game.alliance
+	var id := apprentice_id if apprentice_id != "" else Game.rating.user_id()
+	for step in Mentor.ready_steps(start, level, claimed):
+		var r := Mentor.reward(step, as_mentor)
+		var b := UiKit.button(L.t("mentor.claim", [step, Fmt.n(int(r["coins"])), int(r["crystals"])]), "gold", 12, true)
+		var st: int = step
+		b.pressed.connect(func() -> void: al.claim_mentor(id, st))
+		c.add_child(b)
+	var next := Mentor.next_step(start, level)
+	if next > 0:
+		var r := Mentor.reward(next, as_mentor)
+		c.add_child(_small(L.t("mentor.next", [next, Fmt.n(int(r["coins"])), int(r["crystals"])])))
 
 
 # MARK: Летопись и статуи

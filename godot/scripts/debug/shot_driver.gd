@@ -782,6 +782,7 @@ func _alliance_demo(w: String) -> void:
 		al.chronicle = {}
 		al.weather = {}
 		al.guests = {}
+		al.mentor = {}
 		Game.save["alliance"] = {}
 		Game.recalc()
 		return
@@ -862,6 +863,9 @@ func _alliance_demo(w: String) -> void:
 				{"id": 2, "name": "Kenji", "animal": "chicken", "stars": 2, "returns": tn - 60}],
 			"in": [{"id": 3, "name": "Pierre", "animal": "pig", "stars": 4, "returns": tn + 9 * 3600}],
 			"friends": [{"name": "Masha", "visits": 6}, {"name": "Kenji", "visits": 2}]}
+		al.mentor = {"mentor": null, "apprentices": [
+			{"id": "b", "name": "Lucia", "level": 16, "start": 9, "claimed": [10], "gift": false},
+			{"id": "d", "name": "Tom", "level": 8, "start": 6, "claimed": [], "gift": true}]}
 		Game.save["guestSlot"] = true
 		Game.save["guestsIn"] = [{"stars": 4, "returns": tn + 9 * 3600}]
 		Game.save["statueFrames"] = ["bronze", "gold"]

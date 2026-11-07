@@ -161,6 +161,7 @@ func refresh(force := false) -> void:
 		await fetch_pet()
 		await fetch_weather()
 		await fetch_guests()
+		await fetch_mentor()
 		await refresh_events()
 
 
@@ -173,6 +174,7 @@ func _take(d: Dictionary) -> void:
 		Game.save["allianceWeather"] = {}
 		Game.save["guestsIn"] = []
 		guests = {}
+		mentor = {}
 		pet = {}
 		ev = {}
 		weather = {}
@@ -451,6 +453,117 @@ func buy_guest_slot() -> bool:
 	return true
 
 
+# MARK: Наставник
+
+## Ответ al_mentor: mentor (мой наставник или null), apprentices (мои ученики). Пусто - не загружено.
+var mentor: Dictionary = {}
+
+
+func fetch_mentor() -> void:
+	if demo or not in_alliance():
+		return
+	var res: Variant = await Game.rating.call_rpc("al_mentor", {"p_level": Game.level})
+	if res is Dictionary:
+		mentor = res
+		var m: Variant = res.get("mentor")
+		if m is Dictionary and int(m.get("gifts", 0)) > 0:
+			await _take_mentor_gifts()
+		Game.changed.emit()
+
+
+func my_mentor() -> Dictionary:
+	var m: Variant = mentor.get("mentor")
+	return m if m is Dictionary else {}
+
+
+func apprentices() -> Array:
+	return mentor.get("apprentices", [])
+
+
+## Можно ли мне взять этого участника наставником.
+func can_pick_mentor(m: Dictionary) -> bool:
+	return in_alliance() and not mentor.is_empty() and my_mentor().is_empty() and Game.level <= Mentor.APPRENTICE_MAX \
+		and int(m.get("level", 1)) >= Mentor.MENTOR_LEVEL and not bool(m.get("me", false))
+
+
+## Сколько наград наставничества можно забрать (для отметки).
+func mentor_count() -> int:
+	var n := 0
+	var me := my_mentor()
+	if not me.is_empty():
+		n += Mentor.ready_steps(int(me.get("start", 1)), Game.level, me.get("claimed", [])).size()
+	for a in apprentices():
+		n += Mentor.ready_steps(int(a.get("start", 1)), int(a.get("level", 1)), a.get("claimed", [])).size()
+	return n
+
+
+func pick_mentor(id: String) -> void:
+	if busy:
+		return
+	busy = true
+	var res: Variant = await Game.rating.call_rpc("al_mentor_pick", {"p_mentor": id, "p_level": Game.level})
+	busy = false
+	if not res is Dictionary:
+		_fail()
+		return
+	mentor = res
+	Sound.play("levelUp")
+	poll_chat()
+	Game.changed.emit()
+
+
+## Забрать награду за ступень ученика (ученик - свою, наставник - за ученика).
+func claim_mentor(apprentice_id: String, step: int) -> void:
+	if busy:
+		return
+	busy = true
+	var res: Variant = await Game.rating.call_rpc("al_mentor_claim", {"p_apprentice": apprentice_id, "p_step": step})
+	busy = false
+	if not res is Dictionary:
+		_fail()
+		await fetch_mentor()
+		return
+	var r := Mentor.reward(step, str(res.get("role", "")) == "mentor")
+	Game.add_coins(int(r["coins"]))
+	Game.shop.add_crystals(int(r["crystals"]))
+	Game.show_toast("px:star", L.t("mentor.claimed", [Fmt.n(int(r["coins"])), int(r["crystals"])]))
+	await fetch_mentor()
+
+
+func gift_apprentice(id: String) -> void:
+	if busy or Game.shop.crystals() < Mentor.GIFT_CRYSTALS:
+		return
+	busy = true
+	var res: Variant = await Game.rating.call_rpc("al_mentor_gift", {"p_apprentice": id})
+	busy = false
+	if res == null:
+		_fail()
+		return
+	Game.shop.spend_crystals(Mentor.GIFT_CRYSTALS)
+	Sound.play("purchase")
+	Game.show_toast("px:chest", L.t("mentor.giftSent"))
+	await fetch_mentor()
+
+
+func _take_mentor_gifts() -> void:
+	var n: Variant = await Game.rating.call_rpc("al_mentor_gifts_take", {})
+	if n is float or n is int:
+		var count := int(n)
+		if count > 0:
+			for k in Mentor.GIFT:
+				Game.chests.add_keys(k, int(Mentor.GIFT[k]) * count, false)
+			Game.show_toast("px:chest", L.t("mentor.giftGot", [str(my_mentor().get("name", "")), count]))
+
+
+func leave_mentor() -> void:
+	if busy:
+		return
+	busy = true
+	await Game.rating.call_rpc("al_mentor_leave", {})
+	busy = false
+	await fetch_mentor()
+
+
 func pet_stage() -> int:
 	return int(Game.save.get("alliance", {}).get("petStage", 1)) if in_alliance() else 1
 
@@ -650,7 +763,7 @@ func _act(fn: String, args: Dictionary) -> bool:
 func _fail() -> void:
 	var e := Game.rating.last_error
 	error = e if e in ["limit", "full", "level too low", "name taken", "tag taken", "bad name", "talent locked",
-		"talent maxed", "too fast", "already in alliance", "not allowed", "pet fed", "weather busy", "guest away", "host full"] else "network"
+		"talent maxed", "too fast", "already in alliance", "not allowed", "pet fed", "weather busy", "guest away", "host full", "has mentor", "level too high"] else "network"
 	Game.changed.emit()
 
 
@@ -934,6 +1047,7 @@ static func system_text(m: Dictionary) -> String:
 			var g := str(m.get("body", "")).split(":")
 			if g.size() == 2:
 				return L.t("alliance.sys.guest", [str(m.get("name", "")), Animals.name_of(g[0]), g[1]])
+		"mentor": return L.t("alliance.sys.mentor", [str(m.get("name", "")), str(m.get("body", ""))])
 		"weather":
 			var parts := str(m.get("body", "")).split(":")
 			if parts.size() == 2 and parts[0] in AllianceWeather.KINDS:
