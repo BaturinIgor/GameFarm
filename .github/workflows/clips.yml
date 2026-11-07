@@ -81,6 +81,7 @@ jobs:
         run: |
           mkdir -p /tmp/pv
           cp clips/* /tmp/pv/
+          cp rec_*.log /tmp/pv/ 2> /dev/null || true
           for f in clips/*.mp4; do
             ffmpeg -v error -y -i "$f" -vf "fps=2/3,scale=216:-1,tile=13x1" -frames:v 1 "/tmp/pv/$(basename "$f" .mp4)_sheet.png"
           done
