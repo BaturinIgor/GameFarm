@@ -11,6 +11,7 @@ const FRAMES := {
 	"flame": {"crystals": 800, "fill": Color("ff9a4a"), "edge": Color("c0361a")},
 	# Только из набора «Праздник в деревне» (Village.PACK_FRAME)
 	"royal": {"crystals": 0, "pack": true, "fill": Color("b98cff"), "edge": Color("5a2a9a")},
+	"war": {"crystals": 0, "pack": true, "fill": Color("e0503a"), "edge": Color("7a1a10")},
 }
 const ORDER := ["stone", "bronze", "gold", "crystal", "flame"]
 ## Сколько недель летописи показывать.

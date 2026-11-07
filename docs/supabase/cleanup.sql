@@ -10,7 +10,8 @@
 --   забранные визиты зверей в гости старше 120 дней;
 --   визиты деревни альянса старше 30 дней;
 --   забранные лоты ярмарки альянса старше 4 недель;
---   очки турнира зверей старше 8 недель, журнал защит старше 2 недель.
+--   очки турнира зверей старше 8 недель, журнал защит старше 2 недель;
+--   лиги войны альянсов старше 4 недель.
 
 create or replace function public.hh_cleanup() returns void
 language plpgsql security definer set search_path = public as $$
@@ -28,6 +29,10 @@ begin
   -- Визиты зверей в гости (если выполнен alliance_guests.sql)
   if to_regproc('public.al_guests_cleanup') is not null then
     perform al_guests_cleanup();
+  end if;
+  -- Война альянсов (если выполнен alliance_war.sql)
+  if to_regproc('public.war_cleanup') is not null then
+    perform war_cleanup();
   end if;
   -- Деревня альянса (если выполнен alliance_village.sql)
   if to_regproc('public.al_village_cleanup') is not null then

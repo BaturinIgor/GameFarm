@@ -218,5 +218,115 @@
     "3件村莊裝飾、皇家相框和300水晶"
    ]
   ]
+ },
+ {
+  "id": "com.personal.gamefarm.warbanner",
+  "type": "Consumable",
+  "ref": "War Banner",
+  "price": "1.99",
+  "locs": [
+   [
+    "en",
+    "en",
+    "War Banner",
+    "+3 alliance war attacks daily for 1 week + statue frame"
+   ],
+   [
+    "ru",
+    "ru",
+    "Знамя войны",
+    "+3 атаки в войне альянсов в день на неделю и рамка"
+   ],
+   [
+    "de",
+    "de",
+    "Kriegsbanner",
+    "+3 Kriegsangriffe täglich für 1 Woche + Statuenrahmen"
+   ],
+   [
+    "es",
+    "es",
+    "Estandarte de guerra",
+    "+3 ataques de guerra al día por 1 semana y marco"
+   ],
+   [
+    "fr",
+    "fr",
+    "Bannière de guerre",
+    "+3 attaques de guerre par jour 1 semaine + cadre"
+   ],
+   [
+    "it",
+    "it",
+    "Stendardo di guerra",
+    "+3 attacchi di guerra al giorno per 1 settimana"
+   ],
+   [
+    "pt-BR",
+    "pt-BR",
+    "Estandarte de guerra",
+    "+3 ataques de guerra por dia por 1 semana e moldura"
+   ],
+   [
+    "pl",
+    "pl",
+    "Sztandar wojny",
+    "+3 ataki wojenne dziennie przez tydzień i ramka"
+   ],
+   [
+    "tr",
+    "tr",
+    "Savaş Sancağı",
+    "1 hafta her gün +3 savaş saldırısı ve heykel çerçevesi"
+   ],
+   [
+    "id",
+    "id",
+    "Panji Perang",
+    "+3 serangan perang per hari selama 1 minggu + bingkai"
+   ],
+   [
+    "vi",
+    "vi",
+    "Cờ chiến",
+    "+3 lượt tấn công chiến tranh mỗi ngày trong 1 tuần"
+   ],
+   [
+    "th",
+    "th",
+    "ธงสงคราม",
+    "+3 การโจมตีสงครามต่อวัน 1 สัปดาห์ และกรอบรูปปั้น"
+   ],
+   [
+    "hi",
+    "hi",
+    "युद्ध ध्वज",
+    "1 हफ्ते तक हर दिन +3 युद्ध हमले और मूर्ति फ्रेम"
+   ],
+   [
+    "ja",
+    "ja",
+    "戦旗",
+    "1週間 毎日戦争の攻撃+3回、像の枠つき"
+   ],
+   [
+    "ko",
+    "ko",
+    "전쟁 깃발",
+    "1주 동안 매일 전쟁 공격 +3회와 동상 테두리"
+   ],
+   [
+    "zh-Hans",
+    "zh-Hans",
+    "战旗",
+    "1周内每天战争攻击+3次，附雕像框"
+   ],
+   [
+    "zh-Hant",
+    "zh-Hant",
+    "戰旗",
+    "1週內每天戰爭攻擊+3次，附雕像框"
+   ]
+  ]
  }
 ]

@@ -11,6 +11,8 @@ var give_kind := "free"
 var top_kind := "week"
 ## Вкладка участников: список или летопись со статуями.
 var members_kind := "list"
+## Подвкладка событий: boss (страж и задания) или war (карта войны).
+var events_kind := "boss"
 ## Призыв погоды: какую и через сколько секунд.
 var _wx_kind := "rain"
 var _wx_delay := 0
@@ -39,6 +41,9 @@ func _init(start_tab := "") -> void:
 	if start_tab in ["players", "strength"]:
 		tab = "top"
 		top_kind = start_tab
+	if start_tab == "war":
+		tab = "events"
+		events_kind = "war"
 	if start_tab in ["chronicle", "fair", "village"]:
 		tab = "members"
 		members_kind = start_tab
@@ -111,7 +116,7 @@ func build_top() -> void:
 		if not tab in ["main", "events", "chat", "members", "top"]:
 			tab = "main"
 		items = [["main", L.t("alliance.tab.main"), 0, "crown"],
-			["events", L.t("alliance.tab.events"), Game.alliance.events_count(), "swords"],
+			["events", L.t("alliance.tab.events"), Game.alliance.events_count() + Game.war.ready_count(), "swords"],
 			["chat", L.t("alliance.tab.chat"), 0, "scroll"],
 			["members", L.t("alliance.tab.members"), 0, "paw"], ["top", L.t("alliance.tab.top"), 0, "trophy"]]
 	else:
@@ -124,6 +129,8 @@ func build_top() -> void:
 			Game.alliance.poll_chat()
 		elif id == "events":
 			Game.alliance.refresh_events()
+			if events_kind == "war":
+				Game.war.fetch()
 		elif id == "top":
 			_fetch_top()
 		elif id == "members" and members_kind == "chronicle":
@@ -1299,6 +1306,16 @@ func _top() -> void:
 # MARK: События альянса
 
 func _events() -> void:
+	var kinds := [["boss", L.t("alliance.ev.boss")], ["war", L.t("war.title")]]
+	var tabs := UiKit.tabs(kinds, events_kind, func(id: String) -> void:
+		events_kind = id
+		if id == "war":
+			Game.war.fetch()
+		_dirty = true)
+	content.add_child(tabs)
+	if events_kind == "war":
+		_war()
+		return
 	var al := Game.alliance
 	var ev := al.ev
 	if ev.is_empty():
@@ -1382,6 +1399,198 @@ func _events() -> void:
 		from = to + 1
 	if ev.get("last_place") != null and not bool(ev.get("last_claimed", true)):
 		_claim_row(L.t("alliance.ev.placeReward", [int(ev["last_place"])]), "place", 0)
+
+
+# MARK: Война альянсов
+
+func _war() -> void:
+	var w := Game.war
+	if w.error != "":
+		var e := _note(L.t("alliance.err." + w.error.replace(" ", "_")))
+		e.modulate = Color(1, 0.85, 0.8)
+		content.add_child(e)
+	if not w.joined():
+		content.add_child(_note(L.t("alliance.loading")))
+		return
+	var left := float(int(w.state.get("ends", 0)) - int(Time.get_unix_time_from_system()))
+	content.add_child(_small(L.t("war.ends", [EventsPanel.long_countdown(maxf(0.0, left))])))
+	# Награда за прошлую неделю
+	var rw := w.reward()
+	if not rw.is_empty():
+		var rc := card(Color("f6e7b0"))
+		var rr := HBoxContainer.new()
+		rr.add_theme_constant_override("separation", 8)
+		rc.add_child(rr)
+		var rcol := VBoxContainer.new()
+		rcol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		rr.add_child(rcol)
+		var rl := UiKit.label(L.t("war.reward", [int(rw.get("place", 0)), int(rw.get("teams", 0))]), 13)
+		rl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		rcol.add_child(rl)
+		rcol.add_child(_reward_line(War.place_reward(int(rw.get("place", 8)), Game.level)))
+		var cb := UiKit.button(L.t("alliance.ev.claim"), "green", 13, true)
+		cb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		cb.disabled = w.busy
+		cb.pressed.connect(func() -> void: Game.war.claim())
+		rr.add_child(cb)
+		UiKit.attention(cb)
+	# Сводка: место, атаки, буст
+	var head := card()
+	var hr := HBoxContainer.new()
+	hr.add_theme_constant_override("separation", 8)
+	head.add_child(hr)
+	hr.add_child(UiKit.icon("swords", 26))
+	var hl := UiKit.label(L.t("war.place", [w.my_place(), w.teams().size()]), 14)
+	hl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hr.add_child(hl)
+	hr.add_child(UiKit.label(L.t("war.attacks", [w.attacks_left(), int(w.state.get("max", War.ATTACKS))]), 13, UiKit.INK_SOFT))
+	head.add_child(_small(L.t("war.hint")))
+	# Карта
+	var side := minf(340.0, get_viewport_rect().size.x - 50.0)
+	var holder := CenterContainer.new()
+	content.add_child(holder)
+	holder.add_child(WarMap.new(side))
+	_war_node_card()
+	# Казна
+	section_title(L.t("war.chest"))
+	var cc := card()
+	var crow := HBoxContainer.new()
+	crow.add_theme_constant_override("separation", 8)
+	cc.add_child(crow)
+	var ccol := VBoxContainer.new()
+	ccol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	crow.add_child(ccol)
+	ccol.add_child(UiKit.label(L.t("war.boost", [int(round(War.boost(w.chest()) * 100.0)), int(War.BOOST_MAX * 100.0)]), 13))
+	ccol.add_child(UiKit.bar(War.boost(w.chest()) / War.BOOST_MAX, "orange", 170, 12, Fmt.n(w.chest())))
+	ccol.add_child(_small(L.t("war.donatesLeft", [w.donates_left(), War.DONATES_PER_DAY])))
+	var db := UiKit.button(Fmt.n(War.donate_coins(Game.level)), "orange", 13, true)
+	db.icon = UiKit.icon("coin", 16).texture
+	db.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	db.disabled = w.busy or w.donates_left() <= 0
+	db.pressed.connect(func() -> void: Game.war.donate())
+	crow.add_child(db)
+	# Лига
+	section_title(L.t("war.league"))
+	var lc := card()
+	var i := 0
+	for t in w.teams():
+		i += 1
+		var tr := HBoxContainer.new()
+		tr.add_theme_constant_override("separation", 6)
+		lc.add_child(tr)
+		tr.add_child(UiKit.label("#%d" % i, 12, UiKit.INK_SOFT))
+		var dot := ColorRect.new()
+		dot.color = War.COLORS[clampi(int(t.get("slot", 0)), 0, War.COLORS.size() - 1)]
+		dot.custom_minimum_size = Vector2(12, 12)
+		dot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		tr.add_child(dot)
+		var tn := UiKit.label("[%s] %s" % [str(t.get("tag", "")), str(t.get("name", ""))], 13, UiKit.INK if not bool(t.get("me", false)) else UiKit.GOOD)
+		tn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tn.clip_text = true
+		tr.add_child(tn)
+		tr.add_child(UiKit.label(L.t("war.points", [Fmt.n(int(t.get("points", 0))), int(t.get("nodes", 0))]), 12, UiKit.INK_SOFT))
+	var pg := GridContainer.new()
+	pg.columns = 4
+	pg.add_theme_constant_override("h_separation", 10)
+	lc.add_child(_small(L.t("war.rewards")))
+	lc.add_child(pg)
+	for p in [1, 2, 3, 4]:
+		pg.add_child(UiKit.label("#%d%s" % [p, "+" if p == 4 else ""], 12, UiKit.INK_SOFT))
+	for p in [1, 2, 3, 4]:
+		pg.add_child(_reward_line({"crystals": War.place_reward(p, Game.level)["crystals"]}))
+	# Знамя войны
+	if not w.has_pass():
+		var parts := ShopPanel.shop_card(Products.title("warBanner"), "red")
+		var v: VBoxContainer = parts[1]
+		v.add_child(HousePanel.wrapped(L.t("war.passDesc", [War.PASS_ATTACKS]), 12))
+		v.add_child(ShopPanel.buy_button("warBanner", "orange"))
+		content.add_child(parts[0])
+	# Журнал
+	var log: Array = w.state.get("log", [])
+	if not log.is_empty():
+		section_title(L.t("war.log"))
+		var gc := card()
+		for x in log.slice(0, 12):
+			var en: Dictionary = x
+			var lr := HBoxContainer.new()
+			lr.add_theme_constant_override("separation", 6)
+			gc.add_child(lr)
+			var dd := ColorRect.new()
+			dd.color = War.COLORS[clampi(int(en.get("slot", 0)), 0, War.COLORS.size() - 1)]
+			dd.custom_minimum_size = Vector2(8, 8)
+			dd.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			lr.add_child(dd)
+			var ll := _small(L.t("war.act." + str(en.get("act", "win")), [str(en.get("name", "")), _node_name(int(en.get("node", 0)))]))
+			ll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			lr.add_child(ll)
+
+
+static func _node_name(n: int) -> String:
+	if n == 0:
+		return L.t("war.castle")
+	if War.is_base(n):
+		var t := Game.war.team(n)
+		return L.t("war.base", [str(t.get("tag", "?"))])
+	return L.t("war.post", [n - War.TEAMS])
+
+
+## Выбранная точка: владелец, щиты, гарнизон, шанс и кнопка атаки.
+func _war_node_card() -> void:
+	var w := Game.war
+	var n := w.selected
+	var c := card()
+	if n < 0:
+		c.add_child(_small(L.t("war.pick")))
+		return
+	var d := w.node(n)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	c.add_child(row)
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_theme_constant_override("separation", 2)
+	row.add_child(col)
+	col.add_child(UiKit.label(_node_name(n), 15))
+	var owner := int(d["owner"])
+	var ot := w.team(owner)
+	col.add_child(_small(L.t("war.owner", [str(ot.get("name", ""))]) if owner > 0 else L.t("war.neutral")))
+	if War.is_base(n):
+		col.add_child(_small(L.t("war.baseHint")))
+		_war_last(c)
+		return
+	col.add_child(_small(L.t("war.info", [int(d["shields"]), War.max_shields(War.tier(n)), Fmt.n(int(d["garrison"])),
+		War.rate(War.tier(n))])))
+	if w.can_reinforce(n):
+		var rb := UiKit.button(L.t("war.reinforce"), "blue", 13, true)
+		rb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		rb.disabled = w.busy
+		rb.pressed.connect(func() -> void: Game.war.attack(n, true))
+		row.add_child(rb)
+	elif owner != w.my_slot():
+		col.add_child(_small(L.t("war.chance", [int(round(w.chance(n) * 100.0))])))
+		if w.can_attack(n):
+			var ab := UiKit.button(L.t("war.attack"), "red", 14, true)
+			ab.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			ab.disabled = w.busy
+			ab.pressed.connect(func() -> void: Game.war.attack(n))
+			row.add_child(ab)
+			UiKit.attention(ab)
+		elif not bool(d["reach"]):
+			col.add_child(_small(L.t("war.far")))
+		else:
+			col.add_child(_small(L.t("war.noAttacks")))
+	_war_last(c)
+
+
+func _war_last(c: VBoxContainer) -> void:
+	var r := Game.war.last
+	if r.is_empty() or int(r.get("node", -1)) != Game.war.selected:
+		return
+	var key := "war.res.reinforced" if bool(r.get("reinforced", false)) else "war.res.captured" if bool(r.get("captured", false)) \
+		else "war.res.won" if bool(r.get("won", false)) else "war.res.lost"
+	var l := UiKit.label(L.t(key, [Fmt.n(int(r.get("coins", 0)))]), 13, UiKit.GOOD if bool(r.get("won", false)) else UiKit.BAD)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	c.add_child(l)
 
 
 func _task_row(t: Dictionary, i: int) -> void:

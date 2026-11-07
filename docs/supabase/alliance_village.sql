@@ -36,7 +36,7 @@ revoke all on public.alliance_village, public.alliance_village_acts from anon, a
 
 -- Королевская рамка статуи из набора «Праздник в деревне» (как в alliance_chronicle.sql).
 create or replace function public._al_frames() returns text[] language sql immutable as $$
-  select array['stone', 'bronze', 'gold', 'crystal', 'flame', 'royal']
+  select array['stone', 'bronze', 'gold', 'crystal', 'flame', 'royal', 'war']
 $$;
 
 create or replace function public._al_village_kinds() returns text[] language sql immutable as $$

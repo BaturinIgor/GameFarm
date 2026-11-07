@@ -16,6 +16,8 @@ const KEYS := [
 	"tourneyPass",
 	# Праздник в деревне альянса: украшения, королевская рамка, кристаллы
 	"villagePack",
+	# Знамя войны альянсов на неделю: +3 атаки в день, рамка статуи
+	"warBanner",
 ]
 
 ## Идентификаторы магазина (rawValue ProductID).
@@ -51,6 +53,7 @@ const IDS := {
 	"keyChest": "com.personal.gamefarm.keychest",
 	"tourneyPass": "com.personal.gamefarm.tourneypass",
 	"villagePack": "com.personal.gamefarm.villagepack",
+	"warBanner": "com.personal.gamefarm.warbanner",
 }
 
 ## Цена до загрузки из магазина (и в тестовой сборке).
@@ -64,6 +67,7 @@ const PRICES := {
 	"energyPack": "$0.99", "attemptsPack": "$0.99", "keyPack": "$1.99", "keyChest": "$4.99",
 	"tourneyPass": "$1.99",
 	"villagePack": "$2.99",
+	"warBanner": "$1.99",
 }
 
 ## Цвет набора в магазине (Offers.tone).
@@ -77,6 +81,7 @@ const TONES := {
 	"energyPack": "orange", "attemptsPack": "red", "keyPack": "blue", "keyChest": "gold",
 	"tourneyPass": "gold",
 	"villagePack": "purple",
+	"warBanner": "red",
 }
 
 ## Предложение дня: три варианта по очереди, покупается раз в день. value - во сколько кристаллов его оценивать
@@ -147,7 +152,7 @@ static func id(product: String) -> String:
 ## Расходуемая покупка: её можно купить снова (билеты, пропуск, кристаллы, продление MAX).
 static func consumable(product: String) -> bool:
 	var k := key(product)
-	return k == "tickets" or k == "eventPass" or k == "tourneyPass" or k == "max" or k in CRYSTAL_PACKS or k in KEY_PACKS \
+	return k == "tickets" or k == "eventPass" or k == "tourneyPass" or k == "warBanner" or k == "max" or k in CRYSTAL_PACKS or k in KEY_PACKS \
 		or k in ["flash", "energyPack", "attemptsPack"]
 
 

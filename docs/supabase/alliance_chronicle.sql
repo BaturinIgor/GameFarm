@@ -34,7 +34,7 @@ revoke all on public.alliance_chronicle from anon, authenticated;
 
 -- Рамки статуй (как Chronicle.FRAMES в игре).
 create or replace function public._al_frames() returns text[] language sql immutable as $$
-  select array['stone', 'bronze', 'gold', 'crystal', 'flame', 'royal']
+  select array['stone', 'bronze', 'gold', 'crystal', 'flame', 'royal', 'war']
 $$;
 
 -- Страница летописи за неделю p_week. Пустую неделю (никто ничего не делал) не пишем.

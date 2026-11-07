@@ -259,6 +259,8 @@ func owned_frames() -> Array:
 	var list: Array = ["stone"] + Game.save.get("statueFrames", []).filter(func(f: Variant) -> bool: return Chronicle.valid(str(f)))
 	if Game.premium.owns("villagePack") and not Village.PACK_FRAME in list:
 		list.append(Village.PACK_FRAME)
+	if bool(Game.save.get("warBanner", false)) and not War.PASS_FRAME in list:
+		list.append(War.PASS_FRAME)
 	return list
 
 
@@ -1366,6 +1368,10 @@ static func system_text(m: Dictionary) -> String:
 			var vb := str(m.get("body", "")).split(":")
 			if vb.size() == 2 and vb[0] in Village.BUILDINGS:
 				return L.t("alliance.sys.village", [str(m.get("name", "")), L.t("village.b." + vb[0]), int(vb[1])])
+		"war":
+			var wb := str(m.get("body", ""))
+			if wb in ["join", "castle", "lost"]:
+				return L.t("alliance.sys.war." + wb, [str(m.get("name", ""))])
 		"weather":
 			var parts := str(m.get("body", "")).split(":")
 			if parts.size() == 2 and parts[0] in AllianceWeather.KINDS:

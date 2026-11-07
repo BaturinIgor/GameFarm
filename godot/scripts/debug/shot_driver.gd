@@ -8,7 +8,7 @@ const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", 
 	"dungeon", "trophies", "collection", "collection:zoo", "collection:trophies", "legacy", "wardrobe", "map", "map:ember", "map:azure", "events", "shop",
 	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story", "wild", "talents:estate",
 	"story", "story:altar", "collection:diary", "alliance:find", "alliance:create", "alliance:main", "alliance:events", "alliance:chat",
-	"alliance:members", "alliance:top", "alliance:players", "alliance:chronicle", "alliance:fair", "alliance:village"]
+	"alliance:members", "alliance:top", "alliance:players", "alliance:chronicle", "alliance:fair", "alliance:village", "alliance:war"]
 
 var dir := "/tmp/shots"
 var main: Node
@@ -20,6 +20,8 @@ var _shot_done := ""
 var _sub := 0
 var _mine: MineGame
 var _lang := ""
+## Только эти окна ("-- --only alliance:war,shop"): сразу к снимкам окон, без прогулки и остальных шагов.
+var _only: Array = []
 
 
 func _ready() -> void:
@@ -29,6 +31,9 @@ func _ready() -> void:
 		dir = args[i + 1]
 	DirAccess.make_dir_recursive_absolute(dir)
 	# Снимки для App Store на нужном языке: "-- --shots <папка> --lang en"
+	var oi := args.find("--only")
+	if oi >= 0 and oi + 1 < args.size():
+		_only = Array(args[oi + 1].split(","))
 	var li := args.find("--lang")
 	if li >= 0 and li + 1 < args.size():
 		L.set_language(args[li + 1], false)
@@ -59,6 +64,9 @@ func _process(delta: float) -> void:
 						break
 				_touch(ORIGIN, true)
 				_step = 1
+				if not _only.is_empty():
+					_step = 4
+					_time = 200.0
 		1:
 			var target := _nearest(world)
 			if target != null:
@@ -144,12 +152,17 @@ func _process(delta: float) -> void:
 				_time = 200.0
 		4:
 			var t := int(_time - 200.0)
-			if t < WINDOWS.size() * 2:
-				var w: String = WINDOWS[t / 2]
+			var windows: Array = WINDOWS if _only.is_empty() else _only
+			if t < windows.size() * 2:
+				var w: String = windows[t / 2]
 				if t % 2 == 0 and _opened != w:
 					_opened = w
 					# Окна с покупками за деньги (наборы, пропуск, кристаллы) тоже должны пройти проверку
 					Store.LIVE = true
+					# Заставки (доход без игры и т.п.) закрывают окно на снимке - убираем
+					for _i in 6:
+						if not main.hud.is_blocking() or not main.hud.back():
+							break
 					if w.begins_with("alliance"):
 						_alliance_demo(w)
 					if ":" in w:
@@ -167,6 +180,9 @@ func _process(delta: float) -> void:
 				main.hud.close_window()
 				Store.LIVE = Engine.has_singleton("InAppStore")
 				_alliance_demo("")
+				if not _only.is_empty():
+					get_tree().quit()
+					return
 				_step = 41
 				_time = 260.0
 				_sub = 0
@@ -819,6 +835,10 @@ func _alliance_demo(w: String) -> void:
 		al.weather = {}
 		al.guests = {}
 		al.mentor = {}
+		Game.war.demo = false
+		Game.war.state = {}
+		Game.war.selected = -1
+		Game.war.last = {}
 		Game.save["alliance"] = {}
 		Game.recalc()
 		return
@@ -911,6 +931,7 @@ func _alliance_demo(w: String) -> void:
 			"houses": [{"id": "me", "name": Game.rating.player_name(), "level": 20, "deco": ["fountain", "lantern"], "me": true},
 				{"id": "a", "name": "Masha", "level": 31, "deco": ["goldStatue", "flowers", "fence"], "me": false, "watered": true, "gifted": false},
 				{"id": "b", "name": "Kenji", "level": 18, "deco": [], "me": false, "watered": false, "gifted": true}]}
+		_war_demo()
 		Game.save["houseDeco"] = ["fountain", "lantern"]
 		Game.save["houseDecoOn"] = ["fountain", "lantern"]
 		al.mentor = {"mentor": null, "apprentices": [
@@ -927,3 +948,32 @@ func _alliance_demo(w: String) -> void:
 			{"place": 57, "name": Game.rating.player_name(), "level": 20, "power": Power.total(), "tag": "GV", "me": true},
 		]
 	Game.recalc()
+
+
+## Война альянсов без сервера: лига из пяти альянсов, часть точек занята.
+func _war_demo() -> void:
+	var w := Game.war
+	w.demo = true
+	var owners := {9: 1, 17: 1, 24: 1, 25: 1, 10: 2, 18: 2, 11: 3, 12: 3, 19: 3, 27: 3, 13: 4, 33: 3, 0: 3}
+	var nodes: Array = []
+	for n in War.NODES.size():
+		if War.is_base(n):
+			continue
+		var o := int(owners.get(n, 0))
+		var reach := false
+		for m in War.neighbors(n):
+			if m == 1 or int(owners.get(m, 0)) == 1:
+				reach = true
+		nodes.append([n, o, 1 if o > 0 else (4 if n == 0 else 1 if War.tier(n) == 1 else 2), 2400 if o > 0 else 900, reach and o != 1])
+	w.state = {"league": 1, "slot": 1, "ends": int(Time.get_unix_time_from_system()) + 3 * 86400 + 5 * 3600,
+		"teams": [
+			{"slot": 3, "name": "Iron Oaks", "tag": "IO", "points": 2410, "nodes": 6, "me": false},
+			{"slot": 1, "name": "Green Valley", "tag": "GV", "points": 1630, "nodes": 4, "me": true},
+			{"slot": 2, "name": "Sunny Hills", "tag": "SH", "points": 820, "nodes": 2, "me": false},
+			{"slot": 4, "name": "Moon Farm", "tag": "MF", "points": 410, "nodes": 1, "me": false},
+			{"slot": 5, "name": "Old Mill", "tag": "OM", "points": 0, "nodes": 0, "me": false}],
+		"nodes": nodes, "chest": 1200000, "used": 2, "max": 5, "pass": false, "donates": 1, "wins": 3, "power": 3200,
+		"reward": {"week": 1, "place": 2, "teams": 6},
+		"log": [{"node": 25, "name": "Masha", "act": "capture", "slot": 1}, {"node": 0, "name": "Brom", "act": "capture", "slot": 3},
+			{"node": 10, "name": "Kenji", "act": "lose", "slot": 1}, {"node": 24, "name": "Masha", "act": "reinforce", "slot": 1}]}
+	w.selected = 26
