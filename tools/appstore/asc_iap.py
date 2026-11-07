@@ -278,7 +278,12 @@ def main():
     if not key or not os.path.exists(key):
         sys.exit(f"Не нашёл файл AuthKey_{a.key_id}.p8. Укажи путь: --key /путь/к/AuthKey_{a.key_id}.p8")
     TOKEN = Token(a.issuer, a.key_id, key)
-    products = json.load(open(a.data))
+    data = a.data
+    if not os.path.exists(data) and os.path.exists(os.path.join(HERE, data)):
+        data = os.path.join(HERE, data)
+    if not os.path.exists(data):
+        sys.exit(f"Не нашёл файл {a.data}. Положи его рядом с asc_iap.py или укажи полный путь в --data")
+    products = json.load(open(data))
     if a.only:
         products = [p for p in products if p["id"].endswith(a.only)]
 
