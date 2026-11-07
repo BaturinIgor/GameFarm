@@ -1,0 +1,22 @@
+Godot Engine v4.5.1.stable.official.f62fdbde1 - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:364)
+OpenGL API 4.5 (Core Profile) Mesa 26.0.8-1ubuntu0.3 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 21.1.8, 256 bits)
+
+Movie Maker mode enabled, recording movie at 30 FPS...
+clip: volcano lang=en
+sfx 0.59 whoosh
+sfx 1.86 footstepStone
+sfx 2.26 footstepStone
+clip done: volcano
+--------------------------------------------------------------------------------
+Done recording movie at path: /home/runner/work/GameFarm/GameFarm/raw/volcano_en.avi
+587 frames at 30 FPS (movie length: 00:00:19:17), recorded in 00:00:39 (48% of real-time speed).
+CPU render time: 13.55 seconds (average: 23.08 ms/frame)
+GPU render time: 17.29 seconds (average: 29.45 ms/frame)
+Encoding time: 12.64 seconds (average: 21.53 ms/frame)
+--------------------------------------------------------------------------------
+WARNING: 1 RID of type "Canvas" was leaked.
+     at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2676)
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2514)

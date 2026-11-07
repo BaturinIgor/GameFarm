@@ -1,0 +1,92 @@
+Godot Engine v4.5.1.stable.official.f62fdbde1 - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:364)
+OpenGL API 4.5 (Core Profile) Mesa 26.0.8-1ubuntu0.3 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 21.1.8, 256 bits)
+
+Movie Maker mode enabled, recording movie at 30 FPS...
+clip: swamp lang=ru
+sfx 0.59 whoosh
+sfx 1.86 footstepSand
+sfx 2.26 footstepSand
+sfx 2.63 footstepSand
+sfx 2.99 footstepSand
+sfx 3.36 footstepSand
+sfx 3.72 footstepSand
+sfx 4.09 footstepSand
+sfx 4.29 pick
+sfx 4.46 footstepSand
+sfx 4.49 pickup
+sfx 4.82 pickup
+sfx 4.86 pick
+sfx 4.99 footstepGrass
+sfx 5.29 pickup
+sfx 5.42 pick
+sfx 5.59 footstepGrass
+sfx 5.62 pickup
+sfx 5.76 pickup
+sfx 5.99 pick
+sfx 6.32 footstepGrass
+sfx 6.56 pick
+sfx 6.62 pickup
+sfx 6.76 footstepGrass
+sfx 7.12 footstepGrass
+sfx 7.16 pickup
+sfx 7.49 footstepGrass
+sfx 7.86 footstepGrass
+sfx 7.89 mine
+sfx 7.89 rockBreak
+sfx 8.26 footstepGrass
+sfx 8.46 mine
+sfx 8.46 rockBreak
+sfx 8.49 pickup
+sfx 8.66 footstepGrass
+sfx 8.66 pickup
+sfx 8.79 pickup
+sfx 8.96 pickup
+sfx 9.06 footstepGrass
+sfx 9.16 mine
+sfx 9.16 rockBreak
+sfx 9.46 footstepGrass
+sfx 9.56 pickup
+sfx 9.72 splash
+sfx 9.86 footstepGrass
+sfx 10.06 pickup
+sfx 10.19 pickup
+sfx 10.76 footstepGrass
+sfx 13.36 footstepGrass
+sfx 14.99 footstepGrass
+sfx 15.49 footstepGrass
+sfx 15.86 footstepGrass
+sfx 16.22 footstepGrass
+sfx 16.46 wildAppear
+sfx 16.49 pick
+sfx 16.59 footstepGrass
+sfx 16.96 footstepGrass
+sfx 16.99 pickup
+sfx 17.06 pick
+sfx 17.09 pickup
+sfx 17.29 pickup
+sfx 17.39 pickup
+sfx 17.63 pick
+sfx 17.69 footstepGrass
+sfx 18.06 pickup
+sfx 18.19 pick
+sfx 18.46 footstepGrass
+sfx 18.76 pick
+sfx 18.76 pickup
+sfx 18.86 footstepGrass
+sfx 19.19 pickup
+sfx 19.26 footstepGrass
+sfx 19.29 pickup
+clip done: swamp
+--------------------------------------------------------------------------------
+Done recording movie at path: /home/runner/work/GameFarm/GameFarm/raw/swamp_ru.avi
+587 frames at 30 FPS (movie length: 00:00:19:17), recorded in 00:00:40 (47% of real-time speed).
+CPU render time: 14.44 seconds (average: 24.60 ms/frame)
+GPU render time: 18.31 seconds (average: 31.19 ms/frame)
+Encoding time: 13.21 seconds (average: 22.50 ms/frame)
+--------------------------------------------------------------------------------
+WARNING: 1 RID of type "Canvas" was leaked.
+     at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2676)
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2514)

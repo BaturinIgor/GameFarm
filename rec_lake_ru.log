@@ -1,0 +1,117 @@
+Godot Engine v4.5.1.stable.official.f62fdbde1 - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:364)
+OpenGL API 4.5 (Core Profile) Mesa 26.0.8-1ubuntu0.3 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 21.1.8, 256 bits)
+
+Movie Maker mode enabled, recording movie at 30 FPS...
+clip: lake lang=ru
+sfx 0.59 whoosh
+sfx 1.86 footstepSand
+sfx 2.26 footstepSand
+sfx 2.63 footstepSand
+sfx 2.99 footstepSand
+sfx 3.09 pick
+sfx 3.36 footstepGrass
+sfx 3.39 pickup
+sfx 3.66 pick
+sfx 3.79 footstepGrass
+sfx 4.09 pickup
+sfx 4.22 pick
+sfx 4.46 footstepGrass
+sfx 4.72 pickup
+sfx 4.79 pick
+sfx 5.02 footstepGrass
+sfx 5.22 pickup
+sfx 5.36 pick
+sfx 5.72 footstepGrass
+sfx 5.72 pickup
+sfx 6.09 footstepGrass
+sfx 6.46 footstepGrass
+sfx 6.82 footstepGrass
+sfx 6.89 mine
+sfx 6.89 rockBreak
+sfx 7.09 pickup
+sfx 7.19 footstepGrass
+sfx 7.19 pickup
+sfx 7.39 pickup
+sfx 7.46 mine
+sfx 7.46 rockBreak
+sfx 7.69 footstepGrass
+sfx 7.99 pickup
+sfx 8.02 mine
+sfx 8.02 rockBreak
+sfx 8.12 footstepGrass
+sfx 8.29 pickup
+sfx 8.52 footstepGrass
+sfx 8.59 pickup
+sfx 8.89 footstepGrass
+sfx 9.16 mine
+sfx 9.16 rockBreak
+sfx 9.26 footstepGrass
+sfx 9.36 pickup
+sfx 9.46 pickup
+sfx 9.62 footstepGrass
+sfx 9.72 mine
+sfx 9.72 rockBreak
+sfx 9.99 footstepGrass
+sfx 10.16 pickup
+sfx 10.29 mine
+sfx 10.29 rockBreak
+sfx 10.62 footstepGrass
+sfx 10.89 pickup
+sfx 10.99 footstepGrass
+sfx 11.39 footstepGrass
+sfx 11.76 footstepGrass
+sfx 12.12 footstepSand
+sfx 12.49 footstepGrass
+sfx 12.82 pick
+sfx 12.89 footstepGrass
+sfx 13.02 pickup
+sfx 13.26 footstepGrass
+sfx 13.39 pick
+sfx 13.72 pickup
+sfx 13.96 pick
+sfx 14.22 footstepGrass
+sfx 14.52 pick
+sfx 14.56 pickup
+sfx 14.66 footstepGrass
+sfx 14.72 pickup
+sfx 14.86 pickup
+sfx 15.09 pick
+sfx 15.42 footstepGrass
+sfx 15.66 pickup
+sfx 15.79 footstepGrass
+sfx 16.16 footstepSand
+sfx 16.52 footstepGrass
+sfx 16.89 footstepGrass
+sfx 16.93 pick
+sfx 17.26 footstepGrass
+sfx 17.36 pickup
+sfx 17.49 pick
+sfx 17.63 pickup
+sfx 17.66 footstepGrass
+sfx 17.93 pickup
+sfx 18.06 pick
+sfx 18.09 footstepGrass
+sfx 18.29 pickup
+sfx 18.49 footstepGrass
+sfx 18.53 pickup
+sfx 18.63 pick
+sfx 18.69 pickup
+sfx 18.89 footstepGrass
+sfx 19.19 pick
+sfx 19.26 pickup
+sfx 19.39 pickup
+sfx 19.43 footstepGrass
+clip done: lake
+--------------------------------------------------------------------------------
+Done recording movie at path: /home/runner/work/GameFarm/GameFarm/raw/lake_ru.avi
+587 frames at 30 FPS (movie length: 00:00:19:17), recorded in 00:00:36 (52% of real-time speed).
+CPU render time: 9.86 seconds (average: 16.80 ms/frame)
+GPU render time: 13.62 seconds (average: 23.20 ms/frame)
+Encoding time: 13.02 seconds (average: 22.18 ms/frame)
+--------------------------------------------------------------------------------
+WARNING: 1 RID of type "Canvas" was leaked.
+     at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2676)
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2514)

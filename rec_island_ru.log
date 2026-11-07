@@ -1,0 +1,114 @@
+Godot Engine v4.5.1.stable.official.f62fdbde1 - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:364)
+OpenGL API 4.5 (Core Profile) Mesa 26.0.8-1ubuntu0.3 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 21.1.8, 256 bits)
+
+Movie Maker mode enabled, recording movie at 30 FPS...
+clip: island lang=ru
+sfx 0.59 whoosh
+sfx 1.86 footstepSand
+sfx 2.26 footstepSand
+sfx 2.63 footstepSand
+sfx 2.99 footstepSand
+sfx 3.36 footstepSand
+sfx 3.46 chop
+sfx 3.46 treeFall
+sfx 3.72 footstepSand
+sfx 4.02 chop
+sfx 4.02 treeFall
+sfx 4.09 footstepSand
+sfx 4.09 pickup
+sfx 4.22 pickup
+sfx 4.32 pickup
+sfx 4.42 pickup
+sfx 4.46 footstepSand
+sfx 4.56 pickup
+sfx 4.59 chop
+sfx 4.59 treeFall
+sfx 4.89 pickup
+sfx 4.96 footstepSand
+sfx 4.99 pickup
+sfx 5.09 pickup
+sfx 5.19 pickup
+sfx 5.32 footstepSand
+sfx 5.36 pickup
+sfx 5.69 footstepSand
+sfx 5.69 pick
+sfx 5.99 pickup
+sfx 6.09 pickup
+sfx 6.19 pickup
+sfx 6.26 pick
+sfx 6.32 footstepSand
+sfx 6.72 footstepSand
+sfx 6.79 pickup
+sfx 6.82 pick
+sfx 7.02 pickup
+sfx 7.36 pickup
+sfx 7.39 pick
+sfx 7.46 footstepSand
+sfx 7.76 pickup
+sfx 7.86 pickup
+sfx 7.96 pick
+sfx 8.16 footstepSand
+sfx 8.46 pickup
+sfx 8.52 pick
+sfx 8.69 footstepSand
+sfx 9.06 footstepSand
+sfx 9.16 pickup
+sfx 9.42 footstepSand
+sfx 9.42 pick
+sfx 9.76 pickup
+sfx 9.79 footstepSand
+sfx 10.06 mine
+sfx 10.16 footstepSand
+sfx 10.62 mine
+sfx 10.62 rockBreak
+sfx 10.92 footstepSand
+sfx 11.19 mine
+sfx 11.19 pickup
+sfx 11.76 mine
+sfx 11.76 rockBreak
+sfx 12.06 footstepSand
+sfx 12.06 pickup
+sfx 12.32 mine
+sfx 12.32 crit
+sfx 12.32 rockBreak
+sfx 12.69 footstepSand
+sfx 12.92 pickup
+sfx 13.06 footstepSand
+sfx 13.42 footstepSand
+sfx 13.79 footstepSand
+sfx 13.92 splash
+sfx 14.22 footstepSand
+sfx 14.22 pickup
+sfx 14.32 pickup
+sfx 14.82 footstepSand
+sfx 14.82 splash
+sfx 15.16 pickup
+sfx 15.29 pickup
+sfx 15.39 footstepSand
+sfx 15.89 footstepSand
+sfx 16.46 footstepSand
+sfx 16.82 footstepSand
+sfx 17.19 footstepSand
+sfx 17.36 pick
+sfx 17.93 pick
+sfx 17.99 footstepSand
+sfx 18.26 pickup
+sfx 18.39 footstepSand
+sfx 18.49 pick
+sfx 19.06 pick
+sfx 19.33 pickup
+sfx 19.46 footstepSand
+clip done: island
+--------------------------------------------------------------------------------
+Done recording movie at path: /home/runner/work/GameFarm/GameFarm/raw/island_ru.avi
+587 frames at 30 FPS (movie length: 00:00:19:17), recorded in 00:00:37 (51% of real-time speed).
+CPU render time: 12.05 seconds (average: 20.53 ms/frame)
+GPU render time: 15.84 seconds (average: 26.99 ms/frame)
+Encoding time: 12.41 seconds (average: 21.14 ms/frame)
+--------------------------------------------------------------------------------
+WARNING: 1 RID of type "Canvas" was leaked.
+     at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2676)
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2514)

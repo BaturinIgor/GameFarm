@@ -1,0 +1,149 @@
+Godot Engine v4.5.1.stable.official.f62fdbde1 - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:364)
+OpenGL API 4.5 (Core Profile) Mesa 26.0.8-1ubuntu0.3 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 21.1.8, 256 bits)
+
+Movie Maker mode enabled, recording movie at 30 FPS...
+clip: desert lang=en
+sfx 0.59 whoosh
+sfx 1.86 footstepSand
+sfx 2.26 footstepSand
+sfx 2.63 footstepSand
+sfx 2.99 footstepSand
+sfx 3.06 mine
+sfx 3.06 rockBreak
+sfx 3.26 pickup
+sfx 3.36 footstepSand
+sfx 3.36 pickup
+sfx 3.62 mine
+sfx 3.62 rockBreak
+sfx 3.62 pickup
+sfx 3.72 footstepSand
+sfx 3.82 pickup
+sfx 4.09 footstepSand
+sfx 4.19 mine
+sfx 4.19 crit
+sfx 4.19 rockBreak
+sfx 4.56 footstepSand
+sfx 4.62 pickup
+sfx 4.72 pickup
+sfx 4.92 footstepSand
+sfx 5.06 mine
+sfx 5.06 rockBreak
+sfx 5.39 footstepSand
+sfx 5.69 pickup
+sfx 5.76 footstepSand
+sfx 5.82 pickup
+sfx 6.12 footstepSand
+sfx 6.49 footstepSand
+sfx 6.86 footstepSand
+sfx 6.92 mine
+sfx 6.92 rockBreak
+sfx 7.22 footstepSand
+sfx 7.42 pickup
+sfx 7.49 mine
+sfx 7.49 rockBreak
+sfx 7.56 pickup
+sfx 7.62 footstepSand
+sfx 7.72 pickup
+sfx 7.92 pickup
+sfx 7.99 footstepSand
+sfx 8.02 pickup
+sfx 8.16 mine
+sfx 8.16 rockBreak
+sfx 8.39 footstepSand
+sfx 8.76 footstepSand
+sfx 8.82 pickup
+sfx 9.12 footstepSand
+sfx 9.49 footstepSand
+sfx 9.86 footstepSand
+sfx 10.06 mine
+sfx 10.06 rockBreak
+sfx 10.26 footstepSand
+sfx 10.39 pickup
+sfx 10.56 pickup
+sfx 10.62 footstepSand
+sfx 10.66 pickup
+sfx 10.79 mine
+sfx 10.79 rockBreak
+sfx 10.99 footstepSand
+sfx 11.22 pickup
+sfx 11.36 footstepSand
+sfx 11.46 pickup
+sfx 11.72 footstepSand
+sfx 12.09 footstepSand
+sfx 12.46 footstepSand
+sfx 12.82 footstepSand
+sfx 12.89 mine
+sfx 12.89 rockBreak
+sfx 13.19 footstepSand
+sfx 13.46 mine
+sfx 13.46 rockBreak
+sfx 13.56 footstepSand
+sfx 13.62 pickup
+sfx 13.72 pickup
+sfx 13.82 pickup
+sfx 13.96 pickup
+sfx 14.02 mine
+sfx 14.02 rockBreak
+sfx 14.19 footstepSand
+sfx 14.49 pickup
+sfx 14.59 mine
+sfx 14.59 rockBreak
+sfx 14.72 footstepSand
+sfx 14.79 pickup
+sfx 14.96 pickup
+sfx 15.09 footstepSand
+sfx 15.46 footstepSand
+sfx 15.76 chop
+sfx 15.76 treeFall
+sfx 15.82 footstepSand
+sfx 16.16 pickup
+sfx 16.19 footstepSand
+sfx 16.32 chop
+sfx 16.32 treeFall
+sfx 16.39 pickup
+sfx 16.52 wildAppear
+sfx 16.66 footstepSand
+sfx 16.69 pickup
+sfx 16.82 pickup
+sfx 17.03 footstepSand
+sfx 17.09 chop
+sfx 17.09 treeFall
+sfx 17.39 footstepSand
+sfx 17.43 pickup
+sfx 17.53 pickup
+sfx 17.66 chop
+sfx 17.66 treeFall
+sfx 17.73 pickup
+sfx 17.76 footstepSand
+sfx 18.13 footstepSand
+sfx 18.16 pickup
+sfx 18.23 chop
+sfx 18.23 treeFall
+sfx 18.59 footstepSand
+sfx 18.63 pickup
+sfx 18.79 chop
+sfx 18.79 treeFall
+sfx 18.79 pickup
+sfx 19.03 footstepSand
+sfx 19.16 pickup
+sfx 19.29 pickup
+sfx 19.39 chop
+sfx 19.39 treeFall
+sfx 19.43 footstepSand
+sfx 19.43 pickup
+clip done: desert
+--------------------------------------------------------------------------------
+Done recording movie at path: /home/runner/work/GameFarm/GameFarm/raw/desert_en.avi
+587 frames at 30 FPS (movie length: 00:00:19:17), recorded in 00:00:38 (50% of real-time speed).
+CPU render time: 12.52 seconds (average: 21.34 ms/frame)
+GPU render time: 16.29 seconds (average: 27.74 ms/frame)
+Encoding time: 12.80 seconds (average: 21.81 ms/frame)
+--------------------------------------------------------------------------------
+WARNING: 1 RID of type "Canvas" was leaked.
+     at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2676)
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2514)
+ERROR: 8 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:795)

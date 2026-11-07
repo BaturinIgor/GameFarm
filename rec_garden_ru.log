@@ -1,0 +1,120 @@
+Godot Engine v4.5.1.stable.official.f62fdbde1 - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:364)
+OpenGL API 4.5 (Core Profile) Mesa 26.0.8-1ubuntu0.3 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 21.1.8, 256 bits)
+
+Movie Maker mode enabled, recording movie at 30 FPS...
+clip: garden lang=ru
+sfx 0.59 whoosh
+sfx 1.86 footstepStone
+sfx 2.26 footstepStone
+sfx 2.53 pick
+sfx 2.63 footstepStone
+sfx 3.06 pickup
+sfx 3.09 pick
+sfx 3.09 crit
+sfx 3.12 footstepStone
+sfx 3.36 pickup
+sfx 3.52 footstepStone
+sfx 3.62 pickup
+sfx 3.66 pick
+sfx 4.12 pickup
+sfx 4.22 pick
+sfx 4.29 footstepStone
+sfx 4.69 footstepStone
+sfx 4.72 pickup
+sfx 4.79 pick
+sfx 5.09 footstepStone
+sfx 5.26 pickup
+sfx 5.36 pick
+sfx 5.72 footstepStone
+sfx 5.79 pickup
+sfx 5.89 pickup
+sfx 5.92 pick
+sfx 6.09 footstepStone
+sfx 6.49 pick
+sfx 6.49 pickup
+sfx 6.66 footstepStone
+sfx 6.76 pickup
+sfx 7.06 pick
+sfx 7.06 pickup
+sfx 7.09 footstepStone
+sfx 7.62 pick
+sfx 7.62 pickup
+sfx 7.79 footstepStone
+sfx 8.19 footstepStone
+sfx 8.29 pickup
+sfx 8.56 footstepStone
+sfx 8.92 footstepStone
+sfx 9.29 footstepStone
+sfx 9.72 footstepStone
+sfx 10.06 pick
+sfx 10.56 pickup
+sfx 10.62 pick
+sfx 10.69 footstepStone
+sfx 10.92 pickup
+sfx 11.06 pickup
+sfx 11.19 pick
+sfx 11.19 crit
+sfx 11.49 footstepStone
+sfx 11.62 pickup
+sfx 11.76 pick
+sfx 12.19 footstepStone
+sfx 12.29 pickup
+sfx 12.32 pick
+sfx 12.62 footstepStone
+sfx 12.72 pickup
+sfx 12.86 pickup
+sfx 12.89 pick
+sfx 13.22 footstepStone
+sfx 13.42 pickup
+sfx 13.52 pickup
+sfx 13.59 footstepStone
+sfx 13.96 footstepStone
+sfx 14.32 footstepStone
+sfx 14.62 pick
+sfx 14.69 footstepStone
+sfx 14.82 pickup
+sfx 15.06 footstepStone
+sfx 15.16 pickup
+sfx 15.19 pick
+sfx 15.52 footstepStone
+sfx 15.69 pickup
+sfx 15.76 pick
+sfx 15.79 pickup
+sfx 15.92 footstepStone
+sfx 16.22 pickup
+sfx 16.29 footstepStone
+sfx 16.32 pick
+sfx 16.32 pickup
+sfx 16.42 pickup
+sfx 16.69 footstepStone
+sfx 16.89 pick
+sfx 16.93 pickup
+sfx 17.03 pickup
+sfx 17.09 footstepStone
+sfx 17.33 pickup
+sfx 17.46 pick
+sfx 17.46 pickup
+sfx 17.73 footstepStone
+sfx 17.96 pickup
+sfx 18.03 pick
+sfx 18.09 pickup
+sfx 18.19 footstepStone
+sfx 18.53 pickup
+sfx 18.56 footstepStone
+sfx 18.69 pickup
+sfx 18.93 footstepStone
+sfx 19.29 footstepStone
+clip done: garden
+--------------------------------------------------------------------------------
+Done recording movie at path: /home/runner/work/GameFarm/GameFarm/raw/garden_ru.avi
+587 frames at 30 FPS (movie length: 00:00:19:17), recorded in 00:00:37 (51% of real-time speed).
+CPU render time: 11.53 seconds (average: 19.65 ms/frame)
+GPU render time: 15.34 seconds (average: 26.14 ms/frame)
+Encoding time: 13.28 seconds (average: 22.62 ms/frame)
+--------------------------------------------------------------------------------
+WARNING: 1 RID of type "Canvas" was leaked.
+     at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2676)
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2514)

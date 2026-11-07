@@ -1,0 +1,41 @@
+Godot Engine v4.5.1.stable.official.f62fdbde1 - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:364)
+OpenGL API 4.5 (Core Profile) Mesa 26.0.8-1ubuntu0.3 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 21.1.8, 256 bits)
+
+Movie Maker mode enabled, recording movie at 30 FPS...
+clip: mine lang=ru
+sfx 2.06 pick
+sfx 2.06 luck
+sfx 3.16 mine
+sfx 3.16 luck
+sfx 3.16 rockBreak
+sfx 4.49 mine
+sfx 4.49 luck
+sfx 4.49 rockBreak
+sfx 5.79 mine
+sfx 5.79 luck
+sfx 7.09 pick
+sfx 8.39 pick
+sfx 9.69 pick
+sfx 10.99 pick
+sfx 12.29 pick
+sfx 12.29 luck
+sfx 13.59 pick
+sfx 14.89 pick
+sfx 16.19 pick
+sfx 17.49 pick
+sfx 18.76 pick
+sfx 20.06 pick
+sfx 21.36 pick
+sfx 22.66 mine
+sfx 22.66 luck
+sfx 23.96 pick
+clip done: mine
+--------------------------------------------------------------------------------
+Done recording movie at path: /home/runner/work/GameFarm/GameFarm/raw/mine_ru.avi
+798 frames at 30 FPS (movie length: 00:00:26:18), recorded in 00:01:21 (32% of real-time speed).
+CPU render time: 22.21 seconds (average: 27.83 ms/frame)
+GPU render time: 51.63 seconds (average: 64.70 ms/frame)
+Encoding time: 17.16 seconds (average: 21.50 ms/frame)
+--------------------------------------------------------------------------------

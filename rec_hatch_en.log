@@ -1,0 +1,21 @@
+Godot Engine v4.5.1.stable.official.f62fdbde1 - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:364)
+OpenGL API 4.5 (Core Profile) Mesa 26.0.8-1ubuntu0.3 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 21.1.8, 256 bits)
+
+Movie Maker mode enabled, recording movie at 30 FPS...
+clip: hatch lang=en
+sfx 0.59 open
+sfx 4.82 tap
+sfx 5.36 tap
+sfx 5.89 tap
+sfx 6.42 unlock
+sfx 6.96 levelUp
+clip done: hatch
+--------------------------------------------------------------------------------
+Done recording movie at path: /home/runner/work/GameFarm/GameFarm/raw/hatch_en.avi
+453 frames at 30 FPS (movie length: 00:00:15:03), recorded in 00:00:49 (30% of real-time speed).
+CPU render time: 9.69 seconds (average: 21.38 ms/frame)
+GPU render time: 32.23 seconds (average: 71.16 ms/frame)
+Encoding time: 9.26 seconds (average: 20.43 ms/frame)
+--------------------------------------------------------------------------------

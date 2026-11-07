@@ -1,0 +1,41 @@
+Godot Engine v4.5.1.stable.official.f62fdbde1 - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:364)
+OpenGL API 4.5 (Core Profile) Mesa 26.0.8-1ubuntu0.3 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 21.1.8, 256 bits)
+
+Movie Maker mode enabled, recording movie at 30 FPS...
+clip: chests lang=en
+sfx 0.62 open
+sfx 2.23 tap
+sfx 2.69 tap
+sfx 3.12 tap
+sfx 3.59 tap
+sfx 4.06 unlock
+sfx 4.52 pickup
+sfx 4.72 pickup
+sfx 4.96 pickup
+sfx 5.16 pickup
+sfx 5.39 pickup
+sfx 5.62 pickup
+sfx 5.82 pickup
+sfx 6.06 pickup
+sfx 6.26 pickup
+sfx 6.49 pickup
+sfx 10.76 tap
+sfx 11.22 tap
+sfx 11.66 tap
+sfx 12.12 tap
+sfx 12.59 unlock
+sfx 13.06 pickup
+clip done: chests
+--------------------------------------------------------------------------------
+Done recording movie at path: /home/runner/work/GameFarm/GameFarm/raw/chests_en.avi
+527 frames at 30 FPS (movie length: 00:00:17:17), recorded in 00:01:00 (28% of real-time speed).
+CPU render time: 14.57 seconds (average: 27.64 ms/frame)
+GPU render time: 41.02 seconds (average: 77.84 ms/frame)
+Encoding time: 10.73 seconds (average: 20.35 ms/frame)
+--------------------------------------------------------------------------------
+WARNING: 1 RID of type "CanvasItem" was leaked.
+     at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2676)
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2514)

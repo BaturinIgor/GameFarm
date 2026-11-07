@@ -1,0 +1,107 @@
+Godot Engine v4.5.1.stable.official.f62fdbde1 - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:364)
+OpenGL API 4.5 (Core Profile) Mesa 26.0.8-1ubuntu0.3 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 21.1.8, 256 bits)
+
+Movie Maker mode enabled, recording movie at 30 FPS...
+clip: snow lang=en
+sfx 0.59 whoosh
+sfx 1.86 footstepSnow
+sfx 2.26 footstepSnow
+sfx 2.73 footstepSnow
+sfx 3.52 footstepSnow
+sfx 4.19 footstepSnow
+sfx 4.56 footstepSnow
+sfx 4.92 footstepSnow
+sfx 5.29 footstepSnow
+sfx 5.66 footstepSnow
+sfx 5.66 chop
+sfx 5.66 treeFall
+sfx 6.02 footstepSnow
+sfx 6.06 pickup
+sfx 6.19 pickup
+sfx 6.22 chop
+sfx 6.22 treeFall
+sfx 6.42 footstepSnow
+sfx 6.59 pickup
+sfx 6.79 chop
+sfx 6.79 treeFall
+sfx 6.86 footstepSnow
+sfx 7.32 pickup
+sfx 7.36 chop
+sfx 7.36 treeFall
+sfx 7.52 footstepSnow
+sfx 7.66 pickup
+sfx 7.76 pickup
+sfx 7.89 footstepSnow
+sfx 7.89 pickup
+sfx 7.92 chop
+sfx 7.92 treeFall
+sfx 7.99 pickup
+sfx 8.32 footstepSnow
+sfx 8.49 chop
+sfx 8.49 treeFall
+sfx 8.56 pickup
+sfx 8.82 footstepSnow
+sfx 8.92 pickup
+sfx 9.09 chop
+sfx 9.09 pickup
+sfx 9.19 footstepSnow
+sfx 9.56 footstepSnow
+sfx 9.66 chop
+sfx 9.79 crit
+sfx 10.22 chop
+sfx 10.79 chop
+sfx 11.32 crit
+sfx 11.36 chop
+sfx 11.92 chop
+sfx 12.49 chop
+sfx 12.86 crit
+sfx 13.06 chop
+sfx 13.62 chop
+sfx 13.62 rockBreak
+sfx 13.62 coin
+sfx 14.19 chop
+sfx 14.19 treeFall
+sfx 14.59 footstepSnow
+sfx 14.69 pickup
+sfx 14.79 pickup
+sfx 14.89 pickup
+sfx 14.96 footstepSnow
+sfx 15.32 footstepSnow
+sfx 15.69 footstepSnow
+sfx 15.99 chop
+sfx 16.06 footstepSnow
+sfx 16.42 footstepSnow
+sfx 16.56 chop
+sfx 16.79 footstepSnow
+sfx 17.13 chop
+sfx 17.49 crit
+sfx 17.69 chop
+sfx 17.86 wildAppear
+sfx 18.26 chop
+sfx 18.26 rockBreak
+sfx 18.26 coin
+sfx 18.83 mine
+sfx 18.83 crit
+sfx 18.83 rockBreak
+sfx 19.06 footstepSnow
+sfx 19.33 pickup
+sfx 19.39 mine
+sfx 19.39 rockBreak
+sfx 19.43 footstepSnow
+sfx 19.43 pickup
+clip done: snow
+--------------------------------------------------------------------------------
+Done recording movie at path: /home/runner/work/GameFarm/GameFarm/raw/snow_en.avi
+587 frames at 30 FPS (movie length: 00:00:19:17), recorded in 00:00:40 (47% of real-time speed).
+CPU render time: 14.17 seconds (average: 24.14 ms/frame)
+GPU render time: 17.92 seconds (average: 30.54 ms/frame)
+Encoding time: 13.02 seconds (average: 22.18 ms/frame)
+--------------------------------------------------------------------------------
+WARNING: 1 RID of type "Canvas" was leaked.
+     at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2676)
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2514)
+ERROR: 8 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:795)
