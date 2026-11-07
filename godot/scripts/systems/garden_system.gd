@@ -93,6 +93,21 @@ func _set_bed(index: int, b: Dictionary) -> void:
 	Game.mark_dirty()
 
 
+## Дождь альянса: грядки, которые росли под дождём с from по to, растут вдвое быстрее.
+func apply_rain(w: Dictionary, from: float, to: float) -> void:
+	var beds: Array = Game.save["beds"]
+	var changed := false
+	for i in beds.size():
+		var b: Dictionary = beds[i]
+		var add := AllianceWeather.rain_boost(b, w, from, to)
+		if add > 0.0:
+			b["boost"] = float(b.get("boost", 0.0)) + add
+			changed = true
+	if changed:
+		Game.mark_dirty()
+		Game.changed.emit()
+
+
 func seeds(crop: String) -> int:
 	return int(Game.save["seeds"].get(crop, 0))
 

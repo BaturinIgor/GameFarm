@@ -6,7 +6,8 @@
 --   очки ивентов, которые кончились больше 30 дней назад (награду за место игра забирает сразу после конца ивента);
 --   сообщения чата альянсов старше 30 дней и жалобы на них;
 --   недели событий альянса старше 8 недель;
---   мощь игроков, которые не заходили полгода.
+--   мощь игроков, которые не заходили полгода;
+--   забранные визиты зверей в гости старше 120 дней.
 
 create or replace function public.hh_cleanup() returns void
 language plpgsql security definer set search_path = public as $$
@@ -20,6 +21,10 @@ begin
   -- Мощь тех, кто не заходил полгода (если выполнен power.sql)
   if to_regproc('public.power_cleanup') is not null then
     perform power_cleanup();
+  end if;
+  -- Визиты зверей в гости (если выполнен alliance_guests.sql)
+  if to_regproc('public.al_guests_cleanup') is not null then
+    perform al_guests_cleanup();
   end if;
 end $$;
 

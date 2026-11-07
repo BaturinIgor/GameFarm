@@ -28,6 +28,7 @@ var stats := Stats.new()
 var talents := TalentSystem.new()
 var workshop := ToolSystem.new()
 var animals := AnimalSystem.new()
+var guide := GuideSystem.new()
 var quests := QuestSystem.new()
 var house := HouseSystem.new()
 var garden := GardenSystem.new()
@@ -58,7 +59,8 @@ var alliance := AllianceSystem.new()
 ## Все системы по порядку: для значений по умолчанию и событий.
 var systems: Array:
 	get: return [talents, workshop, animals, quests, house, garden, combat, dungeons, events, collection, legacy, premium, shop,
-		world_map, estate, daily, residents, raids, wild, academy, energy, fair, chests, mine, incubator, story, farm, rating, alliance]
+		world_map, estate, daily, residents, raids, wild, academy, energy, fair, chests, mine, incubator, story, farm, rating, alliance,
+		guide]
 ## Где появиться после перехода через проход (id прохода).
 var arrival_gate := ""
 ## В доме: у какой станции появиться (exit, up, down); на лугу - у двери дома.
@@ -762,6 +764,12 @@ func recalc() -> void:
 		# Хранитель альянса: +1% к добыче и опыту за стадию
 		s.yield_all += AlliancePet.bonus(alliance.pet_stage())
 		xp_bonus += AlliancePet.bonus(alliance.pet_stage())
+		# Звери друзей, которые гостят у меня
+		s.yield_all += alliance.guest_bonus()
+		# Солнце, которое позвал альянс
+		if alliance.weather_now() == "sun":
+			s.yield_all += AllianceWeather.SUN_YIELD
+			xp_bonus += AllianceWeather.SUN_XP
 
 	var strider := 1.25 if r.call("strider") > 0 else 1.0
 	capacity *= (1.0 + 0.1 * r.call("packMaster")) * strider

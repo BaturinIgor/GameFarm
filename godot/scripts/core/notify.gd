@@ -93,6 +93,10 @@ static func plan(now: float) -> Array:
 	if Game.events.events_open():
 		var run := Events.current()
 		add.call("event", float(run["end"]) - EVENT_WARN, L.t("notify.event", [Events.name_of(str(run["event"]))]))
+	# Погода альянса начнётся
+	var wx: Dictionary = Game.save.get("allianceWeather", {})
+	if Game.alliance.in_alliance() and AllianceWeather.pending(wx, now):
+		add.call("weather", float(wx["starts"]), L.t("notify.weather." + str(wx["kind"])))
 	# Давно не заходил
 	for i in COMEBACK.size():
 		add.call("comeback%d" % i, now + float(COMEBACK[i]), L.t("notify.comeback%d" % i))

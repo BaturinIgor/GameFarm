@@ -601,6 +601,60 @@ func _refresh_values() -> void:
 	_update_bubbles()
 	if _prompt_cards.has("tutorial") and bool(Game.save.get("tutorialDone", false)):
 		set_prompt("tutorial", null)
+	_update_guide()
+
+
+var _guide_key := ""
+
+
+## Карточка обучения (после первой подсказки): текущий шаг, прогресс и совет, где это делается.
+func _update_guide() -> void:
+	var show := Game.guide.active() and bool(Game.save.get("tutorialDone", false))
+	var key := "%d|%d|%s" % [Game.guide.index(), Game.guide.progress(), L.code] if show else ""
+	if key == _guide_key:
+		return
+	_guide_key = key
+	set_prompt("guide", _guide_card() if show else null)
+
+
+func _guide_card() -> Control:
+	var i := Game.guide.index()
+	var s := Guide.step(i)
+	var p := PanelContainer.new()
+	p.add_theme_stylebox_override("panel", UiKit.panel_style(14))
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 4)
+	p.add_child(col)
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 8)
+	col.add_child(top)
+	top.add_child(UiKit.icon(str(s["icon"]), 26))
+	var texts := VBoxContainer.new()
+	texts.add_theme_constant_override("separation", 0)
+	texts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top.add_child(texts)
+	texts.add_child(UiKit.label(L.t("guide.step", [i + 1, Guide.STEPS.size()]), 11, UiKit.INK_SOFT))
+	var t := UiKit.label(Guide.step_text(i), 14)
+	t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	texts.add_child(t)
+	var reward := HBoxContainer.new()
+	reward.add_theme_constant_override("separation", 2)
+	reward.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	reward.add_child(UiKit.icon("coin", 16))
+	reward.add_child(UiKit.label(Fmt.n(int(s.get("coins", 0))), 13))
+	top.add_child(reward)
+	var target := int(s.get("target", 1))
+	if target > 1:
+		col.add_child(UiKit.bar(float(Game.guide.progress()) / float(target), "green", 120.0, 10.0,
+			"%d/%d" % [mini(Game.guide.progress(), target), target]))
+	var hint := UiKit.label(Guide.step_hint(i), 12, UiKit.INK_SOFT)
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(hint)
+	# Карточка не мешает касаниям: под ней джойстик
+	for c in p.find_children("*", "Control", true, false):
+		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return p
 
 
 ## Число в шапке не сужается обратно: иначе при каждой смене монет (бой, продажа) плашка справа и блок

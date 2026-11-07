@@ -26,6 +26,8 @@ var power_top: Array = []
 var powers: Dictionary = {}
 ## Хранитель альянса (ответ al_pet): kind, xp, stage, day, cravings, fed, total, ends, top.
 var pet: Dictionary = {}
+## Летопись (ответ al_chronicle): страницы недель, зал славы, неделя основания. Пусто - не загружено.
+var chronicle: Dictionary = {}
 var _loaded_at := -100.0
 ## События альянса на эту неделю (ответ al_events): страж, задания, место. Пусто - не загружено.
 var ev: Dictionary = {}
@@ -49,6 +51,26 @@ func defaults(save: Dictionary) -> void:
 		"petStage": clampi(int(a.get("petStage", 1)), 1, AlliancePet.MAX_STAGE),
 	}
 	save["allianceSeen"] = bool(save.get("allianceSeen", false))
+	# Купленные рамки статуи (украшение за кристаллы)
+	var frames: Variant = save.get("statueFrames", [])
+	save["statueFrames"] = (frames as Array).filter(func(f: Variant) -> bool: return Chronicle.valid(str(f))) \
+		if frames is Array else []
+	save["statueFrame"] = str(save.get("statueFrame", "stone"))
+	# Погода альянса: последняя известная и до какого момента дождь уже полил грядки
+	var w: Variant = save.get("allianceWeather", {})
+	save["allianceWeather"] = {"kind": str(w.get("kind", "")), "starts": int(w.get("starts", 0)),
+		"ends": int(w.get("ends", 0))} if w is Dictionary and save["alliance"].has("id") else {}
+	save["weatherApplied"] = float(save.get("weatherApplied", 0.0))
+	_weather_was = ""
+	# Звери, которые гостят у меня (для бонуса без сети), и купленное второе место для отправки
+	var hosted: Variant = save.get("guestsIn", [])
+	save["guestsIn"] = (hosted as Array).filter(func(x: Variant) -> bool: return x is Dictionary).map(
+		func(x: Dictionary) -> Dictionary: return {"stars": int(x.get("stars", 1)), "returns": int(x.get("returns", 0))}) \
+		if hosted is Array and save["alliance"].has("id") else []
+	save["guestSlot"] = bool(save.get("guestSlot", false))
+	_hosted_was = -1
+	if _ticker == null:
+		_start_ticker.call_deferred()
 	# Счётчики для заданий альянса, ещё не отправленные на сервер
 	var pend: Variant = save.get("alliancePending", {})
 	save["alliancePending"] = pend if pend is Dictionary and save["alliance"].has("id") else {}
@@ -137,6 +159,8 @@ func refresh(force := false) -> void:
 	if in_alliance():
 		await fetch_powers()
 		await fetch_pet()
+		await fetch_weather()
+		await fetch_guests()
 		await refresh_events()
 
 
@@ -146,8 +170,13 @@ func _take(d: Dictionary) -> void:
 	if d.is_empty():
 		Game.save["alliance"] = {}
 		Game.save["alliancePending"] = {}
+		Game.save["allianceWeather"] = {}
+		Game.save["guestsIn"] = []
+		guests = {}
 		pet = {}
 		ev = {}
+		weather = {}
+		chronicle = {}
 		messages.clear()
 		_last_id = 0
 	else:
@@ -188,6 +217,238 @@ func fetch_pet() -> void:
 		pet = res
 		_set_pet_stage(int(res.get("stage", 1)))
 		Game.changed.emit()
+
+
+func fetch_chronicle() -> void:
+	if demo or not in_alliance():
+		return
+	var res: Variant = await Game.rating.call_rpc("al_chronicle", {})
+	if res is Dictionary:
+		chronicle = res
+		# Рамка на сервере теряется при переходе в другой альянс: ставим выбранную снова
+		if str(res.get("frame", "stone")) != statue_frame():
+			Game.rating.call_rpc("al_statue_frame", {"p_frame": statue_frame()})
+		Game.changed.emit()
+
+
+# MARK: Статуи
+
+func statue_frame() -> String:
+	var f := str(Game.save.get("statueFrame", "stone"))
+	return f if f in owned_frames() else "stone"
+
+
+func owned_frames() -> Array:
+	return ["stone"] + Game.save.get("statueFrames", []).filter(func(f: Variant) -> bool: return Chronicle.valid(str(f)))
+
+
+## Купить рамку за кристаллы (или выбрать уже купленную) и поставить её на статую.
+func pick_frame(frame: String) -> bool:
+	if not Chronicle.valid(frame):
+		return false
+	if not frame in owned_frames():
+		if not Game.shop.spend_crystals(Chronicle.price(frame)):
+			return false
+		if not Game.save.has("statueFrames"):
+			Game.save["statueFrames"] = []
+		Game.save["statueFrames"].append(frame)
+	Game.save["statueFrame"] = frame
+	Game.mark_dirty()
+	if demo:
+		chronicle["frame"] = frame
+	elif in_alliance():
+		Game.rating.call_rpc("al_statue_frame", {"p_frame": frame})
+		for x in chronicle.get("statues", []):
+			if bool(x.get("me", false)):
+				x["frame"] = frame
+	Game.changed.emit()
+	return true
+
+
+# MARK: Погода
+
+## Ответ al_weather: kind, starts, ends, caller, free_left, paid_left. Пусто - не загружено.
+var weather: Dictionary = {}
+var _ticker: Timer
+var _weather_was := ""
+
+
+func _start_ticker() -> void:
+	if _ticker != null:
+		return
+	_ticker = Timer.new()
+	_ticker.wait_time = 5.0
+	_ticker.autostart = true
+	_ticker.timeout.connect(weather_tick)
+	Game.add_child(_ticker)
+
+
+func fetch_weather() -> void:
+	if demo or not in_alliance():
+		return
+	var res: Variant = await Game.rating.call_rpc("al_weather", {})
+	if res is Dictionary:
+		_take_weather(res)
+
+
+func _take_weather(res: Dictionary) -> void:
+	weather = res
+	var w := {"kind": str(res.get("kind", "")), "starts": int(res.get("starts", 0)), "ends": int(res.get("ends", 0))}
+	if w != Game.save.get("allianceWeather", {}):
+		Game.save["allianceWeather"] = w
+		Game.mark_dirty()
+	weather_tick()
+	Game.changed.emit()
+
+
+## Погода, которая идёт сейчас ("" - никакая).
+func weather_now() -> String:
+	if not in_alliance():
+		return ""
+	return AllianceWeather.active(Game.save.get("allianceWeather", {}), Clock.now())
+
+
+## Каждые 5 секунд: дождь поливает грядки, начало и конец погоды пересчитывают бонусы.
+func weather_tick() -> void:
+	var w: Dictionary = Game.save.get("allianceWeather", {})
+	var t := Clock.now()
+	if in_alliance() and str(w.get("kind", "")) == "rain":
+		var from := float(Game.save.get("weatherApplied", 0.0))
+		if from < t:
+			Game.garden.apply_rain(w, maxf(from, float(w.get("starts", 0))), t)
+	Game.save["weatherApplied"] = t
+	# Гость уехал - бонус пересчитать
+	var hosted := Guests.active_count(Game.save.get("guestsIn", []), t)
+	if hosted != _hosted_was:
+		_hosted_was = hosted
+		Game.recalc()
+	var now_kind := weather_now()
+	if now_kind != _weather_was:
+		var started := now_kind != "" and _weather_was == ""
+		_weather_was = now_kind
+		Game.recalc()
+		Game.changed.emit()
+		if started:
+			Game.show_toast("px:" + str(AllianceWeather.ICONS[now_kind]), L.t("weather.started." + now_kind, [Fmt.pct(AllianceWeather.SUN_YIELD)]))
+
+
+func can_call_weather(paid: bool) -> bool:
+	if not in_alliance() or weather.is_empty():
+		return false
+	if AllianceWeather.active(weather, Clock.now()) != "" or AllianceWeather.pending(weather, Clock.now()):
+		return false
+	if paid:
+		return int(weather.get("paid_left", 0)) > 0
+	return role() in ["leader", "officer"] and int(weather.get("free_left", 0)) > 0
+
+
+## Позвать погоду: kind rain/sun, delay из AllianceWeather.DELAYS, paid - за кристаллы (списываются после успеха).
+func call_weather(kind: String, delay: int, paid: bool) -> void:
+	if busy or not kind in AllianceWeather.KINDS or not delay in AllianceWeather.DELAYS or not can_call_weather(paid):
+		return
+	if paid and Game.shop.crystals() < AllianceWeather.PAID_CRYSTALS:
+		return
+	busy = true
+	var res: Variant = await Game.rating.call_rpc("al_weather_call", {"p_kind": kind, "p_delay": delay, "p_paid": paid})
+	busy = false
+	if not res is Dictionary:
+		_fail()
+		await fetch_weather()
+		return
+	if paid:
+		Game.shop.spend_crystals(AllianceWeather.PAID_CRYSTALS)
+	Sound.play("levelUp")
+	_take_weather(res)
+	poll_chat()
+
+
+# MARK: Звери в гости
+
+## Ответ al_guests: out (мои звери в гостях), in (гости у меня), friends. Пусто - не загружено.
+var guests: Dictionary = {}
+var _hosted_was := -1
+
+
+func fetch_guests() -> void:
+	if demo or not in_alliance():
+		return
+	var res: Variant = await Game.rating.call_rpc("al_guests", {})
+	if res is Dictionary:
+		_take_guests(res)
+
+
+func _take_guests(res: Dictionary) -> void:
+	guests = res
+	var hosted: Array = []
+	for x in res.get("in", []):
+		hosted.append({"stars": int(x.get("stars", 1)), "returns": int(x.get("returns", 0))})
+	Game.save["guestsIn"] = hosted
+	_hosted_was = -1
+	weather_tick()
+	Game.mark_dirty()
+	Game.changed.emit()
+
+
+func guest_bonus() -> float:
+	return Guests.bonus(Game.save.get("guestsIn", []), Clock.now()) if in_alliance() else 0.0
+
+
+func guest_slots() -> int:
+	return Guests.BASE_SLOTS + (1 if bool(Game.save.get("guestSlot", false)) else 0)
+
+
+func guests_away() -> Array:
+	return guests.get("out", [])
+
+
+## Можно ли сейчас отправить этого зверя (место свободно, зверь дома).
+func can_send_guest(animal: String) -> bool:
+	if not in_alliance() or Game.animals.stars(animal) <= 0:
+		return false
+	var away := guests_away()
+	return away.size() < guest_slots() and away.filter(func(x: Dictionary) -> bool: return str(x.get("animal", "")) == animal).is_empty()
+
+
+func send_guest(host_id: String, animal: String) -> void:
+	if busy or not can_send_guest(animal):
+		return
+	busy = true
+	var res: Variant = await Game.rating.call_rpc("al_guest_send", {"p_host": host_id, "p_animal": animal,
+		"p_stars": Game.animals.stars(animal), "p_slots": guest_slots()})
+	busy = false
+	if not res is Dictionary:
+		_fail()
+		return
+	Sound.play("purchase")
+	_take_guests(res)
+	poll_chat()
+
+
+## Зверь вернулся из гостей: подарок.
+func claim_guest(id: int) -> void:
+	if busy:
+		return
+	busy = true
+	var res: Variant = await Game.rating.call_rpc("al_guest_claim", {"p_id": id})
+	busy = false
+	if not res is Dictionary:
+		_fail()
+		await fetch_guests()
+		return
+	var r := Guests.reward(int(res.get("stars", 1)), Game.level)
+	Game.add_coins(int(r["coins"]))
+	Game.chests.add_keys("copper", int(r["copper"]))
+	Game.show_toast("px:paw", L.t("guests.back", [Animals.name_of(str(res.get("animal", ""))), Fmt.n(int(r["coins"]))]))
+	await fetch_guests()
+
+
+func buy_guest_slot() -> bool:
+	if bool(Game.save.get("guestSlot", false)) or not Game.shop.spend_crystals(Guests.SLOT_CRYSTALS):
+		return false
+	Game.save["guestSlot"] = true
+	Game.mark_dirty()
+	Game.changed.emit()
+	return true
 
 
 func pet_stage() -> int:
@@ -389,7 +650,7 @@ func _act(fn: String, args: Dictionary) -> bool:
 func _fail() -> void:
 	var e := Game.rating.last_error
 	error = e if e in ["limit", "full", "level too low", "name taken", "tag taken", "bad name", "talent locked",
-		"talent maxed", "too fast", "already in alliance", "not allowed", "pet fed"] else "network"
+		"talent maxed", "too fast", "already in alliance", "not allowed", "pet fed", "weather busy", "guest away", "host full"] else "network"
 	Game.changed.emit()
 
 
@@ -669,4 +930,12 @@ static func system_text(m: Dictionary) -> String:
 		"boss": return L.t("alliance.sys.boss", [str(m.get("body", ""))])
 		"task": return L.t("alliance.sys.task", [AllianceEvents.kind_name(str(m.get("body", "")))])
 		"pet": return L.t("alliance.sys.pet", [str(m.get("body", ""))])
+		"guest":
+			var g := str(m.get("body", "")).split(":")
+			if g.size() == 2:
+				return L.t("alliance.sys.guest", [str(m.get("name", "")), Animals.name_of(g[0]), g[1]])
+		"weather":
+			var parts := str(m.get("body", "")).split(":")
+			if parts.size() == 2 and parts[0] in AllianceWeather.KINDS:
+				return L.t("alliance.sys.weather." + parts[0], [str(m.get("name", "")), Fmt.clock(int(parts[1]))])
 	return str(m.get("body", ""))

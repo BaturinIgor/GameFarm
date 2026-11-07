@@ -8,7 +8,7 @@ const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", 
 	"dungeon", "trophies", "collection", "collection:zoo", "collection:trophies", "legacy", "wardrobe", "map", "map:ember", "map:azure", "events", "shop",
 	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story", "wild", "talents:estate",
 	"story", "story:altar", "collection:diary", "alliance:find", "alliance:create", "alliance:main", "alliance:events", "alliance:chat",
-	"alliance:members", "alliance:top", "alliance:players"]
+	"alliance:members", "alliance:top", "alliance:players", "alliance:chronicle"]
 
 var dir := "/tmp/shots"
 var main: Node
@@ -83,6 +83,7 @@ func _process(delta: float) -> void:
 				_shot("5_storage_window")
 				# Прокачанный герой: окна с содержимым
 				Game.save["level"] = 18
+				Game.save["guideStep"] = Guide.STEPS.size()
 				# Окно стартового набора закрывало бы снимки окон
 				Game.save["starterOffers"] = 2
 				Game.save["crystals"] = 98765
@@ -716,6 +717,21 @@ func _extra(k: int) -> void:
 		_ when k == 58 + 2 * Story.count():
 			_shot("8_incubator_pick")
 			main.hud.close_window()
+			# Обучение: карточка шага на главном экране и знакомство с альянсом
+			Game.save["tutorialDone"] = true
+			Game.save["guideStep"] = 4
+			Game.save["guideCount"] = 0
+			Game.changed.emit()
+		_ when k == 59 + 2 * Story.count():
+			_shot("9_guide")
+			Game.save["guideStep"] = Guide.STEPS.size()
+			Game.changed.emit()
+			IntroPopup.open("alliance")
+		_ when k == 60 + 2 * Story.count():
+			_shot("9_intro")
+			for n in main.hud.find_children("*", "", true, false):
+				if n is IntroPopup:
+					n.queue_free()
 			_step = 5
 			_time = 300.0
 			_sub = 0
@@ -763,6 +779,9 @@ func _alliance_demo(w: String) -> void:
 		al.powers = {}
 		al.power_top = []
 		al.pet = {}
+		al.chronicle = {}
+		al.weather = {}
+		al.guests = {}
 		Game.save["alliance"] = {}
 		Game.recalc()
 		return
@@ -824,6 +843,29 @@ func _alliance_demo(w: String) -> void:
 			"cravings": AlliancePet.cravings(day), "fed": 3, "total": 140, "ends": (day + 1) * 86400,
 			"top": [{"name": "Masha", "total": 420}, {"name": Game.rating.player_name(), "total": 140}]}
 		Game.save["alliance"]["petStage"] = al.pet["stage"]
+		var me := Game.rating.player_name()
+		al.chronicle = {"founded_week": wk - 6, "frame": "gold", "statues": [
+			{"name": "Masha", "frame": "crystal", "hits": 3, "gives": 1, "me": false},
+			{"name": me, "frame": "gold", "hits": 1, "gives": 2, "me": true},
+			{"name": "Kenji", "frame": "stone", "hits": 0, "gives": 2, "me": false},
+			{"name": "Pierre", "frame": "flame", "hits": 1, "gives": 0, "me": false}],
+			"weeks": [
+			{"week": wk - 1, "xp": 4820, "level": 9, "members": 18, "boss": 7, "tasks": 3, "place": 4,
+				"hit": "Masha", "hit_value": 48210, "give": me, "give_value": 640},
+			{"week": wk - 2, "xp": 3900, "level": 8, "members": 16, "boss": 5, "tasks": 2, "place": 7,
+				"hit": me, "hit_value": 30100, "give": "Kenji", "give_value": 580},
+			{"week": wk - 3, "xp": 2100, "level": 6, "members": 12, "boss": 3, "tasks": 1, "place": 15,
+				"hit": "Pierre", "hit_value": 12800, "give": me, "give_value": 400}]}
+		al.weather = {"kind": "", "starts": 0, "ends": 0, "caller": "", "free_left": 1, "paid_left": 2}
+		var tn := int(Clock.now())
+		al.guests = {"out": [{"id": 1, "name": "Masha", "animal": "cow", "stars": 3, "returns": tn + 5 * 3600},
+				{"id": 2, "name": "Kenji", "animal": "chicken", "stars": 2, "returns": tn - 60}],
+			"in": [{"id": 3, "name": "Pierre", "animal": "pig", "stars": 4, "returns": tn + 9 * 3600}],
+			"friends": [{"name": "Masha", "visits": 6}, {"name": "Kenji", "visits": 2}]}
+		Game.save["guestSlot"] = true
+		Game.save["guestsIn"] = [{"stars": 4, "returns": tn + 9 * 3600}]
+		Game.save["statueFrames"] = ["bronze", "gold"]
+		Game.save["statueFrame"] = "gold"
 		al.power_top = [
 			{"place": 1, "name": "Masha", "level": 31, "power": 14200, "tag": "GV", "me": false},
 			{"place": 2, "name": "Kenji", "level": 18, "power": 6100, "tag": "GV", "me": false},

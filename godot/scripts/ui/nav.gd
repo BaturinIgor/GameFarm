@@ -67,6 +67,11 @@ static func locked(sub: String) -> bool:
 static func count(sub: String) -> int:
 	if locked(sub):
 		return 0
+	# Шаг обучения ведёт в этот раздел
+	return _count(sub) + Game.guide.badge(sub)
+
+
+static func _count(sub: String) -> int:
 	match sub:
 		"estate":
 			var e := Game.estate
@@ -151,6 +156,9 @@ static func open_sub(sub: String) -> void:
 	if w.has_method("focus_attention"):
 		w.call("focus_attention")
 	Hud.current.open_window(w)
+	# Первое открытие раздела - короткое знакомство
+	if Game.guide.should_intro(sub):
+		IntroPopup.open(sub)
 
 
 ## Запомнить раздел, который сейчас открыт (Sheet при показе).

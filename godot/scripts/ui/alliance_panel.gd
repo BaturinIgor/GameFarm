@@ -9,6 +9,11 @@ var tab := "main"
 var give_kind := "free"
 ## Какой рейтинг открыт: week - альянсы за неделю, strength - альянсы по силе, players - игроки по мощи.
 var top_kind := "week"
+## Вкладка участников: список или летопись со статуями.
+var members_kind := "list"
+## Призыв погоды: какую и через сколько секунд.
+var _wx_kind := "rain"
+var _wx_delay := 0
 ## Создание альянса: выбранная эмблема.
 var emblem := 0
 
@@ -34,6 +39,9 @@ func _init(start_tab := "") -> void:
 	if start_tab in ["players", "strength"]:
 		tab = "top"
 		top_kind = start_tab
+	if start_tab == "chronicle":
+		tab = "members"
+		members_kind = "chronicle"
 	_search.placeholder_text = L.t("alliance.searchHint")
 	_search.max_length = 20
 	_search.text_submitted.connect(func(t: String) -> void: Game.alliance.search(t))
@@ -118,6 +126,8 @@ func build_top() -> void:
 			Game.alliance.refresh_events()
 		elif id == "top":
 			_fetch_top()
+		elif id == "members" and members_kind == "chronicle":
+			Game.alliance.fetch_chronicle()
 		scroll_to_top()))
 
 
@@ -354,6 +364,7 @@ func _main() -> void:
 		c.add_child(_small(str(d["about"])))
 	# Как вкладывать: бесплатно, за монеты, за кристаллы
 	_pet_card()
+	_weather_card()
 	section_title(L.t("alliance.talents"))
 	var kinds := card()
 	kinds.add_child(_small(L.t("alliance.giveHint")))
@@ -394,6 +405,75 @@ func _main() -> void:
 		ConfirmPopup.ask("px:crown", L.t("alliance.leave"), L.t("alliance.leaveText"), L.t("alliance.leave"), "red",
 			func() -> void: Game.alliance.leave()))
 	content.add_child(leave)
+
+
+## Погода альянса: час дождя (грядки вдвое быстрее) или солнца (добыча и опыт) для всех участников.
+func _weather_card() -> void:
+	var al := Game.alliance
+	var w := al.weather
+	section_title(L.t("weather.title"))
+	var c := card()
+	if w.is_empty():
+		c.add_child(_note(L.t("alliance.loading")))
+		return
+	var t := Clock.now()
+	var now_kind := AllianceWeather.active(w, t)
+	var status := HBoxContainer.new()
+	status.add_theme_constant_override("separation", 8)
+	c.add_child(status)
+	var kind := str(w.get("kind", ""))
+	status.add_child(UiKit.icon(str(AllianceWeather.ICONS.get(kind, "rainbow")) if now_kind != "" or AllianceWeather.pending(w, t) else "rainbow", 28))
+	var text: String
+	if now_kind != "":
+		text = L.t("weather.now." + now_kind, [Fmt.seconds(float(w.get("ends", 0)) - t)])
+	elif AllianceWeather.pending(w, t):
+		text = L.t("weather.soon." + kind, [Fmt.clock(int(w.get("starts", 0))), str(w.get("caller", ""))])
+	else:
+		text = L.t("weather.clear")
+	var l := UiKit.label(text, 14)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	status.add_child(l)
+	if now_kind != "" or AllianceWeather.pending(w, t):
+		c.add_child(_small(L.t("weather.effect." + kind, [Fmt.pct(AllianceWeather.SUN_YIELD)])))
+		return
+	var free := al.can_call_weather(false)
+	var paid := al.can_call_weather(true)
+	if not free and not paid:
+		c.add_child(_small(L.t("weather.none")))
+		return
+	c.add_child(UiKit.tabs([["rain", L.t("weather.rain")], ["sun", L.t("weather.sun")]], _wx_kind, func(id: String) -> void:
+		_wx_kind = id
+		_dirty = true))
+	c.add_child(_small(L.t("weather.effect." + _wx_kind, [Fmt.pct(AllianceWeather.SUN_YIELD)])))
+	var delays: Array = []
+	for d in AllianceWeather.DELAYS:
+		delays.append([str(d), L.t("weather.at.now") if d == 0 else "+" + Fmt.seconds(float(d))])
+	c.add_child(UiKit.tabs(delays, str(_wx_delay), func(id: String) -> void:
+		_wx_delay = int(id)
+		_dirty = true))
+	if free:
+		var b := UiKit.button(L.t("weather.callFree"), "green", 15)
+		b.disabled = al.busy
+		b.pressed.connect(func() -> void: al.call_weather(_wx_kind, _wx_delay, false))
+		c.add_child(b)
+	elif int(w.get("free_left", 0)) > 0:
+		c.add_child(_small(L.t("weather.leaderOnly")))
+	if paid:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		c.add_child(row)
+		var pl := UiKit.label(L.t("weather.callPaid", [int(w.get("paid_left", 0))]), 13)
+		pl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		pl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		row.add_child(pl)
+		var pb := ShopPanel.crystal_button(AllianceWeather.PAID_CRYSTALS, "purple", true)
+		pb.pressed.connect(func() -> void:
+			if Game.shop.crystals() < AllianceWeather.PAID_CRYSTALS:
+				Game.show_toast("px:gem", L.t("crystals.notEnough", [Fmt.n(AllianceWeather.PAID_CRYSTALS - Game.shop.crystals())]))
+				return
+			al.call_weather(_wx_kind, _wx_delay, true))
+		row.add_child(pb)
 
 
 ## Хранитель альянса: зверь растёт от угощений, которые приносят все участники.
@@ -583,8 +663,18 @@ func _send() -> void:
 
 
 func _members() -> void:
+	var kinds := [["list", L.t("alliance.members.list")], ["chronicle", L.t("chronicle.title")]]
+	content.add_child(UiKit.tabs(kinds, members_kind, func(id: String) -> void:
+		members_kind = id
+		if id == "chronicle":
+			Game.alliance.fetch_chronicle()
+		_dirty = true))
+	if members_kind == "chronicle":
+		_chronicle()
+		return
 	var al := Game.alliance
 	var me_role := al.role()
+	_guests_card()
 	for x in al.data.get("members", []):
 		var m: Dictionary = x
 		var v := card()
@@ -612,6 +702,13 @@ func _members() -> void:
 			col.add_child(prow)
 		if bool(m.get("me", false)):
 			continue
+		var visit := UiKit.button(L.t("guests.send"), "green", 12, true)
+		visit.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		visit.disabled = al.guests_away().size() >= al.guest_slots()
+		var host_id := str(m.get("id", ""))
+		var host_name := str(m.get("name", ""))
+		visit.pressed.connect(func() -> void: GuestPicker.open(host_id, host_name))
+		row.add_child(visit)
 		var can_manage := me_role == "leader" or (me_role == "officer" and r == "member")
 		if can_manage:
 			var more := UiKit.button("...", "wood", 13, true)
@@ -620,6 +717,222 @@ func _members() -> void:
 			var name := str(m.get("name", ""))
 			more.pressed.connect(func() -> void: _manage(uid, name, r))
 			row.add_child(more)
+
+
+## Звери в гости: мои звери у друзей (с подарком по возвращении), гости у меня и дружба.
+func _guests_card() -> void:
+	var al := Game.alliance
+	var g := al.guests
+	var c := card()
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 8)
+	c.add_child(head)
+	head.add_child(UiKit.icon("paw", 24))
+	var t := UiKit.label(L.t("guests.title"), 15)
+	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(t)
+	head.add_child(UiKit.label(L.t("guests.slots", [al.guests_away().size(), al.guest_slots()]), 12, UiKit.INK_SOFT))
+	c.add_child(_small(L.t("guests.hint")))
+	var now := Clock.now()
+	for x in al.guests_away():
+		var r := HBoxContainer.new()
+		r.add_theme_constant_override("separation", 8)
+		c.add_child(r)
+		var animal := str(x.get("animal", ""))
+		r.add_child(AnimalsPanel.animal_icon(animal, 28))
+		var left := float(x.get("returns", 0)) - now
+		var l := UiKit.label(L.t("guests.away", [Animals.name_of(animal), str(x.get("name", "")), Fmt.seconds(left)]) if left > 0
+			else L.t("guests.ready", [Animals.name_of(animal), str(x.get("name", ""))]), 12)
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		r.add_child(l)
+		if left <= 0:
+			var b := UiKit.button(L.t("guests.claim"), "gold", 12, true)
+			b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			var id := int(x.get("id", 0))
+			b.pressed.connect(func() -> void: al.claim_guest(id))
+			r.add_child(b)
+	var hosted: Array = g.get("in", []).filter(func(x: Dictionary) -> bool: return float(x.get("returns", 0)) > now)
+	if hosted.is_empty():
+		c.add_child(_small(L.t("guests.none")))
+	else:
+		c.add_child(UiKit.label(L.t("guests.in", [hosted.size(), Fmt.pct(al.guest_bonus())]), 13))
+		for x in hosted:
+			var r := HBoxContainer.new()
+			r.add_theme_constant_override("separation", 6)
+			c.add_child(r)
+			r.add_child(AnimalsPanel.animal_icon(str(x.get("animal", "")), 22))
+			r.add_child(UiKit.label(L.t("guests.inRow", [Animals.name_of(str(x.get("animal", ""))), str(x.get("name", "")),
+				Fmt.seconds(float(x.get("returns", 0)) - now)]), 12, UiKit.INK_SOFT))
+	var friends: Array = g.get("friends", [])
+	if not friends.is_empty():
+		var names: Array = []
+		for f in friends.slice(0, 3):
+			names.append(L.t("guests.visits", [str(f.get("name", "")), int(f.get("visits", 0))]))
+		c.add_child(_small(L.t("guests.friends") + ": " + ", ".join(names)))
+	if al.guest_slots() < Guests.MAX_SLOTS:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		c.add_child(row)
+		var bl := UiKit.label(L.t("guests.buySlot"), 13)
+		bl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(bl)
+		var pb := ShopPanel.crystal_button(Guests.SLOT_CRYSTALS, "purple", true)
+		pb.pressed.connect(func() -> void:
+			if not al.buy_guest_slot():
+				Game.show_toast("px:gem", L.t("crystals.notEnough", [Fmt.n(Guests.SLOT_CRYSTALS - Game.shop.crystals())]))
+			else:
+				Sound.play("purchase"))
+		row.add_child(pb)
+
+
+# MARK: Летопись и статуи
+
+func _chronicle() -> void:
+	var ch := Game.alliance.chronicle
+	if ch.is_empty():
+		content.add_child(_note(L.t("alliance.loading")))
+		return
+	# Зал славы: статуи нынешних участников
+	var hall := card()
+	hall.add_child(UiKit.label(L.t("chronicle.hall"), 16))
+	hall.add_child(_small(L.t("chronicle.hallHint")))
+	var statues: Array = ch.get("statues", [])
+	if statues.is_empty():
+		hall.add_child(_small(L.t("chronicle.hallEmpty")))
+	else:
+		var grid := GridContainer.new()
+		grid.columns = 3
+		grid.add_theme_constant_override("h_separation", 8)
+		grid.add_theme_constant_override("v_separation", 8)
+		hall.add_child(grid)
+		for x in statues.slice(0, 9):
+			grid.add_child(_statue(x))
+	_frame_card()
+	# Страницы по неделям
+	var weeks: Array = ch.get("weeks", [])
+	if weeks.is_empty():
+		content.add_child(_note(L.t("chronicle.empty")))
+	var founded := int(ch.get("founded_week", 0))
+	for x in weeks:
+		_week_page(x, founded)
+
+
+## Статуя: фигура в рамке на постаменте, имя и сколько недель был лучшим.
+func _statue(s: Dictionary) -> Control:
+	var frame: Dictionary = Chronicle.FRAMES.get(str(s.get("frame", "stone")), Chronicle.FRAMES["stone"])
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_theme_constant_override("separation", 0)
+	var fig := PanelContainer.new()
+	var st := UiKit.box(frame["fill"], frame["edge"], 12, 3, false)
+	st.set_content_margin_all(6)
+	fig.add_theme_stylebox_override("panel", st)
+	fig.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var hero := UiKit.icon("swords" if int(s.get("hits", 0)) >= int(s.get("gives", 0)) else "crown", 36)
+	hero.modulate = Color(0.85, 0.85, 0.85) if str(s.get("frame", "stone")) == "stone" else Color.WHITE
+	fig.add_child(hero)
+	col.add_child(fig)
+	var base := PanelContainer.new()
+	base.add_theme_stylebox_override("panel", UiKit.box(Color("8a8070"), Color(UiKit.OUTLINE, 0.7), 4, 2, false))
+	base.custom_minimum_size = Vector2(70, 8)
+	base.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	col.add_child(base)
+	var name := UiKit.label(str(s.get("name", "")), 12, UiKit.TONES["green"][2] if bool(s.get("me", false)) else UiKit.INK)
+	name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name.clip_text = true
+	name.custom_minimum_size = Vector2(90, 0)
+	col.add_child(name)
+	var counts := HBoxContainer.new()
+	counts.alignment = BoxContainer.ALIGNMENT_CENTER
+	counts.add_theme_constant_override("separation", 3)
+	for part in [["swords", int(s.get("hits", 0))], ["crown", int(s.get("gives", 0))]]:
+		if int(part[1]) > 0:
+			counts.add_child(UiKit.icon(str(part[0]), 14))
+			counts.add_child(UiKit.label(str(part[1]), 12, UiKit.INK_SOFT))
+	col.add_child(counts)
+	return col
+
+
+## Рамка своей статуи: камень бесплатно, остальные за кристаллы, только для красоты.
+func _frame_card() -> void:
+	var c := card()
+	c.add_child(UiKit.label(L.t("chronicle.frame"), 15))
+	c.add_child(_small(L.t("chronicle.frameHint")))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	c.add_child(row)
+	var al := Game.alliance
+	for id in Chronicle.ORDER:
+		var f: Dictionary = Chronicle.FRAMES[id]
+		var owned: bool = id in al.owned_frames()
+		var b := Button.new()
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.custom_minimum_size = Vector2(0, 54)
+		var chosen: bool = id == al.statue_frame()
+		var st := UiKit.box(f["fill"], UiKit.OUTLINE if chosen else f["edge"], 10, 4 if chosen else 2, false)
+		for state in ["normal", "hover", "pressed", "disabled", "focus"]:
+			b.add_theme_stylebox_override(state, st)
+		var v := VBoxContainer.new()
+		v.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		v.alignment = BoxContainer.ALIGNMENT_CENTER
+		v.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(v)
+		var line := HBoxContainer.new()
+		line.alignment = BoxContainer.ALIGNMENT_CENTER
+		line.add_theme_constant_override("separation", 2)
+		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if chosen:
+			line.add_child(UiKit.icon("check", 18))
+		elif owned:
+			line.add_child(UiKit.label(L.t("chronicle.put"), 11))
+		else:
+			line.add_child(UiKit.icon("gem", 14))
+			line.add_child(UiKit.label(Fmt.n(Chronicle.price(id)), 12))
+		v.add_child(line)
+		var frame_id: String = id
+		b.pressed.connect(func() -> void:
+			if frame_id == al.statue_frame():
+				return
+			if not frame_id in al.owned_frames() and Game.shop.crystals() < Chronicle.price(frame_id):
+				Game.show_toast("px:gem", L.t("crystals.notEnough", [Fmt.n(Chronicle.price(frame_id) - Game.shop.crystals())]))
+				return
+			if al.pick_frame(frame_id):
+				Sound.play("purchase")
+				_dirty = true)
+		row.add_child(b)
+
+
+## Страница летописи: итоги одной недели.
+func _week_page(w: Dictionary, founded: int) -> void:
+	var c := card()
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 6)
+	c.add_child(head)
+	head.add_child(UiKit.icon("book", 22))
+	var t := UiKit.label(L.t("chronicle.week", [Chronicle.week_number(int(w.get("week", 0)), founded)]), 15)
+	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(t)
+	var place := int(w.get("place", 0)) if w.get("place") != null else 0
+	if place > 0:
+		head.add_child(UiKit.label(L.t("chronicle.place", [place]), 13, UiKit.TONES["orange"][2] if place <= 3 else UiKit.INK_SOFT))
+	var lines := [["star", L.t("chronicle.xp", [Fmt.n(int(w.get("xp", 0))), int(w.get("level", 1))])]]
+	if int(w.get("boss", 0)) > 0:
+		lines.append(["skull", L.t("chronicle.boss", [int(w.get("boss", 0))])])
+	lines.append(["scroll", L.t("chronicle.tasks", [int(w.get("tasks", 0)), 3])])
+	if w.get("hit") != null and str(w.get("hit")) != "":
+		lines.append(["swords", L.t("chronicle.hit", [str(w["hit"]), Fmt.n(int(w.get("hit_value", 0)))])])
+	if w.get("give") != null and str(w.get("give")) != "":
+		lines.append(["crown", L.t("chronicle.give", [str(w["give"]), Fmt.n(int(w.get("give_value", 0)))])])
+	for line in lines:
+		var r := HBoxContainer.new()
+		r.add_theme_constant_override("separation", 6)
+		r.add_child(UiKit.icon(str(line[0]), 16))
+		var l := UiKit.label(str(line[1]), 12, UiKit.INK_SOFT)
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		r.add_child(l)
+		c.add_child(r)
 
 
 ## Что сделать с участником: глава повышает и передаёт главенство, глава и заместитель исключают.
