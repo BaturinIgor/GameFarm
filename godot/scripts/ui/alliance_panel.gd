@@ -46,8 +46,15 @@ func _init(start_tab := "") -> void:
 	_chat_row.add_child(send)
 
 
+## Открыть там, где горит отметка: удары и награды событий.
+func focus_attention() -> void:
+	if Game.alliance.in_alliance() and Game.alliance.events_count() > 0:
+		tab = "events"
+
+
 func _ready() -> void:
 	super._ready()
+	Game.alliance.mark_seen()
 	_poll = Timer.new()
 	_poll.wait_time = Alliances.CHAT_POLL
 	_poll.autostart = true
@@ -84,9 +91,11 @@ func build_top() -> void:
 		return
 	var items: Array
 	if Game.alliance.in_alliance():
-		if not tab in ["main", "chat", "members", "top"]:
+		if not tab in ["main", "events", "chat", "members", "top"]:
 			tab = "main"
-		items = [["main", L.t("alliance.tab.main"), 0, "crown"], ["chat", L.t("alliance.tab.chat"), 0, "scroll"],
+		items = [["main", L.t("alliance.tab.main"), 0, "crown"],
+			["events", L.t("alliance.tab.events"), Game.alliance.events_count(), "swords"],
+			["chat", L.t("alliance.tab.chat"), 0, "scroll"],
 			["members", L.t("alliance.tab.members"), 0, "paw"], ["top", L.t("alliance.tab.top"), 0, "trophy"]]
 	else:
 		if not tab in ["find", "create", "top"]:
@@ -96,6 +105,8 @@ func build_top() -> void:
 		tab = id
 		if id == "chat":
 			Game.alliance.poll_chat()
+		elif id == "events":
+			Game.alliance.refresh_events()
 		elif id == "top":
 			Game.alliance.fetch_top()
 		scroll_to_top()))
@@ -119,6 +130,7 @@ func build() -> void:
 		content.add_child(e)
 	match tab:
 		"main": _main()
+		"events": _events()
 		"chat": _chat_tab()
 		"members": _members()
 		"top": _top()
@@ -230,7 +242,7 @@ func _create() -> void:
 func _about_card() -> void:
 	var c := card(Color(UiKit.PARCHMENT_LIGHT, 0.7))
 	c.add_child(UiKit.label(L.t("alliance.whatTitle"), 14))
-	for k in ["alliance.what1", "alliance.what2", "alliance.what3"]:
+	for k in ["alliance.what1", "alliance.what2", "alliance.what3", "alliance.what4"]:
 		c.add_child(_small(L.t(k)))
 
 
@@ -462,6 +474,173 @@ func _top() -> void:
 		pts.custom_minimum_size = Vector2(56, 0)
 		pts.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		row.add_child(pts)
+
+
+# MARK: События альянса
+
+func _events() -> void:
+	var al := Game.alliance
+	var ev := al.ev
+	if ev.is_empty():
+		content.add_child(_note(L.t("alliance.loading")))
+		return
+	var left := float(int(ev.get("ends", 0)) - int(Time.get_unix_time_from_system()))
+	content.add_child(_small(L.t("alliance.ev.weekEnds", [EventsPanel.long_countdown(maxf(0.0, left))])))
+
+	# Страж: портрет, здоровье, удары
+	var tier := int(ev.get("tier", 1))
+	var kind := AllianceEvents.boss_kind(tier)
+	section_title(L.t("alliance.ev.boss"))
+	var c := card()
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	c.add_child(row)
+	var frame := PanelContainer.new()
+	frame.add_theme_stylebox_override("panel", UiKit.box(Color("3a2a22"), Color(UiKit.WOOD_DARK, 0.8), 12, 2, false))
+	frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	frame.add_child(CombatCards.monster_icon(kind, 64))
+	row.add_child(frame)
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_theme_constant_override("separation", 3)
+	row.add_child(col)
+	var bn := UiKit.label(L.t("alliance.ev.bossName", [Monsters.name_of(kind), tier]), 15)
+	bn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(bn)
+	var hp := int(ev.get("hp", 0))
+	var max_hp := maxi(1, int(ev.get("max_hp", 1)))
+	col.add_child(UiKit.bar(float(hp) / float(max_hp), "red", 190, 14, "%s / %s" % [Fmt.n(hp), Fmt.n(max_hp)]))
+	col.add_child(_small(L.t("alliance.ev.myDamage", [Fmt.n(int(ev.get("damage", 0)))])))
+	var btns := HBoxContainer.new()
+	btns.add_theme_constant_override("separation", 6)
+	c.add_child(btns)
+	if al.hits_left() > 0:
+		var hit := UiKit.button(L.t("alliance.ev.hit.free", [al.hits_left(), AllianceEvents.FREE_HITS]), "green", 14)
+		hit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		hit.disabled = al.busy
+		hit.pressed.connect(func() -> void: Game.alliance.attack(false))
+		btns.add_child(hit)
+		UiKit.attention(hit)
+	else:
+		var more := UiKit.button(L.t("alliance.ev.hit.extra", [al.extra_left(), AllianceEvents.EXTRA_HITS]), "orange", 14)
+		more.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		more.icon = UiKit.icon("gem", 16).texture
+		more.text += " " + str(AllianceEvents.EXTRA_COST)
+		more.disabled = not al.can_attack(true)
+		more.pressed.connect(func() -> void: Game.alliance.attack(true))
+		btns.add_child(more)
+	c.add_child(_small(L.t("alliance.ev.bossHint", [AllianceEvents.FREE_HITS, Alliances.talent_name("strength")])))
+	for t in ev.get("unclaimed", []):
+		_claim_row(L.t("alliance.ev.bossReward", [int(t)]), "boss", int(t))
+
+	# Задания недели
+	section_title(L.t("alliance.ev.tasks"))
+	var tasks: Array = ev.get("tasks", [])
+	for i in tasks.size():
+		_task_row(tasks[i], i)
+	content.add_child(_small(L.t("alliance.ev.tasksHint")))
+
+	# Место за неделю
+	section_title(L.t("alliance.ev.place"))
+	var pc := card()
+	var place: Variant = ev.get("place")
+	var now_l := UiKit.label(L.t("alliance.ev.placeNow", [int(place)]) if place != null else L.t("alliance.ev.placeNone"), 13)
+	now_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	pc.add_child(now_l)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 12)
+	grid.add_theme_constant_override("v_separation", 4)
+	pc.add_child(grid)
+	var from := 1
+	for p in AllianceEvents.PLACES:
+		var to := int(p[0])
+		var label := ("#%d" % to) if to == from else (("#%d-%d" % [from, to]) if to < 1000000 else L.t("alliance.ev.placeRest", [from]))
+		grid.add_child(UiKit.label(label, 12, UiKit.INK_SOFT))
+		grid.add_child(_reward_line(AllianceEvents.place_reward(to, Game.level)))
+		from = to + 1
+	if ev.get("last_place") != null and not bool(ev.get("last_claimed", true)):
+		_claim_row(L.t("alliance.ev.placeReward", [int(ev["last_place"])]), "place", 0)
+
+
+func _task_row(t: Dictionary, i: int) -> void:
+	var al := Game.alliance
+	var kind := str(t.get("kind", ""))
+	var v := card()
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	v.add_child(row)
+	var ic := UiKit.icon(str(AllianceEvents.KIND_ICON.get(kind, "star")), 30)
+	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(ic)
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_theme_constant_override("separation", 2)
+	row.add_child(col)
+	var tn := UiKit.label(AllianceEvents.kind_name(kind), 14)
+	tn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(tn)
+	var progress := int(t.get("progress", 0))
+	var target := maxi(1, int(t.get("target", 1)))
+	var done := progress >= target
+	col.add_child(UiKit.bar(float(mini(progress, target)) / float(target), "green" if done else "orange", 180, 12,
+		"%s / %s" % [Fmt.n(mini(progress, target)), Fmt.n(target)]))
+	col.add_child(_small(L.t("alliance.ev.mine", [Fmt.n(int(t.get("mine", 0))),
+		Fmt.n(int(ceil(float(t.get("share", 1)) * AllianceEvents.MIN_SHARE)))])))
+	if bool(t.get("claimed", false)):
+		var got := UiKit.label(L.t("alliance.ev.claimed"), 12, UiKit.INK_SOFT)
+		got.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(got)
+	elif al.task_ready(t):
+		var b := UiKit.button(L.t("alliance.ev.claim"), "green", 13, true)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		b.disabled = al.busy
+		b.pressed.connect(func() -> void: Game.alliance.claim("task", i))
+		row.add_child(b)
+		UiKit.attention(b)
+	else:
+		row.add_child(_reward_line(AllianceEvents.task_reward(Game.level), true))
+
+
+func _claim_row(text: String, what: String, ref: int) -> void:
+	var v := card(Color("f6e7b0"))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	v.add_child(row)
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(col)
+	var cl := UiKit.label(text, 13)
+	cl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(cl)
+	col.add_child(_reward_line(Game.alliance.reward_for(what, ref)))
+	var b := UiKit.button(L.t("alliance.ev.claim"), "green", 13, true)
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.disabled = Game.alliance.busy
+	b.pressed.connect(func() -> void: Game.alliance.claim(what, ref))
+	row.add_child(b)
+	UiKit.attention(b)
+
+
+## Награда одной строкой: кристаллы, монеты, ключ.
+func _reward_line(r: Dictionary, column := false) -> Control:
+	var box: BoxContainer = VBoxContainer.new() if column else HBoxContainer.new()
+	box.add_theme_constant_override("separation", 4 if not column else 1)
+	box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var parts: Array = []
+	if int(r.get("crystals", 0)) > 0:
+		parts.append([UiKit.icon("gem", 14), Fmt.n(int(r["crystals"]))])
+	if int(r.get("coins", 0)) > 0:
+		parts.append([UiKit.icon("coin", 14), Fmt.n(int(r["coins"]))])
+	if str(r.get("key", "")) != "":
+		parts.append([ChestsPanel.key_icon(str(r["key"]), 14), "1"])
+	for part in parts:
+		var h := HBoxContainer.new()
+		h.add_theme_constant_override("separation", 2)
+		h.add_child(part[0])
+		h.add_child(UiKit.label(str(part[1]), 12))
+		box.add_child(h)
+	return box
 
 
 # MARK: Мелочи

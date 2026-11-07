@@ -4,13 +4,18 @@
 --
 -- Что удаляется раз в сутки:
 --   очки ивентов, которые кончились больше 30 дней назад (награду за место игра забирает сразу после конца ивента);
---   сообщения чата альянсов старше 30 дней и жалобы на них.
+--   сообщения чата альянсов старше 30 дней и жалобы на них;
+--   недели событий альянса старше 8 недель.
 
 create or replace function public.hh_cleanup() returns void
 language plpgsql security definer set search_path = public as $$
 begin
   delete from rating_scores where updated_at < now() - interval '30 days';
   delete from alliance_chat where created_at < now() - interval '30 days';
+  -- Недели событий альянса (если выполнен alliance_events.sql)
+  if to_regproc('public.al_ev_cleanup') is not null then
+    perform al_ev_cleanup();
+  end if;
 end $$;
 
 revoke all on function public.hh_cleanup() from public, anon, authenticated;

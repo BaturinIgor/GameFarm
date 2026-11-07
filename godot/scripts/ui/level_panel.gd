@@ -103,6 +103,8 @@ static func unlocks(level: int) -> Array:
 	for d in DUNGEONS:
 		if DUNGEONS[d] == level:
 			lines.append(_line("px:key", L.t("unlock.dungeon", [L.t("dungeon." + d)])))
+	if level == Alliances.JOIN_LEVEL and Game.alliance != null and Game.alliance.available():
+		lines.append(_line("px:crown", L.t("unlock.alliance")))
 	return lines
 
 

@@ -96,9 +96,13 @@ static func count(sub: String) -> int:
 		"events":
 			return Game.events.event_claimable()
 		"alliance":
-			# Отметка, пока остались бесплатные вклады на сегодня
+			# Отметка, пока остались бесплатные вклады на сегодня, а до первого открытия - позвать посмотреть
 			var al := Game.alliance
-			return 1 if al.in_alliance() and al.loaded and al.day_used("free") < Alliances.FREE_PER_DAY else 0
+			if not al.open():
+				return 0
+			if not al.in_alliance():
+				return 0 if al.seen() else 1
+			return (1 if al.free_left() > 0 else 0) + al.events_count()
 	return 0
 
 

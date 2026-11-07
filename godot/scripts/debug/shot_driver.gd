@@ -7,7 +7,7 @@ const ORIGIN := Vector2(195, 620)
 const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", "kitchen", "garden", "trader", "hunt", "level:settings",
 	"dungeon", "trophies", "collection", "collection:zoo", "collection:trophies", "legacy", "wardrobe", "map", "map:ember", "map:azure", "events", "shop",
 	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story", "wild", "talents:estate",
-	"story", "story:altar", "collection:diary", "alliance:find", "alliance:create", "alliance:main", "alliance:chat",
+	"story", "story:altar", "collection:diary", "alliance:find", "alliance:create", "alliance:main", "alliance:events", "alliance:chat",
 	"alliance:members", "alliance:top"]
 
 var dir := "/tmp/shots"
@@ -759,6 +759,7 @@ func _alliance_demo(w: String) -> void:
 			_level_before = -1
 		al.demo = false
 		al.data = {}
+		al.ev = {}
 		Game.save["alliance"] = {}
 		Game.recalc()
 		return
@@ -788,6 +789,19 @@ func _alliance_demo(w: String) -> void:
 				{"id": "d", "name": "Lucía", "level": 12, "role": "member", "week": 20, "total": 150, "me": false},
 			]}
 		Game.save["alliance"] = {"id": 1, "name": "Green Valley", "tag": "GV", "emblem": 6, "talents": talents}
+		var wk := DailySystem.week_index()
+		var kinds := AllianceEvents.task_kinds(wk)
+		al.ev = {"week": wk, "ends": int(Time.get_unix_time_from_system()) + 3 * 86400 + 5 * 3600, "members": 41,
+			"tier": 3, "hp": 61000, "max_hp": AllianceEvents.boss_hp(3, 41), "hits": 1, "extra": 0, "damage": 2380,
+			"unclaimed": [2], "place": 4, "last_place": 7, "last_claimed": false,
+			"tasks": [
+				{"kind": kinds[0], "target": AllianceEvents.task_target(kinds[0], 41), "progress": AllianceEvents.task_target(kinds[0], 41),
+					"mine": AllianceEvents.SHARE[kinds[0]], "share": AllianceEvents.SHARE[kinds[0]], "claimed": false},
+				{"kind": kinds[1], "target": AllianceEvents.task_target(kinds[1], 41), "progress": AllianceEvents.task_target(kinds[1], 41) / 3,
+					"mine": 4, "share": AllianceEvents.SHARE[kinds[1]], "claimed": false},
+				{"kind": kinds[2], "target": AllianceEvents.task_target(kinds[2], 41), "progress": AllianceEvents.task_target(kinds[2], 41),
+					"mine": AllianceEvents.SHARE[kinds[2]], "share": AllianceEvents.SHARE[kinds[2]], "claimed": true},
+			]}
 		var now := int(Time.get_unix_time_from_system())
 		al.messages = [
 			{"id": 1, "kind": "join", "name": "Lucía", "body": "", "at": now - 3600},

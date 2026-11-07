@@ -20,6 +20,9 @@ var _last_id := 0
 var found: Array = []
 var top: Array = []
 var _loaded_at := -100.0
+## События альянса на эту неделю (ответ al_events): страж, задания, место. Пусто - не загружено.
+var ev: Dictionary = {}
+var _flushed_at := -1000.0
 ## Снимки экрана: данные подставлены, сеть не трогаем.
 var demo := false
 
@@ -37,6 +40,10 @@ func defaults(save: Dictionary) -> void:
 		"id": int(a["id"]), "name": str(a.get("name", "")), "tag": str(a.get("tag", "")),
 		"emblem": int(a.get("emblem", 0)), "talents": talents,
 	}
+	save["allianceSeen"] = bool(save.get("allianceSeen", false))
+	# Счётчики для заданий альянса, ещё не отправленные на сервер
+	var pend: Variant = save.get("alliancePending", {})
+	save["alliancePending"] = pend if pend is Dictionary and save["alliance"].has("id") else {}
 	# В альянсе - сразу обновить данные (лимиты на сегодня и отметку на вкладке)
 	if save["alliance"].has("id") and available():
 		refresh.call_deferred()
@@ -48,6 +55,25 @@ func available() -> bool:
 
 func open() -> bool:
 	return available() and Game.level >= Alliances.JOIN_LEVEL
+
+
+## Открывал ли игрок окно альянса. До этого вкладка "Мир" и плашка на главном экране зовут посмотреть.
+func seen() -> bool:
+	return bool(Game.save.get("allianceSeen", false))
+
+
+func mark_seen() -> void:
+	if not seen():
+		Game.save["allianceSeen"] = true
+		Game.mark_dirty()
+		Game.changed.emit()
+
+
+## Бесплатные вклады, оставшиеся на сегодня (0 - не в альянсе или ещё не загрузили).
+func free_left() -> int:
+	if not in_alliance() or not loaded:
+		return 0
+	return maxi(0, Alliances.FREE_PER_DAY - day_used("free"))
 
 
 func in_alliance() -> bool:
@@ -100,6 +126,8 @@ func refresh(force := false) -> void:
 	loaded = true
 	error = ""
 	_take(res if res is Dictionary else {})
+	if in_alliance():
+		await refresh_events()
 
 
 func _take(d: Dictionary) -> void:
@@ -107,6 +135,8 @@ func _take(d: Dictionary) -> void:
 	data = d
 	if d.is_empty():
 		Game.save["alliance"] = {}
+		Game.save["alliancePending"] = {}
+		ev = {}
 		messages.clear()
 		_last_id = 0
 	else:
@@ -297,6 +327,157 @@ func contribute(talent: String, kind: String) -> void:
 	Game.emit_event("allianceGive", {"kind": kind})
 	Game.mark_dirty()
 	Game.changed.emit()
+
+
+# MARK: События альянса
+
+func refresh_events() -> void:
+	if demo or not in_alliance():
+		return
+	await flush_progress(true)
+	var res: Variant = await Game.rating.call_rpc("al_events", {})
+	if res is Dictionary:
+		ev = res
+		Game.changed.emit()
+
+
+func hits_left() -> int:
+	return maxi(0, AllianceEvents.FREE_HITS - int(ev.get("hits", AllianceEvents.FREE_HITS)))
+
+
+func extra_left() -> int:
+	return maxi(0, AllianceEvents.EXTRA_HITS - int(ev.get("extra", AllianceEvents.EXTRA_HITS)))
+
+
+func can_attack(extra: bool) -> bool:
+	if ev.is_empty() or busy:
+		return false
+	if extra:
+		return hits_left() == 0 and extra_left() > 0 and Game.shop.crystals() >= AllianceEvents.EXTRA_COST
+	return hits_left() > 0
+
+
+## Удар по стражу. Урон считает сервер, кристаллы за доп. удар - после успеха.
+func attack(extra: bool) -> void:
+	if not can_attack(extra):
+		return
+	busy = true
+	var res: Variant = await Game.rating.call_rpc("al_ev_attack", {"p_level": Game.level, "p_extra": extra})
+	busy = false
+	if not res is Dictionary:
+		_fail()
+		await refresh_events()
+		return
+	if extra:
+		Game.shop.spend_crystals(AllianceEvents.EXTRA_COST)
+	var dmg := int(res.get("damage", 0))
+	var used := "extra" if extra else "hits"
+	ev[used] = int(ev.get(used, 0)) + 1
+	ev["damage"] = int(ev.get("damage", 0)) + dmg
+	ev["hp"] = maxi(0, int(ev.get("hp", 0)) - dmg)
+	Sound.play("crit" if not bool(res.get("killed", false)) else "levelUp")
+	Game.show_toast("px:swords", L.t("alliance.ev.hit", [Fmt.n(dmg)]))
+	Game.emit_event("allianceHit", {})
+	Game.mark_dirty()
+	Game.changed.emit()
+	if bool(res.get("killed", false)):
+		await refresh_events()
+
+
+## Что можно забрать: [[what, ref], ...].
+func claimable() -> Array:
+	var out: Array = []
+	if ev.is_empty():
+		return out
+	for t in ev.get("unclaimed", []):
+		out.append(["boss", int(t)])
+	var tasks: Array = ev.get("tasks", [])
+	for i in tasks.size():
+		if task_ready(tasks[i]):
+			out.append(["task", i])
+	if ev.get("last_place") != null and not bool(ev.get("last_claimed", true)):
+		out.append(["place", 0])
+	return out
+
+
+func task_ready(t: Dictionary) -> bool:
+	return not bool(t.get("claimed", false)) and int(t.get("progress", 0)) >= int(t.get("target", 1)) \
+		and float(t.get("mine", 0)) >= float(t.get("share", 1)) * AllianceEvents.MIN_SHARE
+
+
+func reward_for(what: String, ref: int) -> Dictionary:
+	match what:
+		"boss": return AllianceEvents.boss_reward(ref, Game.level)
+		"task": return AllianceEvents.task_reward(Game.level)
+		"place": return AllianceEvents.place_reward(int(ev.get("last_place", 1000000)), Game.level)
+	return {}
+
+
+func claim(what: String, ref: int) -> void:
+	if busy:
+		return
+	busy = true
+	var res: Variant = await Game.rating.call_rpc("al_ev_claim", {"p_what": what, "p_ref": ref})
+	busy = false
+	if not res is Dictionary:
+		_fail()
+		await refresh_events()
+		return
+	var r: Dictionary
+	match str(res.get("what", "")):
+		"boss": r = AllianceEvents.boss_reward(int(res.get("tier", 1)), Game.level)
+		"task": r = AllianceEvents.task_reward(Game.level)
+		"place": r = AllianceEvents.place_reward(int(res.get("place", 1000000)), Game.level)
+	RewardsPopup.track(func() -> void: _give(r))
+	Sound.play("treasure")
+	Game.save_now()
+	await refresh_events()
+
+
+func _give(r: Dictionary) -> void:
+	if int(r.get("crystals", 0)) > 0:
+		Game.shop.add_crystals(int(r["crystals"]))
+	if int(r.get("coins", 0)) > 0:
+		Game.add_coins(int(r["coins"]))
+	if str(r.get("key", "")) != "":
+		Game.chests.add_keys(str(r["key"]), 1, false)
+
+
+## Сколько отметить на вкладке: удары и награды.
+func events_count() -> int:
+	if ev.is_empty():
+		return 0
+	return hits_left() + claimable().size()
+
+
+## Счётчики заданий: копим в сохранении и отправляем пачкой.
+func on_event(name: String, data: Dictionary) -> void:
+	if not AllianceEvents.SHARE.has(name) or not in_alliance() or not available():
+		return
+	var pend: Dictionary = Game.save.get("alliancePending", {})
+	pend[name] = int(pend.get(name, 0)) + maxi(1, int(data.get("amount", 1)))
+	Game.save["alliancePending"] = pend
+	flush_progress()
+
+
+func flush_progress(force := false) -> void:
+	var pend: Dictionary = Game.save.get("alliancePending", {})
+	if demo or pend.is_empty() or not in_alliance():
+		return
+	var now := Time.get_ticks_msec() / 1000.0
+	if not force and now - _flushed_at < AllianceEvents.FLUSH_EVERY:
+		return
+	_flushed_at = now
+	var sent := pend.duplicate()
+	Game.save["alliancePending"] = {}
+	var res: Variant = await Game.rating.call_rpc("al_ev_progress", {"p_counts": sent})
+	if res == null and Game.rating.last_error == "network":
+		# Не дошло - вернуть в очередь
+		var back: Dictionary = Game.save.get("alliancePending", {})
+		for k in sent:
+			back[k] = int(back.get(k, 0)) + int(sent[k])
+		Game.save["alliancePending"] = back
+	Game.mark_dirty()
 
 
 # MARK: Чат

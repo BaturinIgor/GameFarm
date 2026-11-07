@@ -17,6 +17,7 @@ const MINI_PILLS := [
 	"res://scripts/ui/event_pill.gd",
 	"res://scripts/ui/meal_pill.gd",
 	"res://scripts/ui/event_map_pill.gd",
+	"res://scripts/ui/alliance_pill.gd",
 ]
 
 ## Карточки у NPC с одной главной кнопкой: вместо карточки внизу (там палец ведёт героя) над головой героя
