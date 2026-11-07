@@ -57,7 +57,7 @@ def upload(kind, rel_name, rel_kind, owner_id, path):
         req = urllib.request.Request(op["url"], data=part, method=op["method"])
         for h in op.get("requestHeaders", []):
             req.add_header(h["name"], h["value"])
-        urllib.request.urlopen(req, timeout=120).read()
+        urllib.request.urlopen(req, timeout=120, context=asc_iap.SSL).read()
     call("PATCH", f"/v1/{kind}/{iid}", {"data": {"type": kind, "id": iid,
         "attributes": {"uploaded": True, "sourceFileChecksum": hashlib.md5(blob).hexdigest()}}})
 

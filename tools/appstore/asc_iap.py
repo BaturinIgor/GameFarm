@@ -15,7 +15,22 @@
 им подписывается токен прямо на этом компьютере.
 """
 import argparse, base64, glob, hashlib, json, os, subprocess, sys, tempfile, time
-import urllib.request, urllib.error
+import ssl, urllib.request, urllib.error
+
+
+def _ssl_context():
+    # Python с python.org на Маке не видит системные сертификаты ("CERTIFICATE_VERIFY_FAILED"):
+    # тогда берём их из /etc/ssl/cert.pem, он есть на любом Маке.
+    paths = ssl.get_default_verify_paths()
+    if (paths.cafile and os.path.exists(paths.cafile)) or (paths.capath and os.path.isdir(paths.capath) and os.listdir(paths.capath)):
+        return ssl.create_default_context()
+    for pem in ("/etc/ssl/cert.pem", "/usr/local/etc/openssl/cert.pem", "/opt/homebrew/etc/openssl@3/cert.pem"):
+        if os.path.exists(pem):
+            return ssl.create_default_context(cafile=pem)
+    return ssl.create_default_context()
+
+
+SSL = _ssl_context()
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 API = "https://api.appstoreconnect.apple.com"
@@ -73,13 +88,14 @@ DRY = False
 def call(method, path, body=None, ok=(200, 201, 204)):
     url = path if path.startswith("http") else API + path
     data = json.dumps(body).encode() if body is not None else None
+    last = None
     for attempt in range(5):
         req = urllib.request.Request(url, data=data, method=method)
         req.add_header("Authorization", "Bearer " + TOKEN.get())
         if data is not None:
             req.add_header("Content-Type", "application/json")
         try:
-            with urllib.request.urlopen(req, timeout=60) as r:
+            with urllib.request.urlopen(req, timeout=60, context=SSL) as r:
                 raw = r.read()
                 return json.loads(raw) if raw else {}
         except urllib.error.HTTPError as e:
@@ -88,9 +104,11 @@ def call(method, path, body=None, ok=(200, 201, 204)):
                 time.sleep(2 ** attempt * 2)
                 continue
             raise RuntimeError(f"{method} {path} -> {e.code}: {text[:800]}")
-        except urllib.error.URLError:
+        except urllib.error.URLError as e:
+            last = e.reason
+            print(f"  нет ответа ({e.reason}), пробую ещё раз")
             time.sleep(2 ** attempt * 2)
-    raise RuntimeError(f"{method} {path}: нет ответа после 5 попыток")
+    raise RuntimeError(f"{method} {path}: нет ответа после 5 попыток: {last}")
 
 
 def get_all(path):
@@ -229,7 +247,7 @@ def ensure_screenshot(iap_id, shot):
         req = urllib.request.Request(op["url"], data=part, method=op["method"])
         for h in op.get("requestHeaders", []):
             req.add_header(h["name"], h["value"])
-        urllib.request.urlopen(req, timeout=120).read()
+        urllib.request.urlopen(req, timeout=120, context=SSL).read()
     call("PATCH", f"/v1/inAppPurchaseAppStoreReviewScreenshots/{sid}", {"data": {
         "type": "inAppPurchaseAppStoreReviewScreenshots", "id": sid,
         "attributes": {"uploaded": True, "sourceFileChecksum": hashlib.md5(blob).hexdigest()}}})
