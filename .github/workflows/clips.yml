@@ -82,6 +82,8 @@ jobs:
           mkdir -p /tmp/pv
           cp clips/* /tmp/pv/
           cp rec_*.log /tmp/pv/ 2> /dev/null || true
+          # Звук из игры без музыки и обработки, для проверки наложений
+          for f in raw/*.avi; do ffmpeg -v error -y -i "$f" -vn -ac 1 -ar 24000 "/tmp/pv/raw_$(basename "$f" .avi).flac"; done
           for f in clips/*.mp4; do
             ffmpeg -v error -y -i "$f" -vf "fps=2/3,scale=216:-1,tile=13x1" -frames:v 1 "/tmp/pv/$(basename "$f" .mp4)_sheet.png"
           done
