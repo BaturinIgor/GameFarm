@@ -14,7 +14,7 @@ create table if not exists public.alliances (
   tag         text        not null,
   emblem      int         not null default 0,
   about       text        not null default '',
-  min_level   int         not null default 10,
+  min_level   int         not null default 5,
   xp          bigint      not null default 0,
   week_xp     bigint      not null default 0,
   week_key    int         not null default 0,
@@ -74,6 +74,7 @@ create table if not exists public.alliance_blocks (
 -- Слова, которые чат заменяет звёздочками (дополняется из SQL Editor: insert into alliance_badwords values ('...')).
 create table if not exists public.alliance_badwords (word text primary key);
 
+alter table public.alliances alter column min_level set default 5;
 alter table public.alliances enable row level security;
 alter table public.alliance_members enable row level security;
 alter table public.alliance_chat enable row level security;
@@ -233,7 +234,7 @@ begin
   if exists (select 1 from alliances where lower(name) = lower(nm)) then raise exception 'name taken'; end if;
   if exists (select 1 from alliances where lower(tag) = lower(tg)) then raise exception 'tag taken'; end if;
   insert into alliances (name, tag, emblem, about, min_level, week_key)
-  values (nm, tg, greatest(0, least(p_emblem, 15)), _al_filter(_al_clean(p_about, 120)), greatest(10, least(p_min_level, 100)), _al_week())
+  values (nm, tg, greatest(0, least(p_emblem, 15)), _al_filter(_al_clean(p_about, 120)), greatest(5, least(p_min_level, 100)), _al_week())
   returning id into aid;
   insert into alliance_members (user_id, alliance_id, name, level, role, week_key)
   values (uid, aid, _rating_clean_name(p_player), greatest(1, least(p_level, 200)), 'leader', _al_week());
@@ -317,7 +318,7 @@ declare me record;
 begin
   select * into me from alliance_members where user_id = auth.uid();
   if me is null or me.role <> 'leader' then raise exception 'not allowed'; end if;
-  update alliances set about = _al_filter(_al_clean(p_about, 120)), min_level = greatest(10, least(p_min_level, 100)),
+  update alliances set about = _al_filter(_al_clean(p_about, 120)), min_level = greatest(5, least(p_min_level, 100)),
          emblem = greatest(0, least(p_emblem, 15))
    where id = me.alliance_id;
 end $$;

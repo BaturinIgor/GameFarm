@@ -4,7 +4,7 @@ class_name Alliances
 ## Шаг 2 - события альянса, шаг 3 - карта битвы альянсов.
 
 ## С какого уровня можно вступить и создать свой.
-const JOIN_LEVEL := 10
+const JOIN_LEVEL := 5
 const CREATE_LEVEL := 15
 ## Цена создания: кристаллы или монеты.
 const CREATE_CRYSTALS := 500

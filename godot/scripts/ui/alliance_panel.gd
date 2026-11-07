@@ -180,12 +180,12 @@ func _alliance_row(a: Dictionary) -> void:
 	row.add_child(col)
 	col.add_child(UiKit.label("[%s] %s" % [a.get("tag", ""), a.get("name", "")], 15))
 	col.add_child(_small(L.t("alliance.rowInfo", [int(a.get("level", 1)), int(a.get("members", 0)), int(a.get("cap", 25)),
-		int(a.get("min_level", 10))])))
+		int(a.get("min_level", Alliances.JOIN_LEVEL))])))
 	if str(a.get("about", "")) != "":
 		var about := _small(str(a["about"]))
 		col.add_child(about)
 	var full := int(a.get("members", 0)) >= int(a.get("cap", 25))
-	var low := Game.level < int(a.get("min_level", 10))
+	var low := Game.level < int(a.get("min_level", Alliances.JOIN_LEVEL))
 	var join := UiKit.button(L.t("alliance.join"), "green", 13, true)
 	join.disabled = full or low or Game.alliance.busy
 	join.size_flags_vertical = Control.SIZE_SHRINK_CENTER
