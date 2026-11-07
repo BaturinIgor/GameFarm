@@ -732,6 +732,42 @@ func _extra(k: int) -> void:
 			for n in main.hud.find_children("*", "", true, false):
 				if n is IntroPopup:
 					n.queue_free()
+			# Турнир зверей: отряд и итог боя, дорожка наград, рейтинг недели
+			var t := Game.tourney
+			t.demo = true
+			for id in ["cow", "pig", "sheep"]:
+				if Game.animals.stars(id) == 0:
+					Game.animals.add_star(id, 3)
+			t.state = {"week": DailySystem.week_index(), "rating": 1084, "fights_left": 3, "buys_left": 2, "points": 23, "wins": 6,
+				"log": [{"name": "Kenji", "held": true, "delta": 9}, {"name": "Pierre", "held": false, "delta": -12}],
+				"top": [{"place": 1, "name": "Masha", "level": 31, "points": 88, "me": false},
+					{"place": 2, "name": "Kenji", "level": 18, "points": 61, "me": false},
+					{"place": 3, "name": Game.rating.player_name(), "level": Game.level, "points": 23, "me": true}],
+				"last": {"week": DailySystem.week_index() - 1, "place": 4, "points": 57, "claimed": false}}
+			t.last_fight = {"won": true, "delta": 14, "points": 3, "opp": {"name": "Hazel", "level": 19, "bot": false},
+				"duels": [{"a": "cow", "ap": 240, "b": "horse", "bp": 210, "won": true},
+					{"a": "pig", "ap": 150, "b": "sheep", "bp": 190, "won": false},
+					{"a": "sheep", "ap": 120, "b": "chicken", "bp": 80, "won": true}]}
+			Game.save["tourneyTrack"] = {"week": DailySystem.week_index(), "free": [0], "paid": []}
+			main.hud.open_window(ArenaPanel.new())
+		_ when k == 61 + 2 * Story.count():
+			_shot("9_arena_fight")
+			_check_layout("arena")
+			for n in main.hud.find_children("*", "", true, false):
+				if n is ArenaPanel:
+					n.tab = "track"
+					n._dirty = true
+		_ when k == 62 + 2 * Story.count():
+			_shot("9_arena_track")
+			_check_layout("arena:track")
+			for n in main.hud.find_children("*", "", true, false):
+				if n is ArenaPanel:
+					n.tab = "top"
+					n._dirty = true
+		_ when k == 63 + 2 * Story.count():
+			_shot("9_arena_top")
+			_check_layout("arena:top")
+			main.hud.close_window()
 			_step = 5
 			_time = 300.0
 			_sub = 0

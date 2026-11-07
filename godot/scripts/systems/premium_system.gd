@@ -131,6 +131,8 @@ func grant(product: String, transaction := "") -> void:
 			return
 		if key == "eventPass":
 			Game.events.activate_vip()
+		elif key == "tourneyPass":
+			Game.tourney.activate_pass()
 		else:
 			Game.save["tickets"] = tickets() + Mine.LAMP_PACK
 		Game.show_toast("px:chest_gold", L.t("toast.purchased", [Products.title(key)]))

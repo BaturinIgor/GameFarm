@@ -1,0 +1,112 @@
+[
+ {
+  "id": "com.personal.gamefarm.tourneypass",
+  "type": "Consumable",
+  "ref": "Tournament Pass",
+  "price": "1.99",
+  "locs": [
+   [
+    "en",
+    "en",
+    "Tournament Pass",
+    "Second weekly reward line in the Animal Tournament"
+   ],
+   [
+    "ru",
+    "ru",
+    "Пропуск турнира",
+    "Вторая линия наград турнира зверей на неделю"
+   ],
+   [
+    "de",
+    "de",
+    "Turnierpass",
+    "Zweite Belohnungsreihe im Tierturnier für 1 Woche"
+   ],
+   [
+    "es",
+    "es",
+    "Pase del torneo",
+    "Segunda línea de premios del torneo por 1 semana"
+   ],
+   [
+    "fr",
+    "fr",
+    "Pass du tournoi",
+    "2e ligne de récompenses du tournoi pour 1 semaine"
+   ],
+   [
+    "it",
+    "it",
+    "Pass del torneo",
+    "Seconda linea di premi del torneo per 1 settimana"
+   ],
+   [
+    "pt-BR",
+    "pt-BR",
+    "Passe do torneio",
+    "Segunda linha de prêmios do torneio por 1 semana"
+   ],
+   [
+    "pl",
+    "pl",
+    "Przepustka turniejowa",
+    "Druga linia nagród turnieju na tydzień"
+   ],
+   [
+    "tr",
+    "tr",
+    "Turnuva Bileti",
+    "Turnuvada 1 haftalık ikinci ödül hattı"
+   ],
+   [
+    "id",
+    "id",
+    "Tiket Turnamen",
+    "Jalur hadiah kedua turnamen selama 1 minggu"
+   ],
+   [
+    "vi",
+    "vi",
+    "Vé giải đấu",
+    "Dòng thưởng thứ hai của giải đấu trong 1 tuần"
+   ],
+   [
+    "th",
+    "th",
+    "บัตรผ่านทัวร์นาเมนต์",
+    "รางวัลสายที่สองของทัวร์นาเมนต์ 1 สัปดาห์"
+   ],
+   [
+    "hi",
+    "hi",
+    "टूर्नामेंट पास",
+    "एक हफ़्ते के लिए टूर्नामेंट की दूसरी इनाम पंक्ति"
+   ],
+   [
+    "ja",
+    "ja",
+    "トーナメントパス",
+    "1週間、トーナメントの2つ目の報酬ライン"
+   ],
+   [
+    "ko",
+    "ko",
+    "토너먼트 패스",
+    "1주일간 토너먼트 두 번째 보상 줄"
+   ],
+   [
+    "zh-Hans",
+    "zh-Hans",
+    "锦标赛通行证",
+    "一周内锦标赛的第二条奖励线"
+   ],
+   [
+    "zh-Hant",
+    "zh-Hant",
+    "錦標賽通行證",
+    "一週內錦標賽的第二條獎勵線"
+   ]
+  ]
+ }
+]

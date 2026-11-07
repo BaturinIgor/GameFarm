@@ -58,6 +58,8 @@ static func bundles() -> Array:
 
 
 static func owned(product: String) -> bool:
+	if product == "tourneyPass":
+		return Game.tourney.has_pass()
 	return Game.events.has_vip() if product == "eventPass" else Game.premium.owns(product)
 
 

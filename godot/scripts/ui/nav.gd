@@ -8,7 +8,7 @@ class_name Nav
 ## Вкладки нижней панели: id, иконка, ключ подписи, разделы.
 const GROUPS := [
 	["farm", "chest", "nav.farm", ["storage", "estate", "workshop"]],
-	["animals", "paw", "hud.animals", ["animals", "wild", "incubator"]],
+	["animals", "paw", "hud.animals", ["animals", "wild", "incubator", "arena"]],
 	["quests", "scroll", "hud.quests", ["quests", "heart"]],
 	["hero", "star", "nav.hero", ["talents", "hunt", "collection", "wardrobe"]],
 	["world", "map", "nav.world", ["map", "mine", "events", "alliance"]],
@@ -24,6 +24,7 @@ const SUBS := {
 	"animals": ["hud.animals", "res://scripts/ui/animals_panel.gd"],
 	"wild": ["wild.title", "res://scripts/ui/wild_panel.gd"],
 	"incubator": ["inc.title", "res://scripts/ui/incubator_panel.gd"],
+	"arena": ["tourney.title", "res://scripts/ui/arena_panel.gd"],
 	"quests": ["hud.quests", "res://scripts/ui/quests_panel.gd"],
 	"heart": ["heart.title", "res://scripts/ui/story_panel.gd"],
 	"talents": ["hud.talents", "res://scripts/ui/talents_panel.gd"],
@@ -56,6 +57,7 @@ static func level_of(sub: String) -> int:
 		"incubator": return Incubator.MIN_LEVEL
 		"heart": return Story.MIN_LEVEL
 		"alliance": return Alliances.JOIN_LEVEL
+		"arena": return Tourney.MIN_LEVEL
 	return 0
 
 
@@ -96,6 +98,8 @@ static func _count(sub: String) -> int:
 			return Game.mine.ready_count()
 		"incubator":
 			return Game.incubator.ready_count()
+		"arena":
+			return Game.tourney.ready_count()
 		"heart":
 			return Game.story.ready_count() + (1 if Game.story.can_raise_altar() else 0)
 		"events":

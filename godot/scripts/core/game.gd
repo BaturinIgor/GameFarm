@@ -55,12 +55,13 @@ var story := StorySystem.new()
 var farm := FarmEventSystem.new()
 var rating := RatingSystem.new()
 var alliance := AllianceSystem.new()
+var tourney := TourneySystem.new()
 
 ## Все системы по порядку: для значений по умолчанию и событий.
 var systems: Array:
 	get: return [talents, workshop, animals, quests, house, garden, combat, dungeons, events, collection, legacy, premium, shop,
 		world_map, estate, daily, residents, raids, wild, academy, energy, fair, chests, mine, incubator, story, farm, rating, alliance,
-		guide]
+		guide, tourney]
 ## Где появиться после перехода через проход (id прохода).
 var arrival_gate := ""
 ## В доме: у какой станции появиться (exit, up, down); на лугу - у двери дома.
