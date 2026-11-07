@@ -8,6 +8,8 @@
 --   недели событий альянса старше 8 недель;
 --   мощь игроков, которые не заходили полгода;
 --   забранные визиты зверей в гости старше 120 дней;
+--   визиты деревни альянса старше 30 дней;
+--   забранные лоты ярмарки альянса старше 4 недель;
 --   очки турнира зверей старше 8 недель, журнал защит старше 2 недель.
 
 create or replace function public.hh_cleanup() returns void
@@ -26,6 +28,14 @@ begin
   -- Визиты зверей в гости (если выполнен alliance_guests.sql)
   if to_regproc('public.al_guests_cleanup') is not null then
     perform al_guests_cleanup();
+  end if;
+  -- Деревня альянса (если выполнен alliance_village.sql)
+  if to_regproc('public.al_village_cleanup') is not null then
+    perform al_village_cleanup();
+  end if;
+  -- Ярмарка альянса (если выполнен alliance_fair.sql)
+  if to_regproc('public.al_fair_cleanup') is not null then
+    perform al_fair_cleanup();
   end if;
   -- Турнир зверей (если выполнен tourney.sql)
   if to_regproc('public.tourney_cleanup') is not null then

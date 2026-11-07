@@ -160,6 +160,8 @@ func grant(product: String, transaction := "") -> void:
 				Game.save["skin"] = "knight"
 				Game.save.erase("gardenChestAt")
 				Game.combat.grant_weapon("royalSword")
+			"villagePack":
+				Game.alliance.grant_village_pack()
 			_:
 				if Products.is_level_bundle(key) or Products.shop_granted(key):
 					Game.shop.grant(key)

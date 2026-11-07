@@ -8,7 +8,7 @@ const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", 
 	"dungeon", "trophies", "collection", "collection:zoo", "collection:trophies", "legacy", "wardrobe", "map", "map:ember", "map:azure", "events", "shop",
 	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story", "wild", "talents:estate",
 	"story", "story:altar", "collection:diary", "alliance:find", "alliance:create", "alliance:main", "alliance:events", "alliance:chat",
-	"alliance:members", "alliance:top", "alliance:players", "alliance:chronicle"]
+	"alliance:members", "alliance:top", "alliance:players", "alliance:chronicle", "alliance:fair", "alliance:village"]
 
 var dir := "/tmp/shots"
 var main: Node
@@ -899,6 +899,20 @@ func _alliance_demo(w: String) -> void:
 				{"id": 2, "name": "Kenji", "animal": "chicken", "stars": 2, "returns": tn - 60}],
 			"in": [{"id": 3, "name": "Pierre", "animal": "pig", "stars": 4, "returns": tn + 9 * 3600}],
 			"friends": [{"name": "Masha", "visits": 6}, {"name": "Kenji", "visits": 2}]}
+		al.fair = {"best": "Masha", "top": [{"name": "Masha", "coins": 4200, "sold": 3, "me": false},
+				{"name": Game.rating.player_name(), "coins": 900, "sold": 1, "me": true}],
+			"mine": [{"id": 7, "kind": "planks", "qty": 120, "price": 2700, "buyer": null, "old": false}],
+			"lots": [{"id": 8, "seller": "Kenji", "kind": "iron", "qty": 200, "price": 1800},
+				{"id": 9, "seller": "Pierre", "kind": "pumpkin", "qty": 20, "price": 4200}]}
+		al.village = {"donates": 2, "waters": 1, "inbox": {"water": 0, "gift": 0},
+			"buildings": {"mill": {"level": 3, "points": 410000, "need": Village.need(4)},
+				"tower": {"level": 1, "points": 90000, "need": Village.need(2)},
+				"well": {"level": 0, "points": 120000, "need": Village.need(1)}},
+			"houses": [{"id": "me", "name": Game.rating.player_name(), "level": 20, "deco": ["fountain", "lantern"], "me": true},
+				{"id": "a", "name": "Masha", "level": 31, "deco": ["goldStatue", "flowers", "fence"], "me": false, "watered": true, "gifted": false},
+				{"id": "b", "name": "Kenji", "level": 18, "deco": [], "me": false, "watered": false, "gifted": true}]}
+		Game.save["houseDeco"] = ["fountain", "lantern"]
+		Game.save["houseDecoOn"] = ["fountain", "lantern"]
 		al.mentor = {"mentor": null, "apprentices": [
 			{"id": "b", "name": "Lucia", "level": 16, "start": 9, "claimed": [10], "gift": false},
 			{"id": "d", "name": "Tom", "level": 8, "start": 6, "claimed": [], "gift": true}]}

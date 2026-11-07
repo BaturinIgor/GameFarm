@@ -68,6 +68,19 @@ func defaults(save: Dictionary) -> void:
 		func(x: Dictionary) -> Dictionary: return {"stars": int(x.get("stars", 1)), "returns": int(x.get("returns", 0))}) \
 		if hosted is Array and save["alliance"].has("id") else []
 	save["guestSlot"] = bool(save.get("guestSlot", false))
+	save["fairSlot"] = bool(save.get("fairSlot", false))
+	# Деревня: купленные и выставленные украшения домика, уровни общих построек (для бонусов без сети)
+	for key in ["houseDeco", "houseDecoOn"]:
+		var list: Variant = save.get(key, [])
+		save[key] = (list as Array).map(func(x: Variant) -> String: return str(x)).filter(
+			func(x: String) -> bool: return Village.valid_deco(x)) if list is Array else []
+	save["houseDecoOn"] = save["houseDecoOn"].slice(0, Village.SHOWN)
+	var vl: Variant = save.get("villageLevels", {})
+	var levels := {}
+	if vl is Dictionary and save["alliance"].has("id"):
+		for k in Village.BUILDINGS:
+			levels[k] = clampi(int(vl.get(k, 0)), 0, Village.MAX_LEVEL)
+	save["villageLevels"] = levels
 	_hosted_was = -1
 	if _ticker == null:
 		_start_ticker.call_deferred()
@@ -162,6 +175,8 @@ func refresh(force := false) -> void:
 		await fetch_weather()
 		await fetch_guests()
 		await fetch_mentor()
+		await fetch_fair()
+		await fetch_village()
 		await refresh_events()
 
 
@@ -241,7 +256,10 @@ func statue_frame() -> String:
 
 
 func owned_frames() -> Array:
-	return ["stone"] + Game.save.get("statueFrames", []).filter(func(f: Variant) -> bool: return Chronicle.valid(str(f)))
+	var list: Array = ["stone"] + Game.save.get("statueFrames", []).filter(func(f: Variant) -> bool: return Chronicle.valid(str(f)))
+	if Game.premium.owns("villagePack") and not Village.PACK_FRAME in list:
+		list.append(Village.PACK_FRAME)
+	return list
 
 
 ## Купить рамку за кристаллы (или выбрать уже купленную) и поставить её на статую.
@@ -249,7 +267,7 @@ func pick_frame(frame: String) -> bool:
 	if not Chronicle.valid(frame):
 		return false
 	if not frame in owned_frames():
-		if not Game.shop.spend_crystals(Chronicle.price(frame)):
+		if Chronicle.pack_only(frame) or not Game.shop.spend_crystals(Chronicle.price(frame)):
 			return false
 		if not Game.save.has("statueFrames"):
 			Game.save["statueFrames"] = []
@@ -564,6 +582,302 @@ func leave_mentor() -> void:
 	await fetch_mentor()
 
 
+# MARK: Деревня альянса
+
+## Ответ al_village: buildings {вид: {level, points, need}}, houses, donates, waters, inbox. Пусто - не загружено.
+var village: Dictionary = {}
+
+
+func fetch_village() -> void:
+	if demo or not in_alliance():
+		return
+	var res: Variant = await Game.rating.call_rpc("al_village", {})
+	if not res is Dictionary:
+		return
+	village = res
+	_take_village_levels()
+	var inbox: Dictionary = res.get("inbox", {}) if res.get("inbox") is Dictionary else {}
+	if int(inbox.get("water", 0)) + int(inbox.get("gift", 0)) > 0:
+		await _take_village_inbox()
+	Game.changed.emit()
+
+
+func _take_village_levels() -> void:
+	var b: Variant = village.get("buildings", {})
+	if not b is Dictionary:
+		return
+	var levels := {}
+	for k in Village.BUILDINGS:
+		levels[k] = clampi(int((b as Dictionary).get(k, {}).get("level", 0)), 0, Village.MAX_LEVEL)
+	if levels != Game.save.get("villageLevels", {}):
+		Game.save["villageLevels"] = levels
+		Game.recalc()
+		Game.mark_dirty()
+
+
+## Бонус постройки деревни (0, если не в альянсе).
+func village_bonus(kind: String) -> float:
+	if not in_alliance():
+		return 0.0
+	return Village.bonus(int(Game.save.get("villageLevels", {}).get(kind, 0)))
+
+
+## Поливы и подарки от друзей: грядки растут быстрее, подарки - серебряные ключи.
+func _take_village_inbox() -> void:
+	var res: Variant = await Game.rating.call_rpc("al_village_take", {})
+	if not res is Dictionary:
+		return
+	var waters := int(res.get("water", 0))
+	var gifts := int(res.get("gift", 0))
+	if waters > 0:
+		Game.garden.boost_all(Village.WATER_GROW * waters)
+	if gifts > 0:
+		Game.chests.add_keys("silver", gifts, false)
+	if waters + gifts > 0:
+		var names: Array = res.get("from", [])
+		Game.show_toast("px:watering_can", L.t("village.visited", [", ".join(names.slice(0, 3).map(func(x: Variant) -> String: return str(x))), waters, gifts]))
+		Game.mark_dirty()
+
+
+func donates_left() -> int:
+	return maxi(0, Village.DONATES_PER_DAY - int(village.get("donates", 0)))
+
+
+func waters_left() -> int:
+	return maxi(0, Village.WATERS_PER_DAY - int(village.get("waters", 0)))
+
+
+func donate_building(kind: String) -> void:
+	var coins := Village.donate_coins(Game.level)
+	if busy or donates_left() <= 0 or int(Game.save["coins"]) < coins or not kind in Village.BUILDINGS:
+		return
+	busy = true
+	var res: Variant = await Game.rating.call_rpc("al_village_build", {"p_kind": kind, "p_coins": coins, "p_player": Game.rating.player_name()})
+	busy = false
+	if res == null:
+		_fail()
+		return
+	Game.save["coins"] = int(Game.save["coins"]) - coins
+	Sound.play("purchase")
+	Game.show_toast("px:hammer", L.t("village.donated", [Fmt.n(coins), L.t("village.b." + kind)]))
+	Game.mark_dirty()
+	await fetch_village()
+
+
+## Полить грядки друга (гостю - монеты) или оставить подарок (за кристаллы).
+func visit(host: String, act: String) -> void:
+	if busy or not act in ["water", "gift"]:
+		return
+	if act == "water" and waters_left() <= 0:
+		return
+	if act == "gift" and Game.shop.crystals() < Village.GIFT_CRYSTALS:
+		Game.show_toast("px:gem", L.t("crystals.notEnough", [Fmt.n(Village.GIFT_CRYSTALS - Game.shop.crystals())]))
+		return
+	busy = true
+	var res: Variant = await Game.rating.call_rpc("al_village_visit", {"p_host": host, "p_act": act})
+	busy = false
+	if res == null:
+		_fail()
+		return
+	if act == "water":
+		var c := Village.water_coins(Game.level)
+		Game.add_coins(c)
+		Game.show_toast("px:watering_can", L.t("village.watered", [Fmt.n(c)]))
+	else:
+		Game.shop.spend_crystals(Village.GIFT_CRYSTALS)
+		Sound.play("purchase")
+		Game.show_toast("px:chest", L.t("village.gifted"))
+	Game.mark_dirty()
+	await fetch_village()
+
+
+func owned_decos() -> Array:
+	var list: Array = Game.save.get("houseDeco", []).duplicate()
+	if Game.premium.owns("villagePack"):
+		for id in Village.DECO_ORDER:
+			if Village.in_pack(id) and not id in list:
+				list.append(id)
+	return list
+
+
+func shown_decos() -> Array:
+	return Game.save.get("houseDecoOn", []).filter(func(x: Variant) -> bool: return str(x) in owned_decos())
+
+
+func buy_deco(id: String) -> bool:
+	if not Village.valid_deco(id) or Village.in_pack(id) or id in owned_decos():
+		return false
+	if not Game.shop.spend_crystals(Village.deco_price(id)):
+		Game.show_toast("px:gem", L.t("crystals.notEnough", [Fmt.n(Village.deco_price(id) - Game.shop.crystals())]))
+		return false
+	Game.save["houseDeco"].append(id)
+	Sound.play("purchase")
+	toggle_deco(id)
+	return true
+
+
+## Показать украшение у домика или убрать. Больше SHOWN - самое старое уходит.
+func toggle_deco(id: String) -> void:
+	if not id in owned_decos():
+		return
+	var on: Array = shown_decos()
+	if id in on:
+		on.erase(id)
+	else:
+		on.append(id)
+		if on.size() > Village.SHOWN:
+			on = on.slice(on.size() - Village.SHOWN)
+	Game.save["houseDecoOn"] = on
+	Game.mark_dirty()
+	if in_alliance() and not demo:
+		Game.rating.call_rpc("al_village_deco", {"p_deco": on})
+	for h in village.get("houses", []):
+		if h is Dictionary and bool(h.get("me", false)):
+			h["deco"] = on
+	Game.changed.emit()
+
+
+## Набор «Праздник в деревне» (PremiumSystem.grant, один раз): кристаллы, украшения уже в owned_decos.
+func grant_village_pack() -> void:
+	Game.shop.add_crystals(Village.PACK_CRYSTALS)
+	var on: Array = shown_decos()
+	for id in Village.DECO_ORDER:
+		if Village.in_pack(id) and on.size() < Village.SHOWN and not id in on:
+			on.append(id)
+	Game.save["houseDecoOn"] = on
+	if in_alliance() and not demo:
+		Game.rating.call_rpc("al_village_deco", {"p_deco": on})
+
+
+# MARK: Ярмарка альянса
+
+## Ответ al_fair: lots (чужие лоты недели), mine (мои незабранные), top (продавцы недели), best (лучший прошлой).
+var fair: Dictionary = {}
+
+
+func fetch_fair() -> void:
+	if demo or not in_alliance():
+		return
+	var res: Variant = await Game.rating.call_rpc("al_fair", {})
+	if res is Dictionary:
+		fair = res
+		# Проданное и непроданное с прошлых недель забираем сразу
+		for x in fair.get("mine", []):
+			if x is Dictionary and (x.get("buyer") != null or bool(x.get("old", false))):
+				await collect_fair()
+				break
+		Game.changed.emit()
+
+
+func fair_slots() -> int:
+	return AllianceFair.MAX_SLOTS if bool(Game.save.get("fairSlot", false)) else AllianceFair.SLOTS
+
+
+## Мои лоты, которые сейчас на прилавке.
+func fair_on_sale() -> Array:
+	return fair.get("mine", []).filter(func(x: Variant) -> bool:
+		return x is Dictionary and x.get("buyer") == null and not bool(x.get("old", false)))
+
+
+func can_list_lot() -> bool:
+	return in_alliance() and not fair.is_empty() and fair_on_sale().size() < fair_slots()
+
+
+## Выставить лот: ресурсы снимаются со склада сразу, при ошибке возвращаются.
+func list_lot(kind: String, qty: int, price: int) -> void:
+	if busy or not can_list_lot() or not AllianceFair.valid_kind(kind) or qty < 1 or qty > AllianceFair.MAX_QTY \
+			or Game.amount(kind) < qty:
+		return
+	price = AllianceFair.clamp_price(kind, qty, price)
+	Game.pay({"items": [[kind, qty]]})
+	busy = true
+	var res: Variant = await Game.rating.call_rpc("al_fair_list", {"p_kind": kind, "p_qty": qty, "p_price": price,
+		"p_slots": fair_slots(), "p_player": Game.rating.player_name()})
+	busy = false
+	if res == null:
+		Game.add_to_storage(kind, qty, false)
+		_fail()
+		await fetch_fair()
+		return
+	Sound.play("coin")
+	Game.show_toast("res:" + kind, L.t("afair.listed", [Res.name_of(kind), qty]))
+	Game.mark_dirty()
+	await fetch_fair()
+
+
+func buy_lot(lot: Dictionary) -> void:
+	var price := int(lot.get("price", 0))
+	if busy or int(Game.save["coins"]) < price:
+		return
+	busy = true
+	var res: Variant = await Game.rating.call_rpc("al_fair_buy", {"p_id": int(lot.get("id", 0)), "p_player": Game.rating.player_name()})
+	busy = false
+	if not res is Dictionary:
+		_fail()
+		await fetch_fair()
+		return
+	var kind := str(res.get("kind", ""))
+	var qty := int(res.get("qty", 0))
+	Game.save["coins"] = int(Game.save["coins"]) - int(res.get("price", price))
+	if AllianceFair.valid_kind(kind):
+		var put := Game.add_to_storage(kind, qty, false)
+		if put < qty:
+			Game.save["backpack"][kind] = int(Game.save["backpack"].get(kind, 0)) + qty - put
+	Sound.play("purchase")
+	Game.show_toast("res:" + kind, L.t("afair.bought", [Res.name_of(kind), qty]))
+	Game.mark_dirty()
+	await fetch_fair()
+
+
+func cancel_lot(id: int) -> void:
+	if busy:
+		return
+	busy = true
+	var res: Variant = await Game.rating.call_rpc("al_fair_cancel", {"p_id": id})
+	busy = false
+	if not res is Dictionary:
+		_fail()
+	else:
+		_return_items([res])
+	await fetch_fair()
+
+
+func collect_fair() -> void:
+	var res: Variant = await Game.rating.call_rpc("al_fair_collect", {})
+	if not res is Dictionary:
+		return
+	var coins := int(res.get("coins", 0))
+	if coins > 0:
+		Game.add_coins(coins)
+		Game.show_toast("px:coins", L.t("afair.earned", [Fmt.n(coins)]))
+	_return_items(res.get("items", []))
+	Game.mark_dirty()
+
+
+func _return_items(items: Array) -> void:
+	for x in items:
+		if not x is Dictionary:
+			continue
+		var kind := str(x.get("kind", ""))
+		var qty := int(x.get("qty", 0))
+		if not AllianceFair.valid_kind(kind) or qty <= 0:
+			continue
+		var put := Game.add_to_storage(kind, qty, false)
+		if put < qty:
+			Game.save["backpack"][kind] = int(Game.save["backpack"].get(kind, 0)) + qty - put
+	Game.mark_dirty()
+
+
+func buy_fair_slot() -> bool:
+	if bool(Game.save.get("fairSlot", false)) or not Game.shop.spend_crystals(AllianceFair.SLOT_CRYSTALS):
+		return false
+	Game.save["fairSlot"] = true
+	Sound.play("purchase")
+	Game.mark_dirty()
+	Game.changed.emit()
+	return true
+
+
 func pet_stage() -> int:
 	return int(Game.save.get("alliance", {}).get("petStage", 1)) if in_alliance() else 1
 
@@ -763,7 +1077,7 @@ func _act(fn: String, args: Dictionary) -> bool:
 func _fail() -> void:
 	var e := Game.rating.last_error
 	error = e if e in ["limit", "full", "level too low", "name taken", "tag taken", "bad name", "talent locked",
-		"talent maxed", "too fast", "already in alliance", "not allowed", "pet fed", "weather busy", "guest away", "host full", "has mentor", "level too high"] else "network"
+		"talent maxed", "too fast", "already in alliance", "not allowed", "pet fed", "weather busy", "guest away", "host full", "has mentor", "level too high", "sold", "bad lot"] else "network"
 	Game.changed.emit()
 
 
@@ -1048,6 +1362,10 @@ static func system_text(m: Dictionary) -> String:
 			if g.size() == 2:
 				return L.t("alliance.sys.guest", [str(m.get("name", "")), Animals.name_of(g[0]), g[1]])
 		"mentor": return L.t("alliance.sys.mentor", [str(m.get("name", "")), str(m.get("body", ""))])
+		"village":
+			var vb := str(m.get("body", "")).split(":")
+			if vb.size() == 2 and vb[0] in Village.BUILDINGS:
+				return L.t("alliance.sys.village", [str(m.get("name", "")), L.t("village.b." + vb[0]), int(vb[1])])
 		"weather":
 			var parts := str(m.get("body", "")).split(":")
 			if parts.size() == 2 and parts[0] in AllianceWeather.KINDS:

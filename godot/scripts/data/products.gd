@@ -14,6 +14,8 @@ const KEYS := [
 	"keyPack", "keyChest",
 	# Пропуск турнира зверей на неделю
 	"tourneyPass",
+	# Праздник в деревне альянса: украшения, королевская рамка, кристаллы
+	"villagePack",
 ]
 
 ## Идентификаторы магазина (rawValue ProductID).
@@ -48,6 +50,7 @@ const IDS := {
 	"keyPack": "com.personal.gamefarm.keypack",
 	"keyChest": "com.personal.gamefarm.keychest",
 	"tourneyPass": "com.personal.gamefarm.tourneypass",
+	"villagePack": "com.personal.gamefarm.villagepack",
 }
 
 ## Цена до загрузки из магазина (и в тестовой сборке).
@@ -60,6 +63,7 @@ const PRICES := {
 	"aura": "$2.99", "rainbow": "$2.99", "glowMeadow": "$1.99", "petGlow": "$1.99", "builder": "$4.99",
 	"energyPack": "$0.99", "attemptsPack": "$0.99", "keyPack": "$1.99", "keyChest": "$4.99",
 	"tourneyPass": "$1.99",
+	"villagePack": "$2.99",
 }
 
 ## Цвет набора в магазине (Offers.tone).
@@ -72,6 +76,7 @@ const TONES := {
 	"aura": "gold", "rainbow": "purple", "glowMeadow": "blue", "petGlow": "green", "builder": "orange",
 	"energyPack": "orange", "attemptsPack": "red", "keyPack": "blue", "keyChest": "gold",
 	"tourneyPass": "gold",
+	"villagePack": "purple",
 }
 
 ## Предложение дня: три варианта по очереди, покупается раз в день. value - во сколько кристаллов его оценивать

@@ -108,6 +108,17 @@ func apply_rain(w: Dictionary, from: float, to: float) -> void:
 		Game.changed.emit()
 
 
+## Ускорить все посаженные грядки на seconds (полив друга из альянса).
+func boost_all(seconds: float) -> void:
+	if seconds <= 0.0:
+		return
+	for b in Game.save["beds"]:
+		if b is Dictionary and not Farming.is_empty(b) and b.has("plantedAt"):
+			b["boost"] = float(b.get("boost", 0.0)) + seconds
+	Game.mark_dirty()
+	Game.changed.emit()
+
+
 func seeds(crop: String) -> int:
 	return int(Game.save["seeds"].get(crop, 0))
 

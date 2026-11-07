@@ -108,5 +108,115 @@
     "一週內錦標賽的第二條獎勵線"
    ]
   ]
+ },
+ {
+  "id": "com.personal.gamefarm.villagepack",
+  "type": "Non-Consumable",
+  "ref": "Village Festival",
+  "price": "2.99",
+  "locs": [
+   [
+    "en",
+    "en",
+    "Village Festival",
+    "3 village decorations, royal frame and 300 crystals"
+   ],
+   [
+    "ru",
+    "ru",
+    "Праздник в деревне",
+    "3 украшения деревни, королевская рамка и 300 кристаллов"
+   ],
+   [
+    "de",
+    "de",
+    "Dorffest",
+    "3 Dorfdeko, königlicher Rahmen und 300 Kristalle"
+   ],
+   [
+    "es",
+    "es",
+    "Fiesta de la aldea",
+    "3 adornos, marco real y 300 cristales"
+   ],
+   [
+    "fr",
+    "fr",
+    "Fête du village",
+    "3 décos du village, cadre royal et 300 cristaux"
+   ],
+   [
+    "it",
+    "it",
+    "Festa del villaggio",
+    "3 decorazioni, cornice reale e 300 cristalli"
+   ],
+   [
+    "pt-BR",
+    "pt-BR",
+    "Festa na vila",
+    "3 enfeites, moldura real e 300 cristais"
+   ],
+   [
+    "pl",
+    "pl",
+    "Święto wioski",
+    "3 ozdoby, królewska rama i 300 kryształów"
+   ],
+   [
+    "tr",
+    "tr",
+    "Köy Şenliği",
+    "3 köy süsü, kraliyet çerçevesi ve 300 kristal"
+   ],
+   [
+    "id",
+    "id",
+    "Pesta Desa",
+    "3 hiasan desa, bingkai kerajaan, 300 kristal"
+   ],
+   [
+    "vi",
+    "vi",
+    "Lễ hội làng",
+    "3 đồ trang trí, khung hoàng gia và 300 pha lê"
+   ],
+   [
+    "th",
+    "th",
+    "เทศกาลหมู่บ้าน",
+    "ของตกแต่ง 3 ชิ้น กรอบหลวง และ 300 คริสตัล"
+   ],
+   [
+    "hi",
+    "hi",
+    "गाँव का उत्सव",
+    "3 सजावट, शाही फ़्रेम और 300 क्रिस्टल"
+   ],
+   [
+    "ja",
+    "ja",
+    "村祭り",
+    "村の飾り3つ、王家のフレーム、クリスタル300"
+   ],
+   [
+    "ko",
+    "ko",
+    "마을 축제",
+    "마을 장식 3개, 왕실 액자, 크리스탈 300개"
+   ],
+   [
+    "zh-Hans",
+    "zh-Hans",
+    "村庄节日",
+    "3件村庄装饰、皇家相框和300水晶"
+   ],
+   [
+    "zh-Hant",
+    "zh-Hant",
+    "村莊節日",
+    "3件村莊裝飾、皇家相框和300水晶"
+   ]
+  ]
  }
 ]

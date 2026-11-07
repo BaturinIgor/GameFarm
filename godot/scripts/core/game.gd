@@ -767,6 +767,9 @@ func recalc() -> void:
 		xp_bonus += AlliancePet.bonus(alliance.pet_stage())
 		# Звери друзей, которые гостят у меня
 		s.yield_all += alliance.guest_bonus()
+		s.yield_all += alliance.village_bonus("mill")
+		xp_bonus += alliance.village_bonus("tower")
+		s.grow_mult /= 1.0 + alliance.village_bonus("well")
 		# Солнце, которое позвал альянс
 		if alliance.weather_now() == "sun":
 			s.yield_all += AllianceWeather.SUN_YIELD

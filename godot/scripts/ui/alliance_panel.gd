@@ -39,9 +39,9 @@ func _init(start_tab := "") -> void:
 	if start_tab in ["players", "strength"]:
 		tab = "top"
 		top_kind = start_tab
-	if start_tab == "chronicle":
+	if start_tab in ["chronicle", "fair", "village"]:
 		tab = "members"
-		members_kind = "chronicle"
+		members_kind = start_tab
 	_search.placeholder_text = L.t("alliance.searchHint")
 	_search.max_length = 20
 	_search.text_submitted.connect(func(t: String) -> void: Game.alliance.search(t))
@@ -663,14 +663,25 @@ func _send() -> void:
 
 
 func _members() -> void:
-	var kinds := [["list", L.t("alliance.members.list")], ["chronicle", L.t("chronicle.title")]]
+	var kinds := [["list", L.t("alliance.members.list")], ["village", L.t("village.title")], ["fair", L.t("afair.title")],
+		["chronicle", L.t("chronicle.title")]]
 	content.add_child(UiKit.tabs(kinds, members_kind, func(id: String) -> void:
 		members_kind = id
 		if id == "chronicle":
 			Game.alliance.fetch_chronicle()
+		elif id == "fair":
+			Game.alliance.fetch_fair()
+		elif id == "village":
+			Game.alliance.fetch_village()
 		_dirty = true))
 	if members_kind == "chronicle":
 		_chronicle()
+		return
+	if members_kind == "fair":
+		_fair()
+		return
+	if members_kind == "village":
+		_village()
 		return
 	var al := Game.alliance
 	var me_role := al.role()
@@ -727,6 +738,208 @@ func _members() -> void:
 			var name := str(m.get("name", ""))
 			more.pressed.connect(func() -> void: _manage(uid, name, r))
 			row.add_child(more)
+
+
+## Деревня альянса: общие постройки, мой домик с украшениями и домики друзей (полить, подарок).
+func _village() -> void:
+	var al := Game.alliance
+	var v := al.village
+	if v.is_empty():
+		content.add_child(_note(L.t("alliance.loading")))
+		return
+	var c := card()
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 8)
+	c.add_child(head)
+	head.add_child(UiKit.icon("hammer", 24))
+	var hl := UiKit.label(L.t("village.buildings"), 15)
+	hl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(hl)
+	head.add_child(UiKit.label(L.t("village.donatesLeft", [al.donates_left()]), 12, UiKit.INK_SOFT))
+	c.add_child(_small(L.t("village.buildHint")))
+	var coins := Village.donate_coins(Game.level)
+	var bs: Dictionary = v.get("buildings", {}) if v.get("buildings") is Dictionary else {}
+	for k in Village.BUILDINGS:
+		var b: Dictionary = bs.get(k, {})
+		var lvl := int(b.get("level", 0))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		c.add_child(row)
+		var ic := UiKit.icon(str(Village.ICONS[k]), 28)
+		ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(ic)
+		var col := VBoxContainer.new()
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_theme_constant_override("separation", 2)
+		row.add_child(col)
+		col.add_child(UiKit.label(L.t("village.bLevel", [L.t("village.b." + k), lvl]), 13))
+		col.add_child(UiKit.label(L.t("village.bonus." + k, [Fmt.pct(Village.bonus(lvl))]), 11, UiKit.INK_SOFT))
+		if lvl < Village.MAX_LEVEL:
+			var need := maxi(1, int(b.get("need", Village.need(lvl + 1))))
+			var pts := int(b.get("points", 0))
+			var bar := UiKit.bar(float(pts) / float(need), "gold", 150.0, 12.0, "%s/%s" % [Fmt.n(pts), Fmt.n(need)])
+			bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			col.add_child(bar)
+			var give := MapPanel.icon_button([["i", "coins"], ["t", Fmt.n(coins)]], "orange", 12)
+			give.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			give.disabled = al.donates_left() <= 0 or int(Game.save["coins"]) < coins
+			var kind: String = k
+			give.pressed.connect(func() -> void: al.donate_building(kind))
+			row.add_child(give)
+		else:
+			row.add_child(UiKit.label(L.t("common.max"), 12, UiKit.GOOD))
+	# Мой домик
+	var mine := card()
+	var mh := HBoxContainer.new()
+	mh.add_theme_constant_override("separation", 8)
+	mine.add_child(mh)
+	mh.add_child(UiKit.icon("door", 24))
+	var ml := UiKit.label(L.t("village.myHouse"), 14)
+	ml.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mh.add_child(ml)
+	var deco := UiKit.button(L.t("village.decorate"), "purple", 12, true)
+	deco.pressed.connect(func() -> void: DecoPicker.open())
+	mh.add_child(deco)
+	mine.add_child(_deco_row(al.shown_decos()))
+	mine.add_child(_small(L.t("village.visitHint", [al.waters_left(), Village.WATERS_PER_DAY, Fmt.n(Village.water_coins(Game.level))])))
+	# Домики друзей
+	for x in v.get("houses", []):
+		var h: Dictionary = x
+		if bool(h.get("me", false)):
+			continue
+		var hc := card()
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		hc.add_child(row)
+		var col := VBoxContainer.new()
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_theme_constant_override("separation", 2)
+		row.add_child(col)
+		col.add_child(UiKit.label(L.t("village.house", [str(h.get("name", "")), int(h.get("level", 1))]), 13))
+		col.add_child(_deco_row(h.get("deco", []) if h.get("deco") is Array else []))
+		var hid := str(h.get("id", ""))
+		var w := UiKit.button(L.t("village.water"), "blue", 12, true)
+		w.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		w.disabled = bool(h.get("watered", false)) or al.waters_left() <= 0
+		w.pressed.connect(func() -> void: al.visit(hid, "water"))
+		if not w.disabled:
+			UiKit.attention(w)
+		row.add_child(w)
+		if not bool(h.get("gifted", false)):
+			var g := ShopPanel.crystal_button(Village.GIFT_CRYSTALS, "purple", true)
+			g.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			g.pressed.connect(func() -> void: al.visit(hid, "gift"))
+			row.add_child(g)
+	content.add_child(_note(L.t("village.giftHint")))
+
+
+func _deco_row(list: Array) -> HFlowContainer:
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 4)
+	row.add_theme_constant_override("v_separation", 2)
+	if list.is_empty():
+		row.add_child(UiKit.label(L.t("village.noDeco"), 11, UiKit.INK_SOFT))
+	for x in list:
+		var id := str(x)
+		if not Village.valid_deco(id):
+			continue
+		var item := HBoxContainer.new()
+		item.add_theme_constant_override("separation", 2)
+		item.add_child(UiKit.icon(str(Village.DECOS[id]["icon"]), 18))
+		item.add_child(UiKit.label(L.t("village.deco." + id), 11, UiKit.INK_SOFT))
+		row.add_child(item)
+	return row
+
+
+## Ярмарка альянса: мой прилавок, лоты других участников и лучшие продавцы недели.
+func _fair() -> void:
+	var al := Game.alliance
+	var f := al.fair
+	if f.is_empty():
+		content.add_child(_note(L.t("alliance.loading")))
+		return
+	var c := card()
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 8)
+	c.add_child(head)
+	head.add_child(UiKit.icon("basket", 24))
+	var hl := UiKit.label(L.t("afair.title"), 15)
+	hl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(hl)
+	head.add_child(UiKit.label(EventsPanel.long_countdown(DailySystem.week_left()), 12, UiKit.INK_SOFT))
+	c.add_child(_small(L.t("afair.hint")))
+	if f.get("best") != null:
+		c.add_child(UiKit.label(L.t("afair.best", [str(f["best"])]), 13, UiKit.GOLD_DARK))
+	for x in f.get("top", []):
+		var t: Dictionary = x
+		c.add_child(_small(L.t("afair.seller", [str(t.get("name", "")), Fmt.n(int(t.get("coins", 0))), int(t.get("sold", 0))])))
+	# Мой прилавок
+	var mine := card()
+	var on_sale := al.fair_on_sale()
+	var mh := HBoxContainer.new()
+	mine.add_child(mh)
+	var ml := UiKit.label(L.t("afair.mine"), 14)
+	ml.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mh.add_child(ml)
+	mh.add_child(UiKit.label(L.t("afair.slots", [on_sale.size(), al.fair_slots()]), 12, UiKit.INK_SOFT))
+	for x in on_sale:
+		var lot: Dictionary = x
+		var row := _lot_row(lot, "")
+		mine.add_child(row)
+		var cancel := UiKit.button(L.t("afair.cancel"), "wood", 12, true)
+		cancel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var lid := int(lot.get("id", 0))
+		cancel.pressed.connect(func() -> void: al.cancel_lot(lid))
+		row.add_child(cancel)
+	if al.can_list_lot():
+		var put := UiKit.button(L.t("afair.put"), "green", 14)
+		put.pressed.connect(func() -> void: FairLotPicker.open())
+		mine.add_child(put)
+	if al.fair_slots() < AllianceFair.MAX_SLOTS:
+		var srow := HBoxContainer.new()
+		srow.add_theme_constant_override("separation", 8)
+		mine.add_child(srow)
+		var sl := _small(L.t("afair.slot2"))
+		sl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		srow.add_child(sl)
+		var sb := ShopPanel.crystal_button(AllianceFair.SLOT_CRYSTALS, "purple", true)
+		sb.pressed.connect(func() -> void:
+			if not al.buy_fair_slot():
+				Game.show_toast("px:gem", L.t("crystals.notEnough", [Fmt.n(AllianceFair.SLOT_CRYSTALS - Game.shop.crystals())])))
+		srow.add_child(sb)
+	# Лоты других
+	var lots: Array = f.get("lots", [])
+	var lc := card()
+	lc.add_child(UiKit.label(L.t("afair.lots"), 14))
+	if lots.is_empty():
+		lc.add_child(_small(L.t("afair.empty")))
+	for x in lots:
+		var lot: Dictionary = x
+		var row := _lot_row(lot, str(lot.get("seller", "")))
+		lc.add_child(row)
+		var price := int(lot.get("price", 0))
+		var b := MapPanel.icon_button([["i", "coins"], ["t", Fmt.n(price)]], "green" if int(Game.save["coins"]) >= price else "gray", 13)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		b.disabled = int(Game.save["coins"]) < price
+		b.pressed.connect(func() -> void: al.buy_lot(lot))
+		row.add_child(b)
+
+
+func _lot_row(lot: Dictionary, seller: String) -> HBoxContainer:
+	var kind := str(lot.get("kind", ""))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	var ic := UiKit.icon_any("res:" + kind, 30)
+	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(ic)
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_theme_constant_override("separation", 0)
+	row.add_child(col)
+	col.add_child(UiKit.label(L.t("afair.lot", [Res.name_of(kind), int(lot.get("qty", 0))]), 13))
+	var sub := L.t("afair.from", [seller]) if seller != "" else L.t("afair.price", [Fmt.n(int(lot.get("price", 0)))])
+	col.add_child(UiKit.label(sub, 11, UiKit.INK_SOFT))
+	return row
 
 
 ## Звери в гости: мои звери у друзей (с подарком по возвращении), гости у меня и дружба.
@@ -933,7 +1146,10 @@ func _frame_card() -> void:
 	row.add_theme_constant_override("separation", 6)
 	c.add_child(row)
 	var al := Game.alliance
-	for id in Chronicle.ORDER:
+	var frames: Array = Chronicle.ORDER.duplicate()
+	if Village.PACK_FRAME in al.owned_frames():
+		frames.append(Village.PACK_FRAME)
+	for id in frames:
 		var f: Dictionary = Chronicle.FRAMES[id]
 		var owned: bool = id in al.owned_frames()
 		var b := Button.new()

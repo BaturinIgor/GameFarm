@@ -9,6 +9,8 @@ const FRAMES := {
 	"gold": {"crystals": 300, "fill": Color("ffd54a"), "edge": Color("b07a10")},
 	"crystal": {"crystals": 500, "fill": Color("9fe4ff"), "edge": Color("3a8ab8")},
 	"flame": {"crystals": 800, "fill": Color("ff9a4a"), "edge": Color("c0361a")},
+	# Только из набора «Праздник в деревне» (Village.PACK_FRAME)
+	"royal": {"crystals": 0, "pack": true, "fill": Color("b98cff"), "edge": Color("5a2a9a")},
 }
 const ORDER := ["stone", "bronze", "gold", "crystal", "flame"]
 ## Сколько недель летописи показывать.
@@ -17,6 +19,11 @@ const MAX_WEEKS := 30
 
 static func price(frame: String) -> int:
 	return int(FRAMES.get(frame, {}).get("crystals", 0))
+
+
+## Рамку не купить за кристаллы, она приходит с набором.
+static func pack_only(frame: String) -> bool:
+	return bool(FRAMES.get(frame, {}).get("pack", false))
 
 
 static func valid(frame: String) -> bool:
