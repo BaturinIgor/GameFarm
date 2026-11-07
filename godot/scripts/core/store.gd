@@ -15,6 +15,7 @@ static var _prices := {}
 static var _loaded := false
 static var _requested_at := -100.0
 static var _restoring := false
+static var _restore_at := -100.0
 static var _poller: Timer
 
 
@@ -72,9 +73,12 @@ static func buy(product: String) -> void:
 
 ## Восстановить покупки: App Store присылает все купленные навсегда наборы заново.
 static func restore() -> void:
-	if not LIVE or _restoring:
+	var now := Time.get_ticks_msec() / 1000.0
+	# Если App Store не ответил за 30 секунд, кнопку можно нажать снова
+	if not LIVE or (_restoring and now - _restore_at < 30.0):
 		return
 	_restoring = true
+	_restore_at = now
 	_plugin().restore_purchases()
 
 
