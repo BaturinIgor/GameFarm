@@ -3,8 +3,8 @@
 -- Повторный запуск безопасен.
 --
 -- Мощь считает игра (Power.total в godot/scripts/data/power.gd): уровень, снаряжение, таланты, звери.
--- Сервер принимает её не больше 200 000. Сила альянса - сумма мощи 30 самых сильных участников.
--- Мощь добавляет урон по стражу альянса (al_ev_attack в alliance_events.sql: +1 за каждые 100 мощи).
+-- Сервер принимает её не больше 100 000 000. Сила альянса - сумма мощи 30 самых сильных участников.
+-- Мощь добавляет урон по стражу альянса (al_ev_attack в alliance_events.sql: +1 за каждые 10 000 мощи).
 
 create table if not exists public.player_power (
   user_id    uuid        primary key references auth.users (id) on delete cascade,
@@ -26,7 +26,7 @@ declare uid uuid := auth.uid();
 begin
   if uid is null then raise exception 'not signed in'; end if;
   insert into player_power (user_id, name, level, power)
-  values (uid, _rating_clean_name(p_name), greatest(1, least(p_level, 200)), greatest(0, least(p_power, 200000)))
+  values (uid, _rating_clean_name(p_name), greatest(1, least(p_level, 200)), greatest(0, least(p_power, 100000000)))
   on conflict (user_id) do update
      set name = excluded.name, level = excluded.level, power = excluded.power, updated_at = now();
 end $$;

@@ -25,7 +25,7 @@ func test_boss() -> void:
 		prev = hp
 		check(Monsters.KINDS.has(AllianceEvents.boss_kind(t)), "страж %d - настоящий монстр" % t)
 	eq(AllianceEvents.hit_damage(30, 0, 0), 300)
-	eq(AllianceEvents.hit_damage(30, 12000, 0), 420, "мощь: +1 за каждые 100")
+	eq(AllianceEvents.hit_damage(30, 1200000, 0), 420, "мощь: +1 за каждые 10 000")
 	eq(AllianceEvents.hit_damage(30, 0, 10), 360, "талант «Натиск»: +2% за ранг")
 	var r := AllianceEvents.with_bounty({"crystals": 10, "coins": 100, "key": "copper"}, 0.3)
 	eq(r["crystals"], 13, "«Трофеи» увеличивают награду")

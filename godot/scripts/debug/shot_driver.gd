@@ -894,7 +894,7 @@ func _alliance_demo(w: String) -> void:
 			{"place": 2, "id": 1, "name": "Green Valley", "tag": "GV", "emblem": 6, "level": 7, "week_xp": 2100, "me": true},
 			{"place": 3, "id": 3, "name": "Moonlit Orchard", "tag": "MOON", "emblem": 5, "level": 3, "week_xp": 900, "me": false},
 		]
-		al.powers = {"a": Power.total(), "b": 14200, "c": 6100, "d": 2300}
+		al.powers = {"a": Power.total(), "b": 1420000, "c": 610000, "d": 230000}
 		var day := int(Time.get_unix_time_from_system()) / 86400
 		al.pet = {"kind": "phoenixChick", "xp": 2100, "stage": AlliancePet.stage_of(2100), "day": day,
 			"cravings": AlliancePet.cravings(day), "fed": 3, "total": 140, "ends": (day + 1) * 86400,
@@ -942,9 +942,9 @@ func _alliance_demo(w: String) -> void:
 		Game.save["statueFrames"] = ["bronze", "gold"]
 		Game.save["statueFrame"] = "gold"
 		al.power_top = [
-			{"place": 1, "name": "Masha", "level": 31, "power": 14200, "tag": "GV", "me": false},
-			{"place": 2, "name": "Kenji", "level": 18, "power": 6100, "tag": "GV", "me": false},
-			{"place": 3, "name": "Pierre", "level": 22, "power": 5800, "tag": null, "me": false},
+			{"place": 1, "name": "Masha", "level": 31, "power": 1420000, "tag": "GV", "me": false},
+			{"place": 2, "name": "Kenji", "level": 18, "power": 610000, "tag": "GV", "me": false},
+			{"place": 3, "name": "Pierre", "level": 22, "power": 580000, "tag": null, "me": false},
 			{"place": 57, "name": Game.rating.player_name(), "level": 20, "power": Power.total(), "tag": "GV", "me": true},
 		]
 	Game.recalc()
@@ -964,7 +964,7 @@ func _war_demo() -> void:
 		for m in War.neighbors(n):
 			if m == 1 or int(owners.get(m, 0)) == 1:
 				reach = true
-		nodes.append([n, o, 1 if o > 0 else (4 if n == 0 else 1 if War.tier(n) == 1 else 2), 2400 if o > 0 else 900, reach and o != 1])
+		nodes.append([n, o, 1 if o > 0 else (4 if n == 0 else 1 if War.tier(n) == 1 else 2), 240000 if o > 0 else 90000, reach and o != 1])
 	w.state = {"league": 1, "slot": 1, "ends": int(Time.get_unix_time_from_system()) + 3 * 86400 + 5 * 3600,
 		"teams": [
 			{"slot": 3, "name": "Iron Oaks", "tag": "IO", "points": 2410, "nodes": 6, "me": false},
@@ -972,7 +972,7 @@ func _war_demo() -> void:
 			{"slot": 2, "name": "Sunny Hills", "tag": "SH", "points": 820, "nodes": 2, "me": false},
 			{"slot": 4, "name": "Moon Farm", "tag": "MF", "points": 410, "nodes": 1, "me": false},
 			{"slot": 5, "name": "Old Mill", "tag": "OM", "points": 0, "nodes": 0, "me": false}],
-		"nodes": nodes, "chest": 1200000, "used": 2, "max": 5, "pass": false, "donates": 1, "wins": 3, "power": 3200,
+		"nodes": nodes, "chest": 1200000, "used": 2, "max": 5, "pass": false, "donates": 1, "wins": 3, "power": 320000,
 		"reward": {"week": 1, "place": 2, "teams": 6},
 		"log": [{"node": 25, "name": "Masha", "act": "capture", "slot": 1}, {"node": 0, "name": "Brom", "act": "capture", "slot": 3},
 			{"node": 10, "name": "Kenji", "act": "lose", "slot": 1}, {"node": 24, "name": "Masha", "act": "reinforce", "slot": 1}]}

@@ -79,7 +79,7 @@ begin
       insert into alliance_chat (alliance_id, user_id, name, body) values (b.alliance_id, b.user_id, b.name, _bot_line());
     end if;
   end loop;
-  update player_power p set power = least(200000, power + floor(random() * 15)::int), updated_at = now()
+  update player_power p set power = least(100000000, power + floor(random() * 1500)::int), updated_at = now()
     from test_bots t where t.user_id = p.user_id and random() < 0.3;
   if to_regproc('public._war_join') is not null then
     for al in select alliance_id from test_bot_alliances loop perform _war_join(al); end loop;
@@ -123,7 +123,7 @@ begin
     insert into public.test_bots (user_id, name) values (uid, nm);
     lvl := 5 + floor(power(random(), 1.6) * 60)::int;
     insert into public.player_power (user_id, name, level, power)
-    values (uid, nm, lvl, lvl * 100 + floor(random() * lvl * 140)::int);
+    values (uid, nm, lvl, lvl * 10000 + 100 * lvl * lvl + floor(random() * lvl * 14000)::int);
   end loop;
 
   -- 8 альянсов

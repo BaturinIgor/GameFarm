@@ -4,16 +4,20 @@ class_name Power
 ## в силу альянса (сумма 30 самых сильных) и в урон по стражу альянса. Сервер (docs/supabase/power.sql)
 ## принимает мощь не больше MAX.
 
-const PER_LEVEL := 100
-const PER_GEAR := 25.0
-const PER_TALENT_POINT := 40
-const PER_STAR := 30
-const PER_AWAKEN := 120
-const SHINY := 80
-const PER_ANIMAL_LEVEL := 10
+const PER_LEVEL := 10000
+## Уровень даёт ещё LEVEL_SQ * уровень^2: к концу игры мощь растёт быстрее.
+const LEVEL_SQ := 100
+const PER_GEAR := 2500.0
+const PER_TALENT_POINT := 4000
+const PER_STAR := 3000
+const PER_AWAKEN := 12000
+const SHINY := 8000
+const PER_ANIMAL_LEVEL := 1000
 ## Редкие звери (за кристаллы, премиум и гибриды) сильнее в полтора раза.
 const RARE_MULT := 1.5
-const MAX := 200000
+const MAX := 100000000
+## Сколько мощи дают +1 к урону по стражу альянса.
+const DAMAGE_PER := 10000
 ## Сколько самых сильных участников дают силу альянса.
 const ALLIANCE_TOP := 30
 ## Как часто отправлять мощь на сервер, если она выросла (секунды).
@@ -21,7 +25,8 @@ const SUBMIT_EVERY := 300.0
 
 
 static func of_level(level: int) -> int:
-	return PER_LEVEL * maxi(1, level)
+	var l := maxi(1, level)
+	return PER_LEVEL * l + LEVEL_SQ * l * l
 
 
 static func of_gear(tier: int) -> int:
@@ -64,4 +69,4 @@ static func total() -> int:
 ## и таланты по уровню, несколько зверей.
 static func recommended(level: int) -> int:
 	var l := maxi(1, level)
-	return int(round((150.0 * float(l) + 2.0 * float(l * l)) / 50.0)) * 50
+	return int(round((150.0 * float(l) + 2.0 * float(l * l)) / 50.0)) * 5000 + LEVEL_SQ * l * l

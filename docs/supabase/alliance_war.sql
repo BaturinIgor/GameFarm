@@ -239,8 +239,8 @@ $$;
 create or replace function public._war_garrison(p_league bigint, p_node int) returns int
 language sql stable security definer set search_path = public as $$
   select case when n.owner is null
-              then greatest(150, round((select strength from war_leagues where id = p_league) / 30.0 * _war_neutral_mult(_war_tier(p_node))))::int
-              else greatest(100, n.garrison) end
+              then greatest(15000, round((select strength from war_leagues where id = p_league) / 30.0 * _war_neutral_mult(_war_tier(p_node))))::int
+              else greatest(10000, n.garrison) end
     from war_nodes n where n.league_id = p_league and n.node = p_node
 $$;
 
@@ -313,7 +313,7 @@ begin
   select * into n from war_nodes where league_id = lg and node = p_node for update;
   if not found then raise exception 'not allowed'; end if;
   tier := _war_tier(p_node);
-  pw := greatest(100, _power_of(uid));
+  pw := greatest(10000, _power_of(uid));
   select * into tm from war_teams where league_id = lg and alliance_id = m.alliance_id;
   if p_reinforce then
     if n.owner is distinct from m.alliance_id or n.shields >= _war_max_shields(tier) then raise exception 'not allowed'; end if;

@@ -212,8 +212,8 @@ begin
   elsif me.day_hits >= _al_free_hits(a.talents) then
     raise exception 'limit';
   end if;
-  -- Урон: уровень, мощь (+1 за каждые 100, power.sql), ранг «Натиска» и разброс 0.85-1.15
-  dmg := round((60 + 8 * greatest(1, least(p_level, 200)) + _power_of(uid) / 100)
+  -- Урон: уровень, мощь (+1 за каждые 10 000, power.sql), ранг «Натиска» и разброс 0.85-1.15
+  dmg := round((60 + 8 * greatest(1, least(p_level, 200)) + _power_of(uid) / 10000)
          * (1 + 0.02 * _al_rank('guard', coalesce((a.talents ->> 'guard')::int, 0)))
          * (0.85 + random() * 0.3));
   tier := w.boss_tier;

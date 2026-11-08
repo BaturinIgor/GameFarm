@@ -29,7 +29,7 @@ func test_chance_and_boost() -> void:
 	eq(War.boost(1000000000), War.BOOST_MAX, "буст не больше 35%")
 	eq(War.chance(100, 0, 1000000), War.MIN_CHANCE)
 	eq(War.chance(1000000, 0, 1), War.MAX_CHANCE)
-	check(War.chance(1000, 2000000, 1000) > War.chance(1000, 0, 1000), "казна поднимает шанс")
+	check(War.chance(20000, 2000000, 30000) > War.chance(20000, 0, 30000), "казна поднимает шанс")
 	eq(War.attacks(false), 5)
 	eq(War.attacks(true), 8)
 	check(War.donate_coins(500) <= 100000, "вклад не больше, чем принимает сервер")

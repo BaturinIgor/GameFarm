@@ -37,7 +37,7 @@ static func boss_hp(tier: int, members: int) -> int:
 ## Урон удара без случайности (сервер добавляет разброс 0.85-1.15).
 ## Мощь даёт +1 к урону за каждые 100, guard_rank - ранг таланта «Натиск» (+2% за ранг).
 static func hit_damage(level: int, power: int, guard_rank: int) -> int:
-	var base := 60 + 8 * clampi(level, 1, 200) + clampi(power, 0, Power.MAX) / 100
+	var base := 60 + 8 * clampi(level, 1, 200) + clampi(power, 0, Power.MAX) / Power.DAMAGE_PER
 	return int(round(float(base) * (1.0 + 0.02 * float(guard_rank))))
 
 

@@ -3,12 +3,12 @@ extends "res://tests/test_case.gd"
 
 
 func test_parts() -> void:
-	eq(Power.of_level(20), 2000)
-	eq(Power.of_gear(1), 25)
-	eq(Power.of_gear(10), 1050)
+	eq(Power.of_level(20), 240000)
+	eq(Power.of_gear(1), 2500)
+	eq(Power.of_gear(10), 105000)
 	eq(Power.of_animal("chicken", 0), 0, "не приручен - нет силы")
-	eq(Power.of_animal("chicken", 5), 150)
-	eq(Power.of_animal("chicken", 5, 4, true), 150 + 480 + 80)
+	eq(Power.of_animal("chicken", 5), 15000)
+	eq(Power.of_animal("chicken", 5, 4, true), 15000 + 48000 + 8000)
 	check(Power.of_animal("moonUnicorn", 3) > Power.of_animal("cow", 3), "редкий зверь сильнее")
 
 
@@ -22,7 +22,7 @@ func test_total_grows_with_animals() -> void:
 	var before := Power.total()
 	Game.animals.add_star("chicken", 1)
 	eq(Power.total() - before, Power.PER_STAR, "звезда добавляет мощь")
-	eq(AllianceEvents.hit_damage(10, Power.total(), 0), 60 + 80 + Power.total() / 100)
+	eq(AllianceEvents.hit_damage(10, Power.total(), 0), 60 + 80 + Power.total() / Power.DAMAGE_PER)
 
 
 func test_recommended() -> void:
@@ -30,7 +30,7 @@ func test_recommended() -> void:
 	for l in range(1, 61):
 		var r := Power.recommended(l)
 		check(r >= prev, "рекомендуемая мощь не падает с уровнем")
-		eq(r % 50, 0, "круглое число")
+		eq(r % 100, 0, "круглое число")
 		prev = r
 
 

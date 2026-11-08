@@ -51,7 +51,7 @@ static func boost(chest: int) -> float:
 
 ## Шанс победы: моя мощь с бустом казны против гарнизона точки.
 static func chance(power: int, chest: int, garrison: int) -> float:
-	var a := float(maxi(100, power)) * (1.0 + boost(chest))
+	var a := float(maxi(10000, power)) * (1.0 + boost(chest))
 	return clampf(a / (a + float(maxi(1, garrison))), MIN_CHANCE, MAX_CHANCE)
 
 

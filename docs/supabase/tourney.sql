@@ -60,11 +60,11 @@ create or replace function public._tn_free() returns int language sql immutable 
 create or replace function public._tn_buy() returns int language sql immutable as $$ select 5 $$;
 create or replace function public._tn_max_buys() returns int language sql immutable as $$ select 2 $$;
 
--- Отряд из ответа игры: до 3 зверей {id, p}, id - буквы и цифры, мощь 0..5000.
+-- Отряд из ответа игры: до 3 зверей {id, p}, id - буквы и цифры, мощь 0..500000.
 create or replace function public._tn_clean_squad(p_squad jsonb) returns jsonb language sql immutable as $$
   select coalesce(jsonb_agg(jsonb_build_object('id', id, 'p', p) order by n), '[]'::jsonb)
     from (select n, left(regexp_replace(coalesce(e->>'id', ''), '[^A-Za-z0-9_]', '', 'g'), 24) as id,
-                 greatest(0, least(coalesce((e->>'p')::numeric, 0)::int, 5000)) as p
+                 greatest(0, least(coalesce((e->>'p')::numeric, 0)::int, 500000)) as p
             from jsonb_array_elements(case when jsonb_typeof(p_squad) = 'array' then p_squad else '[]'::jsonb end)
                  with ordinality as t(e, n)
            where n <= 3) s

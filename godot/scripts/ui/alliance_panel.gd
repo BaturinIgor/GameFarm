@@ -1367,7 +1367,7 @@ func _events() -> void:
 		more.pressed.connect(func() -> void: Game.alliance.attack(true))
 		btns.add_child(more)
 	c.add_child(_small(L.t("alliance.ev.bossHint", [al.free_hits(), Alliances.talent_name("guard")])))
-	c.add_child(_small(L.t("alliance.ev.powerHint", [Fmt.n(Power.total() / 100)])))
+	c.add_child(_small(L.t("alliance.ev.powerHint", [Fmt.n(Power.total() / Power.DAMAGE_PER)])))
 	for t in ev.get("unclaimed", []):
 		_claim_row(L.t("alliance.ev.bossReward", [int(t)]), "boss", int(t))
 
