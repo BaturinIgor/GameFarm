@@ -88,7 +88,7 @@ func _build() -> void:
 	back.custom_minimum_size = Vector2(44, 40)
 	back.pressed.connect(close)
 	head.add_child(back)
-	var title := _pill(L.t("war.title"), 16)
+	var title := _pill(L.t("war.title") + " · " + War.league_name(w.league()), 16)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(title)
 	var left := float(w.state.get("ends", 0)) - w.now()

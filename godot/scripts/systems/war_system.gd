@@ -224,8 +224,23 @@ func defense(n: int) -> int:
 	var d := node(n)
 	var g := int(d.get("garrison", 0))
 	if g <= 0:
-		g = War.camp_power(War.level(n))
+		g = int(round(War.camp_power(War.level(n)) * War.league_mult(league())))
 	return g
+
+
+## Лига этой недели (1..8) и куда альянс сдвинулся после прошлой: 1 вверх, -1 вниз, 0 остался.
+func league() -> int:
+	return clampi(int(state.get("tier", 1)) if state.get("tier") != null else 1, 1, War.LEAGUES)
+
+
+func league_move() -> int:
+	return int(state.get("move", 0)) if state.get("move") != null else 0
+
+
+## Лига недели, за которую ещё не забрана награда.
+func reward_league() -> int:
+	var t: Variant = state.get("reward_tier")
+	return clampi(int(t), 1, War.LEAGUES) if t != null else league()
 
 
 func battle_chance(n: int, tactic: float) -> float:
@@ -275,7 +290,7 @@ func claim() -> void:
 		await fetch()
 		return
 	var place := int(res.get("place", 8))
-	var r := War.place_reward(place, Game.level)
+	var r := War.place_reward(place, Game.level, int(res.get("tier", reward_league())) if res.get("tier") != null else reward_league())
 	Game.add_coins(int(r["coins"]))
 	Game.shop.add_crystals(int(r["crystals"]))
 	Sound.play("purchase")

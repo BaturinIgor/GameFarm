@@ -59,6 +59,22 @@ const CAMP_POWER := [0, 100000, 250000, 500000, 1000000, 3000000]
 const CAMP_MONSTERS := [[], ["slimeGreen", "slimeBlue"], ["slimeRed", "orc", "skeleton"], ["orcRogue", "skelSoldier", "skeletonDark"],
 	["orcWarrior", "skelMage", "skelRogue"], ["skelKnight", "orcWarrior", "skelMage"]]
 const CAMP_BOSS := ["", "slimeGold", "orcShaman", "skelKnight", "orcWarrior", "skelKnight"]
+## Лиги (alliance_war_leagues.sql): 1 - Бронза ... 8 - Легенда. За неделю 1-2 места поднимаются, два последних
+## (если в лиге 6+ альянсов) опускаются. Лагеря на клетках и замок сильнее в лиге выше.
+const LEAGUES := 8
+const LEAGUE_MULT := [1.0, 1.6, 2.5, 4.0, 6.0, 9.0, 13.0, 18.0]
+const LEAGUE_COLORS := [Color("b87333"), Color("a8b2bd"), Color("e0b23a"), Color("7fd0d8"), Color("3fbf7f"), Color("4a7fe0"),
+	Color("d0455a"), Color("a35ae0")]
+
+
+static func league_mult(league: int) -> float:
+	return float(LEAGUE_MULT[clampi(league, 1, LEAGUES) - 1])
+
+
+static func league_name(league: int) -> String:
+	return L.t("war.league.%d" % clampi(league, 1, LEAGUES))
+
+
 ## Тактика в бою (0..1) добавляет до +25% к силе удара; отступление - поражение без броска.
 const TACTIC_MAX := 0.25
 ## Трофеи: за победу в бою - уровень клетки, каждый трофей +2 000 мощи, не больше 300 трофеев.
@@ -113,9 +129,11 @@ static func win_coins(hero_level: int, captured: bool) -> int:
 	return (100 + 20 * maxi(1, hero_level)) * (3 if captured else 1)
 
 
-static func place_reward(place: int, hero_level: int) -> Dictionary:
+## Награда за место; в лиге выше - на четверть больше за каждую ступень.
+static func place_reward(place: int, hero_level: int, league := 1) -> Dictionary:
 	var i := clampi(place - 1, 0, PLACE_CRYSTALS.size() - 1)
-	return {"crystals": PLACE_CRYSTALS[i], "coins": int(round(2000.0 * maxi(1, hero_level) / float(maxi(1, place))))}
+	var k := 1.0 + 0.25 * float(clampi(league, 1, LEAGUES) - 1)
+	return {"crystals": int(round(PLACE_CRYSTALS[i] * k)), "coins": int(round(2000.0 * maxi(1, hero_level) / float(maxi(1, place)) * k))}
 
 
 ## Соседи точки.

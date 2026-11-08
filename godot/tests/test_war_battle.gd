@@ -92,3 +92,12 @@ func test_trophies_in_power() -> void:
 	eq(Power.total() - p0, 10 * War.TROPHY_POWER)
 	Game.save["warTrophies"] = 99999
 	eq(int(Power.breakdown()["trophies"]), War.TROPHY_MAX * War.TROPHY_POWER, "трофеев не больше предела")
+
+
+func test_leagues() -> void:
+	eq(War.LEAGUE_MULT.size(), War.LEAGUES)
+	for i in range(1, War.LEAGUES):
+		check(War.league_mult(i + 1) > War.league_mult(i), "лига выше - лагеря сильнее")
+		check(int(War.place_reward(1, 20, i + 1)["crystals"]) > int(War.place_reward(1, 20, i)["crystals"]), "и награда больше")
+	eq(War.place_reward(1, 20), War.place_reward(1, 20, 1), "без лиги - как в первой")
+	check(L.t("war.league.8") != "war.league.8", "у лиг есть названия")

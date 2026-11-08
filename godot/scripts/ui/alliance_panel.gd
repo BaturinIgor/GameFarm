@@ -2067,6 +2067,30 @@ func _place_screen() -> void:
 
 # MARK: Война альянсов
 
+## Лига альянса: значок, название, сдвиг после прошлой недели и правила.
+func _league_card() -> Control:
+	var w := Game.war
+	var lg := w.league()
+	var c := PanelContainer.new()
+	c.add_theme_stylebox_override("panel", UiKit.box(Color(War.LEAGUE_COLORS[lg - 1], 0.25), War.LEAGUE_COLORS[lg - 1], 14, 2, false))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	c.add_child(row)
+	row.add_child(UiKit.icon("trophy", 40))
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 2)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(col)
+	col.add_child(UiKit.title(L.t("war.leagueTitle", [War.league_name(lg)]), 16))
+	var mv := w.league_move()
+	if mv != 0:
+		col.add_child(UiKit.label(L.t("war.moved.up" if mv > 0 else "war.moved.down"), 12, UiKit.GOOD if mv > 0 else UiKit.BAD))
+	var rules := UiKit.label(L.t("war.leagueRules", [Fmt.n(int(round(War.league_mult(lg) * 100.0)))]), 11, UiKit.INK_SOFT)
+	rules.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(rules)
+	return c
+
+
 func _war() -> void:
 	var w := Game.war
 	if w.error != "":
@@ -2077,6 +2101,7 @@ func _war() -> void:
 		content.add_child(_note(L.t("alliance.loading")))
 		return
 	var left := float(int(w.state.get("ends", 0)) - int(Time.get_unix_time_from_system()))
+	content.add_child(_league_card())
 	content.add_child(_small(L.t("war.ends", [EventsPanel.long_countdown(maxf(0.0, left))])))
 	# Награда за прошлую неделю
 	var rw := w.reward()
@@ -2091,7 +2116,7 @@ func _war() -> void:
 		var rl := UiKit.label(L.t("war.reward", [int(rw.get("place", 0)), int(rw.get("teams", 0))]), 13)
 		rl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		rcol.add_child(rl)
-		rcol.add_child(_reward_line(War.place_reward(int(rw.get("place", 8)), Game.level)))
+		rcol.add_child(_reward_line(War.place_reward(int(rw.get("place", 8)), Game.level, w.reward_league())))
 		var cb := UiKit.button(L.t("alliance.ev.claim"), "green", 13, true)
 		cb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		cb.disabled = w.busy
@@ -2168,7 +2193,7 @@ func _war() -> void:
 	for p in [1, 2, 3, 4]:
 		pg.add_child(UiKit.label("#%d%s" % [p, "+" if p == 4 else ""], 12, UiKit.INK_SOFT))
 	for p in [1, 2, 3, 4]:
-		pg.add_child(_reward_line({"crystals": War.place_reward(p, Game.level)["crystals"]}))
+		pg.add_child(_reward_line({"crystals": War.place_reward(p, Game.level, Game.war.league())["crystals"]}))
 	# Знамя войны
 	if not w.has_pass():
 		var parts := ShopPanel.shop_card(Products.title("warBanner"), "red")
