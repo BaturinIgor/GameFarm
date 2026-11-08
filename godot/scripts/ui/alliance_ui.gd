@@ -171,3 +171,116 @@ class TalentOrb extends Button:
 			var part := float(rank) / float(max_rank)
 			if part > 0.0:
 				draw_arc(c, r - 4.0, -PI / 2.0, -PI / 2.0 + TAU * part, 48, UiKit.GOOD if rank < max_rank else UiKit.GOLD_DARK, 4.0, true)
+
+
+## Баннер события на доске: цветная плашка, большой значок, название, строка и счётчик.
+static func banner(art: Control, title: String, line: String, color: Color, count: int, extra: Control, on_tap: Callable) -> Button:
+	var b := Button.new()
+	b.focus_mode = Control.FOCUS_NONE
+	b.custom_minimum_size = Vector2(0, 92)
+	var normal := UiKit.box(color, UiKit.OUTLINE, 14, 3, true)
+	var pressed := UiKit.box(color.darkened(0.15), UiKit.OUTLINE, 14, 3, false)
+	for st in ["normal", "hover", "focus", "disabled"]:
+		b.add_theme_stylebox_override(st, normal)
+	b.add_theme_stylebox_override("pressed", pressed)
+	b.add_theme_stylebox_override("hover_pressed", pressed)
+	var row := HBoxContainer.new()
+	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 10)
+	row.add_theme_constant_override("separation", 12)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(row)
+	var holder := PanelContainer.new()
+	holder.add_theme_stylebox_override("panel", UiKit.box(Color(0, 0, 0, 0.25), Color(0, 0, 0, 0), 12, 0, false))
+	holder.custom_minimum_size = Vector2(68, 68)
+	holder.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	art.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	art.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	holder.add_child(art)
+	row.add_child(holder)
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_theme_constant_override("separation", 3)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(col)
+	var t := UiKit.label(title, 16, Color.WHITE, 4)
+	t.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	t.clip_text = true
+	col.add_child(t)
+	var l := UiKit.label(line, 12, Color(1, 1, 1, 0.9), 3)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(l)
+	if extra != null:
+		extra.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		col.add_child(extra)
+	var arrow := UiKit.label("›", 26, Color.WHITE, 4)
+	arrow.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(arrow)
+	if count > 0:
+		UiKit.pin_badge(UiKit.count_badge(count), b)
+	b.pressed.connect(on_tap)
+	# Высота по содержимому (строка может переноситься)
+	row.minimum_size_changed.connect(func() -> void: b.custom_minimum_size.y = maxf(92.0, row.get_combined_minimum_size().y + 20.0))
+	return b
+
+
+## Сцена битвы со стражем: тёмный фон с полом, монстр покачивается, сверху здоровье, после удара - всплывающий урон.
+class BossStage extends Control:
+	var kind := ""
+	var title := ""
+	var hp := 0
+	var max_hp := 1
+	var hit := 0
+	var _mon: TextureRect
+	var _t := 0.0
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 250)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _ready() -> void:
+		var name_l := UiKit.label(title, 15, Color.WHITE, 4)
+		name_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_l.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+		name_l.offset_top = 10
+		add_child(name_l)
+		var bar := UiKit.bar(float(hp) / float(maxi(1, max_hp)), "red", 240, 16, "%s / %s" % [Fmt.n(hp), Fmt.n(max_hp)])
+		bar.set_anchors_preset(Control.PRESET_CENTER_TOP)
+		bar.position = Vector2(-120, 36)
+		add_child(bar)
+		resized.connect(func() -> void: bar.position = Vector2((size.x - bar.size.x) / 2.0, 36))
+		_mon = CombatCards.monster_icon(kind, 130)
+		add_child(_mon)
+		if hit > 0:
+			var f := UiKit.label("-" + Fmt.n(hit), 26, Color("ffd34d"), 6)
+			f.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			f.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+			add_child(f)
+			var tw := f.create_tween().set_parallel()
+			tw.tween_property(f, "position:y", f.position.y - 60.0, 1.0).from(f.position.y)
+			tw.tween_property(f, "modulate:a", 0.0, 1.0).set_delay(0.4)
+			_mon.modulate = Color(1.6, 0.7, 0.7)
+			_mon.create_tween().tween_property(_mon, "modulate", Color.WHITE, 0.4)
+
+	func _process(delta: float) -> void:
+		_t += delta
+		if _mon != null:
+			_mon.position = Vector2((size.x - 130.0) / 2.0, 80.0 + sin(_t * 2.2) * 4.0)
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		draw_style_box(UiKit.box(Color("2a2036"), UiKit.OUTLINE, 16, 3, false), r)
+		# Пол арены и тень под монстром
+		draw_rect(Rect2(4, size.y * 0.72, size.x - 8, size.y * 0.28 - 4), Color("3d3048"))
+		draw_circle(Vector2(size.x / 2.0, size.y * 0.86), 1.0, Color(0, 0, 0, 0))
+		var c := Vector2(size.x / 2.0, 214)
+		var pts := PackedVector2Array()
+		for i in 24:
+			var a := TAU * i / 24.0
+			pts.append(c + Vector2(cos(a) * 60.0, sin(a) * 10.0))
+		draw_colored_polygon(pts, Color(0, 0, 0, 0.35))
+		# Звёзды на фоне
+		for i in 14:
+			var p := Vector2(fmod(37.0 * i * 7.3, size.x), fmod(23.0 * i * 3.1, size.y * 0.6) + 8.0)
+			draw_circle(p, 1.2, Color(1, 1, 1, 0.35))

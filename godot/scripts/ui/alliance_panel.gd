@@ -13,8 +13,8 @@ var top_kind := "week"
 var section := ""
 ## Выбранный талант в дереве.
 var _talent_sel := "harvest"
-## Подвкладка событий: boss (страж и задания) или war (карта войны).
-var events_kind := "boss"
+## Экран событий: "" - доска с баннерами, иначе boss, tasks, war, place.
+var events_kind := ""
 ## Призыв погоды: какую и через сколько секунд.
 var _wx_kind := "rain"
 var _wx_delay := 0
@@ -49,9 +49,9 @@ func _init(start_tab := "") -> void:
 	if start_tab in ["players", "strength"]:
 		tab = "top"
 		top_kind = start_tab
-	if start_tab == "war":
+	if start_tab in ["war", "boss", "tasks", "place"]:
 		tab = "events"
-		events_kind = "war"
+		events_kind = start_tab
 	if start_tab in SECTIONS:
 		tab = "main"
 		section = start_tab
@@ -147,13 +147,14 @@ func build_top() -> void:
 	top_bar.add_child(UiKit.tabs(items, "find" if tab == "create" else tab, func(id: String) -> void:
 		if tab == id and id == "main":
 			section = ""
+		if tab == id and id == "events":
+			events_kind = ""
 		tab = id
 		if id == "chat":
 			Game.alliance.poll_chat()
 		elif id == "events":
 			Game.alliance.refresh_events()
-			if events_kind == "war":
-				Game.war.fetch()
+			Game.war.fetch()
 		elif id == "top":
 			_fetch_top()
 		elif id == "members":
@@ -1889,48 +1890,101 @@ func _top() -> void:
 # MARK: События альянса
 
 func _events() -> void:
-	var kinds := [["boss", L.t("alliance.ev.boss")], ["war", L.t("war.title")]]
-	var tabs := UiKit.tabs(kinds, events_kind, func(id: String) -> void:
-		events_kind = id
-		if id == "war":
-			Game.war.fetch()
-		_dirty = true)
-	content.add_child(tabs)
+	var al := Game.alliance
+	var ev := al.ev
+	if events_kind == "":
+		_event_board()
+		return
+	var titles := {"boss": "alliance.ev.boss", "tasks": "alliance.ev.tasks", "war": "war.title", "place": "alliance.ev.place"}
+	content.add_child(AllianceUi.back_row(L.t(str(titles.get(events_kind, "alliance.tab.events"))), func() -> void:
+		events_kind = ""
+		_dirty = true
+		scroll_to_top()))
 	if events_kind == "war":
 		_war()
 		return
+	if ev.is_empty():
+		content.add_child(_note(L.t("alliance.loading")))
+		return
+	match events_kind:
+		"tasks": _tasks_screen()
+		"place": _place_screen()
+		_: _boss_screen()
+
+
+## Доска событий: четыре больших баннера, на каждом главное число и отметка, если есть что сделать.
+func _event_board() -> void:
 	var al := Game.alliance
 	var ev := al.ev
 	if ev.is_empty():
 		content.add_child(_note(L.t("alliance.loading")))
 		return
 	var left := float(int(ev.get("ends", 0)) - int(Time.get_unix_time_from_system()))
-	content.add_child(_small(L.t("alliance.ev.weekEnds", [EventsPanel.long_countdown(maxf(0.0, left))])))
-
-	# Страж: портрет, здоровье, удары
+	var wk := HBoxContainer.new()
+	wk.alignment = BoxContainer.ALIGNMENT_CENTER
+	content.add_child(wk)
+	wk.add_child(AllianceUi.stat("px:hourglass", L.t("alliance.ev.weekEnds", [EventsPanel.long_countdown(maxf(0.0, left))]), UiKit.INK_SOFT, 12))
+	# Страж
 	var tier := int(ev.get("tier", 1))
 	var kind := AllianceEvents.boss_kind(tier)
-	section_title(L.t("alliance.ev.boss"))
-	var c := card()
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
-	c.add_child(row)
-	var frame := PanelContainer.new()
-	frame.add_theme_stylebox_override("panel", UiKit.box(Color("3a2a22"), Color(UiKit.WOOD_DARK, 0.8), 12, 2, false))
-	frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	frame.add_child(CombatCards.monster_icon(kind, 64))
-	row.add_child(frame)
-	var col := VBoxContainer.new()
-	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	col.add_theme_constant_override("separation", 3)
-	row.add_child(col)
-	var bn := UiKit.label(L.t("alliance.ev.bossName", [Monsters.name_of(kind), tier]), 15)
-	bn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	col.add_child(bn)
 	var hp := int(ev.get("hp", 0))
 	var max_hp := maxi(1, int(ev.get("max_hp", 1)))
-	col.add_child(UiKit.bar(float(hp) / float(max_hp), "red", 190, 14, "%s / %s" % [Fmt.n(hp), Fmt.n(max_hp)]))
-	col.add_child(_small(L.t("alliance.ev.myDamage", [Fmt.n(int(ev.get("damage", 0)))])))
+	var boss_extra := UiKit.bar(float(hp) / float(max_hp), "red", 150, 12, "")
+	content.add_child(AllianceUi.banner(CombatCards.monster_icon(kind, 56), L.t("alliance.ev.bossName", [Monsters.name_of(kind), tier]),
+		L.t("board.hits", [al.hits_left(), al.free_hits()]), Color("7a2e2e"), al.hits_left() + (ev.get("unclaimed", []) as Array).size(),
+		boss_extra, func() -> void: _open_event("boss")))
+	# Задания
+	var tasks: Array = ev.get("tasks", [])
+	var done := tasks.filter(func(t: Dictionary) -> bool: return int(t.get("progress", 0)) >= int(t.get("target", 1))).size()
+	var task_claims := al.claimable().filter(func(c: Array) -> bool: return str(c[0]) == "task").size()
+	content.add_child(AllianceUi.banner(UiKit.icon("quest", 56), L.t("alliance.ev.tasks"), L.t("board.tasks", [done, tasks.size()]),
+		Color("2e5e3a"), task_claims, null, func() -> void: _open_event("tasks")))
+	# Война
+	var w := Game.war
+	var war_line := L.t("board.warJoin")
+	if not w.state.is_empty() and int(w.state.get("league", 0)) > 0:
+		war_line = L.t("board.war", [w.my_place(), (w.state.get("teams", []) as Array).size(), w.attacks_left()])
+	content.add_child(AllianceUi.banner(UiKit.icon("swords", 56), L.t("war.title"), war_line, Color("3a3f7a"), w.ready_count(), null,
+		func() -> void: _open_event("war")))
+	# Место недели
+	var place: Variant = ev.get("place")
+	var place_claim := 1 if ev.get("last_place") != null and not bool(ev.get("last_claimed", true)) else 0
+	content.add_child(AllianceUi.banner(UiKit.icon("trophy", 56), L.t("alliance.ev.place"),
+		L.t("board.place", [int(place)]) if place != null else L.t("alliance.ev.placeNone"), Color("7a5a1e"), place_claim, null,
+		func() -> void: _open_event("place")))
+
+
+func _open_event(id: String) -> void:
+	events_kind = id
+	if id == "war":
+		Game.war.fetch()
+	_dirty = true
+	scroll_to_top()
+
+
+## Битва со стражем: тёмная сцена, большой монстр, полоска здоровья, после удара всплывает урон.
+func _boss_screen() -> void:
+	var al := Game.alliance
+	var ev := al.ev
+	var tier := int(ev.get("tier", 1))
+	var kind := AllianceEvents.boss_kind(tier)
+	var hp := int(ev.get("hp", 0))
+	var max_hp := maxi(1, int(ev.get("max_hp", 1)))
+	var stage := AllianceUi.BossStage.new()
+	stage.kind = kind
+	stage.title = L.t("alliance.ev.bossName", [Monsters.name_of(kind), tier])
+	stage.hp = hp
+	stage.max_hp = max_hp
+	stage.hit = al.last_hit if Time.get_ticks_msec() - al.last_hit_at < 1500 else 0
+	content.add_child(stage)
+	var chips := HBoxContainer.new()
+	chips.alignment = BoxContainer.ALIGNMENT_CENTER
+	chips.add_theme_constant_override("separation", 14)
+	content.add_child(chips)
+	chips.add_child(AllianceUi.stat("px:swords", Fmt.n(int(ev.get("damage", 0))), UiKit.INK, 14))
+	chips.add_child(AllianceUi.stat("px:fist", "+" + Fmt.n(Power.total() / Power.DAMAGE_PER), UiKit.INK, 14))
+	chips.add_child(AllianceUi.stat("px:bolt", "%d/%d" % [al.hits_left(), al.free_hits()], UiKit.INK, 14))
+	var c := card()
 	var btns := HBoxContainer.new()
 	btns.add_theme_constant_override("separation", 6)
 	c.add_child(btns)
@@ -1949,20 +2003,22 @@ func _events() -> void:
 		more.disabled = not al.can_attack(true)
 		more.pressed.connect(func() -> void: Game.alliance.attack(true))
 		btns.add_child(more)
-	c.add_child(_small(L.t("alliance.ev.bossHint", [al.free_hits(), Alliances.talent_name("guard")])))
-	c.add_child(_small(L.t("alliance.ev.powerHint", [Fmt.n(Power.total() / Power.DAMAGE_PER)])))
 	for t in ev.get("unclaimed", []):
 		_claim_row(L.t("alliance.ev.bossReward", [int(t)]), "boss", int(t))
+	var help := _small(L.t("alliance.ev.bossHint", [al.free_hits(), Alliances.talent_name("guard")]))
+	help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	content.add_child(help)
 
-	# Задания недели
-	section_title(L.t("alliance.ev.tasks"))
-	var tasks: Array = ev.get("tasks", [])
+
+func _tasks_screen() -> void:
+	var tasks: Array = Game.alliance.ev.get("tasks", [])
 	for i in tasks.size():
 		_task_row(tasks[i], i)
 	content.add_child(_small(L.t("alliance.ev.tasksHint")))
 
-	# Место за неделю
-	section_title(L.t("alliance.ev.place"))
+
+func _place_screen() -> void:
+	var ev := Game.alliance.ev
 	var pc := card()
 	var place: Variant = ev.get("place")
 	var now_l := UiKit.label(L.t("alliance.ev.placeNow", [int(place)]) if place != null else L.t("alliance.ev.placeNone"), 13)

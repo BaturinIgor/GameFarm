@@ -8,7 +8,7 @@ const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", 
 	"dungeon", "trophies", "collection", "collection:zoo", "collection:trophies", "legacy", "wardrobe", "map", "map:ember", "map:azure", "events", "shop",
 	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story", "wild", "talents:estate",
 	"story", "story:altar", "collection:diary", "alliance:find", "alliance:create", "alliance:main", "alliance:events", "alliance:chat",
-	"alliance:members", "alliance:top", "alliance:players", "alliance:chronicle", "alliance:fair", "alliance:village", "alliance:war", "alliance:talents", "alliance:pet", "alliance:weather"]
+	"alliance:members", "alliance:top", "alliance:players", "alliance:chronicle", "alliance:fair", "alliance:village", "alliance:war", "alliance:talents", "alliance:pet", "alliance:weather", "alliance:boss"]
 
 var dir := "/tmp/shots"
 var main: Node

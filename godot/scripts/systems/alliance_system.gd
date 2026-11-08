@@ -25,6 +25,9 @@ var online := 0
 var _chat_v2 := true
 ## Ратуша (ответ al_hall): кто в сети, просьбы о помощи, подарки, цель дня, похвалы. Пусто - не загружено.
 var hall: Dictionary = {}
+## Последний удар по стражу: урон и когда (для всплывающего числа на сцене битвы).
+var last_hit := 0
+var last_hit_at := -100000
 ## Результаты поиска и рейтинга.
 var found: Array = []
 var top: Array = []
@@ -1211,6 +1214,8 @@ func attack(extra: bool) -> void:
 	if extra:
 		Game.shop.spend_crystals(AllianceEvents.EXTRA_COST)
 	var dmg := int(res.get("damage", 0))
+	last_hit = dmg
+	last_hit_at = Time.get_ticks_msec()
 	var used := "extra" if extra else "hits"
 	ev[used] = int(ev.get(used, 0)) + 1
 	ev["damage"] = int(ev.get("damage", 0)) + dmg
