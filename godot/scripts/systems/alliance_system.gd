@@ -1669,7 +1669,7 @@ static func system_text(m: Dictionary) -> String:
 				return L.t("alliance.sys.village", [str(m.get("name", "")), L.t("village.b." + vb[0]), int(vb[1])])
 		"war":
 			var wb := str(m.get("body", ""))
-			if wb in ["join", "castle", "lost"]:
+			if wb in ["join", "castle", "lost", "rally"]:
 				return L.t("alliance.sys.war." + wb, [str(m.get("name", ""))])
 		"weather":
 			var parts := str(m.get("body", "")).split(":")

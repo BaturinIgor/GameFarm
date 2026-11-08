@@ -8,7 +8,7 @@ const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", 
 	"dungeon", "trophies", "collection", "collection:zoo", "collection:trophies", "legacy", "wardrobe", "map", "map:ember", "map:azure", "events", "shop",
 	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story", "wild", "talents:estate",
 	"story", "story:altar", "collection:diary", "alliance:find", "alliance:create", "alliance:main", "alliance:events", "alliance:chat",
-	"alliance:members", "alliance:top", "alliance:players", "alliance:chronicle", "alliance:fair", "alliance:village", "alliance:war", "alliance:talents", "alliance:pet", "alliance:weather", "alliance:boss"]
+	"alliance:members", "alliance:top", "alliance:players", "alliance:chronicle", "alliance:fair", "alliance:village", "alliance:war", "alliance:talents", "alliance:pet", "alliance:weather", "alliance:boss", "alliance:warmap"]
 
 var dir := "/tmp/shots"
 var main: Node
@@ -165,7 +165,9 @@ func _process(delta: float) -> void:
 							break
 					if w.begins_with("alliance"):
 						_alliance_demo(w)
-					if ":" in w:
+					if w == "alliance:warmap":
+						main.hud.open_window(WarScene.new())
+					elif ":" in w:
 						var parts := w.split(":")
 						main.hud.open_window(load("res://scripts/ui/%s_panel.gd" % parts[0]).new(parts[1]))
 					else:
@@ -989,4 +991,13 @@ func _war_demo() -> void:
 		"reward": {"week": 1, "place": 2, "teams": 6},
 		"log": [{"node": 25, "name": "Masha", "act": "capture", "slot": 1}, {"node": 0, "name": "Brom", "act": "capture", "slot": 3},
 			{"node": 10, "name": "Kenji", "act": "lose", "slot": 1}, {"node": 24, "name": "Masha", "act": "reinforce", "slot": 1}]}
-	w.selected = 26
+	var t0 := Time.get_unix_time_from_system()
+	w.state["now"] = t0
+	w.state["marches"] = [
+		{"id": 1, "name": Game.rating.player_name(), "node": 16, "kind": "attack", "slot": 1, "from": t0 - 40, "at": t0 + 80, "me": true, "animal": null},
+		{"id": 2, "name": "Brom", "node": 34, "kind": "attack", "slot": 3, "from": t0 - 100, "at": t0 + 20, "me": false, "animal": null},
+		{"id": 3, "name": "Masha", "node": 24, "kind": "reinforce", "slot": 1, "from": t0 - 10, "at": t0 + 50, "me": false, "animal": "cow"}]
+	w.state["rallies"] = [{"id": 5, "node": 33, "leader": "Masha", "slot": 1, "fires": t0 + 200, "power": 2400000, "members": 4,
+		"mine": true, "joined": false}]
+	w.state["guards"] = [[25, "cow", "Masha"], [24, "chicken", "Kenji"]]
+	w.selected = 32

@@ -22,10 +22,22 @@ const COLORS := [Color("cfc4ae"), Color("e0503a"), Color("3a8ee0"), Color("4cbf4
 const PLACE_CRYSTALS := [300, 200, 150, 100, 60, 60, 60, 60]
 ## Рамка статуи за «Знамя войны».
 const PASS_FRAME := "war"
+## Живая карта (alliance_war_march.sql): отряды идут 1-3 минуты, до 2 отрядов в пути,
+## сбор на замок собирается 5 минут (до 30 участников), победа сбора снимает 2 щита, зверь в гарнизоне - до 500 000 мощи.
+const RALLY_SECS := 300
+const MAX_MARCHES := 2
+const RALLY_MAX := 30
+const RALLY_STRIP := 2
+const ANIMAL_CAP := 500000
 
 
 static func tier(node: int) -> int:
 	return int(NODES[node][2]) if node >= 0 and node < NODES.size() else 0
+
+
+## Сколько идёт отряд к точке: ярус 1 - минута, 2 - две, 3 - три.
+static func march_secs(t: int) -> int:
+	return 60 * clampi(t, 1, 3)
 
 
 static func is_base(node: int) -> bool:

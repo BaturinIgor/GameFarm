@@ -1954,7 +1954,15 @@ func _event_board() -> void:
 		func() -> void: _open_event("place")))
 
 
+func _open_war_scene() -> void:
+	if Hud.current != null:
+		Hud.current.open_window(WarScene.new())
+
+
 func _open_event(id: String) -> void:
+	if id == "war" and Game.war.joined():
+		_open_war_scene()
+		return
 	events_kind = id
 	if id == "war":
 		Game.war.fetch()
@@ -2073,6 +2081,13 @@ func _war() -> void:
 		cb.pressed.connect(func() -> void: Game.war.claim())
 		rr.add_child(cb)
 		UiKit.attention(cb)
+	# Главная кнопка: войти на живую карту
+	var enter := UiKit.button(L.t("war.enter"), "red", 17)
+	enter.custom_minimum_size = Vector2(0, 56)
+	enter.pressed.connect(_open_war_scene)
+	if w.attacks_left() > 0:
+		UiKit.attention(enter)
+	content.add_child(enter)
 	# Сводка: место, атаки, буст
 	var head := card()
 	var hr := HBoxContainer.new()

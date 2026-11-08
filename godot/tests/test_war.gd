@@ -64,3 +64,37 @@ func test_demo_actions() -> void:
 	eq(w.my_place(), 1)
 	w.demo = false
 	w.state = {}
+
+
+func test_live_map_demo() -> void:
+	fresh({"level": 20, "coins": 100000})
+	var w := Game.war
+	w.demo = true
+	w.live = true
+	w.state = {"league": 1, "slot": 1, "nodes": [[9, 1, 1, 500, true], [17, 0, 1, 500, true], [25, 0, 2, 900, true], [33, 0, 2, 900, false],
+		[0, 0, 4, 5000, false]], "teams": [{"slot": 1, "me": true}, {"slot": 2, "me": false}], "used": 0, "max": 5, "chest": 0,
+		"marches": [], "rallies": []}
+	check(w.visible(9), "своя точка видна")
+	check(w.visible(17), "соседняя с базой видна")
+	check(not w.visible(33), "дальняя - в тумане")
+	eq(w.origin(25, 1), 9, "отряд идёт от своей точки")
+	eq(War.march_secs(1), 60)
+	eq(War.march_secs(3), 180)
+	check(w.can_march(17))
+	await w.march(17)
+	eq(w.my_marches().size(), 1)
+	check(not w.can_march(17), "второй отряд к той же точке не идёт")
+	await w.march(25)
+	check(not w.can_march(9) and w.my_marches().size() == War.MAX_MARCHES, "не больше двух отрядов")
+	eq(w.attacks_left(), 3)
+	check(w.can_rally(25))
+	await w.rally(25)
+	check(not w.my_rally().is_empty())
+	check(not w.can_rally(17), "один сбор на альянс")
+	var r := {"id": 7, "mine": true, "joined": false, "members": 3, "fires": w.now() + 100, "power": 1000}
+	check(w.can_join(r))
+	await w.join_rally(r)
+	check(bool(r["joined"]))
+	eq(w.attacks_left(), 1)
+	w.demo = false
+	w.state = {}
