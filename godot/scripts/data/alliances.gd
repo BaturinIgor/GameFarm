@@ -148,3 +148,47 @@ static func emblem_icon(i: int) -> String:
 
 static func emblem_color(i: int) -> Color:
 	return EMBLEM_COLORS[posmod(i, EMBLEM_COLORS.size())]
+
+
+# MARK: Банк альянса (docs/supabase/alliance_bank.sql)
+
+## Постройки альянса: строят глава и офицеры за банк, до BUILD_MAX уровней. per - прибавка за уровень.
+const BUILDINGS := {
+	"barracks": {"icon": "swords", "per": 0.04},
+	"walls": {"icon": "shield", "per": 0.08},
+	"treasury": {"icon": "chest_gold", "per": 0.1},
+	"granary": {"icon": "wheat", "per": 0.02},
+}
+const BUILD_MAX := 5
+const BUILD_COSTS := [600, 1500, 3000, 5000, 8000]
+## Медали (личные монеты альянса) за вклад: кристаллами - больше.
+const MEDALS := {"free": 1, "coins": 1, "gems": 3}
+## Магазин альянса за медали: цена и сколько можно купить в неделю.
+const SHOP := {
+	"keyCopper": {"price": 20, "limit": 5, "icon": "key"},
+	"keySilver": {"price": 60, "limit": 3, "icon": "key"},
+	"keyStar": {"price": 200, "limit": 1, "icon": "key"},
+	"eggBlue": {"price": 80, "limit": 2, "icon": "egg:blue"},
+	"eggPurple": {"price": 250, "limit": 1, "icon": "egg:purple"},
+	"energy": {"price": 15, "limit": 5, "icon": "bolt"},
+}
+
+
+static func build_cost(next_level: int) -> int:
+	return int(BUILD_COSTS[clampi(next_level, 1, BUILD_MAX) - 1])
+
+
+static func build_bonus(id: String, level: int) -> float:
+	return float(BUILDINGS.get(id, {}).get("per", 0.0)) * clampi(level, 0, BUILD_MAX)
+
+
+## Сколько очков банка не хватает таланту до следующего ранга.
+static func rank_cost(id: String, points: int) -> int:
+	var r := rank_of(id, points)
+	if r >= MAX_RANK:
+		return 0
+	return points_for(id, r + 1) - points
+
+
+static func medals_for(kind: String, treasury: int) -> int:
+	return int(round(int(MEDALS.get(kind, 1)) * (1.0 + build_bonus("treasury", treasury))))

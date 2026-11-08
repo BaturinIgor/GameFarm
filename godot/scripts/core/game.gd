@@ -693,6 +693,9 @@ func recalc() -> void:
 				s.yield_all += float(lands[k])
 			else:
 				_add(s.yield_category, k, float(lands[k]))
+	# Амбар альянса: ко всей добыче
+	if alliance != null and alliance.in_alliance():
+		s.yield_all += Alliances.build_bonus("granary", alliance.building("granary"))
 	if house.is_built("upper"):
 		s.offline_hours += 2.0
 

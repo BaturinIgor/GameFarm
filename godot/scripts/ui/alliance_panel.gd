@@ -38,7 +38,7 @@ var _preview: Label
 var _hint: Label
 var _create_buttons: Array = []
 
-const SECTIONS := ["talents", "pet", "weather", "village", "fair", "chronicle", "guests", "mentor"]
+const SECTIONS := ["bank", "talents", "pet", "weather", "village", "fair", "chronicle", "guests", "mentor"]
 
 
 func _init(start_tab := "") -> void:
@@ -470,7 +470,10 @@ func _tiles() -> void:
 	var ranks := 0
 	for id in Alliances.TALENTS:
 		ranks += Alliances.rank_of(id, int(al.data.get("talents", {}).get(id, 0)))
-	_add_tile(g, "talents", "px:star", L.t("alliance.talents"), L.t("alliance.tile.ranks", [ranks, Alliances.TALENTS.size() * Alliances.MAX_RANK]), al.free_left())
+	if al.has_bank():
+		_add_tile(g, "bank", "px:chest_gold", L.t("bank.title"), L.t("bank.tile", [Fmt.compact(al.bank_points()), Fmt.n(al.medals())]), al.free_left())
+	_add_tile(g, "talents", "px:star", L.t("alliance.talents"), L.t("alliance.tile.ranks", [ranks, Alliances.TALENTS.size() * Alliances.MAX_RANK]),
+		0 if al.has_bank() else al.free_left())
 	var pet := al.pet
 	var pkind := str(pet.get("kind", "phoenixChick"))
 	var fed_left := 0
@@ -503,18 +506,20 @@ func _open_section(id: String) -> void:
 		"chronicle": Game.alliance.fetch_chronicle()
 		"fair": Game.alliance.fetch_fair()
 		"village": Game.alliance.fetch_village()
+		"bank", "talents": Game.alliance.fetch_bank()
 	_dirty = true
 	scroll_to_top()
 
 
 func _section() -> void:
-	var titles := {"talents": "alliance.talents", "pet": "alliance.pet.title", "weather": "weather.title", "village": "village.title",
+	var titles := {"bank": "bank.title", "talents": "alliance.talents", "pet": "alliance.pet.title", "weather": "weather.title", "village": "village.title",
 		"fair": "afair.title", "chronicle": "chronicle.title", "guests": "guests.title", "mentor": "mentor.title"}
 	content.add_child(AllianceUi.back_row(L.t(str(titles.get(section, "alliance.title"))), func() -> void:
 		section = ""
 		_dirty = true
 		scroll_to_top()))
 	match section:
+		"bank": _bank()
 		"talents": _talents()
 		"pet": _pet_card()
 		"weather": _weather_card()
@@ -561,7 +566,8 @@ func _talents() -> void:
 				_dirty = true)
 			row.add_child(orb)
 	_talent_detail(_talent_sel)
-	_give_kinds()
+	if not al.has_bank():
+		_give_kinds()
 
 
 ## Карточка выбранного таланта: сейчас и на следующем ранге, полоска до ранга и кнопка вклада.
@@ -610,6 +616,9 @@ func _talent_detail(id: String) -> void:
 	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	prow.add_child(bar)
+	if al.has_bank():
+		_talent_bank_row(v, id, points)
+		return
 	var plus := UiKit.button("+1", "green", 16, true)
 	plus.custom_minimum_size = Vector2(64, 42)
 	plus.disabled = not al.can_contribute(id, give_kind) or al.busy
@@ -617,6 +626,156 @@ func _talent_detail(id: String) -> void:
 	prow.add_child(plus)
 	if plus.disabled == false and give_kind == "free":
 		UiKit.attention(plus)
+
+
+## Ранг таланта за банк: главе и офицерам - кнопка с ценой, остальным - кто решает.
+func _talent_bank_row(v: VBoxContainer, id: String, points: int) -> void:
+	var al := Game.alliance
+	var cost := Alliances.rank_cost(id, points)
+	if not al.can_spend():
+		v.add_child(_small(L.t("bank.leaderBuys", [Fmt.n(cost)])))
+		return
+	v.add_child(_small(L.t("bank.amount", [Fmt.n(al.bank_points())])))
+	var b := MapPanel.icon_button([["t", L.t("bank.buyRank")], ["i", "chest_gold"], ["t", Fmt.n(cost)]],
+		"green" if al.bank_points() >= cost else "gray", 14)
+	b.disabled = al.busy or al.bank_points() < cost
+	b.pressed.connect(func() -> void: al.bank_talent(id))
+	v.add_child(b)
+	if al.bank_points() < cost:
+		v.add_child(_small(L.t("bank.short", [Fmt.n(cost - al.bank_points())])))
+
+
+## Банк альянса: сумма и мои медали, вклад, постройки, магазин за медали, кто вложил больше и журнал трат.
+func _bank() -> void:
+	var al := Game.alliance
+	var head := card(Color("fff6dc"))
+	var hr := HBoxContainer.new()
+	hr.add_theme_constant_override("separation", 12)
+	head.add_child(hr)
+	var ic := UiKit.icon("chest_gold", 44)
+	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	hr.add_child(ic)
+	var hc := VBoxContainer.new()
+	hc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hc.add_theme_constant_override("separation", 2)
+	hr.add_child(hc)
+	hc.add_child(UiKit.label(L.t("bank.amount", [Fmt.n(al.bank_points())]), 17))
+	hc.add_child(AllianceUi.stat("px:" + _medal_icon(), L.t("bank.medals", [Fmt.n(al.medals())]), UiKit.GOLD_DARK, 13))
+	head.add_child(_small(L.t("bank.rules")))
+	# Вклад
+	var gc := card()
+	gc.add_child(UiKit.label(L.t("bank.give"), 14))
+	var krow := HBoxContainer.new()
+	krow.add_theme_constant_override("separation", 6)
+	gc.add_child(krow)
+	for k in ["free", "coins", "gems"]:
+		var cost := al.contribute_cost(k)
+		var parts: Array = []
+		match k:
+			"free": parts = [["t", L.t("alliance.give.free", [Alliances.FREE_PER_DAY - al.day_used("free"), Alliances.FREE_PER_DAY])]]
+			"coins": parts = [["i", "coin"], ["t", Fmt.compact(int(cost.get("coins", Alliances.coin_cost(Game.level))))]]
+			_: parts = [["i", "gem"], ["t", str(int(cost.get("crystals", 0)))]]
+		var b := MapPanel.icon_button(parts, "green" if k == "free" else ("orange" if k == "coins" else "blue"), 13)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.disabled = cost.has("none")
+		var kk: String = k
+		b.pressed.connect(func() -> void: al.give(kk))
+		krow.add_child(b)
+		if k == "free" and not b.disabled:
+			UiKit.attention(b)
+	gc.add_child(_small(L.t("bank.giveHint", [Alliances.medals_for("free", al.building("treasury")), Alliances.medals_for("gems", al.building("treasury"))])))
+	# Постройки
+	var bc := card()
+	bc.add_child(UiKit.label(L.t("bank.buildings"), 14))
+	for id in Alliances.BUILDINGS:
+		var lv := al.building(id)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		bc.add_child(row)
+		var bi := UiKit.icon(str(Alliances.BUILDINGS[id]["icon"]), 34)
+		bi.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(bi)
+		var col := VBoxContainer.new()
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_theme_constant_override("separation", 0)
+		row.add_child(col)
+		col.add_child(UiKit.label(L.t("bank.b." + id) + "  " + L.t("bank.lvl", [lv, Alliances.BUILD_MAX]), 13))
+		var eff := UiKit.label(L.t("bank.e." + id, [Fmt.pct(Alliances.build_bonus(id, maxi(1, lv)))]) if lv > 0
+			else L.t("bank.e." + id, [Fmt.pct(Alliances.build_bonus(id, 1))]), 11, UiKit.GOOD if lv > 0 else UiKit.INK_SOFT)
+		eff.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		col.add_child(eff)
+		if lv >= Alliances.BUILD_MAX:
+			row.add_child(UiKit.icon("check", 22))
+		elif al.can_spend():
+			var cost := Alliances.build_cost(lv + 1)
+			var ub := MapPanel.icon_button([["i", "chest_gold"], ["t", Fmt.compact(cost)]], "green" if al.bank_points() >= cost else "gray", 12)
+			ub.disabled = al.busy or al.bank_points() < cost
+			ub.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			var bid: String = id
+			ub.pressed.connect(func() -> void: al.bank_build(bid))
+			row.add_child(ub)
+		else:
+			row.add_child(AllianceUi.stat("px:chest_gold", Fmt.compact(Alliances.build_cost(lv + 1)), UiKit.INK_SOFT, 11))
+	if not al.can_spend():
+		bc.add_child(_small(L.t("bank.leaderOnly")))
+	# Магазин за медали
+	var sc := card()
+	var sh := HBoxContainer.new()
+	sc.add_child(sh)
+	var st := UiKit.label(L.t("bank.shop"), 14)
+	st.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sh.add_child(st)
+	sh.add_child(AllianceUi.stat("px:" + _medal_icon(), Fmt.n(al.medals()), UiKit.GOLD_DARK, 12))
+	var g := AllianceUi.grid(3)
+	sc.add_child(g)
+	for item in Alliances.SHOP:
+		var it: Dictionary = Alliances.SHOP[item]
+		var left := int(it["limit"]) - al.shop_bought(item)
+		var cell := VBoxContainer.new()
+		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		cell.add_theme_constant_override("separation", 2)
+		g.add_child(cell)
+		var icn: Control
+		if str(item).begins_with("key"):
+			icn = ChestsPanel.key_icon({"keyCopper": "copper", "keySilver": "silver", "keyStar": "star"}[item], 32)
+		else:
+			icn = UiKit.icon_any(("" if str(it["icon"]).contains(":") else "px:") + str(it["icon"]), 32)
+		icn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		cell.add_child(icn)
+		var nl := UiKit.label(L.t("bank.item." + item), 11)
+		nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		cell.add_child(nl)
+		var bb := MapPanel.icon_button([["i", _medal_icon()], ["t", str(it["price"])]], "green" if al.can_shop(item) else "gray", 12)
+		bb.disabled = not al.can_shop(item) or al.busy
+		var iid: String = item
+		bb.pressed.connect(func() -> void: al.shop_buy(iid))
+		cell.add_child(bb)
+		var ll := UiKit.label(L.t("bank.left", [left]), 10, UiKit.INK_SOFT)
+		ll.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		cell.add_child(ll)
+	# Кто вложил больше за неделю
+	var top: Array = al.bank.get("top", []) if al.bank.get("top") is Array else []
+	if not top.is_empty():
+		var tc := card()
+		tc.add_child(UiKit.label(L.t("bank.top"), 14))
+		for i in top.size():
+			var t: Dictionary = top[i]
+			tc.add_child(_small("%d. %s - %s" % [i + 1, str(t.get("name", "")), Fmt.n(int(t.get("week", 0)))]))
+	# Журнал трат
+	var entries: Array = al.bank.get("log", []) if al.bank.get("log") is Array else []
+	var lc := card()
+	lc.add_child(UiKit.label(L.t("bank.log"), 14))
+	if entries.is_empty():
+		lc.add_child(_small(L.t("bank.logEmpty")))
+	for e in entries:
+		var what := str(e.get("what", ""))
+		var name := Alliances.talent_name(what) if str(e.get("kind", "")) == "talent" else L.t("bank.b." + what)
+		lc.add_child(_small(L.t("bank.logLine", [str(e.get("name", "")), name, int(e.get("lvl", 1)), Fmt.n(int(e.get("cost", 0)))])))
+
+
+## Медали альянса - монетки с гербом альянса.
+func _medal_icon() -> String:
+	return Alliances.emblem_icon(int(Game.alliance.data.get("emblem", 0)))
 
 
 func _effect_box(caption: String, text: String, next: bool) -> PanelContainer:
@@ -937,10 +1096,10 @@ func _system_card(m: Dictionary) -> Control:
 	var kind := str(m.get("kind", ""))
 	const ICONS := {"join": "paw", "leave": "door", "kick": "door", "level": "crown", "create": "crown", "boss": "swords",
 		"task": "quest", "pet": "heart", "guest": "paw", "mentor": "book", "village": "hammer", "war": "swords",
-		"weather": "cloud", "talent": "star"}
+		"weather": "cloud", "talent": "star", "bank": "chest_gold"}
 	const GO := {"boss": ["events", ""], "task": ["events", ""], "war": ["events", "war"], "pet": ["main", "pet"],
 		"guest": ["main", "guests"], "mentor": ["main", "mentor"], "village": ["main", "village"], "weather": ["main", "weather"],
-		"level": ["main", "talents"], "talent": ["main", "talents"]}
+		"level": ["main", "talents"], "talent": ["main", "talents"], "bank": ["main", "bank"]}
 	var big := kind in ["level", "boss", "war", "create"]
 	var p := PanelContainer.new()
 	var tint := Color("fff3c4") if big else Color(UiKit.PARCHMENT, 0.85)

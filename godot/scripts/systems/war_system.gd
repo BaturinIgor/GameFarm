@@ -144,8 +144,13 @@ func power() -> int:
 	return maxi(int(state.get("power", 0)), Power.total())
 
 
+## Сила удара с Казармой альянса (+4% за уровень, как на сервере).
+func attack_power() -> int:
+	return int(round(power() * (1.0 + Alliances.build_bonus("barracks", Game.alliance.building("barracks")))))
+
+
 func chance(n: int) -> float:
-	return War.chance(power(), chest(), int(node(n).get("garrison", 0)))
+	return War.chance(attack_power(), chest(), int(node(n).get("garrison", 0)))
 
 
 func can_attack(n: int) -> bool:
@@ -390,7 +395,7 @@ func reward_league() -> int:
 
 
 func battle_chance(n: int, tactic: float) -> float:
-	return War.battle_chance(power(), chest(), defense(n), tactic)
+	return War.battle_chance(attack_power(), chest(), defense(n), tactic)
 
 
 ## Вложить монеты в казну войны: буст атаки всего альянса.

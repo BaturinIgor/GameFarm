@@ -8,7 +8,7 @@ const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", 
 	"dungeon", "trophies", "collection", "collection:zoo", "collection:trophies", "legacy", "wardrobe", "map", "map:ember", "map:azure", "events", "shop",
 	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story", "wild", "talents:estate",
 	"story", "story:altar", "collection:diary", "alliance:find", "alliance:create", "alliance:main", "alliance:events", "alliance:chat",
-	"alliance:members", "alliance:top", "alliance:players", "alliance:chronicle", "alliance:fair", "alliance:village", "alliance:war", "alliance:talents", "alliance:pet", "alliance:weather", "alliance:boss", "alliance:warmap", "alliance:battle", "alliance:siege", "alliance:hud"]
+	"alliance:members", "alliance:bank", "alliance:top", "alliance:players", "alliance:chronicle", "alliance:fair", "alliance:village", "alliance:war", "alliance:talents", "alliance:pet", "alliance:weather", "alliance:boss", "alliance:warmap", "alliance:battle", "alliance:siege", "alliance:hud"]
 
 var dir := "/tmp/shots"
 var main: Node
@@ -886,6 +886,10 @@ func _alliance_demo(w: String) -> void:
 				{"id": "d", "name": "Lucía", "level": 12, "role": "member", "week": 20, "total": 150, "me": false},
 			]}
 		Game.save["alliance"] = {"id": 1, "name": "Green Valley", "tag": "GV", "emblem": 6, "talents": talents}
+		al.bank = {"bank": 2140, "medals": 86, "buildings": {"barracks": 2, "walls": 1, "granary": 1}, "buys": {"keyCopper": 2},
+			"top": [{"name": "Masha", "week": 120}, {"name": Game.rating.player_name(), "week": 140}, {"name": "Kenji", "week": 60}],
+			"log": [{"name": "Masha", "kind": "build", "what": "barracks", "lvl": 2, "cost": 1500, "at": 0},
+				{"name": Game.rating.player_name(), "kind": "talent", "what": "harvest", "lvl": 7, "cost": 280, "at": 0}]}
 		var wk := DailySystem.week_index()
 		var kinds := AllianceEvents.task_kinds(wk)
 		al.ev = {"week": wk, "ends": int(Time.get_unix_time_from_system()) + 3 * 86400 + 5 * 3600, "members": 41,

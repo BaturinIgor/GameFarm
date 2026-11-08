@@ -198,6 +198,7 @@ func refresh(force := false) -> void:
 		await fetch_fair()
 		await fetch_village()
 		await refresh_events()
+		await fetch_bank()
 
 
 func _take(d: Dictionary) -> void:
@@ -1156,7 +1157,7 @@ func _fail() -> void:
 	var e := Game.rating.last_error
 	error = e if e in ["limit", "full", "level too low", "name taken", "tag taken", "bad name", "talent locked",
 		"talent maxed", "too fast", "already in alliance", "not allowed", "pet fed", "weather busy", "guest away", "host full", "has mentor", "level too high", "sold", "bad lot",
-		"apply only", "already asked", "already helped", "no helps left", "help closed", "already praised", "already claimed", "goal not done"] else "network"
+		"apply only", "bank", "medals", "already asked", "already helped", "no helps left", "help closed", "already praised", "already claimed", "goal not done"] else "network"
 	Game.changed.emit()
 
 
@@ -1236,6 +1237,214 @@ func _after_contribute(talent: String, kind: String, before: int) -> void:
 	Game.emit_event("allianceGive", {"kind": kind})
 	Game.mark_dirty()
 	Game.changed.emit()
+
+
+# MARK: Банк альянса
+
+## Банк: {bank, buildings, medals, buys, log, top}. Пусто - сервер без банка (старый) или ещё не загружен.
+var bank := {}
+var _bank_inflight := 0
+
+
+func has_bank() -> bool:
+	return bank.has("bank")
+
+
+func fetch_bank() -> void:
+	if demo or not in_alliance() or _bank_inflight > 0:
+		return
+	var res: Variant = await Game.rating.call_rpc("al_bank", {})
+	if res is Dictionary and _bank_inflight == 0:
+		bank = res
+		_store_buildings()
+		Game.changed.emit()
+
+
+func bank_points() -> int:
+	return int(bank.get("bank", 0))
+
+
+func medals() -> int:
+	return int(bank.get("medals", 0))
+
+
+func building(id: String) -> int:
+	var b: Variant = bank.get("buildings", Game.save.get("alliance", {}).get("buildings", {}))
+	return clampi(int((b as Dictionary).get(id, 0)), 0, Alliances.BUILD_MAX) if b is Dictionary else 0
+
+
+## Тратить банк могут глава и офицеры.
+func can_spend() -> bool:
+	return role() in ["leader", "officer"]
+
+
+func _store_buildings() -> void:
+	if not in_alliance():
+		return
+	var b: Variant = bank.get("buildings", {})
+	Game.save["alliance"]["buildings"] = (b as Dictionary).duplicate() if b is Dictionary else {}
+	Game.recalc()
+
+
+## Вклад в банк: очко в общий банк и медали себе. Цена - как у прежнего вклада в талант.
+func can_give(kind: String) -> bool:
+	if not in_alliance():
+		return false
+	var cost := contribute_cost(kind)
+	if cost.has("none"):
+		return false
+	if cost.has("coins") and int(Game.save["coins"]) < int(cost["coins"]):
+		return false
+	if cost.has("crystals") and Game.shop.crystals() < int(cost["crystals"]):
+		return false
+	return true
+
+
+func give(kind: String) -> void:
+	if not can_give(kind):
+		if contribute_cost(kind).has("crystals"):
+			Game.show_toast("px:gem", L.t("crystals.notEnough", [Fmt.n(int(contribute_cost(kind)["crystals"]) - Game.shop.crystals())]))
+		return
+	var cost := contribute_cost(kind)
+	if cost.has("coins"):
+		Game.save["coins"] = int(Game.save["coins"]) - int(cost["coins"])
+	if cost.has("crystals"):
+		Game.shop.spend_crystals(int(cost["crystals"]))
+	var md := Alliances.medals_for(kind, building("treasury"))
+	bank["bank"] = bank_points() + 1
+	bank["medals"] = medals() + md
+	data["xp"] = int(data.get("xp", 0)) + 1
+	data["week_xp"] = int(data.get("week_xp", 0)) + 1
+	var day: Dictionary = data.get("day", {})
+	day[kind] = int(day.get(kind, 0)) + 1
+	data["day"] = day
+	Sound.play("pick")
+	Game.emit_event("allianceGive", {"kind": kind})
+	Game.mark_dirty()
+	Game.changed.emit()
+	if demo:
+		return
+	_bank_inflight += 1
+	var res: Variant = await Game.rating.call_rpc("al_give", {"p_kind": kind, "p_player": Game.rating.player_name(), "p_level": Game.level})
+	_bank_inflight -= 1
+	if not res is Dictionary:
+		if cost.has("coins"):
+			Game.add_coins(int(cost["coins"]))
+		if cost.has("crystals"):
+			Game.shop.add_crystals(int(cost["crystals"]))
+		_fail()
+		await refresh(true)
+		await fetch_bank()
+		return
+	if _bank_inflight == 0:
+		bank["bank"] = int(res.get("bank", bank_points()))
+		bank["medals"] = int(res.get("medals", medals()))
+		Game.changed.emit()
+
+
+## Глава или офицер покупает следующий ранг таланта за банк.
+func bank_talent(id: String) -> void:
+	var pts := int(data.get("talents", {}).get(id, 0))
+	var cost := Alliances.rank_cost(id, pts)
+	if busy or not can_spend() or cost <= 0 or bank_points() < cost or level() < Alliances.talent_level(id):
+		return
+	var before := rank(id)
+	if not demo:
+		busy = true
+		var res: Variant = await Game.rating.call_rpc("al_bank_talent", {"p_talent": id, "p_player": Game.rating.player_name()})
+		busy = false
+		if res == null:
+			_fail()
+			await fetch_bank()
+			Game.changed.emit()
+			return
+	bank["bank"] = bank_points() - cost
+	data["talents"] = data.get("talents", {})
+	data["talents"][id] = pts + cost
+	_log_spend("talent", id, before + 1, cost)
+	Game.save["alliance"]["talents"][id] = pts + cost
+	Game.recalc()
+	Sound.play("purchase")
+	Game.show_toast("px:" + str(Alliances.TALENTS[id]["icon"]), L.t("alliance.rankUp", [Alliances.talent_name(id), rank(id)]))
+	Game.mark_dirty()
+	Game.changed.emit()
+
+
+## Глава или офицер строит следующий уровень постройки.
+func bank_build(id: String) -> void:
+	var lv := building(id)
+	if busy or not can_spend() or lv >= Alliances.BUILD_MAX or bank_points() < Alliances.build_cost(lv + 1):
+		return
+	var cost := Alliances.build_cost(lv + 1)
+	if not demo:
+		busy = true
+		var res: Variant = await Game.rating.call_rpc("al_bank_build", {"p_id": id, "p_player": Game.rating.player_name()})
+		busy = false
+		if res == null:
+			_fail()
+			await fetch_bank()
+			Game.changed.emit()
+			return
+	bank["bank"] = bank_points() - cost
+	var b: Dictionary = bank.get("buildings", {}) if bank.get("buildings") is Dictionary else {}
+	b[id] = lv + 1
+	bank["buildings"] = b
+	_log_spend("build", id, lv + 1, cost)
+	_store_buildings()
+	Sound.play("purchase")
+	Game.show_toast("px:" + str(Alliances.BUILDINGS[id]["icon"]), L.t("bank.built", [L.t("bank.b." + id), lv + 1]))
+	Game.mark_dirty()
+	Game.changed.emit()
+
+
+func _log_spend(kind: String, what: String, lvl: int, cost: int) -> void:
+	var entries: Array = bank.get("log", []) if bank.get("log") is Array else []
+	entries.push_front({"name": Game.rating.player_name(), "kind": kind, "what": what, "lvl": lvl, "cost": cost, "at": int(Clock.now())})
+	bank["log"] = entries.slice(0, 20)
+
+
+func shop_bought(item: String) -> int:
+	var b: Variant = bank.get("buys", {})
+	return int((b as Dictionary).get(item, 0)) if b is Dictionary else 0
+
+
+func can_shop(item: String) -> bool:
+	var it: Dictionary = Alliances.SHOP.get(item, {})
+	return not it.is_empty() and in_alliance() and shop_bought(item) < int(it["limit"]) and medals() >= int(it["price"])
+
+
+## Купить в магазине альянса за медали. Товар выдаём, когда сервер подтвердил.
+func shop_buy(item: String) -> void:
+	if busy or not can_shop(item):
+		return
+	var price := int(Alliances.SHOP[item]["price"])
+	if not demo:
+		busy = true
+		var res: Variant = await Game.rating.call_rpc("al_shop_buy", {"p_item": item})
+		busy = false
+		if res == null:
+			_fail()
+			await fetch_bank()
+			Game.changed.emit()
+			return
+	bank["medals"] = medals() - price
+	var b: Dictionary = bank.get("buys", {}) if bank.get("buys") is Dictionary else {}
+	b[item] = shop_bought(item) + 1
+	bank["buys"] = b
+	grant_shop_item(item)
+	Sound.play("purchase")
+	Game.mark_dirty()
+	Game.changed.emit()
+
+
+static func grant_shop_item(item: String) -> void:
+	match item:
+		"keyCopper": Game.chests.add_keys("copper", 1)
+		"keySilver": Game.chests.add_keys("silver", 1)
+		"keyStar": Game.chests.add_keys("star", 1)
+		"eggBlue": Game.incubator.add_egg("blue")
+		"eggPurple": Game.incubator.add_egg("purple")
+		"energy": Game.energy.add(50.0, true)
 
 
 # MARK: События альянса
@@ -1758,6 +1967,12 @@ static func system_text(m: Dictionary) -> String:
 			var wb := str(m.get("body", ""))
 			if wb in ["join", "castle", "lost", "rally"]:
 				return L.t("alliance.sys.war." + wb, [str(m.get("name", ""))])
+		"bank":
+			var bb := str(m.get("body", "")).split(":")
+			if bb.size() == 3 and bb[0] == "talent" and Alliances.TALENTS.has(bb[1]):
+				return L.t("alliance.sys.bankTalent", [str(m.get("name", "")), Alliances.talent_name(bb[1]), int(bb[2])])
+			if bb.size() == 3 and bb[0] == "build" and Alliances.BUILDINGS.has(bb[1]):
+				return L.t("alliance.sys.bankBuild", [str(m.get("name", "")), L.t("bank.b." + bb[1]), int(bb[2])])
 		"weather":
 			var parts := str(m.get("body", "")).split(":")
 			if parts.size() == 2 and parts[0] in AllianceWeather.KINDS:
