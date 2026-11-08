@@ -62,7 +62,7 @@ const CAMP_BOSS := ["", "slimeGold", "orcShaman", "skelKnight", "orcWarrior", "s
 ## Лиги (alliance_war_leagues.sql): 1 - Бронза ... 8 - Легенда. За неделю 1-2 места поднимаются, два последних
 ## (если в лиге 6+ альянсов) опускаются. Лагеря на клетках и замок сильнее в лиге выше.
 const LEAGUES := 8
-const LEAGUE_MULT := [1.0, 1.6, 2.5, 4.0, 6.0, 9.0, 13.0, 18.0]
+const LEAGUE_MULT := [1.0, 1.4, 1.9, 2.5, 3.2, 4.0, 5.0, 6.5]
 const LEAGUE_COLORS := [Color("b87333"), Color("a8b2bd"), Color("e0b23a"), Color("7fd0d8"), Color("3fbf7f"), Color("4a7fe0"),
 	Color("d0455a"), Color("a35ae0")]
 
@@ -77,18 +77,18 @@ static func league_name(league: int) -> String:
 
 ## Тактика в бою (0..1) добавляет до +25% к силе удара; отступление - поражение без броска.
 const TACTIC_MAX := 0.25
-## Трофеи: за победу в бою - уровень клетки, каждый трофей +2 000 мощи, не больше 300 трофеев.
-const TROPHY_POWER := 2000
-const TROPHY_MAX := 300
+## Трофеи: за победу в бою - уровень клетки, каждый трофей +500 мощи, не больше 200 трофеев.
+const TROPHY_POWER := 500
+const TROPHY_MAX := 200
 
 
 ## Земли альянса кормят ферму: у каждой клетки свой вид добычи. Пока альянс держит клетку, у всех участников
-## +2% к добыче этого вида за уровень клетки (не больше +25% на вид), замок - +5% ко всей добыче.
+## +2% к добыче этого вида за уровень клетки (не больше +15% на вид), замок - +5% ко всей добыче.
 const LAND_KINDS := ["crop", "wood", "stone", "food", "ore", "farm", "gem"]
 const LAND_ICONS := {"crop": "wheat", "wood": "wood", "stone": "stone", "food": "berries", "ore": "iron", "farm": "egg", "gem": "ruby", "all": "star"}
 const LAND_PER_LEVEL := 0.02
 const LAND_CASTLE := 0.05
-const LAND_MAX := 0.25
+const LAND_MAX := 0.15
 
 
 static func land_kind(node: int) -> String:

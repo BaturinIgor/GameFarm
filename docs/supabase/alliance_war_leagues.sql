@@ -17,7 +17,7 @@ alter table public.war_ranks enable row level security;
 revoke all on public.war_ranks from anon, authenticated;
 
 create or replace function public._war_tier_mult(p_tier int) returns numeric language sql immutable as $$
-  select (array[1, 1.6, 2.5, 4, 6, 9, 13, 18])[greatest(1, least(8, p_tier))]::numeric
+  select (array[1, 1.4, 1.9, 2.5, 3.2, 4, 5, 6.5])[greatest(1, least(8, p_tier))]::numeric
 $$;
 
 -- Лига альянса на эту неделю: пересчёт по месту в прошлой неделе (один раз за неделю).
