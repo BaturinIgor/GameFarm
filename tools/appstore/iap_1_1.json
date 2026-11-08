@@ -328,5 +328,115 @@
     "1週內每天戰爭攻擊+3次，附雕像框"
    ]
   ]
+ },
+ {
+  "id": "com.personal.gamefarm.warchest",
+  "type": "Consumable",
+  "ref": "War Chest",
+  "price": "4.99",
+  "locs": [
+   [
+    "en",
+    "en",
+    "War Chest",
+    "500 crystals, +5 war attacks today, +10 trophies"
+   ],
+   [
+    "ru",
+    "ru",
+    "Военный сундук",
+    "500 кристаллов, +5 атак в войне сегодня, +10 трофеев"
+   ],
+   [
+    "de",
+    "de",
+    "Kriegstruhe",
+    "500 Kristalle, +5 Kriegsangriffe heute, +10 Trophäen"
+   ],
+   [
+    "es",
+    "es",
+    "Cofre de guerra",
+    "500 cristales, +5 ataques hoy, +10 trofeos"
+   ],
+   [
+    "fr",
+    "fr",
+    "Coffre de guerre",
+    "500 cristaux, +5 attaques ce jour, +10 trophées"
+   ],
+   [
+    "it",
+    "it",
+    "Forziere di guerra",
+    "500 cristalli, +5 attacchi oggi, +10 trofei"
+   ],
+   [
+    "pt-BR",
+    "pt-BR",
+    "Baú de guerra",
+    "500 cristais, +5 ataques hoje, +10 troféus"
+   ],
+   [
+    "pl",
+    "pl",
+    "Skrzynia wojenna",
+    "500 kryształów, +5 ataków dziś, +10 trofeów"
+   ],
+   [
+    "tr",
+    "tr",
+    "Savaş Sandığı",
+    "500 kristal, bugün +5 saldırı, +10 kupa"
+   ],
+   [
+    "id",
+    "id",
+    "Peti Perang",
+    "500 kristal, +5 serangan hari ini, +10 trofi"
+   ],
+   [
+    "vi",
+    "vi",
+    "Rương chiến tranh",
+    "500 pha lê, +5 lượt tấn công hôm nay, +10 cúp"
+   ],
+   [
+    "th",
+    "th",
+    "หีบสงคราม",
+    "คริสตัล 500 โจมตีสงครามวันนี้ +5 ถ้วย +10"
+   ],
+   [
+    "hi",
+    "hi",
+    "युद्ध संदूक",
+    "500 क्रिस्टल, आज +5 युद्ध हमले, +10 ट्रॉफ़ी"
+   ],
+   [
+    "ja",
+    "ja",
+    "戦争の宝箱",
+    "クリスタル500個、今日の戦争攻撃+5回、トロフィー+10"
+   ],
+   [
+    "ko",
+    "ko",
+    "전쟁 상자",
+    "크리스털 500개, 오늘 전쟁 공격 +5회, 트로피 +10"
+   ],
+   [
+    "zh-Hans",
+    "zh-Hans",
+    "战争宝箱",
+    "500水晶，今天战争攻击+5次，奖杯+10"
+   ],
+   [
+    "zh-Hant",
+    "zh-Hant",
+    "戰爭寶箱",
+    "500水晶，今天戰爭攻擊+5次，獎盃+10"
+   ]
+  ]
  }
 ]

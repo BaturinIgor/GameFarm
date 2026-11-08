@@ -114,6 +114,18 @@ static func land_bonus(nodes: Array) -> Dictionary:
 	return out
 
 
+## Донат (alliance_war_shop.sql): доп. атака за кристаллы (до 3 в день), «Второе дыхание» - отряд встаёт
+## один раз за бой, мгновенная перезарядка умения, узор флага альянса (выбирает глава).
+const BUY_ATTACKS := 3
+const ATTACK_CRYSTALS := 50
+const REVIVE_CRYSTALS := 30
+const RECHARGE_CRYSTALS := 10
+const FLAG_CRYSTALS := 200
+const FLAGS := 6
+## «Военный сундук»: кристаллы, атаки на сегодня и трофеи.
+const CHEST := {"crystals": 500, "attacks": 5, "trophies": 10}
+
+
 static func camp_power(lvl: int) -> int:
 	return int(CAMP_POWER[clampi(lvl, 0, 5)])
 

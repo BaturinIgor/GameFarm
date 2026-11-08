@@ -16,6 +16,8 @@ var _overlay: Control
 var _sent := false
 var _result: Dictionary = {}
 var _start := 1.2
+## Нажатие на умение в перезарядке: «ещё раз - перезарядить за кристаллы», ждёт второго нажатия.
+var _armed := {}
 
 
 func _init(n: int) -> void:
@@ -101,7 +103,7 @@ func _ready() -> void:
 		b.custom_minimum_size = Vector2(0, 52)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var id: String = s[0]
-		b.pressed.connect(func() -> void: battle.use(id))
+		b.pressed.connect(func() -> void: _press_skill(id))
 		skills.add_child(b)
 		_skill_buttons[id] = b
 	_refresh_hud()
@@ -125,7 +127,10 @@ func _process(delta: float) -> void:
 			"won":
 				_clash()
 			"lost":
-				_finish(-1.0)
+				if battle.can_revive():
+					_offer_revive()
+				else:
+					_finish(-1.0)
 	battle.events.clear()
 	_refresh_hud()
 
@@ -137,8 +142,84 @@ func _refresh_hud() -> void:
 	for id in _skill_buttons:
 		var b: Button = _skill_buttons[id]
 		var cd := float(battle.cds[id])
-		b.disabled = not battle.can_use(id)
-		b.text = L.t("battle.skill." + id) if cd <= 0.0 else "%d" % int(ceil(cd))
+		b.disabled = not battle.can_use(id) and not battle.can_recharge(id)
+		if _armed.has(id):
+			_armed[id] = float(_armed[id]) - get_process_delta_time()
+			if float(_armed[id]) <= 0.0 or cd <= 0.0:
+				_armed.erase(id)
+		if _armed.has(id):
+			b.text = L.t("battle.recharge", [War.RECHARGE_CRYSTALS])
+		else:
+			b.text = L.t("battle.skill." + id) if cd <= 0.0 else "%d" % int(ceil(cd))
+
+
+## Умение готово - применяем. В перезарядке - первое нажатие спрашивает, второе перезаряжает за кристаллы.
+func _press_skill(id: String) -> void:
+	if battle.can_use(id):
+		battle.use(id)
+		return
+	if not battle.can_recharge(id):
+		return
+	if not _armed.has(id):
+		_armed[id] = 2.0
+		return
+	_armed.erase(id)
+	if Game.shop.crystals() < War.RECHARGE_CRYSTALS:
+		Game.show_toast("px:gem", L.t("crystals.notEnough", [Fmt.n(War.RECHARGE_CRYSTALS - Game.shop.crystals())]))
+		return
+	Game.shop.spend_crystals(War.RECHARGE_CRYSTALS)
+	Sound.play("purchase")
+	battle.recharge(id)
+	battle.use(id)
+
+
+## Отряд разбит: «Второе дыхание» за кристаллы (раз за бой) или признать поражение.
+func _offer_revive() -> void:
+	for b in _skill_buttons.values():
+		(b as Button).disabled = true
+	var ov := Control.new()
+	ov.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(ov)
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.45)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	ov.add_child(dim)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	ov.add_child(center)
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", UiKit.box(UiKit.PARCHMENT, UiKit.OUTLINE, 18, 3, true))
+	card.custom_minimum_size = Vector2(300, 0)
+	center.add_child(card)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 8)
+	card.add_child(col)
+	var icon := UiKit.icon("heart_plus", 44)
+	icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	col.add_child(icon)
+	var t := UiKit.title(L.t("battle.revive"), 20)
+	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(t)
+	var tx := UiKit.label(L.t("battle.reviveText", [int(WarBattle.REVIVE_HP * 100.0)]), 13, UiKit.INK_SOFT)
+	tx.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tx.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tx.custom_minimum_size = Vector2(270, 0)
+	col.add_child(tx)
+	var yes := MapPanel.icon_button([["t", L.t("battle.reviveBtn")], ["i", "gem"], ["t", str(War.REVIVE_CRYSTALS)]], "green", 15)
+	yes.pressed.connect(func() -> void:
+		if Game.shop.crystals() < War.REVIVE_CRYSTALS:
+			Game.show_toast("px:gem", L.t("crystals.notEnough", [Fmt.n(War.REVIVE_CRYSTALS - Game.shop.crystals())]))
+			return
+		Game.shop.spend_crystals(War.REVIVE_CRYSTALS)
+		Sound.play("purchase")
+		ov.queue_free()
+		battle.revive())
+	col.add_child(yes)
+	var no := UiKit.button(L.t("battle.giveUp"), "wood", 14)
+	no.pressed.connect(func() -> void:
+		ov.queue_free()
+		_finish(-1.0))
+	col.add_child(no)
 
 
 func _ask_retreat() -> void:
@@ -317,6 +398,9 @@ class BattleField extends Control:
 					_floats.append([_area().get_center(), L.t("battle.wave", [int(e[1]), b.wave_total]), Color.WHITE, 0.0])
 			"dead":
 				Sound.play("pop")
+			"revive":
+				_floats.append([_area().get_center(), L.t("battle.revived"), Color("9fffa0"), 0.0])
+				Sound.play("success")
 
 	func _process(delta: float) -> void:
 		_t += delta

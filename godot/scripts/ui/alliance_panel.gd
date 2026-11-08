@@ -2171,6 +2171,44 @@ func _land_card() -> void:
 		flow.add_child(AllianceUi.stat("px:" + str(War.LAND_ICONS.get(k, "star")), L.t("effect.yield." + k, [Fmt.pct(float(bonus[k]))]), UiKit.GOOD, 12))
 
 
+## Узор флага альянса на карте войны: глава выбирает за кристаллы.
+func _flag_card() -> void:
+	var w := Game.war
+	var c := card()
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 8)
+	c.add_child(head)
+	var t := UiKit.label(L.t("war.flag"), 14)
+	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(t)
+	head.add_child(AllianceUi.stat("px:gem", Fmt.n(War.FLAG_CRYSTALS), UiKit.INK_SOFT, 12))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	c.add_child(row)
+	var mine := w.flag(w.my_slot())
+	var col: Color = War.COLORS[clampi(w.my_slot(), 0, War.COLORS.size() - 1)]
+	for i in War.FLAGS:
+		var b := Button.new()
+		b.custom_minimum_size = Vector2(46, 46)
+		b.focus_mode = Control.FOCUS_NONE
+		var st := UiKit.box(UiKit.PARCHMENT_LIGHT, UiKit.GOLD if i == mine else Color(UiKit.WOOD_DARK, 0.35), 10, 3 if i == mine else 1, false)
+		for s in ["normal", "hover", "pressed", "disabled"]:
+			b.add_theme_stylebox_override(s, st)
+		var pic := WarScene.FlagPic.new()
+		pic.pattern = i
+		pic.color = col
+		pic.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		pic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(pic)
+		var id := i
+		b.pressed.connect(func() -> void:
+			if id == Game.war.flag(Game.war.my_slot()):
+				return
+			ConfirmPopup.ask("px:gem", L.t("war.flag"), L.t("war.flagText", [Fmt.n(War.FLAG_CRYSTALS)]), L.t("common.ok"), "green",
+				func() -> void: Game.war.set_flag(id)))
+		row.add_child(b)
+
+
 func _war() -> void:
 	var w := Game.war
 	if w.error != "":
@@ -2282,6 +2320,15 @@ func _war() -> void:
 		v.add_child(HousePanel.wrapped(L.t("war.passDesc", [War.PASS_ATTACKS]), 12))
 		v.add_child(ShopPanel.buy_button("warBanner", "orange"))
 		content.add_child(parts[0])
+	# Военный сундук
+	var cparts := ShopPanel.shop_card(Products.title("warChest"), "red")
+	var cv: VBoxContainer = cparts[1]
+	cv.add_child(HousePanel.wrapped(L.t("war.chestDesc", [int(War.CHEST["crystals"]), int(War.CHEST["attacks"]), int(War.CHEST["trophies"])]), 12))
+	cv.add_child(ShopPanel.buy_button("warChest", "orange"))
+	content.add_child(cparts[0])
+	# Флаг альянса (глава)
+	if Game.alliance.role() == "leader":
+		_flag_card()
 	# Журнал
 	var log: Array = w.state.get("log", [])
 	if not log.is_empty():

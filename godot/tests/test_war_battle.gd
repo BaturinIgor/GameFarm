@@ -124,3 +124,58 @@ func test_land_feeds_farm() -> void:
 	Game.recalc()
 	near(Game.stats.yield_multiplier("wheat"), base, 0.0001, "после недели бонус пропадает")
 	Game.save["alliance"] = {}
+
+
+func test_revive_and_recharge() -> void:
+	var b := WarBattle.new()
+	b.setup("camp", 5, 10000, 100000, ["hero", "a"], War.CAMP_MONSTERS[5], "", 3)
+	while b.state == "fight":
+		b.step(0.05)
+	eq(b.lost_by, "dead", "слабый отряд разбит")
+	check(b.can_revive())
+	b.revive()
+	eq(b.state, "fight", "второе дыхание - бой продолжается")
+	near(float(b.units[0]["hp"]), WarBattle.UNIT_HP * WarBattle.REVIVE_HP, 0.01)
+	check(b.shield_t > 0.0, "и щит")
+	while b.state == "fight":
+		b.step(0.05)
+	check(not b.can_revive(), "второй раз нельзя")
+	var r := WarBattle.new()
+	r.setup("camp", 1, 100000, 100000, ["hero"], War.CAMP_MONSTERS[1], "", 3)
+	r.retreat()
+	check(not r.can_revive(), "отступившему не поднимают")
+	var c := WarBattle.new()
+	c.setup("camp", 1, 100000, 100000, ["hero"], War.CAMP_MONSTERS[1], "", 3)
+	check(not c.can_recharge("volley"), "готовое умение не перезаряжают")
+	c.use("volley")
+	for i in WarBattle.RECHARGE_MAX:
+		check(c.can_recharge("volley"))
+		c.recharge("volley")
+		c.use("volley")
+	check(not c.can_recharge("volley"), "перезарядок за бой не больше предела")
+
+
+func test_buy_attacks_and_flag() -> void:
+	fresh({"level": 20})
+	var w := Game.war
+	w.demo = true
+	w.state = {"league": 1, "slot": 1, "nodes": [[9, 0, 1, 500, true]], "teams": [{"slot": 1, "me": true}], "used": 5, "max": 5, "chest": 0}
+	Game.shop.add_crystals(1000)
+	var c0 := Game.shop.crystals()
+	eq(w.attacks_left(), 0)
+	for i in War.BUY_ATTACKS:
+		check(w.can_buy_attack())
+		w.buy_attack()
+	eq(w.attacks_left(), War.BUY_ATTACKS, "докупленные атаки")
+	eq(c0 - Game.shop.crystals(), War.BUY_ATTACKS * War.ATTACK_CRYSTALS)
+	check(not w.can_buy_attack(), "не больше трёх в день")
+	w.buy_attack("chest")
+	eq(w.attacks_left(), War.BUY_ATTACKS + int(War.CHEST["attacks"]), "сундук даёт атаки сверх предела")
+	check(Products.consumable("warChest"))
+	eq(w.flag(1), 0, "флаг по умолчанию")
+	w.state["flags"] = {"1": 4}
+	eq(w.flag(1), 4)
+	w.state["flags"] = {"1": 99}
+	eq(w.flag(1), War.FLAGS - 1, "узор в пределах")
+	w.demo = false
+	w.state = {}

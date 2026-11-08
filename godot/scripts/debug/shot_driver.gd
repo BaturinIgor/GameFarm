@@ -997,7 +997,7 @@ func _war_demo() -> void:
 			if m == 1 or int(owners.get(m, 0)) == 1:
 				reach = true
 		nodes.append([n, o, 1 if o > 0 else (4 if n == 0 else 1 if War.tier(n) == 1 else 2), 240000 if o > 0 else 90000, reach and o != 1])
-	w.state = {"league": 1, "slot": 1, "tier": 3, "move": 1, "ends": int(Time.get_unix_time_from_system()) + 3 * 86400 + 5 * 3600,
+	w.state = {"league": 1, "slot": 1, "tier": 3, "move": 1, "flags": {"1": 3, "2": 2, "3": 4, "4": 1, "5": 5}, "ends": int(Time.get_unix_time_from_system()) + 3 * 86400 + 5 * 3600,
 		"teams": [
 			{"slot": 3, "name": "Iron Oaks", "tag": "IO", "points": 2410, "nodes": 6, "me": false},
 			{"slot": 1, "name": "Green Valley", "tag": "GV", "points": 1630, "nodes": 4, "me": true},

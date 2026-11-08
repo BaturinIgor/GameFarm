@@ -303,6 +303,11 @@ func _node_card() -> void:
 		return
 	if w.attacks_left() <= 0:
 		_bottom_col.add_child(_label_wrap(L.t("war.noAttacks"), 12, UiKit.INK_SOFT))
+		if w.bought() < War.BUY_ATTACKS:
+			var bb := MapPanel.icon_button([["t", L.t("war.buyAttack", [War.BUY_ATTACKS - w.bought()])], ["i", "gem"], ["t", str(War.ATTACK_CRYSTALS)]], "green")
+			bb.disabled = w.busy
+			bb.pressed.connect(func() -> void: w.buy_attack())
+			_bottom_col.add_child(bb)
 		return
 	var btns := HBoxContainer.new()
 	btns.add_theme_constant_override("separation", 6)
@@ -372,6 +377,65 @@ func _guard_block(n: int) -> void:
 		w.march(n, true, _animal)
 		_animal = "")
 	_bottom_col.add_child(rb2)
+
+
+## Флаг альянса: древко и полотнище одного из узоров War.FLAGS (узор покупает лидер).
+static func draw_flag(ci: CanvasItem, top: Vector2, r: float, col: Color, pattern: int, wave := 0.0) -> void:
+	var h := r * 1.0
+	ci.draw_line(top, top + Vector2(0, -h), UiKit.OUTLINE, 2.0)
+	var a := top + Vector2(0, -h)
+	var w := r * 0.9
+	var fh := r * 0.5
+	var dark := col.darkened(0.35)
+	var light := col.lightened(0.45)
+	var tip := a + Vector2(w, fh * 0.5 + wave)
+	match pattern:
+		1: # прямоугольник с полосой
+			var q := PackedVector2Array([a, a + Vector2(w, wave), a + Vector2(w, fh + wave), a + Vector2(0, fh)])
+			ci.draw_colored_polygon(q, col)
+			ci.draw_colored_polygon(PackedVector2Array([a + Vector2(0, fh * 0.38), a + Vector2(w, fh * 0.38 + wave),
+				a + Vector2(w, fh * 0.62 + wave), a + Vector2(0, fh * 0.62)]), light)
+			ci.draw_polyline(q + PackedVector2Array([a]), dark, 1.0)
+		2: # ласточкин хвост
+			var q := PackedVector2Array([a, a + Vector2(w, wave), a + Vector2(w * 0.65, fh * 0.5 + wave), a + Vector2(w, fh + wave), a + Vector2(0, fh)])
+			ci.draw_colored_polygon(q, col)
+			ci.draw_polyline(q + PackedVector2Array([a]), dark, 1.0)
+		3: # крест
+			var q := PackedVector2Array([a, a + Vector2(w, wave), a + Vector2(w, fh + wave), a + Vector2(0, fh)])
+			ci.draw_colored_polygon(q, col)
+			ci.draw_line(a + Vector2(w * 0.4, wave * 0.4), a + Vector2(w * 0.4, fh + wave * 0.4), light, maxf(1.5, fh * 0.18))
+			ci.draw_line(a + Vector2(0, fh * 0.5), a + Vector2(w, fh * 0.5 + wave), light, maxf(1.5, fh * 0.18))
+			ci.draw_polyline(q + PackedVector2Array([a]), dark, 1.0)
+		4: # звезда на полотнище
+			var q := PackedVector2Array([a, a + Vector2(w, wave), a + Vector2(w, fh + wave), a + Vector2(0, fh)])
+			ci.draw_colored_polygon(q, col)
+			var c := a + Vector2(w * 0.5, fh * 0.5 + wave * 0.5)
+			var star := PackedVector2Array()
+			for i in 10:
+				var ang := -PI / 2.0 + PI * i / 5.0
+				star.append(c + Vector2(cos(ang), sin(ang)) * (fh * 0.36 if i % 2 == 0 else fh * 0.15))
+			ci.draw_colored_polygon(star, Color("ffe27a"))
+			ci.draw_polyline(q + PackedVector2Array([a]), dark, 1.0)
+		5: # двойной вымпел
+			var q1 := PackedVector2Array([a, tip, a + Vector2(0, fh)])
+			ci.draw_colored_polygon(q1, col)
+			ci.draw_colored_polygon(PackedVector2Array([a + Vector2(0, fh * 0.25), a + Vector2(w * 0.55, fh * 0.5 + wave * 0.6),
+				a + Vector2(0, fh * 0.75)]), light)
+			ci.draw_polyline(q1 + PackedVector2Array([a]), dark, 1.0)
+		_: # простой вымпел
+			var q := PackedVector2Array([a, tip, a + Vector2(0, fh)])
+			ci.draw_colored_polygon(q, col)
+			ci.draw_polyline(q + PackedVector2Array([a]), dark, 1.0)
+
+
+## Картинка флага для выбора узора.
+class FlagPic extends Control:
+	var pattern := 0
+	var color := Color.RED
+
+	func _draw() -> void:
+		var r := minf(size.x, size.y) * 0.62
+		WarScene.draw_flag(self, Vector2(size.x * 0.5 - r * 0.42, size.y * 0.5 + r * 0.5), r, color, pattern)
 
 
 ## Само поле боя: местность, территории, дороги, точки, туман, отряды. Двигается пальцем, приближается щипком или колесом.
@@ -695,11 +759,8 @@ class WarField extends Control:
 			_monster(str(kinds[n % kinds.size()]), p + Vector2(-r * 0.9, u * 3.5), r * 1.2)
 		# Флаг владельца
 		if owner > 0 or War.is_base(n):
-			var fc := col
-			draw_line(top, top + Vector2(0, -r * 1.0), UiKit.OUTLINE, 2.0)
-			var wave := sin(_t * 4.0 + n) * r * 0.08
-			draw_colored_polygon(PackedVector2Array([top + Vector2(0, -r * 1.0), top + Vector2(r * 0.8, -r * 0.85 + wave),
-				top + Vector2(0, -r * 0.6)]), fc)
+			var fs := owner if owner > 0 else n
+			WarScene.draw_flag(self, top, r, col, w.flag(fs), sin(_t * 4.0 + n) * r * 0.08)
 		# Уровень клетки - кружок с цифрой
 		if lvl > 0 and seen:
 			var lp := p + Vector2(r * 1.3, -r * 0.2)

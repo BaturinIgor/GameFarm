@@ -59,6 +59,8 @@ func fetch() -> void:
 			_clock = float(state["now"]) - Time.get_unix_time_from_system()
 		_take_results()
 		_update_land()
+		if int(Game.save.get("warChestAttacks", 0)) > 0:
+			_apply_chest_attacks.call_deferred()
 		# Знамя куплено, а сервер о нём не знает (не было сети) - сообщаем ещё раз
 		if has_pass() and not bool(state.get("pass", false)):
 			if await Game.rating.call_rpc("war_pass", {}) != null:
@@ -245,6 +247,97 @@ func land_bonus() -> Dictionary:
 		return {}
 	var b: Variant = land.get("bonus", {})
 	return b if b is Dictionary else {}
+
+
+## Сколько атак докуплено сегодня за кристаллы.
+func bought() -> int:
+	return int(state.get("bought", 0)) if state.get("bought") != null else 0
+
+
+func can_buy_attack() -> bool:
+	return joined() and bought() < War.BUY_ATTACKS and Game.shop.crystals() >= War.ATTACK_CRYSTALS
+
+
+## Ещё атака: crystals - за кристаллы (до 3 в день), chest - 5 атак из «Военного сундука» (уже оплачен).
+func buy_attack(kind := "crystals") -> bool:
+	if kind == "crystals" and not can_buy_attack():
+		if Game.shop.crystals() < War.ATTACK_CRYSTALS:
+			Game.show_toast("px:gem", L.t("crystals.notEnough", [Fmt.n(War.ATTACK_CRYSTALS - Game.shop.crystals())]))
+		return false
+	var n := 1 if kind == "crystals" else int(War.CHEST["attacks"])
+	if demo:
+		state["used"] = int(state.get("used", 0)) - n
+		if kind == "crystals":
+			state["bought"] = bought() + 1
+			Game.shop.spend_crystals(War.ATTACK_CRYSTALS)
+		Game.changed.emit()
+		return true
+	busy = true
+	var res: Variant = await Game.rating.call_rpc("war_buy_attack", {"p_kind": kind})
+	busy = false
+	if not res is Dictionary:
+		_fail()
+		return false
+	if kind == "crystals":
+		Game.shop.spend_crystals(War.ATTACK_CRYSTALS)
+	state["used"] = int(res.get("used", 0))
+	state["bought"] = int(res.get("bought", 0))
+	Sound.play("purchase")
+	Game.show_toast("px:swords", L.t("war.boughtAttacks", [n]))
+	Game.mark_dirty()
+	Game.changed.emit()
+	return true
+
+
+## «Военный сундук»: кристаллы и трофеи сразу, атаки - на сервер.
+func grant_chest() -> void:
+	Game.shop.add_crystals(int(War.CHEST["crystals"]))
+	Game.save["warTrophies"] = mini(War.TROPHY_MAX, int(Game.save.get("warTrophies", 0)) + int(War.CHEST["trophies"]))
+	Game.recalc()
+	grant_chest_attacks()
+
+
+## «Военный сундук»: атаки на сегодня. Не в альянсе или нет сети - ждут следующего входа в войну.
+func grant_chest_attacks() -> void:
+	Game.save["warChestAttacks"] = int(Game.save.get("warChestAttacks", 0)) + 1
+	Game.mark_dirty()
+	await _apply_chest_attacks()
+
+
+func _apply_chest_attacks() -> void:
+	while int(Game.save.get("warChestAttacks", 0)) > 0 and Game.alliance.in_alliance():
+		if not await buy_attack("chest"):
+			return
+		Game.save["warChestAttacks"] = int(Game.save.get("warChestAttacks", 0)) - 1
+		Game.mark_dirty()
+
+
+## Узор флага альянса по слоту (0..5).
+func flag(slot: int) -> int:
+	var f: Variant = state.get("flags", {})
+	return clampi(int((f as Dictionary).get(str(slot), 0)), 0, War.FLAGS - 1) if f is Dictionary else 0
+
+
+func set_flag(pattern: int) -> void:
+	if busy or Game.alliance.role() != "leader" or pattern == flag(my_slot()):
+		return
+	if Game.shop.crystals() < War.FLAG_CRYSTALS:
+		Game.show_toast("px:gem", L.t("crystals.notEnough", [Fmt.n(War.FLAG_CRYSTALS - Game.shop.crystals())]))
+		return
+	if not demo:
+		busy = true
+		var res: Variant = await Game.rating.call_rpc("al_set_flag", {"p_flag": pattern})
+		busy = false
+		if res == null:
+			_fail()
+			return
+	Game.shop.spend_crystals(War.FLAG_CRYSTALS)
+	var f: Dictionary = state.get("flags", {}) if state.get("flags") is Dictionary else {}
+	f[str(my_slot())] = pattern
+	state["flags"] = f
+	Sound.play("purchase")
+	Game.mark_dirty()
+	Game.changed.emit()
 
 
 ## Можно ли вести бой за клетку: чужая или ничья, рядом с нашей землёй, не база и не замок (замок - только сбором).

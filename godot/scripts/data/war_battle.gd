@@ -25,6 +25,10 @@ const RAM_DMG := 5.0
 const RAM_EVERY := 0.12
 ## Цель, выбранная игроком, получает больше урона.
 const FOCUS_MULT := 1.25
+## «Второе дыхание» (за кристаллы): разбитый отряд встаёт с такой долей здоровья, один раз за бой.
+const REVIVE_HP := 0.6
+## Перезарядок умения за кристаллы в одном бою.
+const RECHARGE_MAX := 3
 
 var mode := "camp"
 var level := 1
@@ -42,6 +46,10 @@ var time := 0.0
 var heavy_total := 0
 var blocked := 0
 var state := "fight"
+## Почему проигран: dead - отряд разбит, time - время вышло, retreat - отступил.
+var lost_by := ""
+var revived := false
+var recharged := 0
 ## События для отрисовки: [вид, данные]. Экран забирает их каждый кадр.
 var events: Array = []
 var _ram_cd := 0.0
@@ -216,6 +224,7 @@ func step(dt: float) -> void:
 			events.append(["hurt", units.find(u), dmg])
 	if alive_units().is_empty():
 		state = "lost"
+		lost_by = "dead"
 		events.append(["lost"])
 		return
 	if range(foes.size()).all(func(i: int) -> bool: return not alive(i)):
@@ -226,6 +235,7 @@ func step(dt: float) -> void:
 		_next_wave()
 	if time >= MAX_TIME:
 		state = "lost"
+		lost_by = "time"
 		events.append(["lost"])
 
 
@@ -246,7 +256,41 @@ func _heavy(fi: int) -> void:
 func retreat() -> void:
 	if state == "fight":
 		state = "lost"
+		lost_by = "retreat"
 		events.append(["lost"])
+
+
+## Можно ли поднять разбитый отряд (один раз, и только если его разбили, а не вышло время).
+func can_revive() -> bool:
+	return state == "lost" and lost_by == "dead" and not revived
+
+
+func revive() -> void:
+	if not can_revive():
+		return
+	revived = true
+	state = "fight"
+	lost_by = ""
+	for u in units:
+		u["hp"] = float(u["max"]) * REVIVE_HP
+		u["cd"] = 0.3
+	shield_t = SHIELD_TIME
+	for f in foes:
+		f["wind"] = 0.0
+	events.append(["revive"])
+
+
+func can_recharge(skill: String) -> bool:
+	return state == "fight" and recharged < RECHARGE_MAX and float(cds.get(skill, 0.0)) > 0.0
+
+
+## Сбросить перезарядку умения (за кристаллы - их списывает экран).
+func recharge(skill: String) -> void:
+	if not can_recharge(skill):
+		return
+	recharged += 1
+	cds[skill] = 0.0
+	events.append(["recharge", skill])
 
 
 ## Насколько хорошо сыгран бой, 0..1: сколько сил отряда сохранено, сколько тяжёлых ударов отбито щитом и как быстро.
@@ -258,7 +302,7 @@ func tactic() -> float:
 	for u in units:
 		hp += float(u["hp"])
 		mx += float(u["max"])
-	var keep := hp / maxf(1.0, mx)
+	var keep := hp / maxf(1.0, mx) * (0.5 if revived else 1.0)
 	var block := 1.0 if heavy_total == 0 else float(blocked) / float(heavy_total)
 	var speed := clampf(1.5 - time / PAR, 0.0, 1.0)
 	return clampf(0.4 * keep + 0.35 * block + 0.25 * speed, 0.0, 1.0)
