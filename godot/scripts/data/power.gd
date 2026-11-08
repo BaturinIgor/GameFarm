@@ -1,6 +1,6 @@
 class_name Power
 ## Мощь игрока: одно число, по которому видно, насколько игрок сильный. Складывается из уровня,
-## снаряжения, личных талантов и зверей (звёзды, пробуждение, редкий окрас, уровень). Мощь идёт в рейтинг игроков,
+## снаряжения, личных талантов, зверей (звёзды, пробуждение, редкий окрас, уровень) и построек усадьбы. Мощь идёт в рейтинг игроков,
 ## в силу альянса (сумма 30 самых сильных) и в урон по стражу альянса. Сервер (docs/supabase/power.sql)
 ## принимает мощь не больше MAX.
 
@@ -13,6 +13,10 @@ const PER_STAR := 3000
 const PER_AWAKEN := 12000
 const SHINY := 8000
 const PER_ANIMAL_LEVEL := 1000
+## Каждый уровень здания усадьбы; башня, стена и лагерь (защита и отряды) - втрое больше.
+const PER_BUILDING_LEVEL := 800
+const DEFENSE_MULT := 3
+const DEFENSE := ["tower", "wall", "camp"]
 ## Редкие звери (за кристаллы, премиум и гибриды) сильнее в полтора раза.
 const RARE_MULT := 1.5
 const MAX := 100000000
@@ -29,6 +33,10 @@ static func of_level(level: int) -> int:
 	return PER_LEVEL * l + LEVEL_SQ * l * l
 
 
+static func of_building(id: String, level: int) -> int:
+	return PER_BUILDING_LEVEL * maxi(0, level) * (DEFENSE_MULT if id in DEFENSE else 1)
+
+
 static func of_gear(tier: int) -> int:
 	return int(round(Tools.power(tier) * PER_GEAR))
 
@@ -41,7 +49,7 @@ static func of_animal(id: String, stars: int, awaken := 0, shiny := false, level
 	return int(round(float(base) * (RARE_MULT if rare else 1.0)))
 
 
-## Мощь по частям: {level, gear, talents, animals}.
+## Мощь по частям: {level, gear, talents, animals, estate}.
 static func breakdown() -> Dictionary:
 	var gear := 0
 	for tool in Tools.UPGRADABLE:
@@ -49,8 +57,11 @@ static func breakdown() -> Dictionary:
 	var animals := 0
 	for id in Game.animals.owned():
 		animals += animal(id)
+	var estate := 0
+	for id in Estate.IDS:
+		estate += of_building(id, Game.estate.level(id))
 	return {"level": of_level(Game.level), "gear": gear, "talents": PER_TALENT_POINT * Game.talents.points_spent(),
-		"animals": animals}
+		"animals": animals, "estate": estate}
 
 
 static func animal(id: String, extra_stars := 0) -> int:

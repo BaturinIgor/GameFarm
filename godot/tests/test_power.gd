@@ -56,3 +56,13 @@ func test_animal_levels() -> void:
 	eq(Game.save["animalLevels"], {"chicken": 30}, "уровни в сохранении чистятся")
 	for l in range(1, Animals.MAX_LEVEL):
 		check(Farming.CROPS.values().any(func(c: Dictionary) -> bool: return c["produce"] == Animals.feed_cost(l)["items"][0][0]), "корм уровня %d - урожай" % l)
+
+
+func test_estate_power() -> void:
+	fresh()
+	var p0 := Power.total()
+	eq(Power.of_building("mill", 5), 5 * Power.PER_BUILDING_LEVEL)
+	eq(Power.of_building("tower", 5), 5 * Power.PER_BUILDING_LEVEL * Power.DEFENSE_MULT, "башня втрое сильнее")
+	Game.save["estate"]["tower"]["level"] = int(Game.save["estate"]["tower"]["level"]) + 2
+	eq(Power.total() - p0, 2 * Power.PER_BUILDING_LEVEL * Power.DEFENSE_MULT, "уровни башни идут в мощь")
+	eq(int(Power.breakdown()["estate"]) > 0, true, "усадьба в разбивке")

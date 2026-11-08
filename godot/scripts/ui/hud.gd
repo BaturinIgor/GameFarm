@@ -58,6 +58,7 @@ var _badges: Dictionary = {}
 var _level_label: Label
 var _level_name: Label
 var _xp_bar: ProgressBar
+var _power_label: Label
 ## Ширина подписи нижней кнопки: 5 кнопок в ряд на узком экране.
 const TAB_LABEL_WIDTH := 62.0
 
@@ -163,6 +164,14 @@ func _build_top() -> void:
 	col.add_child(_level_name)
 	_xp_bar = UiKit.bar(0.0, "gold", 140, 14, " ")
 	col.add_child(_xp_bar)
+	# Мощь - под опытом: по нажатию на плашку открывается окно уровня с разбивкой мощи
+	var pw := HBoxContainer.new()
+	pw.add_theme_constant_override("separation", 3)
+	pw.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(pw)
+	pw.add_child(UiKit.icon("fist", 14))
+	_power_label = UiKit.title("0", 12)
+	pw.add_child(_power_label)
 	# Энергия - под опытом, рядом со здоровьем
 	_energy = EnergyRow.new()
 	col.add_child(_energy)
@@ -581,6 +590,7 @@ func _refresh_values() -> void:
 	if _level_box != null and _minimap != null:
 		_minimap.position = Vector2(10, _level_box.get_rect().end.y + 10.0)
 	_level_label.text = str(Game.level)
+	_power_label.text = Fmt.compact(Power.total())
 	_level_name.text = Locations.name_of(Game.current)
 	_xp_bar.value = Game.level_progress
 	# На последнем уровне полоска показывает путь к следующему очку мастерства
