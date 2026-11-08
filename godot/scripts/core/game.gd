@@ -685,6 +685,14 @@ func recalc() -> void:
 	s.grow_mult /= 1.0 + collection.constellation_bonus("garden")
 	s.weapon_mult *= 1.0 + collection.constellation_bonus("dungeon")
 	s.producer_mult = minf(Stats.MAX_PRODUCER, s.producer_mult * (1.0 + collection.constellation_bonus("birds")))
+	# Земли альянса на войне кормят ферму
+	if war != null and save.has("warLand"):
+		var lands := war.land_bonus()
+		for k in lands:
+			if k == "all":
+				s.yield_all += float(lands[k])
+			else:
+				_add(s.yield_category, k, float(lands[k]))
 	if house.is_built("upper"):
 		s.offline_hours += 2.0
 

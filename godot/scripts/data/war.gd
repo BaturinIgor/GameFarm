@@ -82,6 +82,38 @@ const TROPHY_POWER := 2000
 const TROPHY_MAX := 300
 
 
+## Земли альянса кормят ферму: у каждой клетки свой вид добычи. Пока альянс держит клетку, у всех участников
+## +2% к добыче этого вида за уровень клетки (не больше +25% на вид), замок - +5% ко всей добыче.
+const LAND_KINDS := ["crop", "wood", "stone", "food", "ore", "farm", "gem"]
+const LAND_ICONS := {"crop": "wheat", "wood": "wood", "stone": "stone", "food": "berries", "ore": "iron", "farm": "egg", "gem": "ruby", "all": "star"}
+const LAND_PER_LEVEL := 0.02
+const LAND_CASTLE := 0.05
+const LAND_MAX := 0.25
+
+
+static func land_kind(node: int) -> String:
+	if node == 0:
+		return "all"
+	if is_base(node) or node < 0 or node >= NODES.size():
+		return ""
+	return str(LAND_KINDS[node % LAND_KINDS.size()])
+
+
+static func land_value(node: int) -> float:
+	return LAND_CASTLE if node == 0 else LAND_PER_LEVEL * level(node)
+
+
+## Бонус добычи от клеток: {вид: доля}, вид "all" - вся добыча.
+static func land_bonus(nodes: Array) -> Dictionary:
+	var out := {}
+	for n in nodes:
+		var k := land_kind(int(n))
+		if k == "":
+			continue
+		out[k] = minf(LAND_MAX, float(out.get(k, 0.0)) + land_value(int(n)))
+	return out
+
+
 static func camp_power(lvl: int) -> int:
 	return int(CAMP_POWER[clampi(lvl, 0, 5)])
 

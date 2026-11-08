@@ -27,6 +27,8 @@ func defaults(save: Dictionary) -> void:
 	save["warPasses"] = (passes as Array).map(func(x: Variant) -> int: return int(x)).slice(-8) if passes is Array else []
 	save["warBanner"] = bool(save.get("warBanner", false))
 	save["warTrophies"] = clampi(int(save.get("warTrophies", 0)), 0, War.TROPHY_MAX)
+	var land: Variant = save.get("warLand", {})
+	save["warLand"] = land if land is Dictionary else {}
 
 
 func week() -> int:
@@ -56,6 +58,7 @@ func fetch() -> void:
 		if state.has("now"):
 			_clock = float(state["now"]) - Time.get_unix_time_from_system()
 		_take_results()
+		_update_land()
 		# Знамя куплено, а сервер о нём не знает (не было сети) - сообщаем ещё раз
 		if has_pass() and not bool(state.get("pass", false)):
 			if await Game.rating.call_rpc("war_pass", {}) != null:
@@ -212,6 +215,36 @@ func battle(n: int, tactic: float) -> Dictionary:
 	if not demo:
 		fetch()
 	return out
+
+
+## Клетки моего альянса.
+func my_nodes() -> Array:
+	var out: Array = []
+	if my_slot() <= 0:
+		return out
+	for x in state.get("nodes", []):
+		if x is Array and x.size() >= 2 and int(x[1]) == my_slot():
+			out.append(int(x[0]))
+	return out
+
+
+## Земли кормят ферму: запоминаем бонус до конца недели войны, чтобы он работал и без открытой карты.
+func _update_land() -> void:
+	var bonus := War.land_bonus(my_nodes())
+	var land := {"until": int(state.get("ends", 0)), "bonus": bonus}
+	if land != Game.save.get("warLand", {}):
+		Game.save["warLand"] = land
+		Game.mark_dirty()
+		Game.recalc()
+
+
+## Бонус добычи от земель альянса: {вид: доля} (пусто, если неделя кончилась или я не в альянсе).
+func land_bonus() -> Dictionary:
+	var land: Dictionary = Game.save.get("warLand", {})
+	if land.is_empty() or Time.get_unix_time_from_system() > float(land.get("until", 0)) or not Game.alliance.in_alliance():
+		return {}
+	var b: Variant = land.get("bonus", {})
+	return b if b is Dictionary else {}
 
 
 ## Можно ли вести бой за клетку: чужая или ничья, рядом с нашей землёй, не база и не замок (замок - только сбором).

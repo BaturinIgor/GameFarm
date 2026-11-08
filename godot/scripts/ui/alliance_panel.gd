@@ -2091,6 +2091,26 @@ func _league_card() -> Control:
 	return c
 
 
+## Земли альянса кормят ферму: что сейчас даёт каждая наша клетка.
+func _land_card() -> void:
+	var c := card()
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 8)
+	c.add_child(head)
+	head.add_child(UiKit.icon("wheat", 24))
+	head.add_child(UiKit.label(L.t("war.landTitle"), 14))
+	var bonus := War.land_bonus(Game.war.my_nodes())
+	if bonus.is_empty():
+		var l := _small(L.t("war.landNone"))
+		c.add_child(l)
+		return
+	var flow := HFlowContainer.new()
+	flow.add_theme_constant_override("h_separation", 10)
+	c.add_child(flow)
+	for k in bonus:
+		flow.add_child(AllianceUi.stat("px:" + str(War.LAND_ICONS.get(k, "star")), L.t("effect.yield." + k, [Fmt.pct(float(bonus[k]))]), UiKit.GOOD, 12))
+
+
 func _war() -> void:
 	var w := Game.war
 	if w.error != "":
@@ -2102,6 +2122,7 @@ func _war() -> void:
 		return
 	var left := float(int(w.state.get("ends", 0)) - int(Time.get_unix_time_from_system()))
 	content.add_child(_league_card())
+	_land_card()
 	content.add_child(_small(L.t("war.ends", [EventsPanel.long_countdown(maxf(0.0, left))])))
 	# Награда за прошлую неделю
 	var rw := w.reward()

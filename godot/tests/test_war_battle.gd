@@ -101,3 +101,26 @@ func test_leagues() -> void:
 		check(int(War.place_reward(1, 20, i + 1)["crystals"]) > int(War.place_reward(1, 20, i)["crystals"]), "и награда больше")
 	eq(War.place_reward(1, 20), War.place_reward(1, 20, 1), "без лиги - как в первой")
 	check(L.t("war.league.8") != "war.league.8", "у лиг есть названия")
+
+
+func test_land_feeds_farm() -> void:
+	eq(War.land_kind(0), "all", "замок - вся добыча")
+	eq(War.land_kind(1), "", "база ничего не даёт")
+	var b := War.land_bonus([0, 9, 9 + War.LAND_KINDS.size()])
+	near(float(b["all"]), War.LAND_CASTLE, 0.0001)
+	check(float(b[War.land_kind(9)]) > 0.0)
+	var many: Array = []
+	for n in range(9, War.NODES.size()):
+		many.append(n)
+	for k in War.land_bonus(many):
+		check(float(War.land_bonus(many)[k]) <= War.LAND_MAX + 0.0001, "не больше предела на вид")
+	fresh()
+	Game.save["alliance"] = {"id": 7, "name": "T", "tag": "T", "emblem": 0, "talents": {}}
+	var base := Game.stats.yield_multiplier("wheat")
+	Game.save["warLand"] = {"until": int(Time.get_unix_time_from_system()) + 3600, "bonus": {"crop": 0.1}}
+	Game.recalc()
+	near(Game.stats.yield_multiplier("wheat") - base, 0.1, 0.0001, "земля даёт урожай")
+	Game.save["warLand"] = {"until": 1, "bonus": {"crop": 0.1}}
+	Game.recalc()
+	near(Game.stats.yield_multiplier("wheat"), base, 0.0001, "после недели бонус пропадает")
+	Game.save["alliance"] = {}

@@ -268,6 +268,13 @@ func _node_card() -> void:
 	stats.add_child(AllianceUi.stat("px:shield", "%d/%d" % [int(d["shields"]), War.max_shields(t)], UiKit.INK, 13))
 	stats.add_child(AllianceUi.stat("px:fist", Fmt.n(w.defense(n)), UiKit.INK, 13))
 	stats.add_child(AllianceUi.stat("px:trophy", L.t("war.perHour", [War.rate(t)]), UiKit.INK, 13))
+	var lk := War.land_kind(n)
+	if lk != "":
+		var lr := HBoxContainer.new()
+		lr.add_theme_constant_override("separation", 4)
+		lr.add_child(UiKit.icon(str(War.LAND_ICONS.get(lk, "star")), 18))
+		lr.add_child(UiKit.label(L.t("war.landLine", [L.t("effect.yield." + lk, [Fmt.pct(War.land_value(n))])]), 12, UiKit.GOOD))
+		_bottom_col.add_child(lr)
 	var g := w.guard(n)
 	if not g.is_empty():
 		var gr := HBoxContainer.new()
