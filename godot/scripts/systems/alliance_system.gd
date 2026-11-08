@@ -27,6 +27,10 @@ var online := 0
 var _chat_v2 := true
 ## Ратуша (ответ al_hall): кто в сети, просьбы о помощи, подарки, цель дня, похвалы. Пусто - не загружено.
 var hall: Dictionary = {}
+## Заявки (alliance_apply.sql): в мой альянс (видят глава и заместители), мои поданные и вход свободный ли.
+var apps: Array = []
+var my_apps: Array = []
+var entry_open := true
 ## Последний удар по стражу: урон и когда (для всплывающего числа на сцене битвы).
 var last_hit := 0
 var last_hit_at := -100000
@@ -212,6 +216,7 @@ func _take(d: Dictionary) -> void:
 		_last_id = 0
 		hall = {}
 		hall_failed = false
+		apps = []
 		pin = {}
 		reacts = {}
 		my_reacts = {}
@@ -221,6 +226,7 @@ func _take(d: Dictionary) -> void:
 			_last_id = 0
 			hall = {}
 			hall_failed = false
+			apps = []
 			pin = {}
 		var talents := {}
 		var raw: Variant = d.get("talents", {})
@@ -242,6 +248,7 @@ func search(query: String) -> void:
 	var res: Variant = await Game.rating.call_rpc("al_search", {"p_query": query.strip_edges().left(20), "p_level": Game.level})
 	busy = false
 	found = res if res is Array else []
+	fetch_apps()
 	error = "" if res != null else "network"
 	Game.changed.emit()
 
@@ -1045,18 +1052,63 @@ func create(name: String, tag: String, emblem: int, about: String, with_coins: b
 	await refresh(true)
 
 
+## Вступить: в открытый альянс сразу, в закрытый - заявкой (сервер без alliance_apply.sql - сразу, как раньше).
 func join(id: int) -> void:
 	if busy:
 		return
 	busy = true
-	var res: Variant = await Game.rating.call_rpc("al_join", {"p_alliance": id, "p_player": Game.rating.player_name(),
-		"p_level": Game.level})
+	var args := {"p_alliance": id, "p_player": Game.rating.player_name(), "p_level": Game.level}
+	var res: Variant = await Game.rating.call_rpc("al_apply", args)
+	if res == null and "al_apply" in Game.rating.last_error:
+		res = await Game.rating.call_rpc("al_join", args)
 	busy = false
 	if res == null:
 		_fail()
 		return
+	if str(res) == "applied":
+		if not id in my_apps:
+			my_apps.append(id)
+		Sound.play("purchase")
+		Game.show_toast("px:scroll", L.t("alliance.applied"))
+		Game.changed.emit()
+		return
 	Sound.play("unlock")
 	await refresh(true)
+
+
+func fetch_apps() -> void:
+	if demo:
+		return
+	var res: Variant = await Game.rating.call_rpc("al_apps", {})
+	if res is Dictionary:
+		apps = (res.get("apps", []) as Array) if res.get("apps") is Array else []
+		my_apps = ((res.get("mine", []) as Array) if res.get("mine") is Array else []).map(func(x: Variant) -> int: return int(x))
+		entry_open = bool(res.get("open", true)) if res.get("open") != null else true
+		Game.changed.emit()
+
+
+func decide_app(user: String, accept: bool) -> void:
+	if demo:
+		apps = apps.filter(func(a: Dictionary) -> bool: return str(a.get("id", "")) != user)
+		Game.changed.emit()
+		return
+	if await _act("al_app_decide", {"p_user": user, "p_accept": accept}):
+		Sound.play("unlock" if accept else "tap")
+		await fetch_apps()
+		if accept:
+			await refresh(true)
+	else:
+		await fetch_apps()
+
+
+func set_entry_open(v: bool) -> void:
+	if demo:
+		entry_open = v
+		Game.changed.emit()
+		return
+	if await _act("al_set_open", {"p_open": v}):
+		entry_open = v
+		Game.changed.emit()
 
 
 func leave() -> void:
@@ -1102,7 +1154,7 @@ func _fail() -> void:
 	var e := Game.rating.last_error
 	error = e if e in ["limit", "full", "level too low", "name taken", "tag taken", "bad name", "talent locked",
 		"talent maxed", "too fast", "already in alliance", "not allowed", "pet fed", "weather busy", "guest away", "host full", "has mentor", "level too high", "sold", "bad lot",
-		"already asked", "already helped", "no helps left", "help closed", "already praised", "already claimed", "goal not done"] else "network"
+		"apply only", "already asked", "already helped", "no helps left", "help closed", "already praised", "already claimed", "goal not done"] else "network"
 	Game.changed.emit()
 
 
@@ -1422,6 +1474,8 @@ func fetch_hall() -> void:
 		hall_failed = false
 		_apply_help()
 		Game.changed.emit()
+	if role() in ["leader", "officer"]:
+		fetch_apps()
 	elif hall.is_empty() and not hall_failed:
 		hall_failed = true
 		Game.changed.emit()
@@ -1627,7 +1681,7 @@ func is_online(uid: String) -> bool:
 
 ## Отметка на вкладке ратуши: подарки, чужие просьбы, награда цели дня.
 func hall_count() -> int:
-	return gifts().size() + mini(1, help_open_count()) + (1 if can_claim_goal() else 0)
+	return gifts().size() + mini(1, help_open_count()) + (1 if can_claim_goal() else 0) + apps.size()
 
 
 func say(text: String) -> bool:

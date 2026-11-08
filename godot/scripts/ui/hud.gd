@@ -193,6 +193,9 @@ func _build_top() -> void:
 	prow.add_child(UiKit.icon("bag", 22))
 	var pcol := VBoxContainer.new()
 	pcol.add_theme_constant_override("separation", 1)
+	# Полоска рюкзака - по центру плашки, вровень со значком
+	pcol.alignment = BoxContainer.ALIGNMENT_CENTER
+	pcol.size_flags_vertical = Control.SIZE_FILL
 	prow.add_child(pcol)
 	_pack_bar = UiKit.bar(0.0, "green", 100, 14, " ")
 	_pack_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER

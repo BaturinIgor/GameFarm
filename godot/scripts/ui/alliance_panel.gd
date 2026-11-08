@@ -189,6 +189,56 @@ func build() -> void:
 		_: _find()
 
 
+## Заявки на вступление (глава и заместители) и переключатель «свободный вход / по заявкам» (глава).
+func _apps_card() -> void:
+	var al := Game.alliance
+	if al.apps.is_empty() and al.role() != "leader":
+		return
+	var c := card(Color("e9f0fb") if not al.apps.is_empty() else UiKit.PARCHMENT_LIGHT)
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 8)
+	c.add_child(head)
+	head.add_child(UiKit.icon("scroll", 22))
+	var t := UiKit.label(L.t("alliance.apps", [al.apps.size()]) if not al.apps.is_empty() else L.t("alliance.entry"), 14)
+	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(t)
+	if al.role() == "leader":
+		var tg := UiKit.button(L.t("alliance.entryOpen") if al.entry_open else L.t("alliance.entryApply"), "wood", 12, true)
+		tg.disabled = al.busy
+		tg.pressed.connect(func() -> void: Game.alliance.set_entry_open(not Game.alliance.entry_open))
+		head.add_child(tg)
+	for x in al.apps:
+		var a: Dictionary = x
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		c.add_child(row)
+		row.add_child(AllianceUi.avatar(str(a.get("name", "")), 34, ""))
+		var col := VBoxContainer.new()
+		col.add_theme_constant_override("separation", 0)
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(col)
+		var nl := UiKit.label(str(a.get("name", "")), 14)
+		nl.clip_text = true
+		nl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		col.add_child(nl)
+		var st := HBoxContainer.new()
+		st.add_theme_constant_override("separation", 10)
+		col.add_child(st)
+		st.add_child(AllianceUi.stat("px:star", L.t("alliance.lv", [int(a.get("level", 1))]), UiKit.INK_SOFT, 11))
+		st.add_child(AllianceUi.stat("px:fist", Fmt.compact(int(a.get("power", 0))), UiKit.INK_SOFT, 11))
+		var uid := str(a.get("id", ""))
+		var ok := UiKit.button("✓", "green", 15, true)
+		ok.custom_minimum_size = Vector2(40, 34)
+		ok.disabled = al.busy
+		ok.pressed.connect(func() -> void: Game.alliance.decide_app(uid, true))
+		row.add_child(ok)
+		var no := UiKit.button("✕", "red", 15, true)
+		no.custom_minimum_size = Vector2(40, 34)
+		no.disabled = al.busy
+		no.pressed.connect(func() -> void: Game.alliance.decide_app(uid, false))
+		row.add_child(no)
+
+
 # MARK: Без альянса
 
 func _find() -> void:
@@ -234,10 +284,15 @@ func _alliance_row(a: Dictionary) -> void:
 		col.add_child(about)
 	var full := int(a.get("members", 0)) >= int(a.get("cap", 25))
 	var low := Game.level < int(a.get("min_level", Alliances.JOIN_LEVEL))
-	var join := UiKit.button(L.t("alliance.join"), "green", 13, true)
-	join.disabled = full or low or Game.alliance.busy
-	join.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var id := int(a.get("id", 0))
+	var is_open := bool(a.get("open", true)) if a.get("open") != null else true
+	var applied := id in Game.alliance.my_apps
+	var join := UiKit.button(L.t("alliance.join") if is_open else (L.t("alliance.appliedShort") if applied else L.t("alliance.apply")),
+		"green" if is_open else "blue", 13, true)
+	join.disabled = full or low or Game.alliance.busy or applied
+	join.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	if not is_open:
+		col.add_child(_small(L.t("alliance.byApply")))
 	join.pressed.connect(func() -> void: Game.alliance.join(id))
 	row.add_child(join)
 
@@ -1099,6 +1154,8 @@ func _send() -> void:
 func _members() -> void:
 	var al := Game.alliance
 	var me_role := al.role()
+	if me_role in ["leader", "officer"]:
+		_apps_card()
 	_goal_card()
 	_gifts_card()
 	_help_card()

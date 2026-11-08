@@ -911,6 +911,7 @@ func _alliance_demo(w: String) -> void:
 		al.my_reacts = {2: "heart"}
 		al.pin = {"id": 2, "name": "Masha", "body": "Всем привет! Не забываем бесплатные вклады в «Общий урожай»"}
 		al.online = 3
+		al.apps = [{"id": "x1", "name": "Sunny Farmer", "level": 24, "power": 412000}, {"id": "x2", "name": "Leo", "level": 31, "power": 690000}]
 		al.hall = {"online": ["b", "c"], "helps_today": 4,
 			"help": [{"id": 11, "user": "b", "name": "Masha", "target": "barn", "got": 6, "need": 10, "me": false, "helped": false},
 				{"id": 12, "user": "c", "name": "Kenji", "target": "mill", "got": 3, "need": 10, "me": false, "helped": false},
