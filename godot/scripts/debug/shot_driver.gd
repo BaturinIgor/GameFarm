@@ -8,7 +8,7 @@ const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", 
 	"dungeon", "trophies", "collection", "collection:zoo", "collection:trophies", "legacy", "wardrobe", "map", "map:ember", "map:azure", "events", "shop",
 	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story", "wild", "talents:estate",
 	"story", "story:altar", "collection:diary", "alliance:find", "alliance:create", "alliance:main", "alliance:events", "alliance:chat",
-	"alliance:members", "alliance:top", "alliance:players", "alliance:chronicle", "alliance:fair", "alliance:village", "alliance:war"]
+	"alliance:members", "alliance:top", "alliance:players", "alliance:chronicle", "alliance:fair", "alliance:village", "alliance:war", "alliance:talents", "alliance:pet", "alliance:weather"]
 
 var dir := "/tmp/shots"
 var main: Node
@@ -883,12 +883,25 @@ func _alliance_demo(w: String) -> void:
 			]}
 		var now := int(Time.get_unix_time_from_system())
 		al.messages = [
-			{"id": 1, "kind": "join", "name": "Lucía", "body": "", "at": now - 3600},
-			{"id": 2, "kind": "text", "name": "Masha", "user_id": "b", "body": "Всем привет! Не забываем бесплатные вклады в «Общий урожай»", "at": now - 1800, "me": false},
-			{"id": 3, "kind": "text", "name": Game.rating.player_name(), "user_id": "a", "body": "Done, 20/20 today", "at": now - 900, "me": true},
-			{"id": 4, "kind": "level", "name": "", "body": "7", "at": now - 600},
-			{"id": 5, "kind": "text", "name": "Kenji", "user_id": "c", "body": "Who wants to trade planks?", "at": now - 60, "me": false},
+			{"id": 1, "kind": "join", "name": "Lucía", "body": "", "at": now - 90000},
+			{"id": 2, "kind": "text", "name": "Masha", "user_id": "b", "role": "officer", "body": "Всем привет! Не забываем бесплатные вклады в «Общий урожай»", "at": now - 1800, "me": false},
+			{"id": 3, "kind": "text", "name": "Masha", "user_id": "b", "role": "officer", "body": "::heart", "at": now - 1700, "me": false},
+			{"id": 4, "kind": "text", "name": Game.rating.player_name(), "user_id": "a", "role": "leader", "body": "Done, 20/20 today", "at": now - 900, "me": true},
+			{"id": 5, "kind": "level", "name": "", "body": "7", "at": now - 600},
+			{"id": 6, "kind": "boss", "name": "", "body": "3", "at": now - 400},
+			{"id": 7, "kind": "text", "name": "Kenji", "user_id": "c", "role": "member", "body": "Who wants to trade planks?", "at": now - 60, "me": false},
 		]
+		al.reacts = {2: {"heart": 3, "fist": 1}, 4: {"star": 2}}
+		al.my_reacts = {2: "heart"}
+		al.pin = {"id": 2, "name": "Masha", "body": "Всем привет! Не забываем бесплатные вклады в «Общий урожай»"}
+		al.online = 3
+		al.hall = {"online": ["b", "c"], "helps_today": 4,
+			"help": [{"id": 11, "user": "b", "name": "Masha", "target": "barn", "got": 6, "need": 10, "me": false, "helped": false},
+				{"id": 12, "user": "c", "name": "Kenji", "target": "mill", "got": 3, "need": 10, "me": false, "helped": false},
+				{"id": 13, "user": "d", "name": "Lucía", "target": "storage", "got": 10, "need": 10, "me": false, "helped": true}],
+			"gifts": [{"id": 1, "name": "Masha", "product": "crystals3"}, {"id": 2, "name": "Kenji", "product": "starter"}],
+			"goal": {"done": 9, "need": 12, "mine": 3, "claimed": false},
+			"praise": {"given": null, "week": {"b": 4, "c": 1}}}
 		al.top = [
 			{"place": 1, "id": 2, "name": "Звёздные пахари", "tag": "STAR", "emblem": 0, "level": 12, "week_xp": 5400, "me": false},
 			{"place": 2, "id": 1, "name": "Green Valley", "tag": "GV", "emblem": 6, "level": 7, "week_xp": 2100, "me": true},

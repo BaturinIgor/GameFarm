@@ -11,7 +11,8 @@
 --   визиты деревни альянса старше 30 дней;
 --   забранные лоты ярмарки альянса старше 4 недель;
 --   очки турнира зверей старше 8 недель, журнал защит старше 2 недель;
---   лиги войны альянсов старше 4 недель.
+--   лиги войны альянсов старше 4 недель;
+--   просьбы о помощи старше 3 дней, подарки альянсу старше 7 дней, похвалы старше 14 дней.
 
 create or replace function public.hh_cleanup() returns void
 language plpgsql security definer set search_path = public as $$
@@ -41,6 +42,10 @@ begin
   -- Ярмарка альянса (если выполнен alliance_fair.sql)
   if to_regproc('public.al_fair_cleanup') is not null then
     perform al_fair_cleanup();
+  end if;
+  -- Ратуша альянса (если выполнен alliance_hall.sql)
+  if to_regproc('public.al_hall_cleanup') is not null then
+    perform al_hall_cleanup();
   end if;
   -- Турнир зверей (если выполнен tourney.sql)
   if to_regproc('public.tourney_cleanup') is not null then

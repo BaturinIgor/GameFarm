@@ -238,6 +238,25 @@ func speed_up(id: String) -> bool:
 	return true
 
 
+## Помощь альянса: стройка короче на seconds (не дольше, чем осталось).
+func help_speed_up(id: String, seconds: float) -> bool:
+	if not Estate.IDS.has(id) or not building(id):
+		return false
+	_b(id)["until"] = maxf(_now(), float(_b(id)["until"]) - seconds)
+	tick()
+	Game.mark_dirty()
+	return true
+
+
+## Самая долгая стройка сейчас ("" - ничего не строится): о ней просят помощи в ратуше.
+func longest_build() -> String:
+	var best := ""
+	for id in Estate.IDS:
+		if building(id) and (best == "" or build_left(id) > build_left(best)):
+			best = id
+	return best
+
+
 func ad_speedups_left() -> int:
 	var ads: Dictionary = Game.save["speedAds"]
 	if int(ads["day"]) != ShopSystem.day_index():

@@ -121,6 +121,7 @@ func grant(product: String, transaction := "") -> void:
 				return
 			used.append(transaction)
 			Game.save["consumed"] = used
+		Game.alliance.send_gift(key)
 		if key == "max" or Products.is_crystals(key) or Products.shop_granted(key):
 			# Кристаллы и MAX: свой тост в ShopSystem
 			Game.shop.grant(key)
@@ -149,6 +150,7 @@ func grant(product: String, transaction := "") -> void:
 	if not id in granted:
 		granted.append(id)
 		Game.save["granted"] = granted
+		Game.alliance.send_gift(key)
 		match key:
 			"starter":
 				Game.save["coins"] = int(Game.save["coins"]) + STARTER_COINS

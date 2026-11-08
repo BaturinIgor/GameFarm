@@ -16,6 +16,15 @@ var error := ""
 ## Чат: сообщения по порядку и id последнего.
 var messages: Array = []
 var _last_id := 0
+## Живой чат (ответ al_chat): реакции по сообщениям {id: {вид: сколько}}, мои реакции {id: вид},
+## закреплённое сообщение и сколько участников в сети. Без alliance_hall.sql остаётся старый al_messages.
+var reacts: Dictionary = {}
+var my_reacts: Dictionary = {}
+var pin: Dictionary = {}
+var online := 0
+var _chat_v2 := true
+## Ратуша (ответ al_hall): кто в сети, просьбы о помощи, подарки, цель дня, похвалы. Пусто - не загружено.
+var hall: Dictionary = {}
 ## Результаты поиска и рейтинга.
 var found: Array = []
 var top: Array = []
@@ -196,10 +205,16 @@ func _take(d: Dictionary) -> void:
 		chronicle = {}
 		messages.clear()
 		_last_id = 0
+		hall = {}
+		pin = {}
+		reacts = {}
+		my_reacts = {}
 	else:
 		if was != int(d.get("id", 0)):
 			messages.clear()
 			_last_id = 0
+			hall = {}
+			pin = {}
 		var talents := {}
 		var raw: Variant = d.get("talents", {})
 		if raw is Dictionary:
@@ -1079,7 +1094,8 @@ func _act(fn: String, args: Dictionary) -> bool:
 func _fail() -> void:
 	var e := Game.rating.last_error
 	error = e if e in ["limit", "full", "level too low", "name taken", "tag taken", "bad name", "talent locked",
-		"talent maxed", "too fast", "already in alliance", "not allowed", "pet fed", "weather busy", "guest away", "host full", "has mentor", "level too high", "sold", "bad lot"] else "network"
+		"talent maxed", "too fast", "already in alliance", "not allowed", "pet fed", "weather busy", "guest away", "host full", "has mentor", "level too high", "sold", "bad lot",
+		"already asked", "already helped", "no helps left", "help closed", "already praised", "already claimed", "goal not done"] else "network"
 	Game.changed.emit()
 
 
@@ -1311,8 +1327,19 @@ func flush_progress(force := false) -> void:
 func poll_chat() -> void:
 	if demo or not in_alliance():
 		return
-	var res: Variant = await Game.rating.call_rpc("al_messages", {"p_after": _last_id})
+	var res: Variant = null
+	if _chat_v2:
+		var r2: Variant = await Game.rating.call_rpc("al_chat", {"p_after": _last_id})
+		if r2 is Dictionary:
+			_take_chat_meta(r2)
+			res = r2.get("msgs", [])
+		elif Game.rating.last_error.contains("al_chat"):
+			# alliance_hall.sql ещё не выполнен - старый чат без реакций
+			_chat_v2 = false
+	if not _chat_v2:
+		res = await Game.rating.call_rpc("al_messages", {"p_after": _last_id})
 	if not res is Array or (res as Array).is_empty():
+		Game.changed.emit()
 		return
 	for m in res:
 		if m is Dictionary and int(m.get("id", 0)) > _last_id:
@@ -1321,6 +1348,273 @@ func poll_chat() -> void:
 	if messages.size() > 120:
 		messages = messages.slice(messages.size() - 120)
 	Game.changed.emit()
+
+
+func _take_chat_meta(r: Dictionary) -> void:
+	reacts = {}
+	my_reacts = {}
+	for x in r.get("reacts", []):
+		if not x is Dictionary:
+			continue
+		var id := int(x.get("id", 0))
+		var per: Dictionary = reacts.get(id, {})
+		per[str(x.get("kind", ""))] = int(x.get("n", 0))
+		reacts[id] = per
+		if bool(x.get("mine", false)):
+			my_reacts[id] = str(x.get("kind", ""))
+	pin = r["pin"] if r.get("pin") is Dictionary else {}
+	online = int(r.get("online", 0))
+
+
+## Реакция на сообщение: та же ещё раз - снять. Сразу рисуем у себя, потом спрашиваем сервер.
+func react(message_id: int, kind: String) -> void:
+	if not kind in Hall.REACTS:
+		return
+	var per: Dictionary = reacts.get(message_id, {})
+	var old := str(my_reacts.get(message_id, ""))
+	if old != "":
+		per[old] = maxi(0, int(per.get(old, 0)) - 1)
+		my_reacts.erase(message_id)
+	if old != kind:
+		per[kind] = int(per.get(kind, 0)) + 1
+		my_reacts[message_id] = kind
+	reacts[message_id] = per
+	Game.changed.emit()
+	if demo:
+		return
+	await Game.rating.call_rpc("al_react", {"p_message": message_id, "p_kind": kind})
+
+
+## Закрепить сообщение (0 - открепить). Глава и старейшины.
+func pin_message(message_id: int) -> void:
+	if role() == "member":
+		return
+	if demo:
+		pin = {}
+		for m in messages:
+			if int(m.get("id", 0)) == message_id:
+				pin = {"id": message_id, "name": m.get("name", ""), "body": m.get("body", "")}
+		Game.changed.emit()
+		return
+	if await Game.rating.call_rpc("al_pin", {"p_message": message_id}) == null:
+		_fail()
+		return
+	await poll_chat()
+
+
+# MARK: Ратуша
+
+func fetch_hall() -> void:
+	if demo or not in_alliance():
+		return
+	var res: Variant = await Game.rating.call_rpc("al_hall", {})
+	if res is Dictionary:
+		hall = res
+		_apply_help()
+		Game.changed.emit()
+
+
+## Моя открытая просьба о помощи (из ответа ратуши), пусто - нет.
+func my_help() -> Dictionary:
+	for h in hall.get("help", []):
+		if h is Dictionary and bool(h.get("me", false)):
+			return h
+	return {}
+
+
+## Помощь пришла: стройка короче на 3 минуты за каждую новую помощь.
+func _apply_help() -> void:
+	var h := my_help()
+	if h.is_empty():
+		return
+	var st: Dictionary = Game.save.get("hallHelp", {})
+	if int(st.get("id", 0)) != int(h.get("id", 0)):
+		st = {"id": int(h.get("id", 0)), "applied": 0}
+	var fresh := int(h.get("got", 0)) - int(st.get("applied", 0))
+	if fresh > 0:
+		var target := str(h.get("target", ""))
+		if Game.estate.help_speed_up(target, Hall.HELP_SECONDS * fresh):
+			Game.show_toast("px:hammer", L.t("hall.helped", [fresh, Estate.name_of(target), Fmt.seconds(Hall.HELP_SECONDS * fresh)]))
+		st["applied"] = int(h.get("got", 0))
+	Game.save["hallHelp"] = st
+	Game.mark_dirty()
+
+
+func can_ask_help() -> bool:
+	if Game.estate.longest_build() == "":
+		return false
+	var h := my_help()
+	return h.is_empty() or int(h.get("got", 0)) >= int(h.get("need", Hall.HELP_NEED))
+
+
+func ask_help() -> void:
+	var target := Game.estate.longest_build()
+	if target == "" or busy:
+		return
+	if demo:
+		hall["help"] = [{"id": 99, "user": "a", "name": Game.rating.player_name(), "target": target, "got": 0,
+			"need": Hall.HELP_NEED, "me": true, "helped": false}] + (hall.get("help", []) as Array)
+		Game.changed.emit()
+		return
+	busy = true
+	var res: Variant = await Game.rating.call_rpc("al_help_ask", {"p_target": target, "p_player": Game.rating.player_name()})
+	busy = false
+	if res == null:
+		_fail()
+		return
+	Game.save["hallHelp"] = {"id": int(res), "applied": 0}
+	Game.show_toast("px:hammer", L.t("hall.asked"))
+	await fetch_hall()
+
+
+func helps_left() -> int:
+	return maxi(0, Hall.HELPS_PER_DAY - int(hall.get("helps_today", 0)))
+
+
+## Сколько чужих просьб можно поддержать прямо сейчас.
+func help_open_count() -> int:
+	if helps_left() <= 0:
+		return 0
+	return (hall.get("help", []) as Array).filter(func(h: Dictionary) -> bool:
+		return not bool(h.get("me", false)) and not bool(h.get("helped", false)) and int(h.get("got", 0)) < int(h.get("need", 0))).size()
+
+
+func give_help(help_id: int) -> void:
+	if busy:
+		return
+	var coins := Hall.help_coins(Game.level)
+	if demo:
+		for h in hall.get("help", []):
+			if int(h.get("id", 0)) == help_id:
+				h["helped"] = true
+				h["got"] = int(h.get("got", 0)) + 1
+		hall["helps_today"] = int(hall.get("helps_today", 0)) + 1
+		Game.add_coins(coins)
+		Game.changed.emit()
+		return
+	busy = true
+	var res: Variant = await Game.rating.call_rpc("al_help_give", {"p_help": help_id})
+	busy = false
+	if not res is Dictionary:
+		_fail()
+		await fetch_hall()
+		return
+	Game.add_coins(coins)
+	Game.show_toast("px:coin", L.t("hall.thanks", [Fmt.n(coins)]))
+	await fetch_hall()
+
+
+## Помочь всем сразу (как кнопка «Помочь всем» в ратуше).
+func give_help_all() -> void:
+	for h in (hall.get("help", []) as Array).duplicate():
+		if helps_left() <= 0:
+			break
+		if not bool(h.get("me", false)) and not bool(h.get("helped", false)) and int(h.get("got", 0)) < int(h.get("need", 0)):
+			await give_help(int(h.get("id", 0)))
+
+
+func gifts() -> Array:
+	return hall.get("gifts", [])
+
+
+func claim_gift(gift_id: int) -> void:
+	if busy:
+		return
+	var product := ""
+	if demo:
+		for g in gifts():
+			if int(g.get("id", 0)) == gift_id:
+				product = str(g.get("product", ""))
+		hall["gifts"] = gifts().filter(func(g: Dictionary) -> bool: return int(g.get("id", 0)) != gift_id)
+	else:
+		busy = true
+		var res: Variant = await Game.rating.call_rpc("al_gift_claim", {"p_gift": gift_id})
+		busy = false
+		if not res is String:
+			_fail()
+			await fetch_hall()
+			return
+		product = str(res)
+	var r := Hall.gift_reward(product, Game.level)
+	RewardsPopup.track(func() -> void: _give(r))
+	Sound.play("treasure")
+	Game.save_now()
+	if not demo:
+		await fetch_hall()
+	Game.changed.emit()
+
+
+## После покупки в магазине: подарок всем в альянсе.
+func send_gift(product_key: String) -> void:
+	if demo or not in_alliance() or not available():
+		return
+	await Game.rating.call_rpc("al_gift_send", {"p_product": product_key, "p_player": Game.rating.player_name()})
+
+
+func goal() -> Dictionary:
+	return hall.get("goal", {})
+
+
+func can_claim_goal() -> bool:
+	var g := goal()
+	return not g.is_empty() and not bool(g.get("claimed", false)) and int(g.get("done", 0)) >= int(g.get("need", 1)) \
+		and int(g.get("mine", 0)) > 0
+
+
+func claim_goal() -> void:
+	if not can_claim_goal() or busy:
+		return
+	if not demo:
+		busy = true
+		var res: Variant = await Game.rating.call_rpc("al_goal_claim", {})
+		busy = false
+		if res == null:
+			_fail()
+			return
+	hall["goal"]["claimed"] = true
+	var r := Hall.goal_reward(Game.level)
+	RewardsPopup.track(func() -> void: _give(r))
+	Sound.play("treasure")
+	Game.save_now()
+	Game.changed.emit()
+
+
+func praised_today() -> String:
+	var p: Variant = hall.get("praise", {}).get("given")
+	return "" if p == null else str(p)
+
+
+func praise_count(uid: String) -> int:
+	return int(hall.get("praise", {}).get("week", {}).get(uid, 0))
+
+
+func praise(uid: String) -> void:
+	if praised_today() != "" or busy:
+		return
+	if not demo:
+		busy = true
+		var res: Variant = await Game.rating.call_rpc("al_praise", {"p_user": uid})
+		busy = false
+		if res == null:
+			_fail()
+			return
+	if not hall.has("praise"):
+		hall["praise"] = {"week": {}}
+	hall["praise"]["given"] = uid
+	var wk: Dictionary = hall["praise"].get("week", {})
+	wk[uid] = int(wk.get(uid, 0)) + 1
+	hall["praise"]["week"] = wk
+	Game.show_toast("px:heart", L.t("hall.praised"))
+	Game.changed.emit()
+
+
+func is_online(uid: String) -> bool:
+	return uid in (hall.get("online", []) as Array)
+
+
+## Отметка на вкладке ратуши: подарки, чужие просьбы, награда цели дня.
+func hall_count() -> int:
+	return gifts().size() + mini(1, help_open_count()) + (1 if can_claim_goal() else 0)
 
 
 func say(text: String) -> bool:
