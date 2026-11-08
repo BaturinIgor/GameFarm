@@ -1,6 +1,7 @@
 -- Разбойники: альянсы под управлением сервера. Занимают пустые места в лигах войны, чтобы даже первый
 -- альянс на сервере воевал не с пустой картой. Держат клетки, сами нападают отрядами (видно на карте)
--- и укрепляют свои клетки. Сила - по лиге, примерно как лагерь 2-3 уровня. Своих клеток не больше RAID_NODES.
+-- и укрепляют свои клетки. Сила - по силе лиги, от лагеря 1 до лагеря 3 уровня. Ничьих клеток занимают не больше
+-- _war_raid_nodes() (5 и +2 в день), чужие клетки живых альянсов атакуют всегда.
 -- В поиске и рейтингах альянсов их нет. Имя "@raider:N" игра показывает на языке игрока.
 -- Запуск: Supabase -> SQL Editor -> вставить файл целиком -> Run (после alliance_war_shop.sql). Повторный запуск безопасен.
 
@@ -8,7 +9,11 @@ alter table public.alliances add column if not exists raider boolean not null de
 alter table public.war_marches alter column user_id drop not null;
 
 create or replace function public._war_raid_min() returns int language sql immutable as $$ select 4 $$;
-create or replace function public._war_raid_nodes() returns int language sql immutable as $$ select 5 $$;
+-- Сколько ничьих клеток разбойник может занять: 5 в начале недели и +2 каждый день (до 15).
+-- Чужие клетки живых альянсов он атакует всегда, без предела.
+create or replace function public._war_raid_nodes() returns int language sql stable as $$
+  select least(15, 5 + 2 * greatest(0, floor(7 - extract(epoch from (_war_end(_al_week()) - now())) / 86400.0))::int)
+$$;
 
 -- Новый альянс разбойников (у каждого своё место в лиге на неделю, поэтому создаём по необходимости).
 create or replace function public._war_raider_new() returns bigint
@@ -95,7 +100,16 @@ begin
        and (n.owner is not null or own < _war_raid_nodes())
        and _war_reachable(r.league_id, r.alliance_id, n.node)
      order by (n.owner is null) , _war_tier(n.node), random() limit 1;
-    continue when target is null;
+    if target is null then
+      -- Некуда идти - укрепляет свою клетку, чтобы её было труднее отбить
+      select node into target from war_nodes where league_id = r.league_id and owner = r.alliance_id
+         and shields < _war_max_shields(_war_tier(node)) order by shields, random() limit 1;
+      continue when target is null;
+      insert into war_marches (league_id, user_id, alliance_id, name, node, kind, power, arrive_at)
+        values (r.league_id, null, r.alliance_id, '@raider', target, 'reinforce', r.strength,
+                now() + make_interval(secs => _war_march_secs(_war_tier(target))));
+      continue;
+    end if;
     tier := _war_tier(target);
     insert into war_marches (league_id, user_id, alliance_id, name, node, kind, power, arrive_at)
       values (r.league_id, null, r.alliance_id, '@raider', target, 'attack',
