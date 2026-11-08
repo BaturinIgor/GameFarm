@@ -12,6 +12,14 @@ const KEYS := [
 	"aura", "rainbow", "glowMeadow", "petGlow", "builder", "energyPack", "attemptsPack",
 	# Наборы ключей от сундуков
 	"keyPack", "keyChest",
+	# Пропуск турнира зверей на неделю
+	"tourneyPass",
+	# Праздник в деревне альянса: украшения, королевская рамка, кристаллы
+	"villagePack",
+	# Знамя войны альянсов на неделю: +3 атаки в день, рамка статуи
+	"warBanner",
+	# Военный сундук: кристаллы, атаки на сегодня и трофеи
+	"warChest",
 ]
 
 ## Идентификаторы магазина (rawValue ProductID).
@@ -45,6 +53,10 @@ const IDS := {
 	"attemptsPack": "com.personal.gamefarm.attemptspack",
 	"keyPack": "com.personal.gamefarm.keypack",
 	"keyChest": "com.personal.gamefarm.keychest",
+	"tourneyPass": "com.personal.gamefarm.tourneypass",
+	"villagePack": "com.personal.gamefarm.villagepack",
+	"warBanner": "com.personal.gamefarm.warbanner",
+	"warChest": "com.personal.gamefarm.warchest",
 }
 
 ## Цена до загрузки из магазина (и в тестовой сборке).
@@ -56,6 +68,10 @@ const PRICES := {
 	"flash": "$4.99", "step1": "$0.99", "step2": "$1.99", "step3": "$2.99", "stepsAll": "$2.99",
 	"aura": "$2.99", "rainbow": "$2.99", "glowMeadow": "$1.99", "petGlow": "$1.99", "builder": "$4.99",
 	"energyPack": "$0.99", "attemptsPack": "$0.99", "keyPack": "$1.99", "keyChest": "$4.99",
+	"tourneyPass": "$1.99",
+	"villagePack": "$2.99",
+	"warBanner": "$1.99",
+	"warChest": "$4.99",
 }
 
 ## Цвет набора в магазине (Offers.tone).
@@ -67,6 +83,10 @@ const TONES := {
 	"flash": "red", "step1": "green", "step2": "blue", "step3": "purple", "stepsAll": "gold",
 	"aura": "gold", "rainbow": "purple", "glowMeadow": "blue", "petGlow": "green", "builder": "orange",
 	"energyPack": "orange", "attemptsPack": "red", "keyPack": "blue", "keyChest": "gold",
+	"tourneyPass": "gold",
+	"villagePack": "purple",
+	"warBanner": "red",
+	"warChest": "red",
 }
 
 ## Предложение дня: три варианта по очереди, покупается раз в день. value - во сколько кристаллов его оценивать
@@ -137,7 +157,7 @@ static func id(product: String) -> String:
 ## Расходуемая покупка: её можно купить снова (билеты, пропуск, кристаллы, продление MAX).
 static func consumable(product: String) -> bool:
 	var k := key(product)
-	return k == "tickets" or k == "eventPass" or k == "max" or k in CRYSTAL_PACKS or k in KEY_PACKS \
+	return k == "tickets" or k == "eventPass" or k == "tourneyPass" or k == "warBanner" or k == "warChest" or k == "max" or k in CRYSTAL_PACKS or k in KEY_PACKS \
 		or k in ["flash", "energyPack", "attemptsPack"]
 
 

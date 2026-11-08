@@ -32,6 +32,8 @@ class ErrorCatcher extends Logger:
 func _ready() -> void:
 	# Сохранение тестов - в свой файл: настоящий прогресс не трогаем
 	Game.save_path = SAVE
+	# Альянсы в 1.1 спрятаны (Alliances.enabled), но тесты проверяют и их
+	Alliances.enabled = true
 	var args := OS.get_cmdline_user_args()
 	var i := args.find("--run-tests")
 	var filter := args[i + 1] if i >= 0 and i + 1 < args.size() and not args[i + 1].begins_with("--") else ""

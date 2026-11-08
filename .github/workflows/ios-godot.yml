@@ -17,13 +17,18 @@ on:
       - "GameFarm/Resources/Assets.xcassets/AppIcon.appiconset/**"
       - "tools/godot_sync.sh"
       - "tools/make_splash.py"
-      - "tools/build_inappstore.sh"
+      - "tools/build_ios_plugins.sh"
+      - "tools/ios_plugins/**"
       - "tools/fetch_admob.sh"
       - ".github/workflows/ios-godot.yml"
   workflow_dispatch:
     inputs:
       appstore:
         description: "Подписать и загрузить в App Store Connect (TestFlight)"
+        type: boolean
+        default: false
+      iap:
+        description: "Только завести новые покупки из tools/appstore/iap_1_1.json (без сборки)"
         type: boolean
         default: false
 
@@ -41,7 +46,32 @@ env:
   HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: "1"
 
 jobs:
+  # Новые встроенные покупки в App Store Connect через API (то же, что asc_iap.py на Маке).
+  # Уже заведённые покупки скрипт пропускает.
+  iap:
+    if: inputs.iap
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create in-app purchases
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          set -euo pipefail
+          KEY="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"
+          if printf '%s' "$ASC_KEY_P8" | grep -q "BEGIN PRIVATE KEY"; then
+            printf '%s\n' "$ASC_KEY_P8" > "$KEY"
+          else
+            printf '%s' "$ASC_KEY_P8" | base64 --decode > "$KEY"
+          fi
+          python3 tools/appstore/asc_iap.py --issuer "$ASC_ISSUER_ID" --key-id "$ASC_KEY_ID" --key "$KEY" \
+            --data tools/appstore/iap_1_1.json --shot tools/appstore/screenshots/en/03_6_chest_open10.png
+          rm -f "$KEY"
+
   build:
+    if: ${{ !inputs.iap }}
     runs-on: macos-26
     timeout-minutes: 60
     steps:
@@ -108,27 +138,31 @@ jobs:
           "$HOME/godot-bin/Godot.app/Contents/MacOS/Godot" --version
           xcodebuild -version
 
-      # Плагин покупок App Store (godot-ios-plugins/inappstore), собирается под эту версию Godot
-      - name: Cache InAppStore plugin
+      # Плагины iOS: покупки (inappstore), iCloud, Game Center из godot-ios-plugins и свой localnotify
+      # (уведомления), собираются под эту версию Godot
+      - name: Cache iOS plugins
         id: cache-iap
         uses: actions/cache@v4
         with:
-          path: ~/inappstore
-          key: inappstore-${{ env.GODOT_VERSION }}-${{ hashFiles('tools/build_inappstore.sh') }}-v1
+          path: ~/ios-plugins
+          key: ios-plugins-${{ env.GODOT_VERSION }}-${{ hashFiles('tools/build_ios_plugins.sh', 'tools/ios_plugins/**') }}-v1
 
-      - name: Build InAppStore plugin
+      - name: Build iOS plugins
         if: steps.cache-iap.outputs.cache-hit != 'true'
-        timeout-minutes: 30
+        timeout-minutes: 40
         run: |
           set -o pipefail
-          bash tools/build_inappstore.sh "$HOME/inappstore" 2>&1 | tee iap.log | tail -80
+          bash tools/build_ios_plugins.sh "$HOME/ios-plugins" 2>&1 | tee iap.log | tail -80
 
-      - name: Install InAppStore plugin
+      - name: Install iOS plugins
         run: |
           set -e
-          mkdir -p godot/ios/plugins/inappstore
-          cp -R "$HOME"/inappstore/* godot/ios/plugins/inappstore/
-          ls -la godot/ios/plugins/inappstore
+          mkdir -p godot/ios/plugins
+          for p in inappstore icloud gamecenter localnotify; do
+            rm -rf "godot/ios/plugins/$p"
+            cp -R "$HOME/ios-plugins/$p" "godot/ios/plugins/$p"
+          done
+          ls -laR godot/ios/plugins | head -60
 
       # Реклама за награду: плагин Poing Studios, Google Mobile Ads SDK и UMP (окна согласия)
       - name: Cache AdMob
@@ -192,8 +226,9 @@ jobs:
         timeout-minutes: 15
         run: |
           set -o pipefail
-          # Версия для App Store 1.0.0, номер сборки - номер запуска (растёт сам)
-          V="1.0.0"
+          # Версия для App Store - из пресета (application/short_version), номер сборки - номер запуска (растёт сам)
+          V=$(sed -n 's/^application\/short_version="\(.*\)"/\1/p' godot/export_presets.cfg | head -1)
+          [ -n "$V" ] || { echo "::error::Нет application/short_version в export_presets.cfg"; exit 1; }
           B="${{ github.run_number }}"
           perl -pi -e "s/^application\/short_version=.*/application\/short_version=\"$V\"/; s/^application\/version=.*/application\/version=\"$B\"/" godot/export_presets.cfg
           rm -rf build-ios && mkdir -p build-ios
@@ -202,6 +237,9 @@ jobs:
           test -d build-ios/HarvestHollow.xcodeproj || { echo "::error::Godot did not export the Xcode project"; exit 1; }
           grep -q "inappstore" build-ios/HarvestHollow.xcodeproj/project.pbxproj || { echo "::error::Плагин InAppStore не попал в проект"; exit 1; }
           grep -q "GoogleMobileAds" build-ios/HarvestHollow.xcodeproj/project.pbxproj || { echo "::error::AdMob не попал в проект"; exit 1; }
+          for p in icloud gamecenter localnotify; do
+            grep -q "$p.xcframework" build-ios/HarvestHollow.xcodeproj/project.pbxproj || { echo "::error::Плагин $p не попал в проект"; exit 1; }
+          done
           (cd build-ios && zip -qry ../HarvestHollow-xcode.zip .)
 
       # Проект Xcode до сборки: его открывают на Маке, подписывают своей командой и отправляют в App Store
@@ -286,7 +324,7 @@ jobs:
             || echo "::warning::Не удалось удалить сертификаты разработчика CI"
           rm -rf "$KEY_DIR"
           [ $status -eq 0 ] || { echo "::error::Экспорт или загрузка не прошли, см. appstore.log"; exit $status; }
-          echo "::notice::Сборка 1.0.0 (${{ github.run_number }}) отправлена в App Store Connect. Через 10-30 минут появится в TestFlight."
+          echo "::notice::Сборка $(sed -n 's/^application\/short_version="\(.*\)"/\1/p' godot/export_presets.cfg | head -1) (${{ github.run_number }}) отправлена в App Store Connect. Через 10-30 минут появится в TestFlight."
 
       - name: Build (xcodebuild archive, no signing)
         if: ${{ !inputs.appstore }}
@@ -337,7 +375,7 @@ jobs:
           cp -R "$APP" ipa/Payload/
           (cd ipa && zip -qry ../HarvestHollow.ipa Payload)
           ls -lh HarvestHollow.ipa
-          echo "::notice::HarvestHollow.ipa: $(du -h HarvestHollow.ipa | cut -f1), версия 1.0.0 (${{ github.run_number }})"
+          echo "::notice::HarvestHollow.ipa: $(du -h HarvestHollow.ipa | cut -f1), версия $(sed -n 's/^application\/short_version="\(.*\)"/\1/p' godot/export_presets.cfg | head -1) (${{ github.run_number }})"
 
       - name: Upload IPA
         if: ${{ !inputs.appstore }}

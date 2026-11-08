@@ -28,6 +28,7 @@ var stats := Stats.new()
 var talents := TalentSystem.new()
 var workshop := ToolSystem.new()
 var animals := AnimalSystem.new()
+var guide := GuideSystem.new()
 var quests := QuestSystem.new()
 var house := HouseSystem.new()
 var garden := GardenSystem.new()
@@ -53,11 +54,15 @@ var incubator := IncubatorSystem.new()
 var story := StorySystem.new()
 var farm := FarmEventSystem.new()
 var rating := RatingSystem.new()
+var alliance := AllianceSystem.new()
+var tourney := TourneySystem.new()
+var war := WarSystem.new()
 
 ## Все системы по порядку: для значений по умолчанию и событий.
 var systems: Array:
 	get: return [talents, workshop, animals, quests, house, garden, combat, dungeons, events, collection, legacy, premium, shop,
-		world_map, estate, daily, residents, raids, wild, academy, energy, fair, chests, mine, incubator, story, farm, rating]
+		world_map, estate, daily, residents, raids, wild, academy, energy, fair, chests, mine, incubator, story, farm, rating, alliance,
+		guide, tourney, war]
 ## Где появиться после перехода через проход (id прохода).
 var arrival_gate := ""
 ## В доме: у какой станции появиться (exit, up, down); на лугу - у двери дома.
@@ -84,6 +89,11 @@ func _ready() -> void:
 	Store.setup(self)
 	# Реклама за награду (на iOS с плагином AdMob): согласие, запуск SDK, первый ролик
 	Ads.setup(self)
+	# Копия сохранения в iCloud и локальные уведомления (на iOS с плагинами)
+	Cloud.setup(self)
+	Notify.setup(self)
+	# Game Center: вход, достижения и таблицы лидеров
+	GCenter.setup(self)
 
 
 func emit_event(name: String, data := {}) -> void:
@@ -94,6 +104,11 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_WM_CLOSE_REQUEST \
 			or what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_GO_BACK_REQUEST:
 		save_now()
+		Cloud.upload(true)
+		Notify.schedule_all()
+		GCenter.sync()
+	elif what == NOTIFICATION_APPLICATION_RESUMED or what == NOTIFICATION_APPLICATION_FOCUS_IN:
+		Notify.clear()
 
 
 # MARK: Сохранение
@@ -178,6 +193,25 @@ func save_now() -> void:
 	DirAccess.rename_absolute(save_path + ".tmp", save_path)
 	_dirty = false
 	_last_write = Time.get_ticks_msec() / 1000.0
+	Cloud.upload()
+
+
+## Заменить всё сохранение (игра из iCloud): файл переписывается, системы и мир собираются заново.
+func replace_save(data: Dictionary) -> void:
+	if FileAccess.file_exists(save_path):
+		DirAccess.copy_absolute(save_path, save_path.get_basename() + ".before-cloud.json")
+	var f := FileAccess.open(save_path + ".tmp", FileAccess.WRITE)
+	if f == null:
+		return
+	f.store_string(JSON.stringify(data))
+	f.close()
+	DirAccess.rename_absolute(save_path + ".tmp", save_path)
+	save = _load_save()
+	for sys in systems:
+		sys.defaults(save)
+	recalc()
+	_dirty = false
+	get_tree().change_scene_to_file.call_deferred("res://scenes/main.tscn")
 
 
 func show_toast(icon: String, text: String) -> void:
@@ -651,6 +685,17 @@ func recalc() -> void:
 	s.grow_mult /= 1.0 + collection.constellation_bonus("garden")
 	s.weapon_mult *= 1.0 + collection.constellation_bonus("dungeon")
 	s.producer_mult = minf(Stats.MAX_PRODUCER, s.producer_mult * (1.0 + collection.constellation_bonus("birds")))
+	# Земли альянса на войне кормят ферму
+	if war != null and Alliances.enabled and save.has("warLand"):
+		var lands := war.land_bonus()
+		for k in lands:
+			if k == "all":
+				s.yield_all += float(lands[k])
+			else:
+				_add(s.yield_category, k, float(lands[k]))
+	# Амбар альянса: ко всей добыче
+	if alliance != null and alliance.in_alliance():
+		s.yield_all += Alliances.build_bonus("granary", alliance.building("granary"))
 	if house.is_built("upper"):
 		s.offline_hours += 2.0
 
@@ -706,6 +751,41 @@ func recalc() -> void:
 		crit_bonus += events.boon("lucky")
 		s.regen += events.boon("regen")
 		respawn_bonus += events.boon("regrowth")
+
+	# Таланты альянса (последняя копия с сервера, работает и без сети)
+	if alliance.in_alliance():
+		s.yield_all += alliance.bonus("harvest")
+		s.damage_mult *= 1.0 + alliance.bonus("strength")
+		s.grow_mult /= 1.0 + alliance.bonus("garden")
+		s.animal_mult += alliance.bonus("beasts")
+		s.producer_mult = minf(Stats.MAX_PRODUCER, s.producer_mult * (1.0 + alliance.bonus("workshop")))
+		s.hp_mult *= 1.0 + alliance.bonus("vitality")
+		speed_bonus += alliance.bonus("swift")
+		xp_bonus += alliance.bonus("scholar")
+		sell_bonus += alliance.bonus("merchant")
+		s.double_chance += alliance.bonus("fortune")
+		s.discount *= 1.0 - alliance.bonus("thrift")
+		s.tame_mult *= 1.0 - alliance.bonus("tamer")
+		crit_bonus += alliance.bonus("crit")
+		s.gold_mult *= 1.0 + alliance.bonus("gold")
+		s.offline_hours += alliance.bonus("rest")
+		s.gem_chance += alliance.bonus("gems")
+		s.helper_mult = minf(Stats.MAX_HELPER, s.helper_mult * (1.0 + alliance.bonus("helpers")))
+		s.regrow_chance += alliance.bonus("regrow")
+		capacity += alliance.bonus("packs")
+		s.double_product_chance += alliance.bonus("ranch")
+		# Хранитель альянса: +1% к добыче и опыту за стадию
+		s.yield_all += AlliancePet.bonus(alliance.pet_stage())
+		xp_bonus += AlliancePet.bonus(alliance.pet_stage())
+		# Звери друзей, которые гостят у меня
+		s.yield_all += alliance.guest_bonus()
+		s.yield_all += alliance.village_bonus("mill")
+		xp_bonus += alliance.village_bonus("tower")
+		s.grow_mult /= 1.0 + alliance.village_bonus("well")
+		# Солнце, которое позвал альянс
+		if alliance.weather_now() == "sun":
+			s.yield_all += AllianceWeather.SUN_YIELD
+			xp_bonus += AllianceWeather.SUN_XP
 
 	var strider := 1.25 if r.call("strider") > 0 else 1.0
 	capacity *= (1.0 + 0.1 * r.call("packMaster")) * strider

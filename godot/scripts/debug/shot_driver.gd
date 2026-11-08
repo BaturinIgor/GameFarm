@@ -5,9 +5,10 @@ extends Node
 
 const ORIGIN := Vector2(195, 620)
 const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", "kitchen", "garden", "trader", "hunt", "level:settings",
-	"dungeon", "trophies", "collection", "collection:zoo", "collection:trophies", "legacy", "wardrobe", "map", "events", "shop",
+	"dungeon", "trophies", "collection", "collection:zoo", "collection:trophies", "legacy", "wardrobe", "map", "map:ember", "map:azure", "events", "shop",
 	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story", "wild", "talents:estate",
-	"story", "story:altar", "collection:diary"]
+	"story", "story:altar", "collection:diary", "alliance:find", "alliance:create", "alliance:main", "alliance:events", "alliance:chat",
+	"alliance:members", "alliance:bank", "alliance:top", "alliance:players", "alliance:chronicle", "alliance:fair", "alliance:village", "alliance:war", "alliance:talents", "alliance:pet", "alliance:weather", "alliance:boss", "alliance:warmap", "alliance:battle", "alliance:siege", "alliance:hud"]
 
 var dir := "/tmp/shots"
 var main: Node
@@ -19,6 +20,8 @@ var _shot_done := ""
 var _sub := 0
 var _mine: MineGame
 var _lang := ""
+## Только эти окна ("-- --only alliance:war,shop"): сразу к снимкам окон, без прогулки и остальных шагов.
+var _only: Array = []
 
 
 func _ready() -> void:
@@ -28,6 +31,12 @@ func _ready() -> void:
 		dir = args[i + 1]
 	DirAccess.make_dir_recursive_absolute(dir)
 	# Снимки для App Store на нужном языке: "-- --shots <папка> --lang en"
+	var oi := args.find("--only")
+	if oi >= 0 and oi + 1 < args.size():
+		_only = Array(args[oi + 1].split(","))
+	# Альянсы спрятаны (Alliances.enabled): снимки альянсов и войны - только по --alliances или --only alliance:...
+	if "--alliances" in args or _only.any(func(s: String) -> bool: return s.begins_with("alliance") or s.begins_with("war")):
+		Alliances.enabled = true
 	var li := args.find("--lang")
 	if li >= 0 and li + 1 < args.size():
 		L.set_language(args[li + 1], false)
@@ -58,6 +67,9 @@ func _process(delta: float) -> void:
 						break
 				_touch(ORIGIN, true)
 				_step = 1
+				if not _only.is_empty():
+					_step = 4
+					_time = 200.0
 		1:
 			var target := _nearest(world)
 			if target != null:
@@ -82,6 +94,7 @@ func _process(delta: float) -> void:
 				_shot("5_storage_window")
 				# Прокачанный герой: окна с содержимым
 				Game.save["level"] = 18
+				Game.save["guideStep"] = Guide.STEPS.size()
 				# Окно стартового набора закрывало бы снимки окон
 				Game.save["starterOffers"] = 2
 				Game.save["crystals"] = 98765
@@ -142,13 +155,40 @@ func _process(delta: float) -> void:
 				_time = 200.0
 		4:
 			var t := int(_time - 200.0)
-			if t < WINDOWS.size() * 2:
-				var w: String = WINDOWS[t / 2]
+			var windows: Array = WINDOWS if _only.is_empty() else _only
+			if not Alliances.enabled:
+				windows = windows.filter(func(x: String) -> bool: return not x.begins_with("alliance"))
+			if t < windows.size() * 2:
+				var w: String = windows[t / 2]
 				if t % 2 == 0 and _opened != w:
 					_opened = w
 					# Окна с покупками за деньги (наборы, пропуск, кристаллы) тоже должны пройти проверку
 					Store.LIVE = true
-					if ":" in w:
+					# Заставки (доход без игры и т.п.) закрывают окно на снимке - убираем
+					for _i in 6:
+						if not main.hud.is_blocking() or not main.hud.back():
+							break
+					if w.begins_with("alliance"):
+						_alliance_demo(w)
+					if w == "alliance:hud":
+						pass
+					elif w == "alliance:warmap":
+						main.hud.open_window(WarScene.new())
+					elif w == "alliance:battle" or w == "alliance:siege":
+						var target := -1
+						for n in range(9, War.NODES.size()):
+							var o := int(Game.war.node(n)["owner"])
+							if (o == 0) == (w == "alliance:battle") and o != Game.war.my_slot():
+								target = n
+								break
+						var bs := BattleScene.new(maxi(9, target))
+						main.hud.open_window(bs)
+						# Бой в разгаре: прокручиваем пару секунд
+						bs._start = 0.0
+						for _k in 70:
+							bs.battle.step(0.05)
+						bs.battle.focus = bs.battle.target()
+					elif ":" in w:
 						var parts := w.split(":")
 						main.hud.open_window(load("res://scripts/ui/%s_panel.gd" % parts[0]).new(parts[1]))
 					else:
@@ -162,6 +202,10 @@ func _process(delta: float) -> void:
 			else:
 				main.hud.close_window()
 				Store.LIVE = Engine.has_singleton("InAppStore")
+				_alliance_demo("")
+				if not _only.is_empty():
+					get_tree().quit()
+					return
 				_step = 41
 				_time = 260.0
 				_sub = 0
@@ -712,6 +756,57 @@ func _extra(k: int) -> void:
 		_ when k == 58 + 2 * Story.count():
 			_shot("8_incubator_pick")
 			main.hud.close_window()
+			# Обучение: карточка шага на главном экране и знакомство с альянсом
+			Game.save["tutorialDone"] = true
+			Game.save["guideStep"] = 4
+			Game.save["guideCount"] = 0
+			Game.changed.emit()
+		_ when k == 59 + 2 * Story.count():
+			_shot("9_guide")
+			Game.save["guideStep"] = Guide.STEPS.size()
+			Game.changed.emit()
+			IntroPopup.open("alliance")
+		_ when k == 60 + 2 * Story.count():
+			_shot("9_intro")
+			for n in main.hud.find_children("*", "", true, false):
+				if n is IntroPopup:
+					n.queue_free()
+			# Турнир зверей: отряд и итог боя, дорожка наград, рейтинг недели
+			var t := Game.tourney
+			t.demo = true
+			for id in ["cow", "pig", "sheep"]:
+				if Game.animals.stars(id) == 0:
+					Game.animals.add_star(id, 3)
+			t.state = {"week": DailySystem.week_index(), "rating": 1084, "fights_left": 3, "buys_left": 2, "points": 23, "wins": 6,
+				"log": [{"name": "Kenji", "held": true, "delta": 9}, {"name": "Pierre", "held": false, "delta": -12}],
+				"top": [{"place": 1, "name": "Masha", "level": 31, "points": 88, "me": false},
+					{"place": 2, "name": "Kenji", "level": 18, "points": 61, "me": false},
+					{"place": 3, "name": Game.rating.player_name(), "level": Game.level, "points": 23, "me": true}],
+				"last": {"week": DailySystem.week_index() - 1, "place": 4, "points": 57, "claimed": false}}
+			t.last_fight = {"won": true, "delta": 14, "points": 3, "opp": {"name": "Hazel", "level": 19, "bot": false},
+				"duels": [{"a": "cow", "ap": 240, "b": "horse", "bp": 210, "won": true},
+					{"a": "pig", "ap": 150, "b": "sheep", "bp": 190, "won": false},
+					{"a": "sheep", "ap": 120, "b": "chicken", "bp": 80, "won": true}]}
+			Game.save["tourneyTrack"] = {"week": DailySystem.week_index(), "free": [0], "paid": []}
+			main.hud.open_window(ArenaPanel.new())
+		_ when k == 61 + 2 * Story.count():
+			_shot("9_arena_fight")
+			_check_layout("arena")
+			for n in main.hud.find_children("*", "", true, false):
+				if n is ArenaPanel:
+					n.tab = "track"
+					n._dirty = true
+		_ when k == 62 + 2 * Story.count():
+			_shot("9_arena_track")
+			_check_layout("arena:track")
+			for n in main.hud.find_children("*", "", true, false):
+				if n is ArenaPanel:
+					n.tab = "top"
+					n._dirty = true
+		_ when k == 63 + 2 * Story.count():
+			_shot("9_arena_top")
+			_check_layout("arena:top")
+			main.hud.close_window()
 			_step = 5
 			_time = 300.0
 			_sub = 0
@@ -741,3 +836,198 @@ func _free_overlays() -> void:
 	for n in main.hud.find_children("*", "", true, false):
 		if n is WherePopup or n is DialogPopup or n is EnergyPopup:
 			n.queue_free()
+
+
+var _level_before := -1
+
+
+## Окно альянса без сервера: подставные альянс, участники, чат и рейтинг. "" - вернуть как было.
+func _alliance_demo(w: String) -> void:
+	var al := Game.alliance
+	if w == "":
+		if _level_before >= 0:
+			Game.save["level"] = _level_before
+			_level_before = -1
+		al.demo = false
+		al.data = {}
+		al.ev = {}
+		al.powers = {}
+		al.power_top = []
+		al.pet = {}
+		al.chronicle = {}
+		al.weather = {}
+		al.guests = {}
+		al.mentor = {}
+		Game.war.demo = false
+		Game.war.state = {}
+		Game.war.selected = -1
+		Game.war.last = {}
+		Game.save["alliance"] = {}
+		Game.recalc()
+		return
+	if _level_before < 0:
+		_level_before = int(Game.save["level"])
+	Game.save["level"] = 20
+	al.demo = true
+	al.loaded = true
+	al.error = ""
+	if w == "alliance:find" or w == "alliance:create":
+		al.data = {}
+		Game.save["alliance"] = {}
+		al.found = [
+			{"id": 1, "name": "Green Valley", "tag": "GV", "emblem": 6, "about": "Friendly farmers, daily contributions", "min_level": 10, "level": 7, "members": 41, "cap": 55, "lang": "en"},
+			{"id": 2, "name": "Звёздные пахари", "tag": "STAR", "emblem": 0, "about": "Активные, чат на русском", "min_level": 15, "level": 12, "members": 80, "cap": 80, "lang": "ru"},
+			{"id": 3, "name": "Moonlit Orchard", "tag": "MOON", "emblem": 5, "about": "", "min_level": 10, "level": 3, "members": 12, "cap": 35},
+		]
+	else:
+		var talents := {"harvest": 1650, "strength": 900, "garden": 700, "beasts": 120, "seats": 1200, "guard": 300, "workshop": 300, "warcry": 200}
+		al.data = {"id": 1, "name": "Green Valley", "tag": "GV", "emblem": 6, "about": "Friendly farmers. 20 free contributions every day!",
+			"min_level": 10, "xp": 9800, "week_xp": 2100, "cap": 45, "talents": talents, "role": "leader",
+			"day": {"free": 8, "coins": 0, "gems": 6},
+			"members": [
+				{"id": "a", "name": Game.rating.player_name(), "level": 20, "role": "leader", "week": 140, "total": 2900, "me": true},
+				{"id": "b", "name": "Masha", "level": 31, "role": "officer", "week": 120, "total": 3400, "me": false},
+				{"id": "c", "name": "Kenji", "level": 18, "role": "member", "week": 60, "total": 800, "me": false},
+				{"id": "d", "name": "Lucía", "level": 12, "role": "member", "week": 20, "total": 150, "me": false},
+			]}
+		Game.save["alliance"] = {"id": 1, "name": "Green Valley", "tag": "GV", "emblem": 6, "talents": talents}
+		al.lang = "ru"
+		al.bank = {"bank": 2140, "medals": 86, "buildings": {"barracks": 2, "walls": 1, "granary": 1}, "buys": {"keyCopper": 2},
+			"top": [{"name": "Masha", "week": 120}, {"name": Game.rating.player_name(), "week": 140}, {"name": "Kenji", "week": 60}],
+			"log": [{"name": "Masha", "kind": "build", "what": "barracks", "lvl": 2, "cost": 1500, "at": 0},
+				{"name": Game.rating.player_name(), "kind": "talent", "what": "harvest", "lvl": 7, "cost": 280, "at": 0}]}
+		var wk := DailySystem.week_index()
+		var kinds := AllianceEvents.task_kinds(wk)
+		al.ev = {"week": wk, "ends": int(Time.get_unix_time_from_system()) + 3 * 86400 + 5 * 3600, "members": 41,
+			"tier": 3, "hp": 61000, "max_hp": AllianceEvents.boss_hp(3, 41), "hits": 1, "extra": 0, "damage": 2380,
+			"unclaimed": [2], "place": 4, "last_place": 7, "last_claimed": false,
+			"tasks": [
+				{"kind": kinds[0], "target": AllianceEvents.task_target(kinds[0], 41), "progress": AllianceEvents.task_target(kinds[0], 41),
+					"mine": AllianceEvents.SHARE[kinds[0]], "share": AllianceEvents.SHARE[kinds[0]], "claimed": false},
+				{"kind": kinds[1], "target": AllianceEvents.task_target(kinds[1], 41), "progress": AllianceEvents.task_target(kinds[1], 41) / 3,
+					"mine": 4, "share": AllianceEvents.SHARE[kinds[1]], "claimed": false},
+				{"kind": kinds[2], "target": AllianceEvents.task_target(kinds[2], 41), "progress": AllianceEvents.task_target(kinds[2], 41),
+					"mine": AllianceEvents.SHARE[kinds[2]], "share": AllianceEvents.SHARE[kinds[2]], "claimed": true},
+			]}
+		var now := int(Time.get_unix_time_from_system())
+		al.messages = [
+			{"id": 1, "kind": "join", "name": "Lucía", "body": "", "at": now - 90000},
+			{"id": 2, "kind": "text", "name": "Masha", "user_id": "b", "role": "officer", "body": "Всем привет! Не забываем бесплатные вклады в «Общий урожай»", "at": now - 1800, "me": false},
+			{"id": 3, "kind": "text", "name": "Masha", "user_id": "b", "role": "officer", "body": "::heart", "at": now - 1700, "me": false},
+			{"id": 4, "kind": "text", "name": Game.rating.player_name(), "user_id": "a", "role": "leader", "body": "Done, 20/20 today", "at": now - 900, "me": true},
+			{"id": 5, "kind": "level", "name": "", "body": "7", "at": now - 600},
+			{"id": 6, "kind": "boss", "name": "", "body": "3", "at": now - 400},
+			{"id": 7, "kind": "text", "name": "Kenji", "user_id": "c", "role": "member", "body": "Who wants to trade planks?", "at": now - 60, "me": false},
+		]
+		al.reacts = {2: {"heart": 3, "fist": 1}, 4: {"star": 2}}
+		al.my_reacts = {2: "heart"}
+		al.pin = {"id": 2, "name": "Masha", "body": "Всем привет! Не забываем бесплатные вклады в «Общий урожай»"}
+		al.online = 3
+		al.apps = [{"id": "x1", "name": "Sunny Farmer", "level": 24, "power": 412000}, {"id": "x2", "name": "Leo", "level": 31, "power": 690000}]
+		al.hall = {"online": ["b", "c"], "helps_today": 4,
+			"help": [{"id": 11, "user": "b", "name": "Masha", "target": "barn", "got": 6, "need": 10, "me": false, "helped": false},
+				{"id": 12, "user": "c", "name": "Kenji", "target": "mill", "got": 3, "need": 10, "me": false, "helped": false},
+				{"id": 13, "user": "d", "name": "Lucía", "target": "storage", "got": 10, "need": 10, "me": false, "helped": true}],
+			"gifts": [{"id": 1, "name": "Masha", "product": "crystals3"}, {"id": 2, "name": "Kenji", "product": "starter"}],
+			"goal": {"done": 9, "need": 12, "mine": 3, "claimed": false},
+			"praise": {"given": null, "week": {"b": 4, "c": 1}}}
+		al.top = [
+			{"place": 1, "id": 2, "name": "Звёздные пахари", "tag": "STAR", "emblem": 0, "level": 12, "week_xp": 5400, "me": false},
+			{"place": 2, "id": 1, "name": "Green Valley", "tag": "GV", "emblem": 6, "level": 7, "week_xp": 2100, "me": true},
+			{"place": 3, "id": 3, "name": "Moonlit Orchard", "tag": "MOON", "emblem": 5, "level": 3, "week_xp": 900, "me": false},
+		]
+		al.powers = {"a": Power.total(), "b": 1420000, "c": 610000, "d": 230000}
+		var day := int(Time.get_unix_time_from_system()) / 86400
+		al.pet = {"kind": "phoenixChick", "xp": 2100, "stage": AlliancePet.stage_of(2100), "day": day,
+			"cravings": AlliancePet.cravings(day), "fed": 3, "total": 140, "ends": (day + 1) * 86400,
+			"top": [{"name": "Masha", "total": 420}, {"name": Game.rating.player_name(), "total": 140}]}
+		Game.save["alliance"]["petStage"] = al.pet["stage"]
+		var me := Game.rating.player_name()
+		al.chronicle = {"founded_week": wk - 6, "frame": "gold", "statues": [
+			{"name": "Masha", "frame": "crystal", "hits": 3, "gives": 1, "me": false},
+			{"name": me, "frame": "gold", "hits": 1, "gives": 2, "me": true},
+			{"name": "Kenji", "frame": "stone", "hits": 0, "gives": 2, "me": false},
+			{"name": "Pierre", "frame": "flame", "hits": 1, "gives": 0, "me": false}],
+			"weeks": [
+			{"week": wk - 1, "xp": 4820, "level": 9, "members": 18, "boss": 7, "tasks": 3, "place": 4,
+				"hit": "Masha", "hit_value": 48210, "give": me, "give_value": 640},
+			{"week": wk - 2, "xp": 3900, "level": 8, "members": 16, "boss": 5, "tasks": 2, "place": 7,
+				"hit": me, "hit_value": 30100, "give": "Kenji", "give_value": 580},
+			{"week": wk - 3, "xp": 2100, "level": 6, "members": 12, "boss": 3, "tasks": 1, "place": 15,
+				"hit": "Pierre", "hit_value": 12800, "give": me, "give_value": 400}]}
+		al.weather = {"kind": "", "starts": 0, "ends": 0, "caller": "", "free_left": 1, "paid_left": 2}
+		var tn := int(Clock.now())
+		al.guests = {"out": [{"id": 1, "name": "Masha", "animal": "cow", "stars": 3, "returns": tn + 5 * 3600},
+				{"id": 2, "name": "Kenji", "animal": "chicken", "stars": 2, "returns": tn - 60}],
+			"in": [{"id": 3, "name": "Pierre", "animal": "pig", "stars": 4, "returns": tn + 9 * 3600}],
+			"friends": [{"name": "Masha", "visits": 6}, {"name": "Kenji", "visits": 2}]}
+		al.fair = {"best": "Masha", "top": [{"name": "Masha", "coins": 4200, "sold": 3, "me": false},
+				{"name": Game.rating.player_name(), "coins": 900, "sold": 1, "me": true}],
+			"mine": [{"id": 7, "kind": "planks", "qty": 120, "price": 2700, "buyer": null, "old": false}],
+			"lots": [{"id": 8, "seller": "Kenji", "kind": "iron", "qty": 200, "price": 1800},
+				{"id": 9, "seller": "Pierre", "kind": "pumpkin", "qty": 20, "price": 4200}]}
+		al.village = {"donates": 2, "waters": 1, "inbox": {"water": 0, "gift": 0},
+			"buildings": {"mill": {"level": 3, "points": 410000, "need": Village.need(4)},
+				"tower": {"level": 1, "points": 90000, "need": Village.need(2)},
+				"well": {"level": 0, "points": 120000, "need": Village.need(1)}},
+			"houses": [{"id": "me", "name": Game.rating.player_name(), "level": 20, "deco": ["fountain", "lantern"], "me": true},
+				{"id": "a", "name": "Masha", "level": 31, "deco": ["goldStatue", "flowers", "fence"], "me": false, "watered": true, "gifted": false},
+				{"id": "b", "name": "Kenji", "level": 18, "deco": [], "me": false, "watered": false, "gifted": true}]}
+		_war_demo()
+		Game.save["houseDeco"] = ["fountain", "lantern"]
+		Game.save["houseDecoOn"] = ["fountain", "lantern"]
+		al.mentor = {"mentor": null, "apprentices": [
+			{"id": "b", "name": "Lucia", "level": 16, "start": 9, "claimed": [10], "gift": false},
+			{"id": "d", "name": "Tom", "level": 8, "start": 6, "claimed": [], "gift": true}]}
+		Game.save["guestSlot"] = true
+		Game.save["guestsIn"] = [{"stars": 4, "returns": tn + 9 * 3600}]
+		Game.save["statueFrames"] = ["bronze", "gold"]
+		Game.save["statueFrame"] = "gold"
+		al.power_top = [
+			{"place": 1, "name": "Masha", "level": 31, "power": 1420000, "tag": "GV", "me": false},
+			{"place": 2, "name": "Kenji", "level": 18, "power": 610000, "tag": "GV", "me": false},
+			{"place": 3, "name": "Pierre", "level": 22, "power": 580000, "tag": null, "me": false},
+			{"place": 57, "name": Game.rating.player_name(), "level": 20, "power": Power.total(), "tag": "GV", "me": true},
+		]
+	Game.recalc()
+
+
+## Война альянсов без сервера: лига из пяти альянсов, часть точек занята.
+func _war_demo() -> void:
+	var w := Game.war
+	w.demo = true
+	var owners := {9: 1, 17: 1, 24: 1, 25: 1, 10: 2, 18: 2, 11: 3, 12: 3, 19: 3, 27: 3, 13: 4, 33: 3, 0: 3}
+	var nodes: Array = []
+	for n in War.NODES.size():
+		if War.is_base(n):
+			continue
+		var o := int(owners.get(n, 0))
+		var reach := false
+		for m in War.neighbors(n):
+			if m == 1 or int(owners.get(m, 0)) == 1:
+				reach = true
+		nodes.append([n, o, 1 if o > 0 else (4 if n == 0 else 1 if War.tier(n) == 1 else 2), 240000 if o > 0 else 90000, reach and o != 1])
+	w.state = {"league": 1, "slot": 1, "tier": 3, "move": 1, "flags": {"1": 3, "2": 2, "3": 4, "4": 1, "5": 5}, "ends": int(Time.get_unix_time_from_system()) + 3 * 86400 + 5 * 3600,
+		"teams": [
+			{"slot": 3, "name": "Iron Oaks", "tag": "IO", "points": 2410, "nodes": 6, "me": false},
+			{"slot": 1, "name": "Green Valley", "tag": "GV", "points": 1630, "nodes": 4, "me": true},
+			{"slot": 2, "name": "Sunny Hills", "tag": "SH", "points": 820, "nodes": 2, "me": false},
+			{"slot": 4, "name": "Moon Farm", "tag": "MF", "points": 410, "nodes": 1, "me": false},
+			{"slot": 5, "name": "@raider:3:77", "tag": "R77", "points": 300, "nodes": 1, "me": false}],
+		"nodes": nodes, "chest": 1200000, "used": 2, "max": 5, "pass": false, "donates": 1, "wins": 3, "power": 320000,
+		"reward": {"week": 1, "place": 2, "teams": 6},
+		"log": [{"node": 25, "name": "Masha", "act": "capture", "slot": 1}, {"node": 0, "name": "Brom", "act": "capture", "slot": 3},
+			{"node": 10, "name": "Kenji", "act": "lose", "slot": 1}, {"node": 24, "name": "Masha", "act": "reinforce", "slot": 1}]}
+	var t0 := Time.get_unix_time_from_system()
+	w.state["now"] = t0
+	w.state["marches"] = [
+		{"id": 1, "name": Game.rating.player_name(), "node": 16, "kind": "attack", "slot": 1, "from": t0 - 40, "at": t0 + 80, "me": true, "animal": null},
+		{"id": 2, "name": "Brom", "node": 34, "kind": "attack", "slot": 3, "from": t0 - 100, "at": t0 + 20, "me": false, "animal": null},
+		{"id": 3, "name": "Masha", "node": 24, "kind": "reinforce", "slot": 1, "from": t0 - 10, "at": t0 + 50, "me": false, "animal": "cow"},
+		{"id": 4, "name": "@raider", "node": 9, "kind": "attack", "slot": 5, "from": t0 - 30, "at": t0 + 60, "me": null, "animal": null}]
+	w.state["log"].push_front({"node": 9, "name": "@raider", "act": "lose", "slot": 5})
+	w._localize_raiders()
+	w.state["rallies"] = [{"id": 5, "node": 33, "leader": "Masha", "slot": 1, "fires": t0 + 200, "power": 2400000, "members": 4,
+		"mine": true, "joined": false}]
+	w.state["guards"] = [[25, "cow", "Masha"], [24, "chicken", "Kenji"]]
+	w.selected = 32

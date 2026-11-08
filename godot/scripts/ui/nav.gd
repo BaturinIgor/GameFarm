@@ -8,10 +8,10 @@ class_name Nav
 ## Вкладки нижней панели: id, иконка, ключ подписи, разделы.
 const GROUPS := [
 	["farm", "chest", "nav.farm", ["storage", "estate", "workshop"]],
-	["animals", "paw", "hud.animals", ["animals", "wild", "incubator"]],
+	["animals", "paw", "hud.animals", ["animals", "wild", "incubator", "arena"]],
 	["quests", "scroll", "hud.quests", ["quests", "heart"]],
 	["hero", "star", "nav.hero", ["talents", "hunt", "collection", "wardrobe"]],
-	["world", "map", "nav.world", ["map", "mine", "events"]],
+	["world", "map", "nav.world", ["map", "mine", "events", "alliance"]],
 ]
 ## Вкладка в центре: крупнее остальных.
 const CENTER := "quests"
@@ -24,6 +24,7 @@ const SUBS := {
 	"animals": ["hud.animals", "res://scripts/ui/animals_panel.gd"],
 	"wild": ["wild.title", "res://scripts/ui/wild_panel.gd"],
 	"incubator": ["inc.title", "res://scripts/ui/incubator_panel.gd"],
+	"arena": ["tourney.title", "res://scripts/ui/arena_panel.gd"],
 	"quests": ["hud.quests", "res://scripts/ui/quests_panel.gd"],
 	"heart": ["heart.title", "res://scripts/ui/story_panel.gd"],
 	"talents": ["hud.talents", "res://scripts/ui/talents_panel.gd"],
@@ -33,6 +34,7 @@ const SUBS := {
 	"map": ["hud.map", "res://scripts/ui/map_panel.gd"],
 	"mine": ["mine.title", "res://scripts/ui/mine_panel.gd"],
 	"events": ["event.title", "res://scripts/ui/events_panel.gd"],
+	"alliance": ["alliance.title", "res://scripts/ui/alliance_panel.gd"],
 }
 
 ## Последний открытый раздел вкладки: туда и возвращаемся, если ничего не горит.
@@ -42,7 +44,11 @@ static var _last: Dictionary = {}
 static func group_spec(group: String) -> Array:
 	for g in GROUPS:
 		if g[0] == group:
-			return g
+			if Alliances.enabled or not "alliance" in g[3]:
+				return g
+			var subs: Array = g[3].duplicate()
+			subs.erase("alliance")
+			return [g[0], g[1], g[2], subs]
 	return []
 
 
@@ -54,6 +60,8 @@ static func level_of(sub: String) -> int:
 		"mine": return Mine.MIN_LEVEL
 		"incubator": return Incubator.MIN_LEVEL
 		"heart": return Story.MIN_LEVEL
+		"alliance": return Alliances.JOIN_LEVEL
+		"arena": return Tourney.MIN_LEVEL
 	return 0
 
 
@@ -65,6 +73,11 @@ static func locked(sub: String) -> bool:
 static func count(sub: String) -> int:
 	if locked(sub):
 		return 0
+	# Шаг обучения ведёт в этот раздел
+	return _count(sub) + Game.guide.badge(sub)
+
+
+static func _count(sub: String) -> int:
 	match sub:
 		"estate":
 			var e := Game.estate
@@ -89,10 +102,20 @@ static func count(sub: String) -> int:
 			return Game.mine.ready_count()
 		"incubator":
 			return Game.incubator.ready_count()
+		"arena":
+			return Game.tourney.ready_count()
 		"heart":
 			return Game.story.ready_count() + (1 if Game.story.can_raise_altar() else 0)
 		"events":
 			return Game.events.event_claimable()
+		"alliance":
+			# Отметка, пока остались бесплатные вклады на сегодня, а до первого открытия - позвать посмотреть
+			var al := Game.alliance
+			if not al.open():
+				return 0
+			if not al.in_alliance():
+				return 0 if al.seen() else 1
+			return (1 if al.free_left() > 0 else 0) + al.events_count()
 	return 0
 
 
@@ -141,6 +164,9 @@ static func open_sub(sub: String) -> void:
 	if w.has_method("focus_attention"):
 		w.call("focus_attention")
 	Hud.current.open_window(w)
+	# Первое открытие раздела - короткое знакомство
+	if Game.guide.should_intro(sub):
+		IntroPopup.open(sub)
 
 
 ## Запомнить раздел, который сейчас открыт (Sheet при показе).

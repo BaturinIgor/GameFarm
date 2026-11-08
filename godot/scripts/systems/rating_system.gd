@@ -16,6 +16,8 @@ var _auth := {}
 var _sent: Dictionary = {}       ## ключ -> последние отправленные очки
 var _busy := false
 var _fetching: Dictionary = {}
+var _power_at := -1000.0
+var _pool: HttpPool
 
 
 func defaults(save: Dictionary) -> void:
@@ -100,7 +102,20 @@ func tick() -> void:
 							Game.save["ratingJoined"] = joined.slice(joined.size() - 40)
 						Game.mark_dirty()
 		await _claim_finished()
+		await _submit_power()
 	_busy = false
+
+
+## Мощь в рейтинг игроков: если изменилась, не чаще раза в Power.SUBMIT_EVERY.
+func _submit_power() -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	var pw := Power.total()
+	if int(_sent.get("power", -1)) == pw or now - _power_at < Power.SUBMIT_EVERY:
+		return
+	_power_at = now
+	var res = await _rpc("submit_power", {"p_power": pw, "p_name": player_name(), "p_level": Game.level})
+	if res != null:
+		_sent["power"] = pw
 
 
 ## Ивенты кончились: награда за итоговое место.
@@ -199,6 +214,27 @@ func _ensure_auth() -> bool:
 	return _take_session(fresh)
 
 
+## Вызов функции сервера с входом (для альянсов и других онлайн-частей). null - нет сети или ошибка.
+func call_rpc(fn: String, args: Dictionary) -> Variant:
+	if not OnlineConfig.enabled():
+		return null
+	if _node == null:
+		_start()
+	var ok: bool = await _ensure_auth()
+	if not ok:
+		return null
+	return await _rpc(fn, args)
+
+
+## Текст последней ошибки сервера (например "limit" или "name taken").
+var last_error := ""
+
+
+## id игрока на сервере (после входа).
+func user_id() -> String:
+	return str(_auth.get("user", ""))
+
+
 func _rpc(fn: String, args: Dictionary) -> Variant:
 	return await _request("/rest/v1/rpc/" + fn, args, true)
 
@@ -207,23 +243,24 @@ func _rpc(fn: String, args: Dictionary) -> Variant:
 func _request(path: String, body: Dictionary, authed: bool) -> Variant:
 	if _node == null:
 		return null
-	var http := HTTPRequest.new()
-	http.timeout = 10.0
-	_node.add_child(http)
 	var headers := PackedStringArray(["apikey: " + OnlineConfig.ANON_KEY, "Content-Type: application/json"])
 	headers.append("Authorization: Bearer " + (str(_auth.get("access", "")) if authed else OnlineConfig.ANON_KEY))
-	var err := http.request(OnlineConfig.URL + path, headers, HTTPClient.METHOD_POST, JSON.stringify(body))
-	if err != OK:
-		http.queue_free()
-		return null
-	var res: Array = await http.request_completed
-	http.queue_free()
-	var code := int(res[1])
-	var text: String = (res[3] as PackedByteArray).get_string_from_utf8()
-	if int(res[0]) != HTTPRequest.RESULT_SUCCESS or code < 200 or code >= 300:
+	# Постоянные соединения: без нового рукопожатия на каждый вызов
+	if _pool == null:
+		_pool = HttpPool.new()
+		_pool.name = "HttpPool"
+		_pool.setup(OnlineConfig.URL)
+		_node.add_child(_pool)
+	var r: Array = await _pool.post(path, headers, JSON.stringify(body))
+	var code := int(r[1]) if bool(r[0]) else 0
+	var text: String = str(r[2])
+	if not bool(r[0]) or code < 200 or code >= 300:
+		var err_body = JSON.parse_string(text) if text != "" else null
+		last_error = str(err_body.get("message", "")) if err_body is Dictionary else ("network" if code == 0 else str(code))
 		if code == 401 and authed:
 			_auth["access"] = ""
 		return null
+	last_error = ""
 	if text.strip_edges() == "":
 		return true
 	var parsed = JSON.parse_string(text)
