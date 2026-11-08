@@ -59,3 +59,13 @@ func test_save_cleanup() -> void:
 	fresh({"alliance": "garbage"})
 	eq(Game.save["alliance"], {})
 	check(not Game.alliance.in_alliance())
+
+
+func test_hidden_switch() -> void:
+	Alliances.enabled = false
+	var spec := Nav.group_spec("world")
+	check(not "alliance" in spec[3], "без альянсов во вкладке «Мир» нет раздела альянса")
+	check(not Game.alliance.available(), "альянс недоступен")
+	check(not Game.alliance.open(), "окно альянса закрыто")
+	Alliances.enabled = true
+	check("alliance" in Nav.group_spec("world")[3])

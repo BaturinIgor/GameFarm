@@ -686,7 +686,7 @@ func recalc() -> void:
 	s.weapon_mult *= 1.0 + collection.constellation_bonus("dungeon")
 	s.producer_mult = minf(Stats.MAX_PRODUCER, s.producer_mult * (1.0 + collection.constellation_bonus("birds")))
 	# Земли альянса на войне кормят ферму
-	if war != null and save.has("warLand"):
+	if war != null and Alliances.enabled and save.has("warLand"):
 		var lands := war.land_bonus()
 		for k in lands:
 			if k == "all":

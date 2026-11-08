@@ -113,7 +113,7 @@ func defaults(save: Dictionary) -> void:
 
 
 func available() -> bool:
-	return OnlineConfig.enabled()
+	return Alliances.enabled and OnlineConfig.enabled()
 
 
 func open() -> bool:
@@ -140,7 +140,7 @@ func free_left() -> int:
 
 
 func in_alliance() -> bool:
-	return int(Game.save.get("alliance", {}).get("id", 0)) > 0
+	return Alliances.enabled and int(Game.save.get("alliance", {}).get("id", 0)) > 0
 
 
 func role() -> String:

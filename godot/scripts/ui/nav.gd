@@ -44,7 +44,11 @@ static var _last: Dictionary = {}
 static func group_spec(group: String) -> Array:
 	for g in GROUPS:
 		if g[0] == group:
-			return g
+			if Alliances.enabled or not "alliance" in g[3]:
+				return g
+			var subs: Array = g[3].duplicate()
+			subs.erase("alliance")
+			return [g[0], g[1], g[2], subs]
 	return []
 
 

@@ -34,6 +34,9 @@ func _ready() -> void:
 	var oi := args.find("--only")
 	if oi >= 0 and oi + 1 < args.size():
 		_only = Array(args[oi + 1].split(","))
+	# Альянсы спрятаны (Alliances.enabled): снимки альянсов и войны - только по --alliances или --only alliance:...
+	if "--alliances" in args or _only.any(func(s: String) -> bool: return s.begins_with("alliance") or s.begins_with("war")):
+		Alliances.enabled = true
 	var li := args.find("--lang")
 	if li >= 0 and li + 1 < args.size():
 		L.set_language(args[li + 1], false)
@@ -153,6 +156,8 @@ func _process(delta: float) -> void:
 		4:
 			var t := int(_time - 200.0)
 			var windows: Array = WINDOWS if _only.is_empty() else _only
+			if not Alliances.enabled:
+				windows = windows.filter(func(x: String) -> bool: return not x.begins_with("alliance"))
 			if t < windows.size() * 2:
 				var w: String = windows[t / 2]
 				if t % 2 == 0 and _opened != w:
