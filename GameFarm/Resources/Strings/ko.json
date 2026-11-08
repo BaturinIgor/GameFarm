@@ -554,6 +554,7 @@
  "chat.go": "가기",
  "chat.online": "접속 중: {0}",
  "chat.pinned": "{0}님이 고정",
+ "chat.sticker": "[스티커]",
  "chat.today": "오늘",
  "chat.yesterday": "어제",
  "chest.again": "다시 (열쇠 {0})",

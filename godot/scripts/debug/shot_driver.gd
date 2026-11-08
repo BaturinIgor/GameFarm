@@ -8,7 +8,7 @@ const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", 
 	"dungeon", "trophies", "collection", "collection:zoo", "collection:trophies", "legacy", "wardrobe", "map", "map:ember", "map:azure", "events", "shop",
 	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story", "wild", "talents:estate",
 	"story", "story:altar", "collection:diary", "alliance:find", "alliance:create", "alliance:main", "alliance:events", "alliance:chat",
-	"alliance:members", "alliance:top", "alliance:players", "alliance:chronicle", "alliance:fair", "alliance:village", "alliance:war", "alliance:talents", "alliance:pet", "alliance:weather", "alliance:boss", "alliance:warmap", "alliance:battle", "alliance:siege"]
+	"alliance:members", "alliance:top", "alliance:players", "alliance:chronicle", "alliance:fair", "alliance:village", "alliance:war", "alliance:talents", "alliance:pet", "alliance:weather", "alliance:boss", "alliance:warmap", "alliance:battle", "alliance:siege", "alliance:hud"]
 
 var dir := "/tmp/shots"
 var main: Node
@@ -165,7 +165,9 @@ func _process(delta: float) -> void:
 							break
 					if w.begins_with("alliance"):
 						_alliance_demo(w)
-					if w == "alliance:warmap":
+					if w == "alliance:hud":
+						pass
+					elif w == "alliance:warmap":
 						main.hud.open_window(WarScene.new())
 					elif w == "alliance:battle" or w == "alliance:siege":
 						var target := -1

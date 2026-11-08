@@ -554,6 +554,7 @@
  "chat.go": "ไป",
  "chat.online": "ออนไลน์: {0}",
  "chat.pinned": "{0} ปักหมุด",
+ "chat.sticker": "[สติกเกอร์]",
  "chat.today": "วันนี้",
  "chat.yesterday": "เมื่อวาน",
  "chest.again": "เปิดอีก (กุญแจ {0})",

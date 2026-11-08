@@ -554,6 +554,7 @@
  "chat.go": "Aller",
  "chat.online": "En ligne : {0}",
  "chat.pinned": "Épinglé par {0}",
+ "chat.sticker": "[sticker]",
  "chat.today": "Aujourd'hui",
  "chat.yesterday": "Hier",
  "chest.again": "Encore ({0} clés)",

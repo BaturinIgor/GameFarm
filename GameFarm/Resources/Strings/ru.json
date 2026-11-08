@@ -554,6 +554,7 @@
  "chat.go": "Туда",
  "chat.online": "В сети: {0}",
  "chat.pinned": "Закрепил {0}",
+ "chat.sticker": "[стикер]",
  "chat.today": "Сегодня",
  "chat.yesterday": "Вчера",
  "chest.again": "Ещё (ключей: {0})",

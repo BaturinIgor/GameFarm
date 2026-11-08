@@ -315,6 +315,8 @@ func _build_bottom() -> void:
 	_combat_row.add_theme_constant_override("separation", 8)
 	_combat_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_prompts.add_child(_combat_row)
+	# Последнее сообщение чата альянса - над кнопками, по нажатию открывается чат
+	_prompts.add_child(ChatStrip.new())
 	var items := ConsumableBar.new()
 	items.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_combat_row.add_child(items)
@@ -795,3 +797,85 @@ class CombatRow extends HBoxContainer:
 			if c is Control and (c as Control).visible:
 				any = true
 		visible = any
+
+
+## Плашка чата альянса на главном экране: последнее сообщение и непрочитанные. Сама опрашивает чат раз в 30 с.
+class ChatStrip extends PanelContainer:
+	var _label: Label
+	var _badge: Label
+	var _poll := 3.0
+	var _t := 0.0
+
+	func _init() -> void:
+		size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		custom_minimum_size = Vector2(0, 34)
+		var st := UiKit.box(Color(0.12, 0.08, 0.05, 0.72), Color(0, 0, 0, 0), 14, 0, false)
+		st.content_margin_left = 8
+		st.content_margin_right = 10
+		st.content_margin_top = 4
+		st.content_margin_bottom = 4
+		add_theme_stylebox_override("panel", st)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(row)
+		var ic := UiKit.icon("scroll", 18)
+		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(ic)
+		_label = UiKit.label("", 12, Color.WHITE, 2)
+		_label.custom_minimum_size = Vector2(200, 0)
+		_label.clip_text = true
+		_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(_label)
+		_badge = UiKit.label("", 11, Color.WHITE, 2)
+		_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var bs := UiKit.box(UiKit.BAD, Color(0, 0, 0, 0), 9, 0, false)
+		bs.content_margin_left = 5
+		bs.content_margin_right = 5
+		_badge.add_theme_stylebox_override("normal", bs)
+		row.add_child(_badge)
+		visible = false
+
+	func _gui_input(e: InputEvent) -> void:
+		var tap: bool = (e is InputEventScreenTouch and not e.pressed) or (e is InputEventMouseButton and not e.pressed \
+			and e.button_index == MOUSE_BUTTON_LEFT)
+		if tap and Hud.current != null:
+			Hud.current.open_window(AlliancePanel.new("chat"))
+			accept_event()
+
+	func _process(delta: float) -> void:
+		_t -= delta
+		if _t > 0.0:
+			return
+		_t = 0.5
+		var al := Game.alliance
+		if not al.in_alliance():
+			visible = false
+			return
+		_poll -= 0.5
+		if _poll <= 0.0 and Hud.current != null and not Hud.current.has_window():
+			_poll = 30.0
+			al.poll_chat()
+		var last: Dictionary = {}
+		for i in range(al.messages.size() - 1, -1, -1):
+			var m: Dictionary = al.messages[i]
+			if str(m.get("kind", "text")) == "text":
+				last = m
+				break
+		if last.is_empty():
+			visible = false
+			return
+		var body := str(last.get("body", ""))
+		if Hall.is_sticker(body):
+			body = L.t("chat.sticker")
+		_label.text = "%s: %s" % [str(last.get("name", "")), body.replace("\n", " ")]
+		var n := AlliancePanel.unread()
+		_badge.text = str(n)
+		_badge.visible = n > 0
+		visible = true
+		# Плашка всегда последняя - прямо над кнопками
+		var p := get_parent()
+		if p != null and get_index() != p.get_child_count() - 1:
+			p.move_child(self, -1)

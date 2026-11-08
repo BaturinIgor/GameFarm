@@ -554,6 +554,7 @@
  "chat.go": "Git",
  "chat.online": "Çevrimiçi: {0}",
  "chat.pinned": "{0} sabitledi",
+ "chat.sticker": "[çıkartma]",
  "chat.today": "Bugün",
  "chat.yesterday": "Dün",
  "chest.again": "Tekrar ({0} anahtar)",
