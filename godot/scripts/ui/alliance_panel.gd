@@ -986,6 +986,9 @@ func _message(m: Dictionary, first: bool) -> Control:
 	var sticker := Hall.is_sticker(body_text)
 	var outer := VBoxContainer.new()
 	outer.add_theme_constant_override("separation", 2)
+	# Ещё летит на сервер - чуть прозрачнее
+	if bool(m.get("pending", false)):
+		outer.modulate.a = 0.6
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
 	row.alignment = BoxContainer.ALIGNMENT_END if mine else BoxContainer.ALIGNMENT_BEGIN

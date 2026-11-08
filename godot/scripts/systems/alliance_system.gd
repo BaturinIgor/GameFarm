@@ -15,6 +15,8 @@ var busy := false
 var error := ""
 ## Ратуша не ответила (сервер без al_hall или нет сети) - показываем список без блоков ратуши.
 var hall_failed := false
+## Вклады в таланты, ещё не подтверждённые сервером.
+var _inflight := 0
 ## Чат: сообщения по порядку и id последнего.
 var messages: Array = []
 var _last_id := 0
@@ -1188,30 +1190,43 @@ func can_contribute(talent: String, kind: String) -> bool:
 
 
 func contribute(talent: String, kind: String) -> void:
-	if busy or not can_contribute(talent, kind):
+	if not can_contribute(talent, kind):
 		return
 	var cost := contribute_cost(kind)
-	busy = true
-	var res: Variant = await Game.rating.call_rpc("al_contribute", {"p_talent": talent, "p_kind": kind,
-		"p_player": Game.rating.player_name(), "p_level": Game.level})
-	busy = false
-	if res == null:
-		_fail()
-		await refresh(true)
-		return
+	# Сразу у себя (очки таланта, опыт, лимит, цена) - кнопку можно жать подряд, сервер догоняет
 	if cost.has("coins"):
 		Game.save["coins"] = int(Game.save["coins"]) - int(cost["coins"])
 	if cost.has("crystals"):
 		Game.shop.spend_crystals(int(cost["crystals"]))
-	# Сразу у себя: очки таланта, опыт и лимит; полная копия - при следующей загрузке
 	var before := rank(talent)
 	data["talents"] = data.get("talents", {})
-	data["talents"][talent] = int(res) if (res is float or res is int) else int(data["talents"].get(talent, 0)) + 1
+	data["talents"][talent] = int(data["talents"].get(talent, 0)) + 1
 	data["xp"] = int(data.get("xp", 0)) + 1
 	data["week_xp"] = int(data.get("week_xp", 0)) + 1
 	var day: Dictionary = data.get("day", {})
 	day[kind] = int(day.get(kind, 0)) + 1
 	data["day"] = day
+	_after_contribute(talent, kind, before)
+	_inflight += 1
+	var res: Variant = await Game.rating.call_rpc("al_contribute", {"p_talent": talent, "p_kind": kind,
+		"p_player": Game.rating.player_name(), "p_level": Game.level})
+	_inflight -= 1
+	if res == null:
+		# Не прошло: возвращаем цену и берём правду с сервера
+		if cost.has("coins"):
+			Game.add_coins(int(cost["coins"]))
+		if cost.has("crystals"):
+			Game.shop.add_crystals(int(cost["crystals"]))
+		_fail()
+		await refresh(true)
+		return
+	if (res is float or res is int) and _inflight == 0:
+		data["talents"][talent] = int(res)
+		Game.save["alliance"]["talents"][talent] = int(res)
+	Game.mark_dirty()
+
+
+func _after_contribute(talent: String, kind: String, before: int) -> void:
 	Game.save["alliance"]["talents"][talent] = int(data["talents"][talent])
 	Game.recalc()
 	if rank(talent) > before:
@@ -1658,21 +1673,25 @@ func praise_count(uid: String) -> int:
 func praise(uid: String) -> void:
 	if praised_today() != "" or busy:
 		return
-	if not demo:
-		busy = true
-		var res: Variant = await Game.rating.call_rpc("al_praise", {"p_user": uid})
-		busy = false
-		if res == null:
-			_fail()
-			return
+	# Сразу у себя, сервер подтверждает следом (не прошло - откатываем)
 	if not hall.has("praise"):
 		hall["praise"] = {"week": {}}
 	hall["praise"]["given"] = uid
 	var wk: Dictionary = hall["praise"].get("week", {})
 	wk[uid] = int(wk.get(uid, 0)) + 1
 	hall["praise"]["week"] = wk
+	Sound.play("pick")
 	Game.show_toast("px:heart", L.t("hall.praised"))
 	Game.changed.emit()
+	if demo:
+		return
+	busy = true
+	var res: Variant = await Game.rating.call_rpc("al_praise", {"p_user": uid})
+	busy = false
+	if res == null:
+		hall["praise"]["given"] = null
+		wk[uid] = maxi(0, int(wk.get(uid, 0)) - 1)
+		_fail()
 
 
 func is_online(uid: String) -> bool:
@@ -1688,7 +1707,13 @@ func say(text: String) -> bool:
 	var t := text.strip_edges().left(Alliances.MSG_LEN)
 	if t == "" or not in_alliance():
 		return false
+	# Сообщение видно сразу, сервер догоняет: без паузы после «Отправить»
+	var pending := {"id": 0, "name": Game.rating.player_name(), "body": t, "kind": "text", "me": true,
+		"at": int(Time.get_unix_time_from_system()), "role": role(), "pending": true}
+	messages.append(pending)
+	Game.changed.emit()
 	var res: Variant = await Game.rating.call_rpc("al_say", {"p_text": t, "p_player": Game.rating.player_name()})
+	messages.erase(pending)
 	if res == null:
 		_fail()
 		return false
