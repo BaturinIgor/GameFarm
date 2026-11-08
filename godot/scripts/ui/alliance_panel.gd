@@ -20,6 +20,9 @@ var _wx_kind := "rain"
 var _wx_delay := 0
 ## Создание альянса: выбранная эмблема.
 var emblem := 0
+## Язык нового альянса (по умолчанию - язык игры) и открыт ли выбор языка у главы.
+var create_lang := ""
+var _lang_open := false
 
 var _search := LineEdit.new()
 var _name := LineEdit.new()
@@ -207,6 +210,21 @@ func _apps_card() -> void:
 		tg.disabled = al.busy
 		tg.pressed.connect(func() -> void: Game.alliance.set_entry_open(not Game.alliance.entry_open))
 		head.add_child(tg)
+		var lrow := HBoxContainer.new()
+		lrow.add_theme_constant_override("separation", 8)
+		c.add_child(lrow)
+		var ll := UiKit.label(L.t("alliance.lang", [AllianceSystem.lang_name(al.lang)]), 13, UiKit.INK_SOFT)
+		ll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		lrow.add_child(ll)
+		var lb := UiKit.button(L.t("alliance.langChange") if not _lang_open else "✕", "wood", 12, true)
+		lb.pressed.connect(func() -> void:
+			_lang_open = not _lang_open
+			_dirty = true)
+		lrow.add_child(lb)
+		if _lang_open:
+			c.add_child(_lang_chips(al.lang, func(code: String) -> void:
+				_lang_open = false
+				Game.alliance.set_lang(code)))
 	for x in al.apps:
 		var a: Dictionary = x
 		var row := HBoxContainer.new()
@@ -237,6 +255,19 @@ func _apps_card() -> void:
 		no.disabled = al.busy
 		no.pressed.connect(func() -> void: Game.alliance.decide_app(uid, false))
 		row.add_child(no)
+
+
+## Выбор языка: кнопки со всеми языками игры, выбранный - зелёный.
+func _lang_chips(current: String, on_pick: Callable) -> HFlowContainer:
+	var flow := HFlowContainer.new()
+	flow.add_theme_constant_override("h_separation", 4)
+	flow.add_theme_constant_override("v_separation", 4)
+	for code in L.CODES:
+		var b := UiKit.button(str(L.NAMES[code]), "green" if code == current else "wood", 11, true)
+		var cc: String = code
+		b.pressed.connect(func() -> void: on_pick.call(cc))
+		flow.add_child(b)
+	return flow
 
 
 # MARK: Без альянса
@@ -277,6 +308,10 @@ func _alliance_row(a: Dictionary) -> void:
 	col.add_theme_constant_override("separation", 1)
 	row.add_child(col)
 	col.add_child(UiKit.label("[%s] %s" % [a.get("tag", ""), a.get("name", "")], 15))
+	var alang := str(a.get("lang", "")) if a.get("lang") != null else ""
+	if alang != "":
+		col.add_child(AllianceUi.stat("px:scroll", L.t("alliance.lang", [AllianceSystem.lang_name(alang)]),
+			UiKit.GOOD if alang == L.code else UiKit.INK_SOFT, 11))
 	col.add_child(_small(L.t("alliance.rowInfo", [int(a.get("level", 1)), int(a.get("members", 0)), int(a.get("cap", 25)),
 		int(a.get("min_level", Alliances.JOIN_LEVEL))])))
 	if str(a.get("about", "")) != "":
@@ -324,6 +359,12 @@ func _create() -> void:
 	names.add_child(tag_box)
 	c.add_child(_small(L.t("alliance.tagHint")))
 	c.add_child(UiKit.input(_about, "scroll", L.t("alliance.field.about")))
+	if create_lang == "":
+		create_lang = L.code
+	c.add_child(_small(L.t("alliance.langPick")))
+	c.add_child(_lang_chips(create_lang, func(code: String) -> void:
+		create_lang = code
+		_dirty = true))
 	_hint = _small("")
 	_hint.add_theme_color_override("font_color", UiKit.BAD)
 	c.add_child(_hint)
@@ -361,7 +402,7 @@ func _create() -> void:
 		_create_buttons.append(b)
 		var wc: bool = with_coins
 		b.pressed.connect(func() -> void:
-			Game.alliance.create(_name.text, _tag.text, emblem, _about.text, wc))
+			Game.alliance.create(_name.text, _tag.text, emblem, _about.text, wc, create_lang))
 		row.add_child(b)
 	c.add_child(_small(L.t("alliance.createRules")))
 	_update_create()

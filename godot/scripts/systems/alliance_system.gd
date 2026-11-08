@@ -199,6 +199,7 @@ func refresh(force := false) -> void:
 		await fetch_village()
 		await refresh_events()
 		await fetch_bank()
+		await fetch_lang()
 
 
 func _take(d: Dictionary) -> void:
@@ -248,7 +249,10 @@ func search(query: String) -> void:
 	if busy or demo:
 		return
 	busy = true
-	var res: Variant = await Game.rating.call_rpc("al_search", {"p_query": query.strip_edges().left(20), "p_level": Game.level})
+	var q := query.strip_edges().left(20)
+	var res: Variant = await Game.rating.call_rpc("al_search_lang", {"p_query": q, "p_level": Game.level, "p_lang": L.code})
+	if res == null and Game.rating.last_error.contains("al_search_lang"):
+		res = await Game.rating.call_rpc("al_search", {"p_query": q, "p_level": Game.level})
 	busy = false
 	found = res if res is Array else []
 	fetch_apps()
@@ -1035,7 +1039,7 @@ func can_create(with_coins: bool) -> bool:
 	return int(Game.save["coins"]) >= Alliances.CREATE_COINS if with_coins else Game.shop.crystals() >= Alliances.CREATE_CRYSTALS
 
 
-func create(name: String, tag: String, emblem: int, about: String, with_coins: bool) -> void:
+func create(name: String, tag: String, emblem: int, about: String, with_coins: bool, p_lang := "") -> void:
 	if busy or not can_create(with_coins):
 		return
 	busy = true
@@ -1052,6 +1056,10 @@ func create(name: String, tag: String, emblem: int, about: String, with_coins: b
 		Game.shop.spend_crystals(Alliances.CREATE_CRYSTALS)
 	Sound.play("unlock")
 	Game.save_now()
+	if p_lang != "":
+		var lr: Variant = await Game.rating.call_rpc("al_set_lang", {"p_lang": p_lang})
+		if lr != null:
+			lang = str(lr)
 	await refresh(true)
 
 
@@ -1237,6 +1245,41 @@ func _after_contribute(talent: String, kind: String, before: int) -> void:
 	Game.emit_event("allianceGive", {"kind": kind})
 	Game.mark_dirty()
 	Game.changed.emit()
+
+
+# MARK: Язык альянса (alliance_lang.sql)
+
+## Язык общения в альянсе: код как в L.CODES, пусто - любой.
+var lang := ""
+
+
+func fetch_lang() -> void:
+	if demo or not in_alliance():
+		return
+	var res: Variant = await Game.rating.call_rpc("al_lang", {})
+	if res is String:
+		lang = res
+		Game.changed.emit()
+
+
+## Глава меняет язык альянса.
+func set_lang(code: String) -> void:
+	if busy or not is_leader() or code == lang:
+		return
+	if not demo:
+		busy = true
+		var res: Variant = await Game.rating.call_rpc("al_set_lang", {"p_lang": code})
+		busy = false
+		if res == null:
+			_fail()
+			Game.changed.emit()
+			return
+	lang = code
+	Game.changed.emit()
+
+
+static func lang_name(code: String) -> String:
+	return str(L.NAMES.get(code, "")) if code != "" else L.t("alliance.langAny")
 
 
 # MARK: Банк альянса

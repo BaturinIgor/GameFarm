@@ -870,8 +870,8 @@ func _alliance_demo(w: String) -> void:
 		al.data = {}
 		Game.save["alliance"] = {}
 		al.found = [
-			{"id": 1, "name": "Green Valley", "tag": "GV", "emblem": 6, "about": "Friendly farmers, daily contributions", "min_level": 10, "level": 7, "members": 41, "cap": 55},
-			{"id": 2, "name": "Звёздные пахари", "tag": "STAR", "emblem": 0, "about": "Активные, чат на русском", "min_level": 15, "level": 12, "members": 80, "cap": 80},
+			{"id": 1, "name": "Green Valley", "tag": "GV", "emblem": 6, "about": "Friendly farmers, daily contributions", "min_level": 10, "level": 7, "members": 41, "cap": 55, "lang": "en"},
+			{"id": 2, "name": "Звёздные пахари", "tag": "STAR", "emblem": 0, "about": "Активные, чат на русском", "min_level": 15, "level": 12, "members": 80, "cap": 80, "lang": "ru"},
 			{"id": 3, "name": "Moonlit Orchard", "tag": "MOON", "emblem": 5, "about": "", "min_level": 10, "level": 3, "members": 12, "cap": 35},
 		]
 	else:
@@ -886,6 +886,7 @@ func _alliance_demo(w: String) -> void:
 				{"id": "d", "name": "Lucía", "level": 12, "role": "member", "week": 20, "total": 150, "me": false},
 			]}
 		Game.save["alliance"] = {"id": 1, "name": "Green Valley", "tag": "GV", "emblem": 6, "talents": talents}
+		al.lang = "ru"
 		al.bank = {"bank": 2140, "medals": 86, "buildings": {"barracks": 2, "walls": 1, "granary": 1}, "buys": {"keyCopper": 2},
 			"top": [{"name": "Masha", "week": 120}, {"name": Game.rating.player_name(), "week": 140}, {"name": "Kenji", "week": 60}],
 			"log": [{"name": "Masha", "kind": "build", "what": "barracks", "lvl": 2, "cost": 1500, "at": 0},
