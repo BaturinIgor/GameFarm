@@ -211,7 +211,7 @@ func _power_card() -> void:
 	grid.add_theme_constant_override("h_separation", 8)
 	grid.add_theme_constant_override("v_separation", 8)
 	c.add_child(grid)
-	for p in [["star", "level"], ["sword", "gear"], ["book", "talents"], ["paw", "animals"], ["hammer", "estate"]]:
+	for p in [["star", "level"], ["sword", "gear"], ["book", "talents"], ["paw", "animals"], ["hammer", "estate"], ["trophy", "trophies"]]:
 		grid.add_child(_stat_tile(p[0], L.t("power.part." + p[1]), Fmt.n(int(parts[p[1]]))))
 	c.add_child(_wrap(L.t("power.hint"), 12, UiKit.INK_SOFT))
 

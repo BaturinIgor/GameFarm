@@ -8,7 +8,7 @@ const WINDOWS := ["workshop", "talents", "animals", "quests", "level", "house", 
 	"dungeon", "trophies", "collection", "collection:zoo", "collection:trophies", "legacy", "wardrobe", "map", "map:ember", "map:azure", "events", "shop",
 	"shop:vip", "shop:crystals", "shop:market", "shop:free", "hunt:alchemy", "hunt:bestiary", "estate", "estate:orders", "quests:story", "wild", "talents:estate",
 	"story", "story:altar", "collection:diary", "alliance:find", "alliance:create", "alliance:main", "alliance:events", "alliance:chat",
-	"alliance:members", "alliance:top", "alliance:players", "alliance:chronicle", "alliance:fair", "alliance:village", "alliance:war", "alliance:talents", "alliance:pet", "alliance:weather", "alliance:boss", "alliance:warmap"]
+	"alliance:members", "alliance:top", "alliance:players", "alliance:chronicle", "alliance:fair", "alliance:village", "alliance:war", "alliance:talents", "alliance:pet", "alliance:weather", "alliance:boss", "alliance:warmap", "alliance:battle", "alliance:siege"]
 
 var dir := "/tmp/shots"
 var main: Node
@@ -167,6 +167,20 @@ func _process(delta: float) -> void:
 						_alliance_demo(w)
 					if w == "alliance:warmap":
 						main.hud.open_window(WarScene.new())
+					elif w == "alliance:battle" or w == "alliance:siege":
+						var target := -1
+						for n in range(9, War.NODES.size()):
+							var o := int(Game.war.node(n)["owner"])
+							if (o == 0) == (w == "alliance:battle") and o != Game.war.my_slot():
+								target = n
+								break
+						var bs := BattleScene.new(maxi(9, target))
+						main.hud.open_window(bs)
+						# Бой в разгаре: прокручиваем пару секунд
+						bs._start = 0.0
+						for _k in 70:
+							bs.battle.step(0.05)
+						bs.battle.focus = bs.battle.target()
 					elif ":" in w:
 						var parts := w.split(":")
 						main.hud.open_window(load("res://scripts/ui/%s_panel.gd" % parts[0]).new(parts[1]))

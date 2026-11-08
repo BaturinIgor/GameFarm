@@ -40,6 +40,42 @@ static func march_secs(t: int) -> int:
 	return 60 * clampi(t, 1, 3)
 
 
+## Уровень клетки для живых боёв (alliance_war_battle.sql): 1 - рядом со своей базой, 2 - между двумя базами,
+## 3 и 4 - кольца к центру, 5 - замок. У баз 0.
+static func level(node: int) -> int:
+	if node == 0:
+		return 5
+	if is_base(node) or node < 0 or node >= NODES.size():
+		return 0
+	var t := tier(node)
+	if t == 1:
+		return 1 if node <= 16 else 2
+	return t + 1
+
+
+## Сила лагеря монстров на ничьей клетке по уровню: слабому лагерь 4-5 уровня почти не по силам.
+const CAMP_POWER := [0, 100000, 250000, 500000, 1000000, 3000000]
+## Кто стоит в лагере: волны по уровню и вожак в решающей схватке.
+const CAMP_MONSTERS := [[], ["slimeGreen", "slimeBlue"], ["slimeRed", "orc", "skeleton"], ["orcRogue", "skelSoldier", "skeletonDark"],
+	["orcWarrior", "skelMage", "skelRogue"], ["skelKnight", "orcWarrior", "skelMage"]]
+const CAMP_BOSS := ["", "slimeGold", "orcShaman", "skelKnight", "orcWarrior", "skelKnight"]
+## Тактика в бою (0..1) добавляет до +25% к силе удара; отступление - поражение без броска.
+const TACTIC_MAX := 0.25
+## Трофеи: за победу в бою - уровень клетки, каждый трофей +2 000 мощи, не больше 300 трофеев.
+const TROPHY_POWER := 2000
+const TROPHY_MAX := 300
+
+
+static func camp_power(lvl: int) -> int:
+	return int(CAMP_POWER[clampi(lvl, 0, 5)])
+
+
+## Шанс победы в живом бою: как chance, но сила растёт от тактики.
+static func battle_chance(power: int, chest: int, garrison: int, tactic: float) -> float:
+	var pw := int(round(float(maxi(10000, power)) * (1.0 + TACTIC_MAX * clampf(tactic, 0.0, 1.0))))
+	return chance(pw, chest, garrison)
+
+
 static func is_base(node: int) -> bool:
 	return node >= 1 and node <= TEAMS
 

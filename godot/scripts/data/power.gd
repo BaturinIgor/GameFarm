@@ -49,7 +49,7 @@ static func of_animal(id: String, stars: int, awaken := 0, shiny := false, level
 	return int(round(float(base) * (RARE_MULT if rare else 1.0)))
 
 
-## Мощь по частям: {level, gear, talents, animals, estate}.
+## Мощь по частям: {level, gear, talents, animals, estate, trophies}.
 static func breakdown() -> Dictionary:
 	var gear := 0
 	for tool in Tools.UPGRADABLE:
@@ -61,7 +61,7 @@ static func breakdown() -> Dictionary:
 	for id in Estate.IDS:
 		estate += of_building(id, Game.estate.level(id))
 	return {"level": of_level(Game.level), "gear": gear, "talents": PER_TALENT_POINT * Game.talents.points_spent(),
-		"animals": animals, "estate": estate}
+		"animals": animals, "estate": estate, "trophies": War.TROPHY_POWER * clampi(int(Game.save.get("warTrophies", 0)), 0, War.TROPHY_MAX)}
 
 
 static func animal(id: String, extra_stars := 0) -> int:

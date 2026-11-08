@@ -18,6 +18,8 @@ func test_demo_help_and_gifts() -> void:
 	fresh({"level": 20})
 	var al := Game.alliance
 	al.demo = true
+	# Запрос из прошлого теста мог не вернуться (нет сети) - начинаем с чистого листа
+	al.busy = false
 	al.hall = {"help": [{"id": 1, "name": "Masha", "target": "barn", "got": 2, "need": 10, "me": false, "helped": false}],
 		"helps_today": 0, "gifts": [{"id": 5, "name": "Masha", "product": "starter"}],
 		"goal": {"done": 12, "need": 12, "mine": 1, "claimed": false}, "praise": {"given": null, "week": {}}}

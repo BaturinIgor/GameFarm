@@ -26,6 +26,7 @@ func defaults(save: Dictionary) -> void:
 	var passes: Variant = save.get("warPasses", [])
 	save["warPasses"] = (passes as Array).map(func(x: Variant) -> int: return int(x)).slice(-8) if passes is Array else []
 	save["warBanner"] = bool(save.get("warBanner", false))
+	save["warTrophies"] = clampi(int(save.get("warTrophies", 0)), 0, War.TROPHY_MAX)
 
 
 func week() -> int:
@@ -162,6 +163,73 @@ func attack(n: int, reinforce := false) -> void:
 		Sound.play("error")
 	Game.mark_dirty()
 	await fetch()
+
+
+## Живой бой за клетку: tactic 0..1 - как сыграл бой (до +25% к силе), -1 - отряд разбит или отступил (поражение).
+## Возвращает {result: capture|win|lose|cut|void, coins, trophies} или пусто, если сервер отказал.
+func battle(n: int, tactic: float) -> Dictionary:
+	if busy or not can_battle(n):
+		return {}
+	var out := {}
+	if demo:
+		var won := tactic >= 0.0 and randf() < battle_chance(n, tactic)
+		out = {"result": ("capture" if int(node(n)["shields"]) <= 1 else "win") if won else "lose"}
+	else:
+		busy = true
+		var args := {"p_node": n, "p_name": Game.rating.player_name(), "p_tactic": snappedf(tactic, 0.01)}
+		var res: Variant = await Game.rating.call_rpc("war_battle", args)
+		# Сервер без alliance_war_battle.sql: обычная атака без тактики
+		if res == null and "war_battle" in Game.rating.last_error and tactic >= 0.0:
+			res = await Game.rating.call_rpc("war_attack", {"p_node": n, "p_reinforce": false, "p_name": Game.rating.player_name()})
+			if res is Dictionary:
+				res = {"result": "capture" if bool(res.get("captured", false)) else ("win" if bool(res.get("won", false)) else "lose")}
+		busy = false
+		if not res is Dictionary:
+			_fail()
+			await fetch()
+			return {}
+		out = (res as Dictionary).duplicate()
+	var r := str(out.get("result", "lose"))
+	if r == "win" or r == "capture":
+		var coins := War.win_coins(Game.level, r == "capture")
+		Game.add_coins(coins)
+		out["coins"] = coins
+		var tr := mini(War.TROPHY_MAX, int(Game.save.get("warTrophies", 0)) + War.level(n)) - int(Game.save.get("warTrophies", 0))
+		Game.save["warTrophies"] = int(Game.save.get("warTrophies", 0)) + tr
+		out["trophies"] = tr
+		Sound.play("purchase")
+	else:
+		Sound.play("error")
+	if demo:
+		state["used"] = int(state.get("used", 0)) + 1
+		if r == "capture":
+			for x in state.get("nodes", []):
+				if x is Array and int(x[0]) == n:
+					x[1] = my_slot()
+					x[2] = 1
+	Game.mark_dirty()
+	Game.changed.emit()
+	if not demo:
+		fetch()
+	return out
+
+
+## Можно ли вести бой за клетку: чужая или ничья, рядом с нашей землёй, не база и не замок (замок - только сбором).
+func can_battle(n: int) -> bool:
+	return can_attack(n) and n != 0
+
+
+## Сила обороны клетки: у ничьей - лагерь по уровню, у чужой - гарнизон с сервера.
+func defense(n: int) -> int:
+	var d := node(n)
+	var g := int(d.get("garrison", 0))
+	if g <= 0:
+		g = War.camp_power(War.level(n))
+	return g
+
+
+func battle_chance(n: int, tactic: float) -> float:
+	return War.battle_chance(power(), chest(), defense(n), tactic)
 
 
 ## Вложить монеты в казну войны: буст атаки всего альянса.

@@ -264,8 +264,9 @@ func _node_card() -> void:
 	var stats := HFlowContainer.new()
 	stats.add_theme_constant_override("h_separation", 12)
 	_bottom_col.add_child(stats)
+	stats.add_child(AllianceUi.stat("px:star", L.t("war.level", [War.level(n)]), UiKit.INK, 13))
 	stats.add_child(AllianceUi.stat("px:shield", "%d/%d" % [int(d["shields"]), War.max_shields(t)], UiKit.INK, 13))
-	stats.add_child(AllianceUi.stat("px:fist", Fmt.n(int(d["garrison"])), UiKit.INK, 13))
+	stats.add_child(AllianceUi.stat("px:fist", Fmt.n(w.defense(n)), UiKit.INK, 13))
 	stats.add_child(AllianceUi.stat("px:trophy", L.t("war.perHour", [War.rate(t)]), UiKit.INK, 13))
 	var g := w.guard(n)
 	if not g.is_empty():
@@ -281,11 +282,15 @@ func _node_card() -> void:
 	if owner == w.my_slot():
 		_guard_block(n)
 		return
-	var chance := int(round(w.chance(n) * 100.0))
+	var lo := int(round(w.battle_chance(n, 0.0) * 100.0))
+	var hi := int(round(w.battle_chance(n, 1.0) * 100.0))
 	var crow := HBoxContainer.new()
 	crow.add_theme_constant_override("separation", 6)
 	_bottom_col.add_child(crow)
-	crow.add_child(UiKit.label(L.t("war.chance", [chance]), 13, UiKit.GOOD if chance >= 50 else UiKit.BAD))
+	crow.add_child(UiKit.label(L.t("war.chanceRange", [lo, hi]) if t != 4 else L.t("war.chance", [int(round(w.chance(n) * 100.0))]), 13,
+		UiKit.GOOD if hi >= 50 else UiKit.BAD))
+	if owner == 0 and t != 4 and w.power() < w.defense(n) * 0.5:
+		crow.add_child(UiKit.label(L.t("war.tooStrong"), 12, UiKit.BAD))
 	if not bool(d["reach"]):
 		_bottom_col.add_child(_label_wrap(L.t("war.far"), 12, UiKit.INK_SOFT))
 		return
@@ -296,10 +301,14 @@ func _node_card() -> void:
 	btns.add_theme_constant_override("separation", 6)
 	_bottom_col.add_child(btns)
 	if t != 4 or not w.live:
-		var ab := UiKit.button(L.t("war.sendTroops", [Fmt.seconds(War.march_secs(t))]) if w.live else L.t("war.attack"), "red", 14)
+		var ab := UiKit.button(L.t("war.fight"), "red", 15)
+		ab.icon = UiKit.icon("swords", 20).texture
+		ab.add_theme_constant_override("icon_max_width", 20)
 		ab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		ab.disabled = w.busy or not (w.can_march(n) if w.live else w.can_attack(n))
-		ab.pressed.connect(func() -> void: w.march(n))
+		ab.disabled = w.busy or not w.can_battle(n)
+		ab.pressed.connect(func() -> void:
+			if Hud.current != null:
+				Hud.current.open_window(BattleScene.new(n)))
 		btns.add_child(ab)
 		if not ab.disabled:
 			UiKit.attention(ab)
@@ -371,10 +380,44 @@ class WarField extends Control:
 	var _t := 0.0
 	var _terrain: Array = []
 	var _seed := -1
+	var _texs := {}
+
+	const TREES := ["tree_oak", "tree_spruce", "tree_birch", "tree_oak_big", "tree_spruce_big", "tree_autumn"]
+	const ROCKS := ["rock1", "rock2", "rock3", "rock_mossy", "rock_big"]
+	const BUSHES := ["bush", "bush_leafy", "bush_berry"]
 
 	func _init() -> void:
 		mouse_filter = Control.MOUSE_FILTER_STOP
 		clip_contents = true
+		texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+
+	func _tex(name: String) -> Texture2D:
+		if not _texs.has(name):
+			_texs[name] = Sprites.texture(name)
+		return _texs[name]
+
+	## Рисунок из пака стоит на земле в точке p, высота h пикселей экрана (первый кадр ленты). false - рисунка нет.
+	func _sprite(name: String, p: Vector2, h: float, modulate_c := Color.WHITE) -> bool:
+		var t := _tex(name)
+		if t == null:
+			return false
+		var i := Sprites.info(name)
+		var fw := float(i.get("frame", t.get_width()))
+		var fh := float(i.get("h", t.get_height() if not i.has("frame") else fw))
+		var k := h / fh
+		var a := Sprites.anchor(name)
+		var dst := Rect2(p - Vector2(a.x * fw * k, (1.0 - a.y) * fh * k), Vector2(fw, fh) * k)
+		draw_texture_rect_region(t, dst, Rect2(0, 0, fw, fh), modulate_c)
+		return true
+
+	## Монстр лагеря (портрет без краёв) стоит в точке p.
+	func _monster(kind: String, p: Vector2, h: float) -> bool:
+		var t := Monsters.icon(kind)
+		if t == null:
+			return false
+		var k := h / float(t.get_height())
+		draw_texture_rect(t, Rect2(p - Vector2(t.get_width() * k / 2.0, h), Vector2(t.get_width(), t.get_height()) * k), false)
+		return true
 
 	func _process(delta: float) -> void:
 		_t += delta
@@ -438,8 +481,11 @@ class WarField extends Control:
 					break
 			if near:
 				continue
-			var kind := "tree" if rng.randf() < 0.65 else ("rock" if rng.randf() < 0.6 else "lake")
-			_terrain.append([kind, p, rng.randf_range(1.6, 3.2), rng.randi_range(3, 6)])
+			var roll := rng.randf()
+			var kind := "tree" if roll < 0.55 else ("bush" if roll < 0.7 else ("rock" if roll < 0.88 else "lake"))
+			_terrain.append([kind, p, rng.randf_range(1.6, 3.2), rng.randi_range(3, 6), rng.randi()])
+		# Сверху вниз, чтобы ближние деревья закрывали дальние
+		_terrain.sort_custom(func(a: Array, b: Array) -> bool: return (a[1] as Vector2).y < (b[1] as Vector2).y)
 
 	func _draw() -> void:
 		if not _fitted and size.x > 0:
@@ -462,14 +508,31 @@ class WarField extends Control:
 		for x in _terrain:
 			var p := to_screen(x[1])
 			var r: float = float(x[2]) * s
+			var rnd := int(x[4])
 			match str(x[0]):
 				"tree":
+					if _tex(TREES[0]) != null:
+						var spots: Array = []
+						for i in int(x[3]):
+							spots.append(p + Vector2(cos(i * 2.1), sin(i * 2.1) * 0.6) * r * 0.8)
+						spots.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.y < b.y)
+						for i in spots.size():
+							_sprite(TREES[(rnd + i) % TREES.size()], spots[i], r * (1.5 + 0.25 * ((rnd >> i) & 1)))
+						continue
 					for i in int(x[3]):
 						var off := Vector2(cos(i * 2.1), sin(i * 2.1)) * r * 0.7
 						draw_circle(p + off + Vector2(0, r * 0.25), r * 0.55, Color(0, 0, 0, 0.18))
 						draw_circle(p + off, r * 0.55, Color("2f6b2c"))
 						draw_circle(p + off - Vector2(r * 0.15, r * 0.15), r * 0.3, Color("3f8a38"))
+				"bush":
+					if _tex(BUSHES[0]) != null:
+						for i in mini(3, int(x[3])):
+							_sprite(BUSHES[(rnd + i) % BUSHES.size()], p + Vector2((i - 1) * r * 0.6, (i % 2) * r * 0.3), r * 0.6)
+						continue
+					draw_circle(p, r * 0.5, Color("3f8a38"))
 				"rock":
+					if _sprite(ROCKS[rnd % ROCKS.size()], p + Vector2(0, r * 0.4), r * 0.9):
+						continue
 					var pts := PackedVector2Array([p + Vector2(-r, r * 0.6), p + Vector2(0, -r), p + Vector2(r, r * 0.6)])
 					draw_colored_polygon(pts, Color("8a8a80"))
 					draw_colored_polygon(PackedVector2Array([p + Vector2(-r * 0.3, -r * 0.45), p + Vector2(0, -r), p + Vector2(r * 0.3, -r * 0.45)]), Color("eeeeea"))
@@ -554,6 +617,94 @@ class WarField extends Control:
 		# Тень
 		draw_circle(p + Vector2(0, r * 0.5), r, Color(0, 0, 0, 0.25))
 		if War.is_base(n):
+			var tm := w.team(n)
+			var bc: Color = War.COLORS[n] if not tm.is_empty() else Color("9a9080")
+			if not _node_art(n, p, r, bc, true):
+				_plain_node(n, p, r, t, col)
+			if not tm.is_empty():
+				_text(font, p + Vector2(0, r * 1.6), str(tm.get("tag", "")), 11, Color.WHITE)
+			return
+		if not _node_art(n, p, r, col, seen):
+			_plain_node(n, p, r, t, col)
+		if not seen:
+			return
+		# Щиты - светлые точки под точкой
+		var sh := int(d["shields"])
+		for i in sh:
+			var off := (float(i) - (sh - 1) / 2.0) * 6.0
+			draw_circle(p + Vector2(off, r + 6.0), 2.4, Color("f7f0d0"))
+			draw_arc(p + Vector2(off, r + 6.0), 2.4, 0, TAU, 10, UiKit.OUTLINE, 1.0, true)
+		# Зверь в гарнизоне
+		var g := w.guard(n)
+		if not g.is_empty():
+			var tex := AnimalSheet.icon(g[0])
+			if tex != null:
+				var side := maxf(14.0, r * 1.3)
+				draw_texture_rect(tex, Rect2(p + Vector2(r * 0.4, -r * 1.4), Vector2(side, side)), false)
+
+	## Точка рисунками пака: лагерь, частокол, башни, дом. Флаг цвета владельца. false - рисунков нет.
+	func _node_art(n: int, p: Vector2, r: float, col: Color, seen: bool) -> bool:
+		if _tex("tent") == null and _tex("tower") == null:
+			return false
+		var w := Game.war
+		var lvl := War.level(n)
+		var owner := int(w.node(n)["owner"]) if seen else 0
+		var u := r / 3.0
+		var top := p
+		if War.is_base(n):
+			_sprite("house", p + Vector2(0, u * 1.5), r * 2.4)
+			_sprite("tent", p + Vector2(-r * 1.3, u * 2.5), r * 1.2)
+			_sprite("campfire_anim", p + Vector2(r * 1.2, u * 2.5), r * 0.8)
+			top = p - Vector2(0, r * 2.0)
+		elif lvl == 5:
+			for i in 3:
+				_sprite("palisade", p + Vector2((i - 1) * r * 0.9, u * 2.0), r * 1.0)
+			_sprite("tower", p + Vector2(-r * 1.1, u * 1.5), r * 2.2)
+			_sprite("tower", p + Vector2(r * 1.1, u * 1.5), r * 2.2)
+			_sprite("house_red", p + Vector2(0, u * 2.5), r * 2.0)
+			top = p - Vector2(0, r * 1.6)
+		elif lvl == 4:
+			_sprite("tower", p + Vector2(-r * 0.5, u * 2.0), r * 2.2)
+			_sprite("house_red", p + Vector2(r * 0.6, u * 2.5), r * 1.6)
+			_sprite("palisade", p + Vector2(-r * 1.2, u * 3.0), r * 0.9)
+			_sprite("palisade", p + Vector2(r * 1.3, u * 3.0), r * 0.9)
+			top = p - Vector2(r * 0.5, r * 2.2)
+		elif lvl == 3:
+			_sprite("tower", p + Vector2(0, u * 2.0), r * 2.1)
+			_sprite("palisade", p + Vector2(-r * 0.9, u * 3.0), r * 0.9)
+			_sprite("palisade", p + Vector2(r * 0.9, u * 3.0), r * 0.9)
+			top = p - Vector2(0, r * 2.2)
+		elif lvl == 2:
+			_sprite("palisade", p + Vector2(-r * 0.8, u * 1.5), r * 1.1)
+			_sprite("tent", p + Vector2(r * 0.2, u * 2.5), r * 1.6)
+			top = p - Vector2(0, r * 1.2)
+		else:
+			_sprite("tent", p + Vector2(-r * 0.2, u * 2.0), r * 1.5)
+			_sprite("campfire_anim", p + Vector2(r * 0.9, u * 2.5), r * 0.7)
+			top = p - Vector2(0, r * 1.1)
+		# Ничья клетка: лагерь монстров - видно, кто в нём стоит
+		if seen and owner == 0 and not War.is_base(n) and lvl > 0:
+			var kinds: Array = War.CAMP_MONSTERS[lvl]
+			_monster(str(kinds[n % kinds.size()]), p + Vector2(-r * 0.9, u * 3.5), r * 1.2)
+		# Флаг владельца
+		if owner > 0 or War.is_base(n):
+			var fc := col
+			draw_line(top, top + Vector2(0, -r * 1.0), UiKit.OUTLINE, 2.0)
+			var wave := sin(_t * 4.0 + n) * r * 0.08
+			draw_colored_polygon(PackedVector2Array([top + Vector2(0, -r * 1.0), top + Vector2(r * 0.8, -r * 0.85 + wave),
+				top + Vector2(0, -r * 0.6)]), fc)
+		# Уровень клетки - кружок с цифрой
+		if lvl > 0 and seen:
+			var lp := p + Vector2(r * 1.3, -r * 0.2)
+			draw_circle(lp, maxf(7.0, r * 0.45), UiKit.OUTLINE)
+			draw_circle(lp, maxf(6.0, r * 0.45) - 1.5, Color("f0c75e") if lvl < 5 else Color("e05a3a"))
+			_text(UiKit.font(), lp + Vector2(0, 4), str(lvl), 11, Color.WHITE)
+		return true
+
+	## Точка без рисунков пака (их нет без ключа): простые фигуры.
+	func _plain_node(n: int, p: Vector2, r: float, t: int, col: Color) -> void:
+		var w := Game.war
+		if War.is_base(n):
 			# База: шатёр с флагом
 			var tm := w.team(n)
 			var bc: Color = War.COLORS[n] if not tm.is_empty() else Color("9a9080")
@@ -561,8 +712,6 @@ class WarField extends Control:
 			draw_colored_polygon(PackedVector2Array([p + Vector2(-r * 1.2, -r * 0.6), p + Vector2(0, -r * 1.5), p + Vector2(r * 1.2, -r * 0.6)]), bc)
 			draw_line(p + Vector2(0, -r * 1.5), p + Vector2(0, -r * 2.4), UiKit.OUTLINE, 2.0)
 			draw_colored_polygon(PackedVector2Array([p + Vector2(0, -r * 2.4), p + Vector2(r * 0.9, -r * 2.1), p + Vector2(0, -r * 1.8)]), bc)
-			if not tm.is_empty():
-				_text(font, p + Vector2(0, r * 1.6), str(tm.get("tag", "")), 11, Color.WHITE)
 			return
 		if t == 4:
 			# Замок: стена с башнями
@@ -591,21 +740,6 @@ class WarField extends Control:
 			draw_circle(p, r, Color("9b7a4a"))
 			draw_circle(p, r * 0.65, col)
 			draw_arc(p, r, 0, TAU, 20, UiKit.OUTLINE, 1.5, true)
-		if not seen:
-			return
-		# Щиты - светлые точки под точкой
-		var sh := int(d["shields"])
-		for i in sh:
-			var off := (float(i) - (sh - 1) / 2.0) * 6.0
-			draw_circle(p + Vector2(off, r + 6.0), 2.4, Color("f7f0d0"))
-			draw_arc(p + Vector2(off, r + 6.0), 2.4, 0, TAU, 10, UiKit.OUTLINE, 1.0, true)
-		# Зверь в гарнизоне
-		var g := w.guard(n)
-		if not g.is_empty():
-			var tex := AnimalSheet.icon(g[0])
-			if tex != null:
-				var side := maxf(14.0, r * 1.3)
-				draw_texture_rect(tex, Rect2(p + Vector2(r * 0.4, -r * 1.4), Vector2(side, side)), false)
 
 	func _text(font: Font, at: Vector2, text: String, size: int, color: Color) -> void:
 		var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
