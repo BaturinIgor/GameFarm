@@ -54,6 +54,7 @@ func fetch() -> void:
 	busy = false
 	if res is Dictionary:
 		state = res
+		_localize_raiders()
 		error = ""
 		if state.has("now"):
 			_clock = float(state["now"]) - Time.get_unix_time_from_system()
@@ -69,6 +70,25 @@ func fetch() -> void:
 	else:
 		error = "network"
 	Game.changed.emit()
+
+
+## Разбойники (альянсы под управлением сервера) приходят с именем "@raider:N:id" - показываем на языке игрока.
+func _localize_raiders() -> void:
+	for t in state.get("teams", []):
+		var nm := str((t as Dictionary).get("name", ""))
+		if nm.begins_with("@raider:"):
+			t["name"] = War.raider_name(nm)
+			t["tag"] = L.t("war.raiderTag")
+			t["raider"] = true
+	for key in ["log", "marches"]:
+		for e in state.get(key, []):
+			if str((e as Dictionary).get("name", "")).begins_with("@raider"):
+				e["name"] = L.t("war.raiders")
+			if e.get("me") == null and key == "marches":
+				e["me"] = false
+	for r in state.get("rallies", []):
+		if str((r as Dictionary).get("leader", "")).begins_with("@raider"):
+			r["leader"] = L.t("war.raiders")
 
 
 # MARK: Точки и команды

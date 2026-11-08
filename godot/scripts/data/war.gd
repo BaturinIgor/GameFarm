@@ -126,6 +126,13 @@ const FLAGS := 6
 const CHEST := {"crystals": 500, "attacks": 5, "trophies": 10}
 
 
+## Имя альянса разбойников: "@raider:N:id" -> "Разбойники Чёрного леса" (N - 1..8).
+static func raider_name(raw: String) -> String:
+	var parts := raw.split(":")
+	var k := clampi(int(parts[1]) if parts.size() > 1 else 1, 1, 8)
+	return L.t("war.raider.%d" % k)
+
+
 static func camp_power(lvl: int) -> int:
 	return int(CAMP_POWER[clampi(lvl, 0, 5)])
 

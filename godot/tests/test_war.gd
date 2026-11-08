@@ -98,3 +98,18 @@ func test_live_map_demo() -> void:
 	eq(w.attacks_left(), 1)
 	w.demo = false
 	w.state = {}
+
+
+func test_raiders_names() -> void:
+	var w := Game.war
+	var old := w.state
+	w.state = {"teams": [{"slot": 2, "name": "@raider:3:41", "tag": "R41"}, {"slot": 1, "name": "GV", "tag": "GV"}],
+		"log": [{"name": "@raider", "act": "capture"}], "marches": [{"name": "@raider", "me": null}], "rallies": []}
+	w._localize_raiders()
+	eq(str(w.state["teams"][0]["name"]), L.t("war.raider.3"), "имя разбойников на языке игрока")
+	eq(str(w.state["teams"][0]["tag"]), L.t("war.raiderTag"))
+	eq(str(w.state["teams"][1]["name"]), "GV", "живой альянс не трогаем")
+	eq(str(w.state["log"][0]["name"]), L.t("war.raiders"))
+	eq(w.state["marches"][0]["me"], false, "чужой отряд без игрока")
+	eq(War.raider_name("@raider:99:1"), L.t("war.raider.8"), "номер в пределах")
+	w.state = old

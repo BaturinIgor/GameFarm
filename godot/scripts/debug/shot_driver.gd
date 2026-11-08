@@ -1003,7 +1003,7 @@ func _war_demo() -> void:
 			{"slot": 1, "name": "Green Valley", "tag": "GV", "points": 1630, "nodes": 4, "me": true},
 			{"slot": 2, "name": "Sunny Hills", "tag": "SH", "points": 820, "nodes": 2, "me": false},
 			{"slot": 4, "name": "Moon Farm", "tag": "MF", "points": 410, "nodes": 1, "me": false},
-			{"slot": 5, "name": "Old Mill", "tag": "OM", "points": 0, "nodes": 0, "me": false}],
+			{"slot": 5, "name": "@raider:3:77", "tag": "R77", "points": 300, "nodes": 1, "me": false}],
 		"nodes": nodes, "chest": 1200000, "used": 2, "max": 5, "pass": false, "donates": 1, "wins": 3, "power": 320000,
 		"reward": {"week": 1, "place": 2, "teams": 6},
 		"log": [{"node": 25, "name": "Masha", "act": "capture", "slot": 1}, {"node": 0, "name": "Brom", "act": "capture", "slot": 3},
@@ -1013,7 +1013,10 @@ func _war_demo() -> void:
 	w.state["marches"] = [
 		{"id": 1, "name": Game.rating.player_name(), "node": 16, "kind": "attack", "slot": 1, "from": t0 - 40, "at": t0 + 80, "me": true, "animal": null},
 		{"id": 2, "name": "Brom", "node": 34, "kind": "attack", "slot": 3, "from": t0 - 100, "at": t0 + 20, "me": false, "animal": null},
-		{"id": 3, "name": "Masha", "node": 24, "kind": "reinforce", "slot": 1, "from": t0 - 10, "at": t0 + 50, "me": false, "animal": "cow"}]
+		{"id": 3, "name": "Masha", "node": 24, "kind": "reinforce", "slot": 1, "from": t0 - 10, "at": t0 + 50, "me": false, "animal": "cow"},
+		{"id": 4, "name": "@raider", "node": 9, "kind": "attack", "slot": 5, "from": t0 - 30, "at": t0 + 60, "me": null, "animal": null}]
+	w.state["log"].push_front({"node": 9, "name": "@raider", "act": "lose", "slot": 5})
+	w._localize_raiders()
 	w.state["rallies"] = [{"id": 5, "node": 33, "leader": "Masha", "slot": 1, "fires": t0 + 200, "power": 2400000, "members": 4,
 		"mine": true, "joined": false}]
 	w.state["guards"] = [[25, "cow", "Masha"], [24, "chicken", "Kenji"]]
