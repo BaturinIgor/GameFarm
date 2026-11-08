@@ -13,6 +13,8 @@ var loaded := false
 var busy := false
 ## Ошибка последнего действия (ключ строки alliance.err.*), показывается в окне.
 var error := ""
+## Ратуша не ответила (сервер без al_hall или нет сети) - показываем список без блоков ратуши.
+var hall_failed := false
 ## Чат: сообщения по порядку и id последнего.
 var messages: Array = []
 var _last_id := 0
@@ -209,6 +211,7 @@ func _take(d: Dictionary) -> void:
 		messages.clear()
 		_last_id = 0
 		hall = {}
+		hall_failed = false
 		pin = {}
 		reacts = {}
 		my_reacts = {}
@@ -217,6 +220,7 @@ func _take(d: Dictionary) -> void:
 			messages.clear()
 			_last_id = 0
 			hall = {}
+			hall_failed = false
 			pin = {}
 		var talents := {}
 		var raw: Variant = d.get("talents", {})
@@ -1415,7 +1419,11 @@ func fetch_hall() -> void:
 	var res: Variant = await Game.rating.call_rpc("al_hall", {})
 	if res is Dictionary:
 		hall = res
+		hall_failed = false
 		_apply_help()
+		Game.changed.emit()
+	elif hall.is_empty() and not hall_failed:
+		hall_failed = true
 		Game.changed.emit()
 
 

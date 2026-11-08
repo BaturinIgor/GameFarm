@@ -149,6 +149,7 @@ func build_top() -> void:
 			section = ""
 		if tab == id and id == "events":
 			events_kind = ""
+		Game.alliance.error = ""
 		tab = id
 		if id == "chat":
 			Game.alliance.poll_chat()
@@ -425,14 +426,14 @@ func _tiles() -> void:
 	var w := al.weather
 	var t := Clock.now()
 	var wnow := AllianceWeather.active(w, t) if not w.is_empty() else ""
-	var wsub := L.t("weather.tile." + wnow, [Fmt.seconds(float(w.get("ends", 0)) - t)]) if wnow != "" else L.t("alliance.tile.weatherReady") if al.can_call_weather(false) else ""
+	var wsub := L.t("weather.tile." + wnow, [Fmt.seconds(float(w.get("ends", 0)) - t)]) if wnow != "" else L.t("alliance.tile.weatherReady") if al.can_call_weather(false) else L.t("alliance.tile.weatherClear")
 	_add_tile(g, "weather", "px:" + (str(AllianceWeather.ICONS.get(wnow, "cloud")) if wnow != "" else "cloud"), L.t("weather.title"), wsub,
 		1 if al.can_call_weather(false) else 0)
 	_add_tile(g, "village", "px:door", L.t("village.title"), L.t("alliance.tile.village"), 0)
 	_add_tile(g, "fair", "px:tag", L.t("afair.title"), L.t("alliance.tile.fair"), 0)
 	var ready_guests := al.guests_away().filter(func(x: Dictionary) -> bool: return float(x.get("returns", 0)) <= Clock.now()).size()
 	_add_tile(g, "guests", "px:paw", L.t("guests.title"), L.t("alliance.tile.slots", [al.guests_away().size(), al.guest_slots()]), ready_guests)
-	_add_tile(g, "mentor", "px:book", L.t("mentor.title"), "", al.mentor_count())
+	_add_tile(g, "mentor", "px:book", L.t("mentor.title"), L.t("alliance.tile.mentor"), al.mentor_count())
 	_add_tile(g, "chronicle", "px:scroll", L.t("chronicle.title"), L.t("alliance.tile.chronicle"), 0)
 
 
@@ -442,6 +443,7 @@ func _add_tile(g: GridContainer, id: String, icon_name: String, title: String, s
 
 func _open_section(id: String) -> void:
 	section = id
+	Game.alliance.error = ""
 	match id:
 		"chronicle": Game.alliance.fetch_chronicle()
 		"fair": Game.alliance.fetch_fair()
@@ -1262,7 +1264,7 @@ func _help_card() -> void:
 	var al := Game.alliance
 	if al.hall.is_empty():
 		if not al.demo:
-			content.add_child(_note(L.t("alliance.loading")))
+			content.add_child(_note(L.t("hall.unavailable") if al.hall_failed else L.t("alliance.loading")))
 		return
 	var c := card()
 	var head := HBoxContainer.new()
@@ -1865,22 +1867,26 @@ func _top() -> void:
 		place.custom_minimum_size = Vector2(40, 0)
 		row.add_child(place)
 		var value := 0
+		var tag := str(a.get("tag", "")) if a.get("tag") != null else ""
 		if top_kind == "players":
 			row.add_child(UiKit.icon("fist", 22))
-			var tag := str(a.get("tag", "")) if a.get("tag") != null else ""
-			var n := UiKit.label(("[%s] " % tag if tag != "" else "") + str(a.get("name", "")), 13)
-			n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			n.clip_text = true
-			row.add_child(n)
 			value = int(a.get("power", 0))
 		else:
 			row.add_child(_emblem(int(a.get("emblem", 0)), 26))
-			var n := UiKit.label("[%s] %s" % [a.get("tag", ""), a.get("name", "")], 13)
-			n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			n.clip_text = true
-			row.add_child(n)
 			value = int(a.get("strength" if top_kind == "strength" else "week_xp", 0))
-		row.add_child(UiKit.label(L.t("common.lvl", [int(a.get("level", 1))]), 12, UiKit.INK_SOFT))
+		# Имя целиком в первой строке, тег и уровень - мелко во второй.
+		var nb := VBoxContainer.new()
+		nb.add_theme_constant_override("separation", 0)
+		nb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(nb)
+		var n := UiKit.label(str(a.get("name", "")), 13)
+		n.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		n.clip_text = true
+		nb.add_child(n)
+		var sub := L.t("common.lvl", [int(a.get("level", 1))])
+		if tag != "":
+			sub = "[%s] · %s" % [tag, sub]
+		nb.add_child(UiKit.label(sub, 11, UiKit.INK_SOFT))
 		var pts := UiKit.label(Fmt.n(value), 13)
 		pts.custom_minimum_size = Vector2(56, 0)
 		pts.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -1950,7 +1956,7 @@ func _event_board() -> void:
 	var place: Variant = ev.get("place")
 	var place_claim := 1 if ev.get("last_place") != null and not bool(ev.get("last_claimed", true)) else 0
 	content.add_child(AllianceUi.banner(UiKit.icon("trophy", 56), L.t("alliance.ev.place"),
-		L.t("board.place", [int(place)]) if place != null else L.t("alliance.ev.placeNone"), Color("7a5a1e"), place_claim, null,
+		L.t("board.place", [int(place)]) if place != null else L.t("board.placeNone"), Color("7a5a1e"), place_claim, null,
 		func() -> void: _open_event("place")))
 
 
@@ -2003,14 +2009,25 @@ func _boss_screen() -> void:
 		hit.pressed.connect(func() -> void: Game.alliance.attack(false))
 		btns.add_child(hit)
 		UiKit.attention(hit)
-	else:
-		var more := UiKit.button(L.t("alliance.ev.hit.extra", [al.extra_left(), AllianceEvents.EXTRA_HITS]), "orange", 14)
+	elif al.extra_left() > 0:
+		var enough := Game.shop.crystals() >= AllianceEvents.EXTRA_COST
+		var more := MapPanel.icon_button([["t", L.t("alliance.ev.hit.buy", [al.extra_left()])], ["i", "gem"],
+			["t", str(AllianceEvents.EXTRA_COST)]], "orange" if enough else "gray", 14)
+		more.custom_minimum_size.y = 44
 		more.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		more.icon = UiKit.icon("gem", 16).texture
-		more.text += " " + str(AllianceEvents.EXTRA_COST)
-		more.disabled = not al.can_attack(true)
-		more.pressed.connect(func() -> void: Game.alliance.attack(true))
+		more.disabled = al.busy
+		more.pressed.connect(func() -> void:
+			if Game.shop.crystals() < AllianceEvents.EXTRA_COST:
+				Game.show_toast("px:gem", L.t("crystals.notEnough", [Fmt.n(AllianceEvents.EXTRA_COST - Game.shop.crystals())]))
+				return
+			Game.alliance.attack(true))
 		btns.add_child(more)
+	else:
+		var done := UiKit.label(L.t("alliance.ev.hit.none"), 13)
+		done.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		done.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		done.add_theme_color_override("font_color", UiKit.INK_SOFT)
+		btns.add_child(done)
 	for t in ev.get("unclaimed", []):
 		_claim_row(L.t("alliance.ev.bossReward", [int(t)]), "boss", int(t))
 	var help := _small(L.t("alliance.ev.bossHint", [al.free_hits(), Alliances.talent_name("guard")]))
