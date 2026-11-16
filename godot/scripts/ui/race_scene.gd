@@ -47,7 +47,7 @@ var _over := false
 
 var _top := VBoxContainer.new()
 var _timer_label: Label
-var _board := VBoxContainer.new()
+var _board: HBoxContainer
 var _bottom := VBoxContainer.new()
 var _card := PanelContainer.new()
 var _card_col := VBoxContainer.new()
@@ -127,6 +127,8 @@ func _build_map() -> void:
 	for z in 3:
 		var t := TraderNode.new("stall" if z == 0 else "wanderer", L.t("race.trader"), "coins")
 		t.position = Race.trader_pos(seat, z)
+		# Табличка ближе к прилавку: в гонке торговец без очереди, высокая табличка висит в воздухе
+		t._sign.position.y = -84.0
 		_entities.add_child(t)
 	var elder := Player.new()
 	elder.position = Race.elder_pos(seat)
@@ -304,7 +306,7 @@ func _process(delta: float) -> void:
 	_cam = _cam.lerp(_player.position, 1.0 - exp(-dt * 6.0))
 	var view := get_viewport_rect().size
 	_cam.x = clampf(_cam.x, view.x / 2.0, Race.SIZE - view.x / 2.0)
-	_cam.y = clampf(_cam.y, view.y / 2.0 - 60.0, Race.SIZE - view.y / 2.0 + 120.0)
+	_cam.y = clampf(_cam.y, view.y / 2.0, Race.SIZE - view.y / 2.0)
 	_world.position = (view / 2.0 - _cam).round()
 	_ui_cd -= dt
 	if _ui_cd <= 0.0:
@@ -716,40 +718,45 @@ func _build_ui() -> void:
 	var insets := UiKit.safe_insets(get_viewport())
 	var top_holder := MarginContainer.new()
 	top_holder.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	top_holder.add_theme_constant_override("margin_left", 10)
-	top_holder.add_theme_constant_override("margin_right", 10)
+	top_holder.add_theme_constant_override("margin_left", 8)
+	top_holder.add_theme_constant_override("margin_right", 8)
 	top_holder.add_theme_constant_override("margin_top", int(insets["top"]) + 6)
 	top_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	top_holder.z_index = 150
 	add_child(top_holder)
-	_top.add_theme_constant_override("separation", 4)
+	# Одна плашка: закрыть, таймер, уровень и инструмент; ниже - места четырёх игроков в строку
+	var top_bg := PanelContainer.new()
+	top_bg.add_theme_stylebox_override("panel", UiKit.box(UiKit.PARCHMENT, UiKit.OUTLINE, 14, 3, true))
+	top_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	top_holder.add_child(top_bg)
+	_top.add_theme_constant_override("separation", 6)
 	_top.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	top_holder.add_child(_top)
+	top_bg.add_child(_top)
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 8)
 	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_top.add_child(head)
 	var back := UiKit.button("×", "red", 18, true)
-	back.custom_minimum_size = Vector2(40, 40)
+	back.custom_minimum_size = Vector2(38, 38)
 	back.pressed.connect(_close)
 	head.add_child(back)
-	_timer_label = UiKit.label("", 22, Color.WHITE, 5)
+	_timer_label = UiKit.label("", 24, UiKit.INK)
 	_timer_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_timer_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	head.add_child(_timer_label)
-	_stat_label = UiKit.label("", 13, Color.WHITE, 4)
+	_stat_label = UiKit.label("", 12, UiKit.INK_SOFT)
 	_stat_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_stat_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_stat_label.custom_minimum_size = Vector2(70, 0)
 	head.add_child(_stat_label)
-	_hp_bar = UiKit.bar(1.0, "red", 120.0, 8.0)
+	_hp_bar = UiKit.bar(1.0, "red", 120.0, 6.0)
 	_hp_bar.visible = false
 	_top.add_child(_hp_bar)
-	var board_bg := PanelContainer.new()
-	board_bg.add_theme_stylebox_override("panel", UiKit.box(Color(0, 0, 0, 0.35), Color(0, 0, 0, 0), 12, 0, false))
-	board_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_top.add_child(board_bg)
-	_board.add_theme_constant_override("separation", 2)
+	_board = HBoxContainer.new()
+	_board.add_theme_constant_override("separation", 6)
 	_board.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	board_bg.add_child(_board)
+	_top.add_child(_board)
 
 	var bottom_holder := MarginContainer.new()
 	bottom_holder.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
@@ -769,7 +776,7 @@ func _build_ui() -> void:
 	_card_col.add_theme_constant_override("separation", 6)
 	_card.add_child(_card_col)
 	var bag_bg := PanelContainer.new()
-	bag_bg.add_theme_stylebox_override("panel", UiKit.box(Color(0, 0, 0, 0.4), Color(0, 0, 0, 0), 12, 0, false))
+	bag_bg.add_theme_stylebox_override("panel", UiKit.box(UiKit.PARCHMENT, UiKit.OUTLINE, 14, 3, true))
 	bag_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_bottom.add_child(bag_bg)
 	_bag_row.add_theme_constant_override("h_separation", 8)
@@ -789,32 +796,36 @@ func _refresh_top(now: float) -> void:
 	for i in rows.size():
 		_board.add_child(_board_row(i + 1, rows[i]))
 	UiKit.clear(_bag_row)
-	_bag_row.add_child(_chip_icon("coins", Fmt.n(run.coins()), Color.WHITE))
-	_bag_row.add_child(_chip_icon("key", "%d/3" % run.shards(), Color.WHITE))
+	_bag_row.add_child(_chip_icon("coins", Fmt.n(run.coins())))
+	_bag_row.add_child(_chip_icon("key", "%d/3" % run.shards()))
 	var kinds: Array = run.d["bag"].keys()
 	kinds.sort()
 	for k in kinds:
-		_bag_row.add_child(_chip_icon(k, Fmt.n(run.have(k)), Color.WHITE))
+		_bag_row.add_child(_chip_icon(k, Fmt.n(run.have(k))))
 
 
+## Ячейка места в верхней плашке: место и имя, под ними полоска этапов (или время, если дошёл).
 func _board_row(n: int, r: Dictionary) -> Control:
-	var h := HBoxContainer.new()
-	h.add_theme_constant_override("separation", 6)
-	h.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var color := Color(1, 0.95, 0.6) if bool(r["me"]) else Color.WHITE
-	var name := L.t("race.you") if bool(r["me"]) else str(r["name"])
-	var place := UiKit.label("%d" % n, 13, color, 4)
-	place.custom_minimum_size = Vector2(16, 0)
-	h.add_child(place)
-	var nl := UiKit.label(name, 12, color, 4)
-	nl.custom_minimum_size = Vector2(120, 0)
+	var me := bool(r["me"])
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 2)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.size_flags_stretch_ratio = 1.0
+	col.custom_minimum_size = Vector2(60, 0)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var color := UiKit.INK if me else UiKit.INK_SOFT
+	var name := L.t("race.you") if me else str(r["name"])
+	var nl := UiKit.label("%d. %s" % [n, name], 11, color)
 	nl.clip_text = true
-	h.add_child(nl)
-	var steps := float(int(r["steps"])) / 7.0
-	h.add_child(UiKit.bar(steps, "gold" if bool(r["me"]) else "green", 140.0, 8.0))
+	nl.custom_minimum_size = Vector2(60, 0)
+	col.add_child(nl)
 	if float(r["finish"]) >= 0.0:
-		h.add_child(UiKit.label(Race.clock(float(r["finish"])), 11, color, 4))
-	return h
+		col.add_child(UiKit.label(Race.clock(float(r["finish"])), 11, color))
+	else:
+		var bar := UiKit.bar(float(int(r["steps"])) / 7.0, "gold" if me else "green", 60.0, 7.0)
+		bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_child(bar)
+	return col
 
 
 func _standing_row(n: int, r: Dictionary) -> Control:

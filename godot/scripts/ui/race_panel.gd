@@ -29,6 +29,7 @@ func _process(delta: float) -> void:
 	super(delta)
 	if _flag_label != null and is_instance_valid(_flag_label):
 		_flag_label.text = _flag_text()
+		_flag_label.visible = _flag_label.text != ""
 
 
 func _flag_text() -> String:
@@ -66,6 +67,7 @@ func build() -> void:
 		flags.add_child(UiKit.label(L.t("race.flags", [sys.flags(), Race.FLAGS_MAX]), 15))
 		v.add_child(flags)
 		_flag_label = UiKit.label(_flag_text(), 11, UiKit.INK_SOFT)
+		_flag_label.visible = _flag_label.text != ""
 		v.add_child(_flag_label)
 		var go := UiKit.button(L.t("race.searching") if sys.busy else L.t("race.start"), "green", 18)
 		go.disabled = not sys.can_start() or sys.busy
@@ -104,6 +106,7 @@ func build() -> void:
 	places.add_theme_constant_override("separation", 14)
 	for i in Race.SEATS:
 		var p := VBoxContainer.new()
+		p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		p.add_child(UiKit.label(L.t("race.place", [i + 1]), 12, UiKit.INK_SOFT))
 		p.add_child(UiKit.label(Fmt.n(int(sys.places()[i])), 18))
 		places.add_child(p)
@@ -115,24 +118,23 @@ func build() -> void:
 	# Награды за место
 	var r := TraderPanel.card_box(content, Color("f4d6a0"), 3)
 	r.add_child(UiKit.label(L.t("race.rewardsTitle"), 15))
+	# Таблица: место | трофеи | кристаллы | ключ - столбцы ровно друг под другом
+	var grid := GridContainer.new()
+	grid.columns = 4
+	grid.add_theme_constant_override("h_separation", 12)
+	grid.add_theme_constant_override("v_separation", 6)
+	r.add_child(grid)
 	for i in Race.SEATS:
 		var rw := RaceSystem.reward_for(i + 1)
-		var h := HFlowContainer.new()
-		h.add_theme_constant_override("h_separation", 8)
-		var pl := UiKit.label(L.t("race.place", [i + 1]), 13)
-		pl.custom_minimum_size = Vector2(76, 0)
-		h.add_child(pl)
-		h.add_child(UiKit.icon_any("px:trophy", 16))
-		h.add_child(UiKit.label("+%d" % int(rw["trophies"]), 13))
-		h.add_child(UiKit.icon_any("px:gem", 16))
-		h.add_child(UiKit.label("+%d" % int(rw["crystals"]), 13))
+		grid.add_child(UiKit.label(L.t("race.place", [i + 1]), 13))
+		grid.add_child(_reward_chip("px:trophy", "+%d" % int(rw["trophies"])))
+		grid.add_child(_reward_chip("px:gem", "+%d" % int(rw["crystals"])))
 		if str(rw["key"]) != "":
-			var key := HBoxContainer.new()
-			key.add_theme_constant_override("separation", 4)
-			key.add_child(UiKit.icon_any("px:key", 16))
-			key.add_child(UiKit.label(Chests.key_name(str(rw["key"])), 13))
-			h.add_child(key)
-		r.add_child(h)
+			var key := _reward_chip("px:key", Chests.key_name(str(rw["key"])), 11)
+			key.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			grid.add_child(key)
+		else:
+			grid.add_child(Control.new())
 
 	_build_rating()
 
@@ -187,4 +189,18 @@ func _rating_row(place: int, name: String, points: int, me: bool) -> Control:
 	h.add_child(nl)
 	h.add_child(UiKit.icon_any("px:trophy", 14))
 	h.add_child(UiKit.label(Fmt.n(points), 13, color))
+	return h
+
+
+func _reward_chip(icon: String, text: String, size := 13) -> HBoxContainer:
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 4)
+	h.add_child(UiKit.icon_any(icon, 16))
+	var l := UiKit.label(text, size)
+	if size < 13:
+		# Длинное название ключа обрезается, а не растягивает окно
+		l.clip_text = true
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		l.custom_minimum_size = Vector2(40, 0)
+	h.add_child(l)
 	return h
