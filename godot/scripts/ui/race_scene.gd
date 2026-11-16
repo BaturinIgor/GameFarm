@@ -3,6 +3,8 @@ extends Control
 ## Поле гонки к Сердцу долины во весь экран (поверх фермы, ферма в это время стоит).
 ## Карта 3x3: свой угол, перешеек, ядро с Сердцем. Герой ходит джойстиком и сам бьёт ближайшую точку,
 ## у торговца, ворот и старца снизу появляется карточка с действиями. Странники идут по своим углам.
+## Уютные действия: смайлики над бегуном, «Подбодрить» отстающего, маяк первого дошедшего. Лига видна по цвету
+## имени, знамени (с Серебра) и следу (с Золота).
 ## Правила - RaceRun (Game.race.run()), карта - Race. Закрыть поле можно в любой момент: время идёт.
 
 const R := 11.0
@@ -59,6 +61,16 @@ var _wait: Control
 var _tags: Dictionary = {}
 var _net_cd := 0.0
 var _rev := -1
+var _gift_rev := 0
+var _beacon_label: Label
+var _beacon_seen := false
+var _emote_bar: PanelContainer
+var _cheer_btn: Button
+## Последний показанный смайлик соперника: место -> emote_at.
+var _emote_shown: Dictionary = {}
+## Сколько этапов было у странника (он радуется пройденным воротам).
+var _bot_steps_seen: Dictionary = {}
+var _trails: Array = []
 
 
 static func launch() -> RaceScene:
@@ -91,10 +103,16 @@ func _ready() -> void:
 	_hp = run.hero_hp()
 	_player.position = _spawn_point()
 	_entities.add_child(_player)
+	_dress(_player, Game.race.league(), true)
 	_cam = _player.position
 	add_child(_joy)
 	_build_ui()
 	_net_cd = 0.0
+	_gift_rev = Game.race.gift_rev
+	for b in run.d["bots"]:
+		_emote_shown[int(b["seat"])] = float(b.get("emote_at", 0.0))
+		_bot_steps_seen[int(b["seat"])] = RaceRun.bot_steps(b, run.elapsed(Clock.now()))
+	_beacon_seen = run.beacon_left(Clock.now()) > 0.0
 	if run.ended(Clock.now()):
 		_show_end()
 
@@ -153,6 +171,7 @@ func _build_map() -> void:
 		p.add_child(tag)
 		_rivals[int(b["seat"])] = p
 		_tags[int(b["seat"])] = tag
+		_dress(p, _rival_league(b), false)
 	_sync_gates()
 
 
@@ -289,6 +308,12 @@ func _process(delta: float) -> void:
 	if Game.race.rev != _rev:
 		_rev = Game.race.rev
 		_refresh_rivals()
+	if Game.race.gift_rev != _gift_rev:
+		_gift_rev = Game.race.gift_rev
+		var food := str(Race.FOOD[run.biome])
+		Fx.text(_fx, L.t("race.cheered"), _player.position - Vector2(0, 96), Color(1, 0.75, 0.85), 15)
+		Fx.gain(_fx, food, Game.race.gift_count * Race.CHEER_COST, _player.position - Vector2(0, 70), 0.3)
+		_ui_cd = 0.0
 	if _over:
 		if _wait != null and run.decided(now):
 			_show_end()
@@ -303,6 +328,9 @@ func _process(delta: float) -> void:
 	for sp in _spots:
 		(sp["spot"] as ResourceSpot).tick(dt)
 	_move_rivals(dt, now)
+	_cozy_tick(now)
+	for tr in _trails:
+		(tr as Trail).tick(dt)
 	_cam = _cam.lerp(_player.position, 1.0 - exp(-dt * 6.0))
 	var view := get_viewport_rect().size
 	_cam.x = clampf(_cam.x, view.x / 2.0, Race.SIZE - view.x / 2.0)
@@ -586,6 +614,7 @@ func _refresh_rivals() -> void:
 		var s := int(b["seat"])
 		if _tags.has(s):
 			(_tags[s] as Label).text = _rival_name(b)
+			(_tags[s] as Label).label_settings = Fx.label_settings(11, Race.league_color(_rival_league(b)).lightened(0.2))
 		if _rivals.has(s):
 			(_rivals[s] as Player).set_skin(str(b["skin"]))
 			(_rivals[s] as Player).modulate = Color.WHITE if bool(b.get("human", false)) else Color(1, 1, 1, 0.85)
@@ -645,14 +674,23 @@ func _show_end() -> void:
 	var rows := run.standings(at)
 	for i in rows.size():
 		col.add_child(_standing_row(i + 1, rows[i]))
+	if run.lit_beacon():
+		var bl := UiKit.label(L.t("race.beaconMine"), 13, UiKit.INK)
+		bl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		bl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		col.add_child(bl)
 	var rw := RaceSystem.reward_for(place)
 	var rew := HFlowContainer.new()
 	rew.add_theme_constant_override("h_separation", 10)
-	rew.add_child(_chip_icon("trophy", "+%d" % int(rw["trophies"])))
+	rew.add_child(_chip_icon("trophy", "+%d" % (int(rw["trophies"]) + run.cheers())))
 	rew.add_child(_chip_icon("gem", "+%d" % int(rw["crystals"])))
 	if str(rw["key"]) != "":
 		rew.add_child(_chip_icon("key", Chests.key_name(str(rw["key"]))))
 	col.add_child(rew)
+	if run.cheers() > 0:
+		var fl := UiKit.label(L.t("race.friendBonus", [run.cheers()]), 12, UiKit.INK_SOFT)
+		fl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		col.add_child(fl)
 	var btn := UiKit.button(L.t("race.claim"), "green")
 	btn.pressed.connect(_claim)
 	col.add_child(btn)
@@ -757,6 +795,10 @@ func _build_ui() -> void:
 	_board.add_theme_constant_override("separation", 6)
 	_board.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_top.add_child(_board)
+	_beacon_label = UiKit.label("", 12, Color("a8541c"))
+	_beacon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_beacon_label.visible = false
+	_top.add_child(_beacon_label)
 
 	var bottom_holder := MarginContainer.new()
 	bottom_holder.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
@@ -775,10 +817,36 @@ func _build_ui() -> void:
 	_bottom.add_child(_card)
 	_card_col.add_theme_constant_override("separation", 6)
 	_card.add_child(_card_col)
+	# Смайлики: ряд значков над сумкой, открывается кнопкой
+	_emote_bar = PanelContainer.new()
+	_emote_bar.add_theme_stylebox_override("panel", UiKit.box(UiKit.PARCHMENT, UiKit.OUTLINE, 14, 3, true))
+	_emote_bar.visible = false
+	_bottom.add_child(_emote_bar)
+	var em := HBoxContainer.new()
+	em.add_theme_constant_override("separation", 6)
+	_emote_bar.add_child(em)
+	for e in Race.EMOTES:
+		var eb := _square(e)
+		eb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var ee: String = e
+		eb.pressed.connect(func() -> void: _send_emote(ee))
+		em.add_child(eb)
+	# Сумка и две кнопки справа: смайлики и «Подбодрить»
+	var low := HBoxContainer.new()
+	low.add_theme_constant_override("separation", 6)
+	low.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bottom.add_child(low)
 	var bag_bg := PanelContainer.new()
 	bag_bg.add_theme_stylebox_override("panel", UiKit.box(UiKit.PARCHMENT, UiKit.OUTLINE, 14, 3, true))
 	bag_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_bottom.add_child(bag_bg)
+	bag_bg.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	low.add_child(bag_bg)
+	var emote_btn := _square("star")
+	emote_btn.pressed.connect(func() -> void: _emote_bar.visible = not _emote_bar.visible)
+	low.add_child(emote_btn)
+	_cheer_btn = _square("heart_plus")
+	_cheer_btn.pressed.connect(_cheer)
+	low.add_child(_cheer_btn)
 	_bag_row.add_theme_constant_override("h_separation", 8)
 	_bag_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bag_bg.add_child(_bag_row)
@@ -788,6 +856,11 @@ func _build_ui() -> void:
 
 func _refresh_top(now: float) -> void:
 	_timer_label.text = Race.clock(ceilf(run.left(now)))
+	var beacon := run.beacon_left(now)
+	_beacon_label.visible = beacon > 0.0
+	if beacon > 0.0:
+		_beacon_label.text = L.t("race.beacon", [int(Race.BEACON_BOOST * 100.0), Race.clock(beacon)])
+	_cheer_btn.modulate = Color.WHITE if run.can_cheer(now) else Color(1, 1, 1, 0.5)
 	_stat_label.text = "%s\n%s" % [L.t("race.level", [run.level()]), L.t("race.tool", [run.tool()])]
 	_hp_bar.visible = _fight >= 0 or _hp < run.hero_hp() - 0.5
 	_hp_bar.value = clampf(_hp / run.hero_hp(), 0.0, 1.0)
@@ -851,6 +924,104 @@ func _chip_icon(icon: String, text: String, color := UiKit.INK) -> Control:
 	h.add_child(UiKit.icon_any("px:" + icon if not Res.KINDS.has(icon) else "res:" + icon, 18))
 	h.add_child(UiKit.label(text, 13, color, 4 if color == Color.WHITE else 0))
 	return h
+
+
+# MARK: Уютные действия
+
+## Квадратная кнопка со значком (смайлики, «Подбодрить»).
+func _square(icon: String) -> Button:
+	var b := UiKit.button("", "wood", 12, true)
+	b.icon = Sprites.icon(icon)
+	b.expand_icon = true
+	b.custom_minimum_size = Vector2(44, 44)
+	return b
+
+
+func _send_emote(id: String) -> void:
+	_emote_bar.visible = false
+	if Game.race.emote(id):
+		_bubble(_player, id)
+
+
+func _cheer() -> void:
+	var now := Clock.now()
+	var why := ""
+	if run.cheers() >= Race.CHEER_MAX:
+		why = L.t("race.cheerDone", [Race.CHEER_MAX])
+	elif run.cheer_target(now) < 0:
+		why = L.t("race.cheerNobody")
+	elif run.cheer_kind() == "":
+		why = L.t("race.cheerNeed", [Race.CHEER_COST])
+	if why != "":
+		Fx.text(_fx, why, _player.position - Vector2(0, 96), Color(1, 0.9, 0.6), 14)
+		return
+	var c := Game.race.cheer()
+	if c.is_empty():
+		return
+	var p: Player = _rivals[int(c["seat"])]
+	Fx.gain(_fx, str(c["kind"]), Race.CHEER_COST, p.position - Vector2(0, 96))
+	Fx.scatter(_fx, p.position - Vector2(0, 30), 8, Color(1, 0.6, 0.75), Sprites.icon("heart"), 8.0, 50, 24)
+	Fx.text(_fx, L.t("race.friendPoint"), _player.position - Vector2(0, 96), Color(1, 0.75, 0.85), 15)
+	Sound.play("unlock")
+	if not bool(c["human"]):
+		# Странник благодарит сердечком
+		get_tree().create_timer(1.2).timeout.connect(func() -> void:
+			if is_instance_valid(p):
+				_bubble(p, "heart"))
+	_ui_cd = 0.0
+
+
+## Смайлик над бегуном на EMOTE_SHOW секунд.
+func _bubble(who: Node2D, id: String) -> void:
+	var old := who.get_node_or_null("Emote")
+	if old != null:
+		old.free()
+	var b := EmoteBubble.new(id)
+	b.name = "Emote"
+	b.position = Vector2(0, -104)
+	who.add_child(b)
+
+
+## Смайлики живых соперников, радость странников на воротах, маяк.
+func _cozy_tick(now: float) -> void:
+	var t := run.elapsed(now)
+	for b in run.d["bots"]:
+		var s := int(b["seat"])
+		var p: Player = _rivals[s]
+		var at := float(b.get("emote_at", 0.0))
+		if at > float(_emote_shown.get(s, 0.0)):
+			_emote_shown[s] = at
+			if now - at < Race.EMOTE_SHOW:
+				_bubble(p, str(b["emote"]))
+		var k := RaceRun.bot_steps(b, t)
+		if k > int(_bot_steps_seen.get(s, 0)):
+			_bot_steps_seen[s] = k
+			if not bool(b.get("human", false)) and randf() < 0.4:
+				_bubble(p, ["star", "flame", "fist", "clover"][randi() % 4])
+	var lit := run.beacon_left(now) > 0.0
+	if lit and not _beacon_seen:
+		_beacon_seen = true
+		Fx.scatter(_fx, Race.heart_center(), 24, Color(1, 0.8, 0.4), Sprites.icon("flame"), 10.0, 140, 60)
+		Fx.text(_fx, L.t("race.beaconLit"), _player.position - Vector2(0, 110), Color(1, 0.85, 0.45), 16)
+		Sound.play("unlock")
+	_heart.lit = run.beacon_at() <= t or (run.finished() and run.lit_beacon())
+
+
+func _rival_league(b: Dictionary) -> int:
+	# Странники - в лиге игрока, живые - в своей
+	return int(b.get("league", Game.race.league())) if bool(b.get("human", false)) else Game.race.league()
+
+
+## Оформление лиги: знамя над бегуном (с Серебра) и след за своим бегуном (с Золота).
+func _dress(p: Player, league: int, me: bool) -> void:
+	if league >= Race.BANNER_FROM:
+		var f := Banner.new(Race.league_color(league))
+		f.position = Vector2(14 if me else -22, -58)
+		p.add_child(f)
+	if me and league >= Race.TRAIL_FROM:
+		var tr := Trail.new(p, Race.league_color(league))
+		_flat.add_child(tr)
+		_trails.append(tr)
 
 
 # MARK: Карточка снизу
@@ -1079,6 +1250,8 @@ class GuardArt extends Node2D:
 ## Сердце долины: светящийся круг в центре ядра.
 class HeartArt extends Node2D:
 	var _t := 0.0
+	## Маяк зажжён: столб света над Сердцем.
+	var lit := false
 
 	func _process(dt: float) -> void:
 		_t += dt
@@ -1089,6 +1262,85 @@ class HeartArt extends Node2D:
 		draw_circle(Vector2.ZERO, Race.HEART_R, Color(1, 0.85, 0.45, 0.18 + 0.08 * pulse))
 		draw_arc(Vector2.ZERO, Race.HEART_R, 0.0, TAU, 64, Color(1, 0.9, 0.5, 0.8), 4.0)
 		draw_circle(Vector2.ZERO, 28.0 + 4.0 * pulse, Color(1, 0.95, 0.7, 0.8))
+		if lit:
+			draw_rect(Rect2(-14.0, -260.0, 28.0, 260.0), Color(1, 0.85, 0.4, 0.22 + 0.1 * pulse))
+			draw_circle(Vector2(0, -260.0), 18.0 + 4.0 * pulse, Color(1, 0.8, 0.35, 0.55))
+
+
+## Смайлик над бегуном: значок на белом кружке, всплывает и гаснет.
+class EmoteBubble extends Node2D:
+	var _t := 0.0
+	var _tex: Texture2D
+
+	func _init(id: String) -> void:
+		_tex = Sprites.icon(id)
+		z_index = 60
+		scale = Vector2(0.4, 0.4)
+
+	func _process(dt: float) -> void:
+		_t += dt
+		scale = Vector2.ONE * minf(1.0, 0.4 + _t * 4.0)
+		modulate.a = clampf((Race.EMOTE_SHOW - _t) / 0.5, 0.0, 1.0)
+		if _t >= Race.EMOTE_SHOW:
+			queue_free()
+		queue_redraw()
+
+	func _draw() -> void:
+		draw_circle(Vector2.ZERO, 17.0, Color(1, 1, 1, 0.95))
+		draw_arc(Vector2.ZERO, 17.0, 0.0, TAU, 32, Color(0.24, 0.16, 0.1, 0.9), 2.0)
+		draw_colored_polygon(PackedVector2Array([Vector2(-5, 15), Vector2(5, 15), Vector2(0, 23)]), Color(1, 1, 1, 0.95))
+		if _tex != null:
+			draw_texture_rect(_tex, Rect2(-11, -11, 22, 22), false)
+
+
+## Знамя лиги над бегуном: древко и флажок цвета лиги.
+class Banner extends Node2D:
+	var _color: Color
+	var _t := randf() * TAU
+
+	func _init(color: Color) -> void:
+		_color = color
+		z_index = 30
+
+	func _process(dt: float) -> void:
+		_t += dt
+		queue_redraw()
+
+	func _draw() -> void:
+		draw_line(Vector2(0, 0), Vector2(0, -30), Color(0.35, 0.22, 0.12), 2.0)
+		var w := sin(_t * 4.0) * 2.0
+		var pts := PackedVector2Array([Vector2(1, -30), Vector2(15, -26 + w), Vector2(1, -20)])
+		draw_colored_polygon(pts, _color)
+		draw_polyline(PackedVector2Array([pts[0], pts[1], pts[2], pts[0]]), _color.darkened(0.45), 1.0)
+
+
+## След лиги: гаснущие искры цвета лиги там, где прошёл бегун.
+class Trail extends Node2D:
+	var _who: Node2D
+	var _color: Color
+	var _dots: Array = []
+	var _last := Vector2.INF
+
+	func _init(who: Node2D, color: Color) -> void:
+		_who = who
+		_color = color
+
+	func tick(dt: float) -> void:
+		if not is_instance_valid(_who):
+			return
+		var p := _who.position
+		if _last == Vector2.INF or p.distance_to(_last) >= 10.0:
+			_dots.append([p + Vector2(randf_range(-4, 4), randf_range(-2, 2)), 0.0])
+			_last = p
+		for d in _dots:
+			d[1] = float(d[1]) + dt
+		_dots = _dots.filter(func(d: Array) -> bool: return float(d[1]) < 0.9)
+		queue_redraw()
+
+	func _draw() -> void:
+		for d in _dots:
+			var k := 1.0 - float(d[1]) / 0.9
+			draw_circle(d[0], 2.0 + 2.0 * k, Color(_color.r, _color.g, _color.b, 0.7 * k))
 
 
 ## Тени стен между клетками (под валунами), чтобы граница читалась и без картинок.

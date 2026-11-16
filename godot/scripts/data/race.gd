@@ -13,6 +13,8 @@ const SEATS := 4
 ## Флажки: попытки гонки. Восстанавливаются по одному.
 const FLAGS_MAX := 5
 const FLAG_EVERY := 3600
+## Флажки за рекламу: сколько в день.
+const AD_FLAGS := 3
 ## Сколько секунд после своего конца ждём итога живых соперников, если нет связи.
 const RESULT_WAIT := 90
 ## Как часто спрашивать сервер о ходе соперников (с).
@@ -129,6 +131,26 @@ const CRYSTALS := [10, 5, 3, 1]
 ## Ключ от сундука за место ("" - без ключа).
 const KEYS := ["silver", "copper", "", ""]
 
+# MARK: Уютные действия
+
+## Маяк: первый дошедший до Сердца зажигает его, остальным на BEACON_TIME секунд добыча +BEACON_BOOST.
+const BEACON_TIME := 120.0
+const BEACON_BOOST := 0.5
+## «Подбодрить»: отстающему CHEER_COST своих ресурсов, мне очко дружбы (+1 трофей), не больше CHEER_MAX за гонку.
+const CHEER_COST := 5
+const CHEER_MAX := 3
+## Смайлики над бегуном (значки Sprites, тот же список - в race_emote на сервере). Не чаще раза в EMOTE_EVERY с.
+const EMOTES := ["heart", "star", "flame", "clover", "fist", "trophy"]
+const EMOTE_EVERY := 3.0
+const EMOTE_SHOW := 4.0
+
+# MARK: Рейтинг
+
+## Награда за место в рейтинге дня (топ-10): кристаллы.
+const DAY_PRIZES := [50, 35, 25, 10]
+## Награда за место в рейтинге месяца (топ-100): кристаллы; первым трём - титул чемпиона, топ-10 - призёра.
+const MONTH_PRIZES := [500, 300, 200, 100, 30]
+
 ## Лиги по трофеям: порог и разовая награда кристаллами.
 const LEAGUES := [
 	{"id": "wood", "from": 0, "crystals": 0},
@@ -138,6 +160,50 @@ const LEAGUES := [
 	{"id": "emerald", "from": 1500, "crystals": 150},
 	{"id": "diamond", "from": 3000, "crystals": 300},
 ]
+
+
+## Цвет лиги: имя бегуна, знамя (с Серебра), след (с Золота).
+const LEAGUE_COLORS := ["c9a27a", "d08a4a", "dfe6ee", "ffd54a", "5fd39a", "9fe8ff"]
+const BANNER_FROM := 2
+const TRAIL_FROM := 3
+
+
+static func league_color(i: int) -> Color:
+	return Color(LEAGUE_COLORS[clampi(i, 0, LEAGUE_COLORS.size() - 1)])
+
+
+## Кристаллы за место в рейтинге дня (0 - вне топ-10).
+static func day_prize(place: int) -> int:
+	if place < 1 or place > 10:
+		return 0
+	return int(DAY_PRIZES[mini(place, DAY_PRIZES.size()) - 1])
+
+
+## Кристаллы за место в рейтинге месяца (0 - вне топ-100).
+static func month_prize(place: int) -> int:
+	if place < 1 or place > 100:
+		return 0
+	if place <= 3:
+		return int(MONTH_PRIZES[place - 1])
+	return int(MONTH_PRIZES[3]) if place <= 10 else int(MONTH_PRIZES[4])
+
+
+## Титул за место в рейтинге месяца: champion (1-3), medalist (4-10), top100, "" - нет.
+static func month_title(place: int) -> String:
+	if place < 1 or place > 100:
+		return ""
+	return "champion" if place <= 3 else ("medalist" if place <= 10 else "top100")
+
+
+## Название месяца по номеру (год * 12 + месяц - 1, как month_key на сервере): "11.2026".
+static func month_label(key: int) -> String:
+	return "%02d.%d" % [key % 12 + 1, key / 12]
+
+
+## Дата дня по номеру (дни от 1970-01-01, как day_key на сервере): "15.11".
+static func day_label(key: int) -> String:
+	var d := Time.get_date_dict_from_unix_time(key * 86400)
+	return "%02d.%02d" % [int(d["day"]), int(d["month"])]
 
 
 ## Время гонки как на секундомере: "8:05".

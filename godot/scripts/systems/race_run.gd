@@ -4,9 +4,11 @@ extends RefCounted
 ## Game.save["raceRun"], поэтому гонку можно закрыть и вернуться, пока идёт время:
 ## {seat, start (unix), seed, coins, xp, tool, bag {ресурс: n}, gates [3], shards [3], sold {ресурс: давление},
 ##  sold_at, finish (секунды от старта или -1), bots [{name, seat, skin, pace}], name, times [секунды этапов],
-##  room (id комнаты на сервере, 0 - гонка без сети)}.
+##  room (id комнаты на сервере, 0 - гонка без сети), cheers (сколько раз я подбодрил), gifts (сколько раз меня
+##  подбодрили - уже положено в сумку)}.
 ## Живой соперник лежит в bots на своём месте с human = true, times (его этапы от его старта), age (с от его
-## входа на момент ответа сервера), age_at (когда пришёл ответ), done (его итог известен).
+## входа на момент ответа сервера), age_at (когда пришёл ответ), done (его итог известен), league, emote и emote_at
+## (последний смайлик и когда он показан, unix).
 ## Время всегда передаётся снаружи (now - unix-секунды), чтобы тесты могли его двигать.
 
 var d: Dictionary
@@ -32,7 +34,7 @@ static func create(seat: int, now: float, seed_value: int, name: String) -> Race
 			bots.append(bot)
 	return RaceRun.new({"seat": seat, "start": now, "seed": seed_value, "name": name, "coins": 0, "xp": 0, "tool": 1,
 		"bag": {}, "gates": [false, false, false], "shards": [false, false, false], "sold": {}, "sold_at": now,
-		"finish": -1.0, "bots": bots, "times": [], "room": 0})
+		"finish": -1.0, "bots": bots, "times": [], "room": 0, "cheers": 0, "gifts": 0})
 
 
 ## Забег из сохранения (числа из JSON дробные - приводим).
@@ -56,6 +58,8 @@ static func from_save(raw: Variant) -> RaceRun:
 	r.d["finish"] = float(r.d.get("finish", -1.0))
 	r.d["start"] = float(r.d["start"])
 	r.d["room"] = int(r.d.get("room", 0))
+	r.d["cheers"] = clampi(int(r.d.get("cheers", 0)), 0, Race.CHEER_MAX)
+	r.d["gifts"] = maxi(0, int(r.d.get("gifts", 0)))
 	r.d["times"] = _floats(r.d.get("times", []))
 	for b in r.d.get("bots", []):
 		if b.has("times"):
@@ -148,6 +152,11 @@ func apply_humans(seats: Array, now: float) -> bool:
 			b["age"] = float(raw.get("age", 0.0))
 			b["age_at"] = now
 			b["done"] = bool(raw.get("done", false))
+			b["league"] = clampi(int(raw.get("league", 0)), 0, Race.LEAGUES.size() - 1)
+			var e := str(raw.get("emote", ""))
+			if e in Race.EMOTES and raw.get("emote_age") != null:
+				b["emote"] = e
+				b["emote_at"] = now - float(raw["emote_age"])
 	return changed
 
 
@@ -207,7 +216,7 @@ func hits_for(node: String) -> int:
 
 ## Добыча с точки: base единиц с учётом догоняния. Возвращает, сколько легло в сумку.
 func gather(kind: String, base: int, now: float) -> int:
-	var k := 1.0 + Race.CATCH_UP * float(behind(now))
+	var k := 1.0 + Race.CATCH_UP * float(behind(now)) + (Race.BEACON_BOOST if beacon_left(now) > 0.0 else 0.0)
 	var n := int(floor(float(base) * k))
 	if randf() < float(base) * k - float(n):
 		n += 1
@@ -389,6 +398,91 @@ func finish(now: float) -> bool:
 		return false
 	d["finish"] = elapsed(now)
 	return true
+
+
+# MARK: Маяк и «Подбодрить»
+
+## Секунда гонки, когда соперник первым дошёл до Сердца и зажёг маяк (INF - ещё никто).
+func beacon_at() -> float:
+	var best := INF
+	for b in d["bots"]:
+		var fin := float(b["pace"])
+		if bool(b.get("human", false)):
+			var times: Array = b.get("times", [])
+			fin = float(times[6]) if times.size() >= 7 else INF
+		if fin <= float(Race.DURATION):
+			best = minf(best, fin)
+	return best
+
+
+## Сколько ещё секунд маяк ускоряет мою добычу (0 - не горит, погас или я сам уже дошёл).
+func beacon_left(now: float) -> float:
+	var at := beacon_at()
+	var t := elapsed(now)
+	if finished() or at == INF or t < at:
+		return 0.0
+	return maxf(0.0, at + Race.BEACON_TIME - t)
+
+
+## Я зажёг маяк: дошёл раньше всех соперников.
+func lit_beacon() -> bool:
+	return finished() and float(d["finish"]) < beacon_at()
+
+
+func cheers() -> int:
+	return int(d.get("cheers", 0))
+
+
+## Кого подбодрить: соперник в пути, у которого этапов меньше моего (самый отстающий). -1 - некого.
+func cheer_target(now: float) -> int:
+	var t := minf(elapsed(now), float(Race.DURATION))
+	var out := -1
+	var low := my_steps()
+	for b in d["bots"]:
+		var k := bot_steps(b, t)
+		if k < 7 and k < low:
+			low = k
+			out = int(b["seat"])
+	return out
+
+
+## Ресурс, которым буду делиться: какого больше всего (не меньше CHEER_COST). "" - нечем.
+func cheer_kind() -> String:
+	var best := ""
+	for k in d["bag"]:
+		if have(k) >= Race.CHEER_COST and (best == "" or have(k) > have(best)):
+			best = k
+	return best
+
+
+func can_cheer(now: float) -> bool:
+	return not ended(now) and cheers() < Race.CHEER_MAX and cheer_target(now) >= 0 and cheer_kind() != ""
+
+
+## Подбодрить отстающего: CHEER_COST ресурсов из сумки, очко дружбы. Ответ: {seat, kind, human} или {}.
+func cheer(now: float) -> Dictionary:
+	if not can_cheer(now):
+		return {}
+	var target := cheer_target(now)
+	var kind := cheer_kind()
+	_take([[kind, Race.CHEER_COST]])
+	d["cheers"] = cheers() + 1
+	var human := false
+	for b in d["bots"]:
+		if int(b["seat"]) == target:
+			human = bool(b.get("human", false))
+	return {"seat": target, "kind": kind, "human": human}
+
+
+## Меня подбодрили total раз (по данным сервера): новые подарки - еда моего угла в сумку. Ответ: сколько новых.
+func receive_gifts(total: int) -> int:
+	var fresh := total - int(d.get("gifts", 0))
+	if fresh <= 0:
+		return 0
+	d["gifts"] = total
+	var food := str(Race.FOOD[biome])
+	d["bag"][food] = have(food) + fresh * Race.CHEER_COST
+	return fresh
 
 
 # MARK: Соперники и места

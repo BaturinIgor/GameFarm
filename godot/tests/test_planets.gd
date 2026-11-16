@@ -110,7 +110,7 @@ func test_week_has_six_goals() -> void:
 
 func test_game_center_lists() -> void:
 	var all := GCenter.all_achievements()
-	eq(all.size(), Quests.achievements().size() + Trophies.IDS.size(), "все достижения и трофеи")
+	eq(all.size(), Quests.achievements().size() + Trophies.IDS.size() + GCenter.RACE.size(), "все достижения, трофеи и гонка")
 	check(GCenter.pending_achievements().is_empty(), "у нового игрока нечего отправлять")
 	Game.save["kills"] = 60
 	check("trophy.wolf" in GCenter.pending_achievements(), "трофей волка выполнен")

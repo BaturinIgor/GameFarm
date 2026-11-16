@@ -2,7 +2,8 @@ class_name GCenter
 ## Game Center: достижения и таблицы лидеров. Плагин GameCenter из godot-ios-plugins собирает ios-godot.yml.
 ## Без плагина (Android, ПК, тесты) LIVE = false и ничего не происходит.
 ## Достижения Game Center повторяют достижения игры (Quests.achievements) и трофеи гостиной (Trophies):
-## отправляем, как только условие выполнено. Таблицы: уровень героя, лучший этап праздника, заработанные монеты.
+## отправляем, как только условие выполнено, плюс достижения гонки к Сердцу долины (RACE).
+## Таблицы: уровень героя, лучший этап праздника, заработанные монеты, трофеи гонки.
 ## Что уже отправлено - в Game.save.gc = {ach: [id], scores: {таблица: значение}}, чтобы не слать повторно.
 ## Сами достижения и таблицы заводит в App Store Connect tools/appstore/asc_gamecenter.py (те же id).
 
@@ -10,7 +11,10 @@ static var LIVE: bool = Engine.has_singleton("GameCenter")
 
 const PREFIX := "hh."
 ## Таблицы лидеров: id -> откуда берём значение.
-const BOARDS := ["level", "event_stage", "coins"]
+const BOARDS := ["level", "event_stage", "coins", "race_trophies"]
+## Достижения гонки: id (число в конце - ступень картинки) -> [что считаем, сколько нужно, очки Game Center].
+const RACE := {"race.win_1": ["wins", 1, 5], "race.wins_2": ["wins", 10, 10], "race.league_3": ["league", 3, 15],
+	"race.league_4": ["league", 5, 15]}
 ## Как часто сверять достижения и очки (секунды).
 const SYNC_EVERY := 30.0
 
@@ -93,12 +97,18 @@ static func all_achievements() -> Array:
 		out.append("ach." + str(a["id"]))
 	for t in Trophies.IDS:
 		out.append("trophy." + str(t))
+	for r in RACE:
+		out.append(r)
 	return out
 
 
 static func earned(id: String) -> bool:
 	if id.begins_with("trophy."):
 		return Trophies.is_earned(id.substr(7))
+	if RACE.has(id):
+		var need: Array = RACE[id]
+		var have := int(Game.race.places()[0]) if need[0] == "wins" else Game.race.league()
+		return have >= int(need[1])
 	var key := id.substr(4)
 	for a in Quests.achievements():
 		if a["id"] == key:
@@ -116,6 +126,7 @@ static func score(board: String) -> int:
 		"level": return Game.level
 		"event_stage": return int(Game.save.get("eventBestEver", 0))
 		"coins": return int(Game.save.get("coinsEarned", 0))
+		"race_trophies": return Game.race.trophies()
 	return 0
 
 
@@ -144,7 +155,8 @@ static func manifest() -> Dictionary:
 	for t in Trophies.IDS:
 		ach.append({"id": PREFIX + "trophy." + str(t), "ref": "trophy " + str(t), "family": "trophy_" + str(t),
 			"points": 40, "trophy": str(t)})
-	# Game Center: не больше 1000 очков на игру
+	# Game Center: не больше 1000 очков на игру. Очки гонки (45) добавлены в оставшийся запас без сжатия,
+	# чтобы не менять очки уже заведённых достижений
 	var total := 0
 	for x in ach:
 		total += int(x["points"])
@@ -154,12 +166,18 @@ static func manifest() -> Dictionary:
 		boards.append({"id": PREFIX + b, "ref": "board " + b, "names": {}})
 	for x in ach:
 		x["points"] = maxi(1, floori(float(x["points"]) * k))
+	for r in RACE:
+		ach.append({"id": PREFIX + r, "ref": r.replace(".", " "), "family": "race", "points": int(RACE[r][2]), "race": r})
+	for x in ach:
 		x["names"] = {}
 		x["text"] = {}
 	for c in L.CODES:
 		L.set_language(c, false)
 		for x in ach:
-			if x.has("trophy"):
+			if x.has("race"):
+				x["names"][c] = L.t("gc." + str(x["race"]))
+				x["text"][c] = L.t("gc." + str(x["race"]) + ".text")
+			elif x.has("trophy"):
 				x["names"][c] = Trophies.name_of(str(x["trophy"]))
 				x["text"][c] = Trophies.condition(str(x["trophy"]))
 			else:
@@ -171,4 +189,5 @@ static func manifest() -> Dictionary:
 	for x in ach:
 		x.erase("a")
 		x.erase("trophy")
+		x.erase("race")
 	return {"achievements": ach, "leaderboards": boards}
