@@ -275,3 +275,9 @@ func _spare_value(run: RaceRun, keep: Array, now: float) -> int:
 		if spare > 0:
 			total += int(float(spare) * run.price(kind, now) * 0.9)
 	return total
+
+
+func test_clock() -> void:
+	eq(Race.clock(0.0), "0:00")
+	eq(Race.clock(65.2), "1:06")
+	eq(Race.clock(900.0), "15:00")

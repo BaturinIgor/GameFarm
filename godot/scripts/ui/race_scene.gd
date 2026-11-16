@@ -566,6 +566,7 @@ func _show_end() -> void:
 	var now := Clock.now()
 	var place := run.place(now)
 	_end_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_end_layer.z_index = 200
 	add_child(_end_layer)
 	var dim := ColorRect.new()
 	dim.color = Color(0, 0, 0, 0.55)
@@ -585,7 +586,7 @@ func _show_end() -> void:
 	big.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(big)
 	if run.finished():
-		var tl := UiKit.label(L.t("race.finishedAt", [Fmt.seconds(float(run.d["finish"]))]), 13, UiKit.INK_SOFT)
+		var tl := UiKit.label(L.t("race.finishedAt", [Race.clock(float(run.d["finish"]))]), 13, UiKit.INK_SOFT)
 		tl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		col.add_child(tl)
 	var at := now if not run.finished() else float(run.d["start"]) + float(run.d["finish"])
@@ -669,6 +670,7 @@ func _build_ui() -> void:
 	top_holder.add_theme_constant_override("margin_right", 10)
 	top_holder.add_theme_constant_override("margin_top", int(insets["top"]) + 6)
 	top_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	top_holder.z_index = 150
 	add_child(top_holder)
 	_top.add_theme_constant_override("separation", 4)
 	_top.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -706,6 +708,7 @@ func _build_ui() -> void:
 	bottom_holder.add_theme_constant_override("margin_right", 8)
 	bottom_holder.add_theme_constant_override("margin_bottom", int(insets["bottom"]) + 8)
 	bottom_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bottom_holder.z_index = 150
 	add_child(bottom_holder)
 	_bottom.add_theme_constant_override("separation", 6)
 	_bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -727,7 +730,7 @@ func _build_ui() -> void:
 
 
 func _refresh_top(now: float) -> void:
-	_timer_label.text = Fmt.seconds(ceilf(run.left(now)))
+	_timer_label.text = Race.clock(ceilf(run.left(now)))
 	_stat_label.text = "%s\n%s" % [L.t("race.level", [run.level()]), L.t("race.tool", [run.tool()])]
 	_hp_bar.visible = _fight >= 0 or _hp < run.hero_hp() - 0.5
 	_hp_bar.value = clampf(_hp / run.hero_hp(), 0.0, 1.0)
@@ -760,7 +763,7 @@ func _board_row(n: int, r: Dictionary) -> Control:
 	var steps := float(int(r["steps"])) / 7.0
 	h.add_child(UiKit.bar(steps, "gold" if bool(r["me"]) else "green", 140.0, 8.0))
 	if float(r["finish"]) >= 0.0:
-		h.add_child(UiKit.label(Fmt.seconds(float(r["finish"])), 11, color, 4))
+		h.add_child(UiKit.label(Race.clock(float(r["finish"])), 11, color, 4))
 	return h
 
 
@@ -775,7 +778,7 @@ func _standing_row(n: int, r: Dictionary) -> Control:
 	var nl := UiKit.label(name, 14, UiKit.INK if me else UiKit.INK_SOFT)
 	nl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	h.add_child(nl)
-	var right := Fmt.seconds(float(r["finish"])) if float(r["finish"]) >= 0.0 else L.t("race.steps", [int(r["steps"])])
+	var right := Race.clock(float(r["finish"])) if float(r["finish"]) >= 0.0 else L.t("race.steps", [int(r["steps"])])
 	h.add_child(UiKit.label(right, 12, UiKit.INK_SOFT))
 	return h
 

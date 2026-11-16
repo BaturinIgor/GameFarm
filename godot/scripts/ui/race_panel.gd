@@ -35,7 +35,7 @@ func build() -> void:
 		if run.decided(now):
 			v.add_child(UiKit.label(L.t("race.place", [run.place(now)]), 20))
 		else:
-			v.add_child(UiKit.label(L.t("race.left", [Fmt.seconds(run.left(now))]), 16))
+			v.add_child(UiKit.label(L.t("race.left", [Race.clock(run.left(now))]), 16))
 		var back := UiKit.button(L.t("race.resume"), "green", 17)
 		back.pressed.connect(func() -> void:
 			close()
@@ -92,23 +92,26 @@ func build() -> void:
 	s.add_child(places)
 	s.add_child(UiKit.label(L.t("race.races", [sys.races()]), 12, UiKit.INK_SOFT))
 	if sys.best() > 0.0:
-		s.add_child(UiKit.label(L.t("race.best", [Fmt.seconds(sys.best())]), 12, UiKit.INK_SOFT))
+		s.add_child(UiKit.label(L.t("race.best", [Race.clock(sys.best())]), 12, UiKit.INK_SOFT))
 
 	# Награды за место
 	var r := TraderPanel.card_box(content, Color("f4d6a0"), 3)
 	r.add_child(UiKit.label(L.t("race.rewardsTitle"), 15))
 	for i in Race.SEATS:
 		var rw := RaceSystem.reward_for(i + 1)
-		var h := HBoxContainer.new()
-		h.add_theme_constant_override("separation", 10)
+		var h := HFlowContainer.new()
+		h.add_theme_constant_override("h_separation", 8)
 		var pl := UiKit.label(L.t("race.place", [i + 1]), 13)
-		pl.custom_minimum_size = Vector2(90, 0)
+		pl.custom_minimum_size = Vector2(76, 0)
 		h.add_child(pl)
 		h.add_child(UiKit.icon_any("px:trophy", 16))
 		h.add_child(UiKit.label("+%d" % int(rw["trophies"]), 13))
 		h.add_child(UiKit.icon_any("px:gem", 16))
 		h.add_child(UiKit.label("+%d" % int(rw["crystals"]), 13))
 		if str(rw["key"]) != "":
-			h.add_child(UiKit.icon_any("px:key", 16))
-			h.add_child(UiKit.label(Chests.key_name(str(rw["key"])), 13))
+			var key := HBoxContainer.new()
+			key.add_theme_constant_override("separation", 4)
+			key.add_child(UiKit.icon_any("px:key", 16))
+			key.add_child(UiKit.label(Chests.key_name(str(rw["key"])), 13))
+			h.add_child(key)
 		r.add_child(h)

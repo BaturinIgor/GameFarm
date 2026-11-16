@@ -136,6 +136,12 @@ const LEAGUES := [
 ]
 
 
+## Время гонки как на секундомере: "8:05".
+static func clock(sec: float) -> String:
+	var t := maxi(0, int(ceilf(sec)))
+	return "%d:%02d" % [t / 60, t % 60]
+
+
 static func league_of(trophies: int) -> int:
 	var out := 0
 	for i in LEAGUES.size():
