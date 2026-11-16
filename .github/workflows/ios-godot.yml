@@ -31,6 +31,10 @@ on:
         description: "Только завести новые покупки из tools/appstore/iap_1_1.json (без сборки)"
         type: boolean
         default: false
+      gamecenter:
+        description: "Только завести достижения и таблицы Game Center из tools/appstore/gamecenter/manifest.json (без сборки)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -70,8 +74,32 @@ jobs:
             --data tools/appstore/iap_1_1.json --shot tools/appstore/screenshots/en/03_6_chest_open10.png
           rm -f "$KEY"
 
+  # Достижения и таблицы Game Center через API (то же, что asc_gamecenter.py на Маке).
+  # Уже заведённое скрипт пропускает.
+  gamecenter:
+    if: inputs.gamecenter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create Game Center achievements and leaderboards
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          set -euo pipefail
+          KEY="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"
+          if printf '%s' "$ASC_KEY_P8" | grep -q "BEGIN PRIVATE KEY"; then
+            printf '%s\n' "$ASC_KEY_P8" > "$KEY"
+          else
+            printf '%s' "$ASC_KEY_P8" | base64 --decode > "$KEY"
+          fi
+          cd tools/appstore
+          python3 asc_gamecenter.py --issuer "$ASC_ISSUER_ID" --key-id "$ASC_KEY_ID" --key "$KEY"
+          rm -f "$KEY"
+
   build:
-    if: ${{ !inputs.iap }}
+    if: ${{ !inputs.iap && !inputs.gamecenter }}
     runs-on: macos-26
     timeout-minutes: 60
     steps:
