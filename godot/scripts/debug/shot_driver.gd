@@ -822,6 +822,9 @@ func _extra(k: int) -> void:
 		_ when k == 64 + 2 * Story.count():
 			_shot("10_race_panel")
 			_check_layout("race")
+			_scroll_window(3000)
+		_ when k == 65 + 2 * Story.count():
+			_shot("10_race_rating")
 			main.hud.close_window()
 			Game.race.start(6)
 			_race = RaceScene.launch()
