@@ -1,35 +1,14 @@
 class_name RaidPill
 extends Button
-## Плашка набега справа: за 5 минут до набега - таймер (нажатие - окно с кнопкой "Отложить на час"),
+## Кружок набега в ряду таймеров: за 5 минут до набега - таймер (нажатие - окно с кнопкой "Отложить на час"),
 ## во время набега - сколько монстров осталось. В остальное время скрыта. Раз в секунду ведёт расписание.
 
-var _row := HBoxContainer.new()
 var _text: Label
 var _tick := 0.0
 
 
 func _init() -> void:
-	focus_mode = Control.FOCUS_NONE
-	size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var s := UiKit.pill_style()
-	s.set_corner_radius_all(13)
-	s.set_content_margin_all(0)
-	s.bg_color = Color(0.62, 0.18, 0.14, 0.92)
-	var down := s.duplicate() as GameStyle
-	down.bg_color = s.bg_color.darkened(0.15)
-	for state in ["normal", "hover", "disabled", "focus"]:
-		add_theme_stylebox_override(state, s)
-	add_theme_stylebox_override("pressed", down)
-	add_theme_stylebox_override("hover_pressed", down)
-	_row.add_theme_constant_override("separation", 5)
-	_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(_row)
-	_row.add_child(UiKit.icon("swords", 20))
-	_text = UiKit.title("", 12)
-	_text.label_settings.outline_size = 4
-	_row.add_child(_text)
+	_text = HudRound.circle(self, UiKit.icon("swords", 26), Color(0.62, 0.18, 0.14, 0.92))
 	pressed.connect(_open)
 	visible = false
 
@@ -47,13 +26,13 @@ func _refresh() -> void:
 	var rs := Game.raids
 	if not rs.live.is_empty():
 		visible = true
-		_text.text = L.t("raid.left", [rs.monsters_left()])
+		# В кружке только число: рядом со значком мечей понятно, что это монстры
+		_text.text = str(rs.monsters_left())
 	elif rs.warning():
 		visible = true
 		_text.text = House.countdown(rs.left())
 	else:
 		visible = false
-	custom_minimum_size = _row.get_combined_minimum_size() + Vector2(16, 10)
 
 
 ## Что будет и что можно сделать: вернуться домой, отложить.
