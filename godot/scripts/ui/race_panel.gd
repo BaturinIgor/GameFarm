@@ -115,6 +115,14 @@ func build() -> void:
 	looks.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	t.add_child(looks)
 
+	# «Наряд гонщика»: золотое знамя и радужный след сразу, в любой лиге
+	if not sys.has_kit():
+		var parts := ShopPanel.shop_card(Products.title("racerKit"), "gold")
+		var kv: VBoxContainer = parts[1]
+		kv.add_child(HousePanel.wrapped(L.t("race.kitDesc"), 12))
+		kv.add_child(ShopPanel.buy_button("racerKit", "orange"))
+		content.add_child(parts[0])
+
 	# Места
 	var s := TraderPanel.card_box(content, Color("a8c5e6"), 3)
 	s.add_child(UiKit.label(L.t("race.stats"), 15))

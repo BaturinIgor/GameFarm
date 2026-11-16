@@ -122,6 +122,8 @@ const CATCH_UP := 0.15
 const BOT_PACES := [570.0, 660.0, 810.0]
 ## Доли пути, на которых странник проходит этапы: ворота 1, осколок 1, осколок 2, ворота 2, осколок 3, ворота 3.
 const BOT_STEPS := [0.28, 0.32, 0.58, 0.62, 0.85, 0.95]
+## Странники быстрее в высоких лигах: множитель их времени до Сердца по лиге комнаты.
+const LEAGUE_PACE := [1.0, 0.97, 0.94, 0.91, 0.88, 0.85]
 const BOT_SKINS := ["farmerWoman", "farmerMan", "cowboy", "builder", "elf", "detective"]
 
 # MARK: Награды
@@ -166,6 +168,8 @@ const LEAGUES := [
 const LEAGUE_COLORS := ["c9a27a", "d08a4a", "dfe6ee", "ffd54a", "5fd39a", "9fe8ff"]
 const BANNER_FROM := 2
 const TRAIL_FROM := 3
+## «Наряд гонщика» (покупка racerKit): золотое знамя и радужный след, только внешний вид.
+const KIT_COLOR := "ffd54a"
 
 
 static func league_color(i: int) -> Color:

@@ -19,7 +19,8 @@ func _init(data: Dictionary = {}) -> void:
 
 
 ## Новый забег: место игрока и три странника на остальных местах.
-static func create(seat: int, now: float, seed_value: int, name: String) -> RaceRun:
+## league - лига комнаты: странники в ней быстрее (Race.LEAGUE_PACE).
+static func create(seat: int, now: float, seed_value: int, name: String, league := 0) -> RaceRun:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
 	# Странники по всем 4 местам из seed (у всех в комнате одинаковые), своё место пропускаем
@@ -27,7 +28,8 @@ static func create(seat: int, now: float, seed_value: int, name: String) -> Race
 	var paces: Array = Race.BOT_PACES.duplicate()
 	var shift := rng.randi_range(0, paces.size() - 1)
 	for s in Race.SEATS:
-		var pace: float = paces[(s + shift) % paces.size()] * rng.randf_range(0.93, 1.07)
+		var pace: float = paces[(s + shift) % paces.size()] * rng.randf_range(0.93, 1.07) \
+			* float(Race.LEAGUE_PACE[clampi(league, 0, Race.LEAGUE_PACE.size() - 1)])
 		var bot := {"name": "Farmer%04d" % rng.randi_range(0, 9999), "seat": s,
 			"skin": Race.BOT_SKINS[rng.randi_range(0, Race.BOT_SKINS.size() - 1)], "pace": pace}
 		if s != seat:
@@ -153,6 +155,7 @@ func apply_humans(seats: Array, now: float) -> bool:
 			b["age_at"] = now
 			b["done"] = bool(raw.get("done", false))
 			b["league"] = clampi(int(raw.get("league", 0)), 0, Race.LEAGUES.size() - 1)
+			b["kit"] = bool(raw.get("kit", false))
 			var e := str(raw.get("emote", ""))
 			if e in Race.EMOTES and raw.get("emote_age") != null:
 				b["emote"] = e

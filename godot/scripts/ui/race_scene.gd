@@ -103,7 +103,7 @@ func _ready() -> void:
 	_hp = run.hero_hp()
 	_player.position = _spawn_point()
 	_entities.add_child(_player)
-	_dress(_player, Game.race.league(), true)
+	_dress(_player, Game.race.league(), true, Game.race.has_kit())
 	_cam = _player.position
 	add_child(_joy)
 	_build_ui()
@@ -171,7 +171,7 @@ func _build_map() -> void:
 		p.add_child(tag)
 		_rivals[int(b["seat"])] = p
 		_tags[int(b["seat"])] = tag
-		_dress(p, _rival_league(b), false)
+		_dress(p, _rival_league(b), false, false)
 	_sync_gates()
 
 
@@ -615,6 +615,8 @@ func _refresh_rivals() -> void:
 		if _tags.has(s):
 			(_tags[s] as Label).text = _rival_name(b)
 			(_tags[s] as Label).label_settings = Fx.label_settings(11, Race.league_color(_rival_league(b)).lightened(0.2))
+		if _rivals.has(s) and bool(b.get("human", false)):
+			_dress(_rivals[s], _rival_league(b), false, bool(b.get("kit", false)))
 		if _rivals.has(s):
 			(_rivals[s] as Player).set_skin(str(b["skin"]))
 			(_rivals[s] as Player).modulate = Color.WHITE if bool(b.get("human", false)) else Color(1, 1, 1, 0.85)
@@ -694,10 +696,14 @@ func _show_end() -> void:
 	var btn := UiKit.button(L.t("race.claim"), "green")
 	btn.pressed.connect(_claim)
 	col.add_child(btn)
+	# Ролик удваивает кристаллы и ключ (трофеи - нет)
+	var ad := Ads.reward_button(L.t(Ads.k("race.adDouble")), "blue", 14)
+	ad.pressed.connect(func() -> void: Ads.show_rewarded(func() -> void: _claim(true)))
+	col.add_child(ad)
 
 
-func _claim() -> void:
-	var got := Game.race.claim()
+func _claim(double := false) -> void:
+	var got := Game.race.claim(double)
 	queue_free()
 	if not got.is_empty() and int(got.get("league", -1)) >= 0:
 		Game.show_toast("px:trophy", L.t("race.leagueUp", [Race.league_name(int(got["league"]))]))
@@ -1013,13 +1019,18 @@ func _rival_league(b: Dictionary) -> int:
 
 
 ## Оформление лиги: знамя над бегуном (с Серебра) и след за своим бегуном (с Золота).
-func _dress(p: Player, league: int, me: bool) -> void:
-	if league >= Race.BANNER_FROM:
-		var f := Banner.new(Race.league_color(league))
+## С «Нарядом гонщика» (kit) знамя золотое, а след радужный при любой лиге.
+func _dress(p: Player, league: int, me: bool, kit: bool) -> void:
+	var old := p.get_node_or_null("Banner")
+	if old != null:
+		old.free()
+	if league >= Race.BANNER_FROM or kit:
+		var f := Banner.new(Color(Race.KIT_COLOR) if kit else Race.league_color(league), kit)
+		f.name = "Banner"
 		f.position = Vector2(14 if me else -22, -58)
 		p.add_child(f)
-	if me and league >= Race.TRAIL_FROM:
-		var tr := Trail.new(p, Race.league_color(league))
+	if me and (league >= Race.TRAIL_FROM or kit):
+		var tr := Trail.new(p, Race.league_color(league), kit)
 		_flat.add_child(tr)
 		_trails.append(tr)
 
@@ -1297,9 +1308,12 @@ class EmoteBubble extends Node2D:
 class Banner extends Node2D:
 	var _color: Color
 	var _t := randf() * TAU
+	## Знамя «Наряда гонщика»: со звездой на древке.
+	var _kit := false
 
-	func _init(color: Color) -> void:
+	func _init(color: Color, kit := false) -> void:
 		_color = color
+		_kit = kit
 		z_index = 30
 
 	func _process(dt: float) -> void:
@@ -1312,6 +1326,8 @@ class Banner extends Node2D:
 		var pts := PackedVector2Array([Vector2(1, -30), Vector2(15, -26 + w), Vector2(1, -20)])
 		draw_colored_polygon(pts, _color)
 		draw_polyline(PackedVector2Array([pts[0], pts[1], pts[2], pts[0]]), _color.darkened(0.45), 1.0)
+		if _kit:
+			draw_circle(Vector2(0, -32), 3.0, Color(1, 0.95, 0.6))
 
 
 ## След лиги: гаснущие искры цвета лиги там, где прошёл бегун.
@@ -1321,9 +1337,13 @@ class Trail extends Node2D:
 	var _dots: Array = []
 	var _last := Vector2.INF
 
-	func _init(who: Node2D, color: Color) -> void:
+	## Радужный след «Наряда гонщика».
+	var _rainbow := false
+
+	func _init(who: Node2D, color: Color, rainbow := false) -> void:
 		_who = who
 		_color = color
+		_rainbow = rainbow
 
 	func tick(dt: float) -> void:
 		if not is_instance_valid(_who):
@@ -1340,7 +1360,8 @@ class Trail extends Node2D:
 	func _draw() -> void:
 		for d in _dots:
 			var k := 1.0 - float(d[1]) / 0.9
-			draw_circle(d[0], 2.0 + 2.0 * k, Color(_color.r, _color.g, _color.b, 0.7 * k))
+			var c := Color.from_hsv(fposmod((d[0] as Vector2).x * 0.004 + (d[0] as Vector2).y * 0.004, 1.0), 0.6, 1.0) if _rainbow else _color
+			draw_circle(d[0], 2.0 + 2.0 * k, Color(c.r, c.g, c.b, 0.7 * k))
 
 
 ## Тени стен между клетками (под валунами), чтобы граница читалась и без картинок.

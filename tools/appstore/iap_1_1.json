@@ -438,5 +438,115 @@
     "500水晶，今天戰爭攻擊+5次，獎盃+10"
    ]
   ]
+ },
+ {
+  "id": "com.personal.gamefarm.racerkit",
+  "type": "Non-Consumable",
+  "ref": "Racer Outfit",
+  "price": "1.99",
+  "locs": [
+   [
+    "en",
+    "en",
+    "Racer Outfit",
+    "Gold banner and rainbow trail in the Valley Race"
+   ],
+   [
+    "ru",
+    "ru",
+    "Наряд гонщика",
+    "Золотое знамя и радужный след в гонке долины"
+   ],
+   [
+    "de",
+    "de",
+    "Rennoutfit",
+    "Goldbanner und Regenbogenspur im Talrennen"
+   ],
+   [
+    "es",
+    "es",
+    "Traje de corredor",
+    "Estandarte dorado y estela arcoíris en la carrera"
+   ],
+   [
+    "fr",
+    "fr",
+    "Tenue de coureur",
+    "Bannière dorée et traînée arc-en-ciel en course"
+   ],
+   [
+    "it",
+    "it",
+    "Tenuta da corsa",
+    "Stendardo dorato e scia arcobaleno nella gara"
+   ],
+   [
+    "pt-BR",
+    "pt-BR",
+    "Traje de corredor",
+    "Estandarte dourado e rastro arco-íris na corrida"
+   ],
+   [
+    "pl",
+    "pl",
+    "Strój biegacza",
+    "Złoty sztandar i tęczowy ślad w wyścigu doliny"
+   ],
+   [
+    "tr",
+    "tr",
+    "Yarışçı kıyafeti",
+    "Vadi yarışında altın sancak ve gökkuşağı izi"
+   ],
+   [
+    "id",
+    "id",
+    "Kostum pembalap",
+    "Panji emas dan jejak pelangi di balapan lembah"
+   ],
+   [
+    "vi",
+    "vi",
+    "Trang phục tay đua",
+    "Cờ vàng và vệt cầu vồng trong cuộc đua thung lũng"
+   ],
+   [
+    "th",
+    "th",
+    "ชุดนักแข่ง",
+    "ธงทองและรอยรุ้งในการแข่งหุบเขา"
+   ],
+   [
+    "hi",
+    "hi",
+    "धावक पोशाक",
+    "घाटी रेस में सुनहरा झंडा और इंद्रधनुषी निशान"
+   ],
+   [
+    "ja",
+    "ja",
+    "レーサー衣装",
+    "谷のレースで金の旗と虹の軌跡"
+   ],
+   [
+    "ko",
+    "ko",
+    "레이서 의상",
+    "골짜기 레이스의 황금 깃발과 무지개 발자취"
+   ],
+   [
+    "zh-Hans",
+    "zh-Hans",
+    "赛跑装扮",
+    "山谷竞速中的金色旗帜和彩虹足迹"
+   ],
+   [
+    "zh-Hant",
+    "zh-Hant",
+    "賽跑裝扮",
+    "山谷競速中的金色旗幟和彩虹足跡"
+   ]
+  ]
  }
 ]

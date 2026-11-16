@@ -134,7 +134,8 @@ func can_start() -> bool:
 
 
 ## Новый забег: флажок, место (угол) и странники. Возвращает забег или null.
-func start(seed_value := -1, seat := -1, room := 0) -> RaceRun:
+## league - лига комнаты (странники быстрее), -1 - своя.
+func start(seed_value := -1, seat := -1, room := 0, room_league := -1) -> RaceRun:
 	if not can_start():
 		return null
 	var f: Dictionary = Game.save["raceFlags"]
@@ -142,7 +143,8 @@ func start(seed_value := -1, seat := -1, room := 0) -> RaceRun:
 		f["at"] = Clock.now()
 	f["n"] = int(f["n"]) - 1
 	var s := seed_value if seed_value >= 0 else randi()
-	_run = RaceRun.create(seat if seat >= 0 else s % Race.SEATS, Clock.now(), s, Game.rating.player_name())
+	_run = RaceRun.create(seat if seat >= 0 else s % Race.SEATS, Clock.now(), s, Game.rating.player_name(),
+		room_league if room_league >= 0 else league())
 	_run.d["room"] = room
 	Game.save["raceRun"] = _run.d
 	Game.mark_dirty()
@@ -159,12 +161,13 @@ func start_online() -> RaceRun:
 	busy = true
 	Game.changed.emit()
 	var res: Variant = await Game.rating.call_rpc("race_join",
-		{"p_name": Game.rating.player_name(), "p_skin": Skins.current(), "p_league": league()})
+		{"p_name": Game.rating.player_name(), "p_skin": Skins.current(), "p_league": league(), "p_kit": has_kit()})
 	busy = false
 	if not can_start():
 		return null
 	if res is Dictionary and int(res.get("room", 0)) > 0:
-		return start(int(res["seed"]), clampi(int(res.get("seat", 0)), 0, Race.SEATS - 1), int(res["room"]))
+		return start(int(res["seed"]), clampi(int(res.get("seat", 0)), 0, Race.SEATS - 1), int(res["room"]),
+			clampi(int(res.get("league", league())), 0, Race.LEAGUES.size() - 1))
 	return start()
 
 
@@ -223,7 +226,7 @@ static func reward_for(place: int) -> Dictionary:
 
 ## Забрать итог (когда он известен): трофеи, кристаллы, ключ, статистика. Возвращает награду с местом
 ## ({} - итога ещё нет).
-func claim() -> Dictionary:
+func claim(double := false) -> Dictionary:
 	if _run == null or not _run.decided(Clock.now()):
 		return {}
 	var place := _run.place(Clock.now())
@@ -250,9 +253,13 @@ func claim() -> Dictionary:
 		s["league"] = after
 		r["league"] = after
 		r["league_crystals"] = int(Race.LEAGUES[after]["crystals"])
+	# Ролик после гонки удваивает кристаллы и ключ за место (трофеи и награду лиги - нет)
+	r["double"] = double
+	if double:
+		r["crystals"] = int(r["crystals"]) * 2
 	Game.shop.add_crystals(int(r["crystals"]) + int(r["league_crystals"]))
 	if r["key"] != "":
-		Game.chests.add_keys(r["key"], 1, false)
+		Game.chests.add_keys(r["key"], 2 if double else 1, false)
 	if _run.room() > 0:
 		_run.mark(Clock.now())
 		Game.save["racePending"].append({"room": _run.room(), "place": place, "times": _run.d["times"].duplicate()})
@@ -353,6 +360,11 @@ func touch() -> void:
 
 
 # MARK: Статистика
+
+## Куплен «Наряд гонщика».
+func has_kit() -> bool:
+	return Game.premium.owns("racerKit")
+
 
 func trophies() -> int:
 	return int(_s()["trophies"])

@@ -20,6 +20,8 @@ create table if not exists public.race_rooms (
   created_at timestamptz not null default now()
 );
 create index if not exists race_rooms_open on public.race_rooms (created_at) where humans < 4;
+-- Лига того, кто открыл комнату: в неё зовут игроков соседних лиг, странники в ней быстрее (Race.LEAGUE_PACE).
+alter table public.race_rooms add column if not exists league int not null default 0;
 
 create table if not exists public.race_seats (
   room_id    bigint      not null references public.race_rooms (id) on delete cascade,
@@ -40,6 +42,8 @@ alter table public.race_seats add column if not exists gifts    int         not 
 alter table public.race_seats add column if not exists cheers   int         not null default 0;
 alter table public.race_seats add column if not exists emote    text        not null default '';
 alter table public.race_seats add column if not exists emote_at timestamptz;
+-- Куплен «Наряд гонщика»: золотое знамя и радужный след у бегуна.
+alter table public.race_seats add column if not exists kit      boolean     not null default false;
 
 create table if not exists public.race_results (
   room_id    bigint      not null,
@@ -120,13 +124,15 @@ begin
   return res;
 end $$;
 
--- Войти в гонку: свободное место в открытой комнате или новая комната. Ответ: {room, seed, seat}.
--- p_league - лига игрока (только оформление бегуна у соперников).
+-- Войти в гонку: свободное место в открытой комнате игроков соседней лиги (+-1) или новая комната.
+-- Ответ: {room, seed, seat, league (лига комнаты)}. p_kit - куплен «Наряд гонщика» (только внешний вид).
 drop function if exists public.race_join(text, text);
-create or replace function public.race_join(p_name text, p_skin text, p_league int)
+drop function if exists public.race_join(text, text, int);
+create or replace function public.race_join(p_name text, p_skin text, p_league int, p_kit boolean)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare
   uid  uuid := auth.uid();
+  lg   int := greatest(0, least(coalesce(p_league, 0), 5));
   r    race_rooms;
   s    int;
 begin
@@ -138,25 +144,26 @@ begin
   end if;
   select * into r from race_rooms
    where humans < 4 and created_at > now() - make_interval(secs => _race_open_secs())
+     and abs(race_rooms.league - lg) <= 1
      and not exists (select 1 from race_seats x where x.room_id = race_rooms.id and x.user_id = uid)
-   order by created_at
+   order by abs(race_rooms.league - lg), created_at
    limit 1
    for update skip locked;
   if r.id is null then
-    insert into race_rooms (seed) values (floor(random() * 2000000000)::int) returning * into r;
+    insert into race_rooms (seed, league) values (floor(random() * 2000000000)::int, lg) returning * into r;
   end if;
   select g into s from generate_series(0, 3) g
    where not exists (select 1 from race_seats x where x.room_id = r.id and x.seat = g)
    order by random()
    limit 1;
-  insert into race_seats (room_id, seat, user_id, name, skin, league)
+  insert into race_seats (room_id, seat, user_id, name, skin, league, kit)
   values (r.id, s, uid, _race_name(p_name), left(regexp_replace(coalesce(p_skin, ''), '[^A-Za-z0-9_]', '', 'g'), 24),
-          greatest(0, least(coalesce(p_league, 0), 5)));
+          lg, coalesce(p_kit, false));
   update race_rooms set humans = humans + 1 where id = r.id;
-  return jsonb_build_object('room', r.id, 'seed', r.seed, 'seat', s);
+  return jsonb_build_object('room', r.id, 'seed', r.seed, 'seat', s, 'league', r.league);
 end $$;
 
--- Свой ход и ход соперников. Ответ: {open, gifts (сколько раз меня подбодрили), seats: [{seat, name, skin, league,
+-- Свой ход и ход соперников. Ответ: {open, gifts (сколько раз меня подбодрили), seats: [{seat, name, skin, league, kit,
 -- times, age (с от входа), done, emote, emote_age (с назад)}]}.
 create or replace function public.race_sync(p_room bigint, p_times jsonb)
 returns jsonb language plpgsql security definer set search_path = public as $$
@@ -179,7 +186,7 @@ begin
     'open', r.humans < 4 and r.created_at > now() - make_interval(secs => _race_open_secs()),
     'gifts', me.gifts,
     'seats', coalesce((
-      select jsonb_agg(jsonb_build_object('seat', s.seat, 'name', s.name, 'skin', s.skin, 'league', s.league,
+      select jsonb_agg(jsonb_build_object('seat', s.seat, 'name', s.name, 'skin', s.skin, 'league', s.league, 'kit', s.kit,
                'times', s.times, 'emote', s.emote,
                'emote_age', case when s.emote_at is null then null
                                  else round(extract(epoch from now() - s.emote_at)::numeric, 1) end,
@@ -360,7 +367,7 @@ begin
   delete from race_prizes where created_at < now() - interval '62 days';
 end $$;
 
-revoke all on function public.race_join(text, text, int) from public, anon;
+revoke all on function public.race_join(text, text, int, boolean) from public, anon;
 revoke all on function public.race_cheer(bigint, int) from public, anon;
 revoke all on function public.race_emote(bigint, text) from public, anon;
 revoke all on function public.race_prizes() from public, anon;
@@ -371,7 +378,7 @@ revoke all on function public.race_result(bigint, int, jsonb) from public, anon;
 revoke all on function public.race_top(text) from public, anon;
 revoke all on function public.race_cleanup() from public, anon, authenticated;
 revoke all on function public._race_clean_times(jsonb, timestamptz) from public, anon, authenticated;
-grant execute on function public.race_join(text, text, int) to authenticated;
+grant execute on function public.race_join(text, text, int, boolean) to authenticated;
 grant execute on function public.race_cheer(bigint, int) to authenticated;
 grant execute on function public.race_emote(bigint, text) to authenticated;
 grant execute on function public.race_prizes() to authenticated;
