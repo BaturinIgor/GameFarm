@@ -464,11 +464,34 @@ static func pin_badge(badge: Control, owner: Control) -> void:
 	badge.set_meta("overlay_ok", true)
 	badge.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	badge.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	badge.offset_left = -14
-	badge.offset_right = 7
-	badge.offset_top = -7
-	badge.offset_bottom = 13
+	if badge.has_meta("dot"):
+		badge.offset_left = -10
+		badge.offset_right = 4
+		badge.offset_top = -4
+		badge.offset_bottom = 10
+	else:
+		badge.offset_left = -14
+		badge.offset_right = 7
+		badge.offset_top = -7
+		badge.offset_bottom = 13
 	owner.add_child(badge)
+
+
+## Красная точка без числа: здесь что-то есть (нижние вкладки, кроме заданий).
+static func dot_badge() -> PanelContainer:
+	var p := PanelContainer.new()
+	var s := box(TONES["red"][1], Color.WHITE, 7, 2, false)
+	s.set_content_margin_all(0)
+	p.add_theme_stylebox_override("panel", s)
+	p.custom_minimum_size = Vector2(14, 14)
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.set_meta("count_badge", true)
+	p.set_meta("dot", true)
+	# Пустая подпись: код, который пишет число в значок, работает и с точкой
+	var l := Label.new()
+	l.visible = false
+	p.add_child(l)
+	return p
 
 
 ## Красный кружок со счётчиком (CountBadge). "!" - здесь можно что-то сделать, число - сколько.
