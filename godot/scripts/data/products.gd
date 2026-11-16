@@ -20,6 +20,8 @@ const KEYS := [
 	"warBanner",
 	# Военный сундук: кристаллы, атаки на сегодня и трофеи
 	"warChest",
+	# Наряд гонщика: золотое знамя и радужный след в гонке к Сердцу (только внешний вид)
+	"racerKit",
 ]
 
 ## Идентификаторы магазина (rawValue ProductID).
@@ -57,6 +59,7 @@ const IDS := {
 	"villagePack": "com.personal.gamefarm.villagepack",
 	"warBanner": "com.personal.gamefarm.warbanner",
 	"warChest": "com.personal.gamefarm.warchest",
+	"racerKit": "com.personal.gamefarm.racerkit",
 }
 
 ## Цена до загрузки из магазина (и в тестовой сборке).
@@ -72,6 +75,7 @@ const PRICES := {
 	"villagePack": "$2.99",
 	"warBanner": "$1.99",
 	"warChest": "$4.99",
+	"racerKit": "$1.99",
 }
 
 ## Цвет набора в магазине (Offers.tone).
@@ -87,6 +91,7 @@ const TONES := {
 	"villagePack": "purple",
 	"warBanner": "red",
 	"warChest": "red",
+	"racerKit": "gold",
 }
 
 ## Предложение дня: три варианта по очереди, покупается раз в день. value - во сколько кристаллов его оценивать

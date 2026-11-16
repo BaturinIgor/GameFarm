@@ -474,3 +474,36 @@ func test_game_center_race() -> void:
 	Game.save["raceStats"]["trophies"] = 800
 	check(GCenter.earned("race.league_3"), "золотая лига")
 	eq(GCenter.score("race_trophies"), 800, "таблица трофеев")
+
+
+func test_bots_faster_in_high_league() -> void:
+	var low := RaceRun.create(0, 0.0, 777, "Me", 0)
+	var high := RaceRun.create(0, 0.0, 777, "Me", 5)
+	for i in low.d["bots"].size():
+		near(float(high.d["bots"][i]["pace"]), float(low.d["bots"][i]["pace"]) * float(Race.LEAGUE_PACE[5]), 0.01,
+			"в Алмазной лиге странник быстрее")
+
+
+func test_ad_doubles_reward() -> void:
+	fresh({"level": Race.MIN_LEVEL})
+	var r := Game.race
+	var run := r.start(3)
+	run.d["shards"] = [true, true, true]
+	run.d["gates"] = [true, true, true]
+	for b in run.d["bots"]:
+		b["pace"] = 900.0
+	run.finish(Clock.now() + 10.0)
+	var crystals := Game.shop.crystals()
+	var got := r.claim(true)
+	eq(int(got["place"]), 1, "первое место")
+	eq(Game.shop.crystals(), crystals + 2 * Race.CRYSTALS[0], "кристаллы вдвое")
+	eq(Game.chests.keys("silver"), 2, "и ключа два")
+	eq(r.trophies(), Race.TROPHIES[0], "трофеи не удваиваются")
+
+
+func test_racer_kit() -> void:
+	fresh({"level": Race.MIN_LEVEL})
+	check(not Game.race.has_kit(), "без покупки наряда нет")
+	Game.premium.grant("racerKit")
+	check(Game.race.has_kit(), "куплен")
+	check(not Products.consumable("racerKit"), "покупается один раз")
