@@ -1,7 +1,7 @@
 class_name LuckButton
 extends Button
 ## Удача: x2 ресурсов на 10 минут за рекламу, для Pro без рекламы (порт LuckButton).
-## Вид "pill" - плашка в шапке рядом с магазином, "wide" - широкая кнопка в магазине.
+## Вид "pill" - кружок в ряду таймеров под магазином, "wide" - широкая кнопка в магазине.
 
 var kind := "pill"
 var _row := HBoxContainer.new()
@@ -27,14 +27,13 @@ func _init(style := "pill") -> void:
 
 
 func _build_pill() -> void:
-	_row.add_theme_constant_override("separation", 5)
-	_row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_row.add_child(UiKit.icon("clover", 16))
-	_text = UiKit.title("", 12)
-	_text.label_settings.outline_size = 4
-	_row.add_child(_text)
+	# Кружок в ряду таймеров: клевер по центру, x2 или время на нижнем крае, значок рекламы в углу
+	_row.visible = false
+	_text = HudRound.circle(self, UiKit.icon("clover", 26), Color(UiKit.WOOD, 0.95))
 	_ad = Ads.mark(11.0)
-	_row.add_child(_ad)
+	_ad.set_meta("overlay_ok", true)
+	_ad.position = Vector2(HudRound.ROUND - 10.0, -6.0)
+	add_child(_ad)
 
 
 func _build_wide() -> void:
@@ -110,22 +109,7 @@ func _refresh() -> void:
 	var state := "active" if active else "idle"
 	if state != _state:
 		_state = state
-		_pill_style(active)
-	custom_minimum_size = _row.get_combined_minimum_size() + Vector2(16, 12)
-
-
-## Деревянная плашка, пока удача действует - зелёная.
-func _pill_style(active: bool) -> void:
-	var s := UiKit.pill_style()
-	s.set_corner_radius_all(13)
-	s.set_content_margin_all(0)
-	s.bg_color = UiKit.TONES["green"][1] if active else Color(UiKit.WOOD, 0.95)
-	var down := s.duplicate() as GameStyle
-	down.bg_color = s.bg_color.darkened(0.15)
-	for state in ["normal", "hover", "disabled"]:
-		add_theme_stylebox_override(state, s)
-	add_theme_stylebox_override("pressed", down)
-	add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		HudRound.tint(self, UiKit.TONES["green"][1] if active else Color(UiKit.WOOD, 0.95))
 
 
 func _watch() -> void:

@@ -1,29 +1,24 @@
 class_name MealPill
-extends PanelContainer
-## Плашка под монетами: какие блюда сейчас действуют и сколько осталось до конца первого (порт MealPill).
-## По нажатию открывает кухню. Без действующих блюд прячется.
+extends Button
+## Кружок блюда в ряду таймеров под магазином (порт MealPill): значок первого действующего блюда,
+## сколько осталось и число блюд, если их несколько. По нажатию открывает кухню. Без блюд прячется.
 
-var _row := HBoxContainer.new()
+var _icon: TextureRect
 var _time: Label
-var _signature: Array = []
+var _count: PanelContainer
 var _tick := 0.0
 
 
 func _init() -> void:
-	var s := UiKit.pill_style()
-	s.bg_color = UiKit.TONES["green"][1]
-	s.set_corner_radius_all(13)
-	add_theme_stylebox_override("panel", s)
-	mouse_filter = Control.MOUSE_FILTER_STOP
-	_row.add_theme_constant_override("separation", 2)
-	_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_row)
+	_icon = UiKit.icon("star", 26)
+	_time = HudRound.circle(self, _icon, UiKit.TONES["green"][1])
+	_count = UiKit.count_badge(0)
+	_count.visible = false
+	UiKit.pin_badge(_count, self)
+	pressed.connect(func() -> void:
+		if Hud.current != null:
+			Hud.current.open_window(KitchenPanel.new()))
 	visible = false
-
-
-func _gui_input(e: InputEvent) -> void:
-	if e is InputEventMouseButton and not e.pressed and e.button_index == MOUSE_BUTTON_LEFT and Hud.current != null:
-		Hud.current.open_window(KitchenPanel.new())
 
 
 func _process(delta: float) -> void:
@@ -35,13 +30,8 @@ func _process(delta: float) -> void:
 	visible = not meals.is_empty()
 	if meals.is_empty():
 		return
-	var dishes: Array = meals.map(func(m: Dictionary) -> String: return m["dish"])
-	if dishes != _signature:
-		_signature = dishes
-		UiKit.clear(_row)
-		for d in dishes:
-			_row.add_child(UiKit.icon(House.dish_icon(d), 18))
-		_time = UiKit.title("", 12)
-		_time.label_settings.outline_size = 4
-		_row.add_child(_time)
-	_time.text = " " + House.countdown(float(meals[0]["until"]) - Time.get_unix_time_from_system())
+	var dish := House.dish_icon(meals[0]["dish"])
+	_icon.texture = Sprites.icon(str(UiKit.ICON_ALIAS.get(dish, dish)))
+	_count.visible = meals.size() > 1
+	(_count.get_child(0) as Label).text = str(meals.size())
+	_time.text = House.countdown(float(meals[0]["until"]) - Time.get_unix_time_from_system())
