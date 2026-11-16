@@ -812,6 +812,12 @@ func _extra(k: int) -> void:
 			if Game.level < Race.MIN_LEVEL:
 				Game.save["level"] = Race.MIN_LEVEL
 				Game.recalc()
+			# Рейтинг дня без сервера
+			Game.race.demo = true
+			Game.race.top["day"] = {"period": "day", "me": {"place": 7, "points": 46},
+				"top": [{"place": 1, "name": "Masha", "points": 214, "me": false}, {"place": 2, "name": "Kenji", "points": 190, "me": false},
+					{"place": 3, "name": "Pierre", "points": 148, "me": false}, {"place": 4, "name": "Hazel", "points": 120, "me": false},
+					{"place": 5, "name": "Lucía", "points": 96, "me": false}, {"place": 6, "name": "Ahmet", "points": 64, "me": false}]}
 			main.hud.open_window(RacePanel.new())
 		_ when k == 64 + 2 * Story.count():
 			_shot("10_race_panel")
@@ -830,6 +836,10 @@ func _extra(k: int) -> void:
 			run.add_xp(Race.LEVEL_XP[2])
 			for kind in ["wood", "stone", "coal"]:
 				run.d["bag"][kind] = 9
+			# Живой соперник на одном из мест
+			var other := int(run.d["bots"][0]["seat"])
+			run.apply_humans([{"seat": other, "name": "Masha", "skin": "", "times": [70, 150, 240], "age": 360, "done": false}], Clock.now())
+			Game.race.rev += 1
 			_race._player.position = Race.trader_pos(run.seat, 1)
 			_race._cam = _race._player.position
 			_race._ui_cd = 0.0

@@ -2,10 +2,23 @@ class_name RaceSystem
 extends RefCounted
 ## Гонка к Сердцу долины: флажки (попытки), идущий забег, трофеи, лиги и статистика мест.
 ## В Game.save: raceRun - идущий забег (RaceRun.d) или нет ключа; raceFlags = {n, at} - флажки и когда
-## пересчитаны; raceStats = {trophies, places [4], races, best (с), league (лучшая лига, за которую дана награда)}.
-## Правила забега - RaceRun, данные - Race.
+## пересчитаны; raceStats = {trophies, places [4], races, best (с), league (лучшая лига, за которую дана награда)};
+## racePending - итоги, ещё не отправленные на сервер [{room, place, times}].
+## Сервер (docs/supabase/race.sql через Game.rating.call_rpc): race_join - место в комнате на 4, race_sync - свой
+## ход и ход живых соперников, race_result - итог для рейтинга, race_top - рейтинг дня и месяца.
+## Без сети гонка идёт со странниками. Правила забега - RaceRun, данные - Race.
 
 var _run: RaceRun
+## Идёт запрос к серверу (вход в комнату или ход соперников).
+var busy := false
+var _sync_busy := false
+## Растёт, когда на поле появился живой соперник (поле обновляет имена и облик).
+var rev := 0
+## Рейтинги: {"day": ответ race_top, "month": ...}.
+var top := {}
+var top_error := false
+## Снимки экрана: данные подставлены, сеть не трогаем.
+var demo := false
 
 
 func defaults(save: Dictionary) -> void:
@@ -22,6 +35,8 @@ func defaults(save: Dictionary) -> void:
 	save["raceStats"] = {"trophies": maxi(0, int(stats.get("trophies", 0))), "places": places,
 		"races": maxi(0, int(stats.get("races", 0))), "best": float(stats.get("best", 0.0)),
 		"league": int(stats.get("league", 0))}
+	var pend: Variant = save.get("racePending", [])
+	save["racePending"] = (pend as Array).filter(func(p: Variant) -> bool: return p is Dictionary and int(p.get("room", 0)) > 0).slice(-20) if pend is Array else []
 	_run = RaceRun.from_save(save.get("raceRun"))
 	if _run == null:
 		save.erase("raceRun")
@@ -82,7 +97,7 @@ func can_start() -> bool:
 
 
 ## Новый забег: флажок, место (угол) и странники. Возвращает забег или null.
-func start(seed_value := -1) -> RaceRun:
+func start(seed_value := -1, seat := -1, room := 0) -> RaceRun:
 	if not can_start():
 		return null
 	var f: Dictionary = Game.save["raceFlags"]
@@ -90,11 +105,45 @@ func start(seed_value := -1) -> RaceRun:
 		f["at"] = Clock.now()
 	f["n"] = int(f["n"]) - 1
 	var s := seed_value if seed_value >= 0 else randi()
-	_run = RaceRun.create(s % Race.SEATS, Clock.now(), s, Game.rating.player_name())
+	_run = RaceRun.create(seat if seat >= 0 else s % Race.SEATS, Clock.now(), s, Game.rating.player_name())
+	_run.d["room"] = room
 	Game.save["raceRun"] = _run.d
 	Game.mark_dirty()
 	Game.save_now()
 	return _run
+
+
+## Старт с живыми соперниками: место в комнате на сервере, без сети - со странниками.
+func start_online() -> RaceRun:
+	if not can_start() or busy:
+		return null
+	if demo or not OnlineConfig.enabled():
+		return start()
+	busy = true
+	Game.changed.emit()
+	var res: Variant = await Game.rating.call_rpc("race_join", {"p_name": Game.rating.player_name(), "p_skin": Skins.current()})
+	busy = false
+	if not can_start():
+		return null
+	if res is Dictionary and int(res.get("room", 0)) > 0:
+		return start(int(res["seed"]), clampi(int(res.get("seat", 0)), 0, Race.SEATS - 1), int(res["room"]))
+	return start()
+
+
+## Свой ход на сервер, ход живых соперников с сервера.
+func sync() -> void:
+	if _run == null or _run.room() == 0 or _sync_busy or demo:
+		return
+	_sync_busy = true
+	var room := _run.room()
+	_run.mark(Clock.now())
+	var res: Variant = await Game.rating.call_rpc("race_sync", {"p_room": room, "p_times": _run.d["times"]})
+	_sync_busy = false
+	if _run == null or _run.room() != room or not res is Dictionary:
+		return
+	if _run.apply_humans(res.get("seats", []), Clock.now()):
+		rev += 1
+	touch()
 
 
 ## Награда за место: {trophies, crystals, key, league (новая лига или -1), league_crystals}.
@@ -131,6 +180,10 @@ func claim() -> Dictionary:
 	Game.shop.add_crystals(int(r["crystals"]) + int(r["league_crystals"]))
 	if r["key"] != "":
 		Game.chests.add_keys(r["key"], 1, false)
+	if _run.room() > 0:
+		_run.mark(Clock.now())
+		Game.save["racePending"].append({"room": _run.room(), "place": place, "times": _run.d["times"].duplicate()})
+		send_pending()
 	_run = null
 	Game.save.erase("raceRun")
 	Game.emit_event("race", {"place": place})
@@ -139,9 +192,36 @@ func claim() -> Dictionary:
 	return r
 
 
+## Отправить итоги для рейтинга (что не дошло - попробуем позже).
+func send_pending() -> void:
+	if demo or not OnlineConfig.enabled():
+		return
+	var list: Array = Game.save["racePending"]
+	for p in list.duplicate():
+		var res: Variant = await Game.rating.call_rpc("race_result",
+			{"p_room": int(p["room"]), "p_place": int(p["place"]), "p_times": p.get("times", [])})
+		# Принят или сервер его не возьмёт (комнату удалили) - больше не шлём; нет сети - попробуем позже
+		if res != null or Game.rating.last_error in ["room", "early"]:
+			list.erase(p)
+			Game.mark_dirty()
+
+
+## Рейтинг дня ("day") или месяца ("month") с сервера.
+func fetch_top(period: String) -> void:
+	if demo or not OnlineConfig.enabled():
+		return
+	await send_pending()
+	var res: Variant = await Game.rating.call_rpc("race_top", {"p_period": period})
+	top_error = not res is Dictionary
+	if res is Dictionary:
+		top[period] = res
+	Game.changed.emit()
+
+
 ## Сохранить состояние забега (после добычи, продажи, ворот).
 func touch() -> void:
 	if _run != null:
+		_run.mark(Clock.now())
 		Game.save["raceRun"] = _run.d
 		Game.mark_dirty()
 

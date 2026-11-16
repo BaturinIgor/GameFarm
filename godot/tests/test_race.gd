@@ -281,3 +281,91 @@ func test_clock() -> void:
 	eq(Race.clock(0.0), "0:00")
 	eq(Race.clock(65.2), "1:06")
 	eq(Race.clock(900.0), "15:00")
+
+
+func test_bots_same_for_every_seat() -> void:
+	# Странник на месте 3 одинаков у игроков с мест 0 и 1 одной комнаты
+	var a := RaceRun.create(0, 0.0, 777, "A")
+	var b := RaceRun.create(1, 0.0, 777, "B")
+	var found := 0
+	for x in a.d["bots"]:
+		for y in b.d["bots"]:
+			if int(x["seat"]) == int(y["seat"]):
+				eq(str(x["name"]), str(y["name"]), "имя странника совпадает")
+				near(float(x["pace"]), float(y["pace"]), 0.001, "темп странника совпадает")
+				found += 1
+	eq(found, 2, "общие места - 2 и 3")
+
+
+func test_mark_times() -> void:
+	var run := _run(0, 1000.0)
+	run.d["gates"][0] = true
+	run.mark(1003.0)
+	eq(run.d["times"], [10.0], "этап раньше 10 с записан как 10 с")
+	run.d["shards"][0] = true
+	run.d["gates"][1] = true
+	run.mark(1200.0)
+	eq(run.d["times"], [10.0, 200.0, 200.0], "два этапа за раз - одно время")
+	run.mark(1300.0)
+	eq(run.d["times"].size(), 3, "без новых этапов ничего не добавилось")
+
+
+func _human(run: RaceRun, seat: int, times: Array, age: float, done: bool, now: float) -> void:
+	run.apply_humans([{"seat": seat, "name": "Masha", "skin": "", "times": times, "age": age, "done": done}], now)
+
+
+func test_human_rival_replaces_bot() -> void:
+	var run := _run(0, 0.0)
+	var seat := int(run.d["bots"][0]["seat"])
+	check(run.apply_humans([{"seat": seat, "name": "Masha", "skin": "", "times": [30, 90], "age": 100, "done": false}], 100.0),
+		"живой соперник встал на место странника")
+	var b: Dictionary = run.d["bots"][0]
+	eq(str(b["name"]), "Masha", "имя живого")
+	eq(RaceRun.bot_steps(b, 60.0), 1, "к 60 с у живого один этап")
+	eq(RaceRun.bot_steps(b, 100.0), 2, "к 100 с - два")
+	eq(RaceRun.bot_gates(b, 100.0), 1, "ворота живого по этапам")
+	between(RaceRun.bot_fraction(b, 100.0), float(Race.BOT_STEPS[1]), float(Race.BOT_STEPS[2]), "живой на поле между этапами")
+	var rows := run.standings(100.0)
+	for r in rows:
+		if str(r["name"]) == "Masha":
+			check(not bool(r["bot"]), "в таблице живой не странник")
+
+
+func test_result_waits_for_humans() -> void:
+	var run := _run(0, 0.0)
+	run.d["room"] = 5
+	var seat := int(run.d["bots"][0]["seat"])
+	for i in 3:
+		run.d["gates"][i] = true
+		run.d["shards"][i] = true
+	check(run.finish(500.0), "дошёл за 500 с")
+	# Соперник вошёл на 30 с позже: его гонке 470 с, он ещё может прийти быстрее
+	_human(run, seat, [40, 100, 160, 220, 280, 340], 470.0, false, 500.0)
+	check(run.ended(500.0), "мой путь окончен")
+	check(not run.decided(500.0), "итог ждёт соперника")
+	check(not run.decided(520.0), "через 20 с его гонке 490 с - ещё ждём")
+	check(run.decided(531.0), "его гонке больше 500 с - обогнать уже не может")
+	eq(run.place(531.0), 1, "я первый среди дошедших к 500 с")
+	_human(run, seat, [40, 100, 160, 220, 280, 340, 480], 490.0, true, 520.0)
+	check(run.decided(520.0), "соперник дошёл - итог известен")
+	eq(run.place(520.0) > 1, true, "соперник дошёл быстрее (480 с) - я ниже")
+
+
+func test_result_without_network() -> void:
+	var run := _run(0, 0.0)
+	run.d["room"] = 5
+	_human(run, int(run.d["bots"][0]["seat"]), [40], 0.0, false, 10.0)
+	# Соперник вошёл на 10 с позже меня, связи больше нет
+	check(not run.decided(float(Race.DURATION) + 1.0), "сразу после конца ждём соперника")
+	check(run.decided(float(Race.DURATION + Race.RESULT_WAIT)), "без связи итог через RESULT_WAIT")
+
+
+func test_save_keeps_online_fields() -> void:
+	var run := _run(0, 0.0)
+	run.d["room"] = 9
+	run.d["times"] = [12.5, 40.0]
+	_human(run, int(run.d["bots"][1]["seat"]), [20, 50], 60.0, false, 60.0)
+	var back := RaceRun.from_save(JSON.parse_string(JSON.stringify(run.d)))
+	eq(back.room(), 9, "комната сохранилась")
+	eq(back.d["times"], [12.5, 40.0], "свои этапы сохранились")
+	eq(RaceRun.bot_steps(back.d["bots"][1], 60.0), 2, "ход живого сохранился")

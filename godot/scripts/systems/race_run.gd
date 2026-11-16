@@ -3,7 +3,10 @@ extends RefCounted
 ## Один забег гонки (правила без отрисовки, их проверяют тесты). Данные - словарь d, он же лежит в
 ## Game.save["raceRun"], поэтому гонку можно закрыть и вернуться, пока идёт время:
 ## {seat, start (unix), seed, coins, xp, tool, bag {ресурс: n}, gates [3], shards [3], sold {ресурс: давление},
-##  sold_at, finish (секунды от старта или -1), bots [{name, seat, skin, pace}], name}.
+##  sold_at, finish (секунды от старта или -1), bots [{name, seat, skin, pace}], name, times [секунды этапов],
+##  room (id комнаты на сервере, 0 - гонка без сети)}.
+## Живой соперник лежит в bots на своём месте с human = true, times (его этапы от его старта), age (с от его
+## входа на момент ответа сервера), age_at (когда пришёл ответ), done (его итог известен).
 ## Время всегда передаётся снаружи (now - unix-секунды), чтобы тесты могли его двигать.
 
 var d: Dictionary
@@ -17,17 +20,19 @@ func _init(data: Dictionary = {}) -> void:
 static func create(seat: int, now: float, seed_value: int, name: String) -> RaceRun:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
+	# Странники по всем 4 местам из seed (у всех в комнате одинаковые), своё место пропускаем
 	var bots: Array = []
 	var paces: Array = Race.BOT_PACES.duplicate()
+	var shift := rng.randi_range(0, paces.size() - 1)
 	for s in Race.SEATS:
-		if s == seat:
-			continue
-		var pace: float = paces[bots.size() % paces.size()] * rng.randf_range(0.93, 1.07)
-		bots.append({"name": "Farmer%04d" % rng.randi_range(0, 9999), "seat": s,
-			"skin": Race.BOT_SKINS[rng.randi_range(0, Race.BOT_SKINS.size() - 1)], "pace": pace})
+		var pace: float = paces[(s + shift) % paces.size()] * rng.randf_range(0.93, 1.07)
+		var bot := {"name": "Farmer%04d" % rng.randi_range(0, 9999), "seat": s,
+			"skin": Race.BOT_SKINS[rng.randi_range(0, Race.BOT_SKINS.size() - 1)], "pace": pace}
+		if s != seat:
+			bots.append(bot)
 	return RaceRun.new({"seat": seat, "start": now, "seed": seed_value, "name": name, "coins": 0, "xp": 0, "tool": 1,
 		"bag": {}, "gates": [false, false, false], "shards": [false, false, false], "sold": {}, "sold_at": now,
-		"finish": -1.0, "bots": bots})
+		"finish": -1.0, "bots": bots, "times": [], "room": 0})
 
 
 ## Забег из сохранения (числа из JSON дробные - приводим).
@@ -50,7 +55,20 @@ static func from_save(raw: Variant) -> RaceRun:
 		r.d[key] = out
 	r.d["finish"] = float(r.d.get("finish", -1.0))
 	r.d["start"] = float(r.d["start"])
+	r.d["room"] = int(r.d.get("room", 0))
+	r.d["times"] = _floats(r.d.get("times", []))
+	for b in r.d.get("bots", []):
+		if b.has("times"):
+			b["times"] = _floats(b["times"])
 	return r
+
+
+static func _floats(a: Variant) -> Array:
+	var out: Array = []
+	if a is Array:
+		for x in a:
+			out.append(float(x))
+	return out
 
 
 # MARK: Время
@@ -67,9 +85,70 @@ func finished() -> bool:
 	return float(d["finish"]) >= 0.0
 
 
-## Итог известен: дошёл до центра или время вышло.
-func decided(now: float) -> bool:
+## Мой путь окончен: дошёл до центра или время вышло.
+func ended(now: float) -> bool:
 	return finished() or elapsed(now) >= float(Race.DURATION)
+
+
+## Секунда гонки, на которой окончен мой путь.
+func end_time() -> float:
+	return float(d["finish"]) if finished() else float(Race.DURATION)
+
+
+## Итог известен: мой путь окончен и ни один живой соперник уже не обгонит (дошёл, время вышло или он
+## уже прошёл больше моего времени). Без связи ждём не дольше RESULT_WAIT.
+func decided(now: float) -> bool:
+	if not ended(now):
+		return false
+	if room() == 0 or elapsed(now) >= end_time() + Race.RESULT_WAIT:
+		return true
+	for b in d["bots"]:
+		if bool(b.get("human", false)) and not bool(b.get("done", false)) and human_age(b, now) < end_time():
+			return false
+	return true
+
+
+func room() -> int:
+	return int(d.get("room", 0))
+
+
+## Сколько секунд идёт гонка живого соперника к моменту now.
+static func human_age(b: Dictionary, now: float) -> float:
+	return float(b.get("age", 0.0)) + maxf(0.0, now - float(b.get("age_at", now)))
+
+
+## Отметить пройденные этапы (секунда гонки каждого) - их видят соперники.
+func mark(now: float) -> void:
+	var t: Array = d["times"]
+	while t.size() < my_steps():
+		var at := minf(elapsed(now), float(Race.DURATION))
+		if t.size() == 6 and finished():
+			at = float(d["finish"])
+		var prev: float = float(t[-1]) if not t.is_empty() else 0.0
+		t.append(snappedf(maxf(maxf(prev, 10.0), at), 0.1))
+
+
+## Живые соперники из ответа сервера: [{seat, name, skin, times, age, done}] - встают на место странника.
+func apply_humans(seats: Array, now: float) -> bool:
+	var changed := false
+	for raw in seats:
+		if not raw is Dictionary:
+			continue
+		var s := int(raw.get("seat", -1))
+		for b in d["bots"]:
+			if int(b["seat"]) != s:
+				continue
+			if not bool(b.get("human", false)):
+				changed = true
+			b["human"] = true
+			b["name"] = str(raw.get("name", b["name"]))
+			if str(raw.get("skin", "")) != "":
+				b["skin"] = str(raw["skin"])
+			b["times"] = _floats(raw.get("times", []))
+			b["age"] = float(raw.get("age", 0.0))
+			b["age_at"] = now
+			b["done"] = bool(raw.get("done", false))
+	return changed
 
 
 # MARK: Уровень, инструмент, сумка
@@ -319,8 +398,14 @@ func my_steps() -> int:
 	return gates_open() + shards() + (1 if finished() else 0)
 
 
-## Сколько этапов прошёл странник к секунде t от старта.
+## Сколько этапов прошёл странник (или живой соперник) к секунде t от старта.
 static func bot_steps(bot: Dictionary, t: float) -> int:
+	if bool(bot.get("human", false)):
+		var k := 0
+		for x in bot.get("times", []):
+			if float(x) <= t:
+				k += 1
+		return k
 	var f := t / maxf(1.0, float(bot["pace"]))
 	var n := 0
 	for s in Race.BOT_STEPS:
@@ -331,6 +416,9 @@ static func bot_steps(bot: Dictionary, t: float) -> int:
 
 ## Ворота странника (по порядку этапов BOT_STEPS: 0 - ворота 1, 3 - ворота 2, 5 - ворота 3).
 static func bot_gates(bot: Dictionary, t: float) -> int:
+	if bool(bot.get("human", false)):
+		var k := bot_steps(bot, t)
+		return (1 if k >= 1 else 0) + (1 if k >= 4 else 0) + (1 if k >= 6 else 0)
 	var f := t / maxf(1.0, float(bot["pace"]))
 	var n := 0
 	for idx in [0, 3, 5]:
@@ -341,6 +429,15 @@ static func bot_gates(bot: Dictionary, t: float) -> int:
 
 ## Доля пути странника 0..1.
 static func bot_fraction(bot: Dictionary, t: float) -> float:
+	if bool(bot.get("human", false)):
+		# Живой: доля по пройденным этапам, между этапами - понемногу вперёд (до 0,9 отрезка)
+		var k := bot_steps(bot, t)
+		if k >= 7:
+			return 1.0
+		var marks: Array = [0.0] + Race.BOT_STEPS + [1.0]
+		var times: Array = bot.get("times", [])
+		var since := t - (float(times[k - 1]) if k > 0 else 0.0)
+		return float(marks[k]) + (float(marks[k + 1]) - float(marks[k])) * clampf(since / 90.0, 0.0, 0.9)
 	return clampf(t / maxf(1.0, float(bot["pace"])), 0.0, 1.0)
 
 
@@ -360,9 +457,14 @@ func standings(now: float) -> Array:
 	var rows: Array = [{"name": str(d.get("name", "")), "seat": seat, "me": true, "bot": false,
 		"skin": "", "steps": my_steps(), "finish": float(d["finish"])}]
 	for b in d["bots"]:
-		var done := t >= float(b["pace"]) and float(b["pace"]) <= float(Race.DURATION)
-		rows.append({"name": str(b["name"]), "seat": int(b["seat"]), "me": false, "bot": true, "skin": str(b["skin"]),
-			"steps": bot_steps(b, t), "finish": float(b["pace"]) if done else -1.0})
+		var human := bool(b.get("human", false))
+		var fin := float(b["pace"])
+		if human:
+			var times: Array = b.get("times", [])
+			fin = float(times[6]) if times.size() >= 7 else INF
+		var done := t >= fin and fin <= float(Race.DURATION)
+		rows.append({"name": str(b["name"]), "seat": int(b["seat"]), "me": false, "bot": not human, "skin": str(b["skin"]),
+			"steps": bot_steps(b, t), "finish": fin if done else -1.0})
 	rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		var fa := float(a["finish"])
 		var fb := float(b["finish"])

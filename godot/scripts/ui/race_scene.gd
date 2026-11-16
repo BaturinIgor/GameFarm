@@ -55,6 +55,10 @@ var _bag_row := HFlowContainer.new()
 var _stat_label: Label
 var _hp_bar: GameBar
 var _end_layer := CenterContainer.new()
+var _wait: Control
+var _tags: Dictionary = {}
+var _net_cd := 0.0
+var _rev := -1
 
 
 static func launch() -> RaceScene:
@@ -90,7 +94,8 @@ func _ready() -> void:
 	_cam = _player.position
 	add_child(_joy)
 	_build_ui()
-	if run.decided(Clock.now()):
+	_net_cd = 0.0
+	if run.ended(Clock.now()):
 		_show_end()
 
 
@@ -142,9 +147,10 @@ func _build_map() -> void:
 		p.position = _bot_target(b, 0.0)
 		_entities.add_child(p)
 		p.set_skin(str(b["skin"]))
-		var tag := _npc_label(Vector2.ZERO, "%s · %s" % [b["name"], L.t("race.wanderer")], 11)
+		var tag := _npc_label(Vector2.ZERO, _rival_name(b), 11)
 		p.add_child(tag)
 		_rivals[int(b["seat"])] = p
+		_tags[int(b["seat"])] = tag
 	_sync_gates()
 
 
@@ -274,9 +280,18 @@ func _sync_gates() -> void:
 func _process(delta: float) -> void:
 	var dt := minf(delta, 1.0 / 20.0)
 	var now := Clock.now()
+	_net_cd -= dt
+	if _net_cd <= 0.0 and run.room() > 0 and not run.decided(now):
+		_net_cd = Race.SYNC_EVERY
+		Game.race.sync()
+	if Game.race.rev != _rev:
+		_rev = Game.race.rev
+		_refresh_rivals()
 	if _over:
+		if _wait != null and run.decided(now):
+			_show_end()
 		return
-	if run.decided(now):
+	if run.ended(now):
 		_show_end()
 		return
 	_move(dt)
@@ -557,13 +572,48 @@ func _check_heart(now: float) -> void:
 			get_tree().create_timer(1.0).timeout.connect(_show_end)
 
 
+## Имя над соперником: живой - просто имя, странник - с пометкой.
+func _rival_name(b: Dictionary) -> String:
+	if bool(b.get("human", false)):
+		return str(b["name"])
+	return "%s · %s" % [b["name"], L.t("race.wanderer")]
+
+
+func _refresh_rivals() -> void:
+	for b in run.d["bots"]:
+		var s := int(b["seat"])
+		if _tags.has(s):
+			(_tags[s] as Label).text = _rival_name(b)
+		if _rivals.has(s):
+			(_rivals[s] as Player).set_skin(str(b["skin"]))
+			(_rivals[s] as Player).modulate = Color.WHITE if bool(b.get("human", false)) else Color(1, 1, 1, 0.85)
+	_ui_cd = 0.0
+
+
 func _show_end() -> void:
-	if _over:
+	var now := Clock.now()
+	if _over and _wait == null:
 		return
 	_over = true
 	_joy.enabled = false
 	_card.visible = false
-	var now := Clock.now()
+	if not run.decided(now):
+		# Мой путь окончен, живые соперники ещё идут - ждём итога
+		if _wait == null:
+			_wait = PanelContainer.new()
+			_wait.add_theme_stylebox_override("panel", UiKit.box(UiKit.PARCHMENT, UiKit.OUTLINE, 18, 3, true))
+			var wl := UiKit.title(L.t("race.waiting"), 18)
+			wl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			_wait.add_child(wl)
+			_end_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			_end_layer.z_index = 200
+			add_child(_end_layer)
+			_end_layer.add_child(_wait)
+		return
+	if _wait != null:
+		_wait.queue_free()
+		_wait = null
+		remove_child(_end_layer)
 	var place := run.place(now)
 	_end_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_end_layer.z_index = 200
@@ -771,7 +821,7 @@ func _standing_row(n: int, r: Dictionary) -> Control:
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 8)
 	var me := bool(r["me"])
-	var name := L.t("race.you") if me else "%s · %s" % [r["name"], L.t("race.wanderer")]
+	var name := L.t("race.you") if me else (str(r["name"]) if not bool(r["bot"]) else "%s · %s" % [r["name"], L.t("race.wanderer")])
 	var pl := UiKit.label("%d." % n, 15, UiKit.INK)
 	pl.custom_minimum_size = Vector2(24, 0)
 	h.add_child(pl)
