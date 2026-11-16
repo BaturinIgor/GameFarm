@@ -48,6 +48,7 @@ func build() -> void:
 		_settings()
 		return
 	_progress_card()
+	_power_card()
 	_bonuses_card()
 	_upcoming_card()
 	_stats_card()
@@ -103,6 +104,8 @@ static func unlocks(level: int) -> Array:
 	for d in DUNGEONS:
 		if DUNGEONS[d] == level:
 			lines.append(_line("px:key", L.t("unlock.dungeon", [L.t("dungeon." + d)])))
+	if level == Alliances.JOIN_LEVEL and Game.alliance != null and Game.alliance.available():
+		lines.append(_line("px:crown", L.t("unlock.alliance")))
 	return lines
 
 
@@ -187,6 +190,33 @@ func _progress_card() -> void:
 		mbar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		col.add_child(mbar)
 		col.add_child(_wrap(L.t("level.masteryHint", [Game.mastery_points()]), 12, UiKit.INK_SOFT))
+
+
+# MARK: Мощь
+
+func _power_card() -> void:
+	var parts := Power.breakdown()
+	section_title(L.t("power.title"))
+	var c := _card(UiKit.GOLD_DARK)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	c.add_child(row)
+	row.add_child(UiKit.icon("fist", 34))
+	var total := UiKit.title(Fmt.n(Power.total()), 24)
+	total.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	total.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(total)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+	c.add_child(grid)
+	var tiles := [["star", "level"], ["sword", "gear"], ["book", "talents"], ["paw", "animals"], ["hammer", "estate"]]
+	if Alliances.enabled:
+		tiles.append(["trophy", "trophies"])
+	for p in tiles:
+		grid.add_child(_stat_tile(p[0], L.t("power.part." + p[1]), Fmt.n(int(parts[p[1]]))))
+	c.add_child(_wrap(L.t("power.hint"), 12, UiKit.INK_SOFT))
 
 
 # MARK: Характеристики
@@ -502,6 +532,26 @@ func _settings() -> void:
 		func(on: bool) -> void: Settings.set_value("dialogs", on)))
 	game.add_child(_switch_row(L.t("settings.battery"), L.t("settings.battery.hint"), Sound.battery_saver,
 		func(on: bool) -> void: Sound.battery_saver = on))
+	if Notify.LIVE:
+		game.add_child(_switch_row(L.t("settings.notify"), L.t("settings.notify.hint"), Notify.enabled(),
+			func(on: bool) -> void:
+				Settings.set_value("notify", on)
+				if on and Notify.status() == 0:
+					Engine.get_singleton("LocalNotify").request_permission()))
+	# Game Center: достижения и таблицы лидеров (только на iOS с плагином)
+	if GCenter.LIVE:
+		game.add_child(_divider())
+		_game_center_row(game)
+	# Сохранение в iCloud: только на iOS с плагином
+	if Cloud.LIVE:
+		section_title(L.t("settings.section.cloud"))
+		var cloud := card()
+		cloud.add_child(_switch_row(L.t("settings.cloud"), L.t("settings.cloud.hint"), Cloud.enabled(),
+			func(on: bool) -> void:
+				Settings.set_value("cloud", on)
+				if on:
+					Cloud.upload(true)))
+		_cloud_row(cloud)
 	# Внешний вид
 	section_title(L.t("settings.section.look"))
 	var look := card()
@@ -517,6 +567,45 @@ func _settings() -> void:
 		section_title(L.t("settings.section.purchases"))
 		var buy := card()
 		_purchases_rows(buy)
+
+
+func _game_center_row(c: VBoxContainer) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	c.add_child(row)
+	var l := UiKit.label("Game Center", 14)
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(l)
+	for v in [["achievements", "gc.achievements"], ["leaderboards", "gc.leaderboards"]]:
+		var b := UiKit.button(L.t(v[1]), "wood", 13, true)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var view: String = v[0]
+		b.pressed.connect(func() -> void: GCenter.show(view))
+		row.add_child(b)
+
+
+## Что лежит в iCloud и кнопка загрузить оттуда.
+func _cloud_row(c: VBoxContainer) -> void:
+	var m := Cloud.meta()
+	if m.is_empty():
+		return
+	c.add_child(_divider())
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	c.add_child(row)
+	var when := Time.get_datetime_string_from_unix_time(int(m.get("at", 0)), true).substr(0, 16)
+	var l := UiKit.label(L.t("settings.cloud.copy", [int(m.get("level", 1)), when]), 13, UiKit.INK_SOFT)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(l)
+	var load_b := UiKit.button(L.t("cloud.load"), "wood", 13, true)
+	load_b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	load_b.pressed.connect(func() -> void:
+		ConfirmPopup.ask("px:cloud", L.t("cloud.title"), L.t("cloud.confirm", [int(m.get("level", 1)), when]),
+			L.t("cloud.load"), "orange", Cloud.restore))
+	row.add_child(load_b)
 
 
 func _language_row(c: VBoxContainer) -> void:

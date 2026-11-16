@@ -1,14 +1,19 @@
 #!/bin/bash
-# Собирает плагин InAppStore (StoreKit) из godot-ios-plugins под Godot $GODOT_VERSION для iPhone (arm64,
-# release) и кладёт inappstore.xcframework и inappstore.gdip в папку $1. Нужен macOS с Xcode.
-# В ios-godot.yml результат кэшируется: пересобирается только при смене версии Godot или этого файла.
+# Собирает плагины iOS под Godot $GODOT_VERSION для iPhone (arm64, release): из godot-ios-plugins
+# inappstore (StoreKit), icloud (сохранение в iCloud) и gamecenter (достижения и таблицы лидеров),
+# и свой localnotify (локальные уведомления, исходники в tools/ios_plugins/localnotify).
+# Каждый кладётся в папку $1/<плагин>: <плагин>.xcframework и .gdip. Нужен macOS с Xcode.
+# В ios-godot.yml результат кэшируется: пересобирается только при смене версии Godot или этих файлов.
 set -e -o pipefail
 
 OUT="$1"
 [ -n "$OUT" ] || { echo "usage: $0 <out dir>"; exit 2; }
 V="${GODOT_VERSION:-4.5.1}"
 PLUGINS_SHA="caafb2c7fbfb5c72a64f163c76449274fa49abaa"
-W="${RUNNER_TEMP:-/tmp}/inappstore-build"
+W="${RUNNER_TEMP:-/tmp}/ios-plugins-build"
+SRC="$(cd "$(dirname "$0")" && pwd)/ios_plugins"
+PLUGINS="inappstore icloud gamecenter localnotify"
+mkdir -p "$OUT" && OUT="$(cd "$OUT" && pwd)"
 
 rm -rf "$W" && mkdir -p "$W" && cd "$W"
 command -v scons > /dev/null || brew install scons > /dev/null
@@ -46,12 +51,19 @@ done
 perl -pi -e "s/'-DIOS_ENABLED', /'-DIOS_ENABLED', '-DAPPLE_EMBEDDED_ENABLED', '-DTHREADS_ENABLED', /" SConstruct
 grep -q "DTHREADS_ENABLED" SConstruct || { echo "::error::Не удалось добавить флаги в SConstruct плагина"; exit 1; }
 
-scons target=release arch=arm64 plugin=inappstore version=4.0
-LIB=$(ls bin/*inappstore*.arm64-ios.release.a | head -1)
-[ -f "$LIB" ] || { echo "::error::Библиотека плагина не собрана"; ls -la bin; exit 1; }
+# Свои плагины - рядом с родными, и в список допустимых в SConstruct
+for d in "$SRC"/*/; do
+  name=$(basename "$d")
+  rm -rf "plugins/$name" && cp -R "$d" "plugins/$name"
+  perl -pi -e "s/'photo_picker'\]/'photo_picker', '$name']/" SConstruct
+done
 
-mkdir -p "$OUT"
-rm -rf "$OUT/inappstore.xcframework"
-xcodebuild -create-xcframework -library "$LIB" -output "$OUT/inappstore.xcframework"
-cp plugins/inappstore/inappstore.gdip "$OUT/"
+for p in $PLUGINS; do
+  scons target=release arch=arm64 plugin=$p version=4.0
+  LIB=$(ls bin/*$p*.arm64-ios.release.a | head -1)
+  [ -f "$LIB" ] || { echo "::error::Библиотека плагина $p не собрана"; ls -la bin; exit 1; }
+  rm -rf "$OUT/$p" && mkdir -p "$OUT/$p"
+  xcodebuild -create-xcframework -library "$LIB" -output "$OUT/$p/$p.xcframework"
+  cp plugins/$p/*.gdip "$OUT/$p/"
+done
 ls -laR "$OUT"

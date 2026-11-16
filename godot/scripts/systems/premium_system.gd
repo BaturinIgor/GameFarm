@@ -121,6 +121,7 @@ func grant(product: String, transaction := "") -> void:
 				return
 			used.append(transaction)
 			Game.save["consumed"] = used
+		Game.alliance.send_gift(key)
 		if key == "max" or Products.is_crystals(key) or Products.shop_granted(key):
 			# Кристаллы и MAX: свой тост в ShopSystem
 			Game.shop.grant(key)
@@ -131,6 +132,12 @@ func grant(product: String, transaction := "") -> void:
 			return
 		if key == "eventPass":
 			Game.events.activate_vip()
+		elif key == "tourneyPass":
+			Game.tourney.activate_pass()
+		elif key == "warBanner":
+			Game.war.activate_pass()
+		elif key == "warChest":
+			Game.war.grant_chest()
 		else:
 			Game.save["tickets"] = tickets() + Mine.LAMP_PACK
 		Game.show_toast("px:chest_gold", L.t("toast.purchased", [Products.title(key)]))
@@ -145,6 +152,7 @@ func grant(product: String, transaction := "") -> void:
 	if not id in granted:
 		granted.append(id)
 		Game.save["granted"] = granted
+		Game.alliance.send_gift(key)
 		match key:
 			"starter":
 				Game.save["coins"] = int(Game.save["coins"]) + STARTER_COINS
@@ -158,6 +166,8 @@ func grant(product: String, transaction := "") -> void:
 				Game.save["skin"] = "knight"
 				Game.save.erase("gardenChestAt")
 				Game.combat.grant_weapon("royalSword")
+			"villagePack":
+				Game.alliance.grant_village_pack()
 			_:
 				if Products.is_level_bundle(key) or Products.shop_granted(key):
 					Game.shop.grant(key)

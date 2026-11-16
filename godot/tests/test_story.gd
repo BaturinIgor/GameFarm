@@ -10,7 +10,7 @@ func _fill_gift(ch: int) -> void:
 
 
 func test_chapters_data() -> void:
-	eq(Story.count(), 11)
+	eq(Story.count(), 16)
 	var seen := {}
 	for ch in Story.count():
 		var loc := Story.loc(ch)

@@ -15,8 +15,20 @@ const CHAPTERS := [
 	{"loc": "island", "gift": {"coins": 18000, "items": [["pineapple", 30], ["coral", 15]]}},
 	{"loc": "volcano", "gift": {"coins": 26000, "items": [["obsidian", 20], ["ruby", 5]]}},
 	{"loc": "sky", "gift": {"coins": 35000, "items": [["cloud", 30], ["goldenApple", 20]]}},
-	{"loc": "crystalReef", "gift": {"coins": 50000, "items": [["coral", 30], ["pineapple", 40]]}},
+	# Дальние планеты (1.1): главы перед финалом
+	{"loc": "ashPlains", "gift": {"coins": 38000, "items": [["obsidian", 30], ["emberstone", 6]]}},
+	{"loc": "amberWoods", "gift": {"coins": 42000, "items": [["goldenApple", 30], ["resin", 8]]}},
+	{"loc": "fireCanyon", "gift": {"coins": 46000, "items": [["ruby", 10], ["phoenixFeather", 6]]}},
+	{"loc": "starMeadows", "gift": {"coins": 52000, "items": [["stardust", 10], ["starlight", 8]]}},
+	{"loc": "frostSpires", "gift": {"coins": 56000, "items": [["diamond", 20], ["frostglass", 8]]}},
+	{"loc": "crystalReef", "gift": {"coins": 60000, "items": [["coral", 30], ["azurite", 8]]}},
 ]
+
+## Версия списка глав: в 1.1 перед финалом добавлены 5 глав дальних планет (см. StorySystem.defaults).
+const VERSION := 2
+## Сколько глав вставлено перед финалом и с какой главы старые сохранения сдвигаются.
+const INSERTED_AT := 10
+const INSERTED := 5
 
 ## С какого уровня открыт раздел.
 const MIN_LEVEL := 3

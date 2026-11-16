@@ -1,51 +1,26 @@
 class_name ShopPill
-extends HBoxContainer
-## Плашки справа под монетами: удача и магазин (порт LuckButton(.pill) и shopPill из HUDView).
-## Срочный набор и предложения дня показывает отдельная плашка под магазином (HotOfferPill).
+extends Button
+## Квадратная кнопка магазина в правом столбце под монетами (порт shopPill из HUDView).
+## Удача (x2) - отдельный кружок в ряду таймеров, срочный набор - кнопка «Горячее» (HotOfferPill).
 ## Новое предложение или кристаллы MAX - красная точка. Здесь же раз в полсекунды проверяется,
 ## не пора ли показать окно нового предложения (OfferPopup.check).
 
-## Общий размер плашек столбца справа: магазин, сундуки, горячее предложение.
-const WIDTH := 112.0
-const HEIGHT := 34.0
-
-var _shop := Button.new()
-var _row := HBoxContainer.new()
-var _icon: TextureRect
 var _text: Label
-var _offer := false
 var _dot: Control
-var _built := false
 var _tick := 0.0
 
 
 func _init() -> void:
-	add_theme_constant_override("separation", 6)
-	alignment = BoxContainer.ALIGNMENT_END
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var luck := LuckButton.new("pill")
-	luck.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	add_child(luck)
-	_shop.focus_mode = Control.FOCUS_NONE
-	_shop.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_shop.pressed.connect(func() -> void:
+	_text = HudRound.square(self, UiKit.icon("chest", 30), Color(UiKit.WOOD, 0.95))
+	HudRound.caption(_text, L.t("shop.short"))
+	pressed.connect(func() -> void:
 		if Hud.current != null:
 			Hud.current.open_window(ShopPanel.new()))
-	add_child(_shop)
-	_row.add_theme_constant_override("separation", 5)
-	_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_shop.add_child(_row)
-	_icon = UiKit.icon("chest", 20)
-	_row.add_child(_icon)
-	_text = UiKit.title("", 12)
-	_text.label_settings.outline_size = 4
-	_row.add_child(_text)
 	_dot = UiKit.count_badge(0)
 	(_dot.get_child(0) as Label).text = "!"
 	_dot.visible = false
-	UiKit.pin_badge(_dot, _shop)
+	UiKit.pin_badge(_dot, self)
+	L.language_changed.connect(func() -> void: HudRound.caption(_text, L.t("shop.short")))
 	_refresh()
 
 
@@ -71,28 +46,4 @@ static func urgent_until() -> float:
 
 
 func _refresh() -> void:
-	# Срочный набор теперь показывает горячее предложение (HotOfferPill) под магазином
-	var until := 0.0
-	var offer := false
 	_dot.visible = Game.shop.has_news()
-	if offer != _offer or not _built:
-		_offer = offer
-		_built = true
-		_icon.texture = Sprites.icon("chest_gold" if offer else "chest")
-		_text.label_settings.font_color = UiKit.GOLD if offer else Color.WHITE
-		var s := UiKit.pill_style()
-		s.set_corner_radius_all(13)
-		s.set_content_margin_all(0)
-		s.bg_color = UiKit.TONES["orange"][1] if offer else Color(UiKit.WOOD, 0.95)
-		var down := s.duplicate() as GameStyle
-		down.bg_color = s.bg_color.darkened(0.15)
-		for state in ["normal", "hover", "disabled"]:
-			_shop.add_theme_stylebox_override(state, s)
-		_shop.add_theme_stylebox_override("pressed", down)
-		_shop.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	if offer:
-		_text.text = House.countdown(until - Time.get_unix_time_from_system())
-	else:
-		_text.text = L.t("shop.short")
-	# Магазин, сундуки и горячее предложение - одной ширины, правые края в линию
-	_shop.custom_minimum_size = Vector2(maxf(ShopPill.WIDTH, _row.get_combined_minimum_size().x + 16.0), ShopPill.HEIGHT)

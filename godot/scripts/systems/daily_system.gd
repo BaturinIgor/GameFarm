@@ -2,7 +2,8 @@ class_name DailySystem
 extends RefCounted
 ## Цели дня и цели недели за кристаллы.
 ## День: до пяти целей (добыча и склад всегда, остальные - из того, что уже открыто), за каждую 1-4 кристалла,
-## за все цели дня - сундук: ещё кристаллы, монеты и медный ключ (за неделю - серебряный). Неделя (с понедельника): четыре большие цели и сундук недели.
+## за все цели дня - сундук: ещё кристаллы, монеты и медный ключ (за неделю - серебряный). Неделя (с понедельника): шесть целей
+## (три постоянные и три разные из открытого: монстры, цеха, подземелья, кухня, сундуки, инкубатор, шахта, стражи планет) и сундук недели.
 ## Цели растут с уровнем: на 18 уровне день - это около 370 ударов по ресурсам и 390 ресурсов на склад.
 ## В Game.save: daily = {day, v, goals: [{type, target, progress, crystals, claimed}], bonus},
 ## weekly = {week, v, goals, bonus}.
@@ -10,10 +11,13 @@ extends RefCounted
 const VERSION := 2
 const DAY_CRYSTALS := [1, 2, 2, 3, 4]
 const DAY_BONUS := 3
-const WEEK_CRYSTALS := [5, 5, 5, 10]
+const WEEK_CRYSTALS := [5, 5, 5, 8, 8, 10]
 const WEEK_BONUS := 15
 ## Какие события что считают (у продажи и склада - количество, у остального - по одному).
-const EVENTS := ["deposit", "order", "kill", "harvest", "produce", "sell", "quest", "daily", "dungeon", "raid", "crop"]
+const EVENTS := ["deposit", "order", "kill", "harvest", "produce", "sell", "quest", "daily", "dungeon", "raid", "crop",
+	"cook", "chest", "hatch", "mine", "guardian", "treasure"]
+## Сколько разных больших целей в неделе.
+const WEEK_BIG := 3
 
 
 func defaults(save: Dictionary) -> void:
@@ -119,19 +123,41 @@ func _ensure_week() -> void:
 	list.append(_goal("harvest", 1200 + lvl * 60, WEEK_CRYSTALS[0]))
 	list.append(_goal("daily", 20, WEEK_CRYSTALS[1]))
 	list.append(_goal("quest", 15 + lvl / 2, WEEK_CRYSTALS[2]))
+	var big := week_pool(lvl)
+	big.shuffle()
+	for i in mini(WEEK_BIG, big.size()):
+		list.append(_goal(str(big[i][0]), int(big[i][1]), WEEK_CRYSTALS[3 + i]))
+	Game.save["weekly"] = {"week": week, "v": VERSION, "goals": list, "bonus": false}
+	Game.mark_dirty()
+
+
+## Большие цели недели из того, что уже открыто: [[тип, сколько], ...]. Всегда не меньше WEEK_BIG.
+func week_pool(lvl: int) -> Array:
 	var big: Array = []
 	if lvl >= 4:
 		big.append(["kill", 60 + lvl * 4])
 	if Game.estate.level("sawmill") > 0:
 		big.append(["produce", 100 + lvl * 6])
+	if Game.estate.orders_open():
+		big.append(["order", 12])
 	if lvl >= 8:
 		big.append(["dungeon", 8])
-	if big.is_empty():
-		big.append(["deposit", 900 + lvl * 80])
-	var pick: Array = big.pick_random()
-	list.append(_goal(str(pick[0]), int(pick[1]), WEEK_CRYSTALS[3]))
-	Game.save["weekly"] = {"week": week, "v": VERSION, "goals": list, "bonus": false}
-	Game.mark_dirty()
+	if Game.house.kitchen_level() > 0:
+		big.append(["cook", 10 + lvl / 4])
+	if Game.incubator.open():
+		big.append(["hatch", 3])
+	if Game.mine.open():
+		big.append(["mine", 15])
+	if lvl >= Mine.MIN_LEVEL:
+		big.append(["chest", 8])
+	for loc in Planets.GUARDIAN:
+		if Game.world_map.is_reachable(loc):
+			big.append(["guardian", 5])
+			break
+	var fill: Array = [["deposit", 900 + lvl * 80], ["treasure", 4], ["sell", maxi(1000, day_target("sell", lvl) * 4)]]
+	while big.size() < WEEK_BIG and not fill.is_empty():
+		big.append(fill.pop_front())
+	return big
 
 
 func _goal(type: String, target: int, crystals: int) -> Dictionary:

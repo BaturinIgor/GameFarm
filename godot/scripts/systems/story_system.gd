@@ -7,8 +7,13 @@ extends RefCounted
 
 func defaults(save: Dictionary) -> void:
 	var raw: Dictionary = save.get("heart", {}) if save.get("heart") is Dictionary else {}
+	var ch := int(raw.get("ch", 0))
+	# Сохранения до 1.1: финал был 11-й главой, теперь перед ним 5 глав планет
+	if int(raw.get("v", 1)) < Story.VERSION and ch >= Story.INSERTED_AT:
+		ch += Story.INSERTED
 	save["heart"] = {
-		"ch": clampi(int(raw.get("ch", 0)), 0, Story.count()),
+		"v": Story.VERSION,
+		"ch": clampi(ch, 0, Story.count()),
 		"pages": clampi(int(raw.get("pages", 0)), 0, Story.PAGES),
 		"pity": maxi(0, int(raw.get("pity", 0))),
 		"gift": bool(raw.get("gift", false)),

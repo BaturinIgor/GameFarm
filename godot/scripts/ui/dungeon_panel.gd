@@ -160,6 +160,12 @@ static func _dungeon_card(id: String, on_enter: Callable) -> Control:
 	var ml := UiKit.label(L.t("dungeon.monsterLevel", [Dungeons.monster_level(id, floor_n)]), 10, Color(1, 1, 1, 0.85), 3)
 	ml.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	mid.add_child(ml)
+	# Рекомендуемая мощь: зелёная, если мощи хватает
+	var need := Power.recommended(Dungeons.monster_level(id, floor_n))
+	var enough := Power.total() >= need
+	var pl := UiKit.label(L.t("power.recommended", [Fmt.n(need)]), 10, Color("9be37a") if enough else Color("ffb36b"), 3)
+	pl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mid.add_child(pl)
 	var nxt := _chevron_button(false)
 	nxt.disabled = floor_n >= max_floor
 	nxt.pressed.connect(func() -> void: _pick(id, floor_n + 1))

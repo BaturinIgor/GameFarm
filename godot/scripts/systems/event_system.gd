@@ -422,6 +422,8 @@ func event_boss_defeated() -> void:
 func _stage_cleared() -> void:
 	var stage := event_stage()
 	Game.save["eventBest"] = maxi(int(Game.save.get("eventBest", 0)), stage)
+	# Лучший этап за все праздники - для таблицы Game Center
+	Game.save["eventBestEver"] = maxi(int(Game.save.get("eventBestEver", 0)), stage)
 	_add_pass_points(Events.clear_points(stage))
 	Game.add_coins(Events.clear_coins(stage, Game.level))
 	if Events.is_boss_stage(stage):

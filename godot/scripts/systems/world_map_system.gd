@@ -32,6 +32,13 @@ func defaults(save: Dictionary) -> void:
 	_refresh(save)
 	if cur == "garden" and not Game.premium.owns("garden"):
 		save["current"] = "meadow"
+	# Стражи дальних планет: в какой день (ShopSystem.day_index) каждого победили
+	var gd: Dictionary = {}
+	if save.get("guardians") is Dictionary:
+		for k in save["guardians"]:
+			if Planets.GUARDIAN.has(str(k)):
+				gd[str(k)] = int(save["guardians"][k])
+	save["guardians"] = gd
 
 
 ## Старые сохранения: локации открывались без проходов. Открываем проходы по цепочке до каждой.
@@ -192,3 +199,28 @@ func open_gate(id: String) -> bool:
 	Game.mark_dirty()
 	Game.save_now()
 	return true
+
+
+# MARK: Стражи дальних планет
+
+## Стража этой локации сегодня уже победили.
+func guardian_done(loc: String) -> bool:
+	return int(Game.save.get("guardians", {}).get(loc, -1)) == ShopSystem.day_index()
+
+
+## Победа над стражем: награда раз в день - ресурс локации, ключ и редкий Осколок.
+func guardian_defeated(loc: String) -> void:
+	if guardian_done(loc) or not Planets.GUARDIAN.has(loc):
+		return
+	Game.save["guardians"][loc] = ShopSystem.day_index()
+	var res := Planets.resource_of(loc)
+	var got := Game.add_to_storage(res, Planets.REWARD_RES)
+	if got > 0:
+		Game.show_toast("res:" + res, "+%d %s" % [got, Res.name_of(res)])
+	Game.chests.add_keys(Planets.REWARD_KEY, 1)
+	if randf() < Planets.REWARD_SHARD_CHANCE:
+		Game.save["shards"] = int(Game.save.get("shards", 0)) + 1
+		Game.show_toast("shard", L.t("guardian.shard"))
+	Game.show_toast("px:crown", L.t("guardian.defeated", [Planets.guardian_name(loc)]))
+	Game.emit_event("guardian", {"loc": loc})
+	Game.save_now()

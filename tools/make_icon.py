@@ -1,9 +1,8 @@
-"""Иконка Harvest Hollow: герой с топором у домика на поляне, вечернее небо со звездой.
+"""Иконка Harvest Hollow: вечер на ферме, домик с дымом, знамя альянса, фермер с топором и курица.
 
     python3 tools/make_icon.py <out.png>
 
-Рисуется пикселями 64x64 вручную (без графики паков), потом увеличивается в 16 раз
-и получает мягкое свечение звезды и окна.
+Рисуется пикселями 64x64 вручную (без графики паков) и увеличивается ровно в 16 раз.
 """
 import math
 import random
@@ -381,28 +380,70 @@ def _add(base, layer):
     return out
 
 
-def main(path):
-    img = Image.new("RGBA", (N, N))
-    sky(img)
-    stars(img)
-    paint(img, BIG_STAR, 45, 4)
-    hills(img)
-    meadow(img)
-    # домик слева, чуть дальше героя
-    shadow(img, 15, 48, 14, 2.5, 0.65)
-    window, chimney = house(img, 2, 24)
-    smoke(img, 21, 22)
-    # тропинка к двери
-    px = img.load()
-    for y in range(48, N):
-        w = 2 + (y - 48) * 0.35
-        cx = 10 + (y - 48) * 0.9
-        for x in range(int(cx - w), int(cx + w) + 1):
-            if 0 <= x < N:
-                px[x, y] = hexc("#c8925a") if (x + y) % 6 else hexc("#a8744a")
-    # герой с топором
+# Хранитель альянса (птенец феникса), курица и знамя альянса с короной
+PH = {"O": OUT, "F": "#ffd54a", "f": "#ff8a2a", "R": "#e04a2a", "E": "#262b44", "b": "#ffb15e", "X": "#fff3b0"}
+PHOENIX = [
+    "O.................O",
+    "OO...............OO",
+    "OfO.............OfO",
+    "OffO....OOO....OffO",
+    ".OffO..OFXFO..OffO.",
+    ".OfFfOOFEFEFOOfFfO.",
+    "..OfFFFFFbFFFFFfO..",
+    "..OffFFFFFFFFFffO..",
+    "...OOfFFFFFFFfOO...",
+    ".....OfRFFFRfO.....",
+    "....OfRO.O.ORfO....",
+    "....OO.......OO....",
+]
+CH = {"O": OUT, "W": "#ffffff", "w": "#c8d0e0", "r": "#e43b44", "b": "#feae34", "y": "#f77622", "E": "#262b44"}
+CHICKEN = [
+    "...rr.....",
+    "..OrrO....",
+    ".OWWWWO...",
+    "OWWWEWbO..",
+    "OWWWWWbbO.",
+    "OwWWWWWWO.",
+    "OwwWWWWwO.",
+    ".OwwwwwO..",
+    "..OOOOO...",
+    "...y.y....",
+    "..yy.yy...",
+]
+# Полотно 7 клеток, корона по центру (по клетке поля с обеих сторон)
+BN = {"O": OUT, "Y": "#ffc825", "t": "#743f39", "B": "#3a6fd0", "b": "#24408a"}
+BANNER = [
+    "OOO........",
+    "OYO........",
+    "OtOOOOOOOOO",
+    "OtOBBBBBBBO",
+    "OtOBYBYBYBO",
+    "OtOBYYYYYBO",
+    "OtOBYYYYYBO",
+    "OtOBBBBBBBO",
+    "OtOBBBBBBbO",
+    "OtOBBBBBBbO",
+    "OtOBBBOBBbO",
+    "OtOBBO.OBbO",
+    "OtOBO...ObO",
+    "OtOO.....OO",
+    "OtO........",
+    "OtO........",
+    "OtO........",
+    "OtO........",
+    "OtO........",
+    "OOO........",
+]
+
+
+def sprite(rows, pal):
+    img = Image.new("RGBA", (len(rows[0]), len(rows)), (0, 0, 0, 0))
+    paint(img, rows, 0, 0, pal)
+    return img
+
+
+def hero_with_axe(img, hx, hy):
     h = hero()
-    hx, hy = 26, 27
     shadow(img, hx + 12, hy + 31, 9, 1.6, 0.55)
     axe = Image.new("RGBA", (16, 34), (0, 0, 0, 0))
     paint(axe, AXE, 2, 0)
@@ -422,11 +463,74 @@ def main(path):
                  (hx + 18, hy + 25), (hx + 19, hy + 25), (hx + 20, hy + 25), (hx + 18, hy + 22), (hx + 20, hy + 22)):
         px[x, y] = hexc(OUT)
 
-    big = img.resize((N * SCALE, N * SCALE), Image.NEAREST)
-    s = SCALE
-    big = glow(big, 51.5 * s, 9.5 * s, 13 * s, (255, 236, 170), 0.55)
-    big = glow(big, window[0] * s, window[1] * s, 9 * s, (255, 200, 90), 0.4)
-    big.convert("RGB").save(path)
+
+# Флаг альянса с короной на древке
+FLAG = [
+    "OOOOOOOOOO",
+    "OBBBBBBBBO",
+    "OBYBYBYBBO",
+    "OBYYYYYBBO",
+    "OBBBBBBBbO",
+    "OBBBBBBbO.",
+    "OOOOOOOO..",
+]
+
+
+def rect(img, x0, y0, x1, y1, col):
+    px = img.load()
+    for y in range(y0, y1 + 1):
+        for x in range(x0, x1 + 1):
+            if 0 <= x < img.width and 0 <= y < img.height:
+                px[x, y] = hexc(col)
+
+
+def star_glow(img, cx, cy):
+    """Свечение звезды кольцами по той же сетке 64x64 (без размытия)."""
+    px = img.load()
+    for y in range(N):
+        for x in range(N):
+            d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
+            k = 0.34 if d < 6 else 0.2 if d < 9 else 0.09 if d < 12 else 0
+            if k:
+                r, g, b, _ = px[x, y]
+                px[x, y] = (round(r + (255 - r) * k), round(g + (200 - g) * k), round(b + (110 - b) * k), 255)
+
+
+def main(path):
+    """Вечер на ферме: домик с дымом, знамя альянса, фермер с топором и курица. Вся картинка - одна сетка 64x64,
+    увеличенная ровно в 16 раз: пиксели одного размера, без размытия."""
+    img = Image.new("RGBA", (N, N))
+    sky(img)
+    stars(img)
+    hills(img)
+    meadow(img)
+    star_glow(img, 53, 8)
+    paint(img, BIG_STAR, 47, 3)
+    house(img, 1, 20)
+    # ровное окно: по два ряда стекла сверху и снизу
+    px = img.load()
+    for y in range(36, 43):
+        for x in range(15, 22):
+            if x in (15, 21) or y in (36, 42):
+                c = OUT
+            elif x == 18 or y == 39:
+                c = "#743f39"
+            else:
+                c = "#fee761" if (x + y) % 4 else "#ffc825"
+            px[x, y] = hexc(c)
+    smoke(img, 20, 18)
+    # знамя альянса на древке, стоит на одной линии с домом
+    rect(img, 29, 18, 29, 44, OUT)
+    rect(img, 30, 18, 30, 44, "#743f39")
+    rect(img, 31, 18, 31, 44, OUT)
+    rect(img, 29, 17, 31, 17, OUT)
+    rect(img, 30, 17, 30, 17, "#ffc825")
+    rect(img, 28, 45, 32, 45, OUT)
+    paint(img, FLAG, 31, 19, BN)
+    hero_with_axe(img, 32, 26)
+    shadow(img, 13, 58, 5, 1.0, 0.6)
+    paint(img, CHICKEN, 8, 48, CH)
+    img.resize((N * SCALE, N * SCALE), Image.NEAREST).convert("RGB").save(path)
     print("ok", path)
 
 

@@ -11,6 +11,8 @@ const IDS := [
 	"mouse", "goose", "duck", "frog", "butterfly", "swan", "goldenGoose",
 	# Дикие жители дальних биомов (перекраска листа другого зверя, см. base и recolor)
 	"jerboa", "crystalMouse", "salamander", "amberButterfly", "starButterfly",
+	# Звери дальних планет (1.1)
+	"ashGoose", "phoenixChick", "frostSwan", "reefDuck",
 	# Из стартового набора
 	"duckHat",
 	# За кристаллы: перекрашенные звери пака
@@ -91,6 +93,24 @@ const SPECS := {
 		"cost": {"coins": 0, "items": [["obsidian", 15], ["sulfur", 15]]},
 		"effects": [{"type": "helper", "spec": {"damage": 10.0, "interval": 1.1, "tools": ["hand", "pickaxe"], "max_tier": 7}},
 			{"type": "crit", "v": 0.04}]},
+	"ashGoose": {"emoji": "🪿", "source": "wild", "location": "ashPlains", "weight": 1.0,
+		"base": "goose", "recolor": [Color("2a2422"), Color("6b5d58"), Color("ff8a3a")],
+		"cost": {"coins": 0, "items": [["emberstone", 8], ["sulfur", 30]]},
+		"effects": [{"type": "helper", "spec": {"damage": 14.0, "interval": 1.0, "tools": ["hand", "pickaxe"], "max_tier": 8}},
+			{"type": "yield", "cat": "ore", "v": 0.08}]},
+	"phoenixChick": {"emoji": "🐥", "source": "wild", "location": "fireCanyon", "weight": 0.6,
+		"base": "duck", "recolor": [Color("8a1a0e"), Color("ff5a1f"), Color("ffd24a")],
+		"cost": {"coins": 0, "items": [["phoenixFeather", 8], ["ruby", 6]]},
+		"effects": [{"type": "xp", "v": 0.2}, {"type": "crit", "v": 0.05}]},
+	"frostSwan": {"emoji": "🦢", "source": "wild", "location": "frostSpires", "weight": 0.8,
+		"base": "swan", "recolor": [Color("3a5a8a"), Color("a8d8ff"), Color("ffffff")],
+		"cost": {"coins": 0, "items": [["frostglass", 8], ["ice", 80]]},
+		"effects": [{"type": "helper", "spec": {"damage": 16.0, "interval": 1.0, "tools": ["hand", "axe", "pickaxe"], "max_tier": 8}},
+			{"type": "yield", "cat": "gem", "v": 0.08}]},
+	"reefDuck": {"emoji": "🦆", "source": "wild", "location": "crystalReef", "weight": 0.8,
+		"base": "duck", "recolor": [Color("0e3a5a"), Color("2a8ac8"), Color("8ff0ff")],
+		"cost": {"coins": 0, "items": [["azurite", 8], ["pearl", 10]]},
+		"effects": [{"type": "xp", "v": 0.15}, {"type": "yield", "cat": "treasure", "v": 0.12}]},
 	"amberButterfly": {"emoji": "🦋", "source": "wild", "location": "amberWoods", "weight": 1.0,
 		"base": "butterfly", "recolor": [Color("7a3a0c"), Color("e8962a"), Color("ffe08a")],
 		"cost": {"coins": 0, "items": [["goldenApple", 10], ["honey", 20]]},
@@ -146,6 +166,12 @@ const AWAKEN_COSTS := [
 ]
 ## Цвет ауры: бронза, серебро, золото, мифическая (сиренево-голубая).
 const AWAKEN_COLORS := [Color("cd7f32"), Color("d8dee8"), Color("ffd54a"), Color("9fd8ff")]
+
+# Уровни зверей: корм с фермы. Каждый уровень после первого +1% к умениям зверя и немного мощи.
+## Уровней на каждую звезду (5 звёзд - 30 уровней).
+const MAX_LEVEL := 30
+const LEVELS_PER_STAR := 6
+const LEVEL_BONUS := 0.01
 
 # Редкая окраска: 3% диких зверей бывают другого цвета
 const SHINY_CHANCE := 0.03
@@ -303,6 +329,16 @@ static func effect_icons(e: Dictionary) -> Array:
 					out.append("fist" if t == "hand" else Tools.icon_name(t))
 			return out
 	return []
+
+
+## Корм для перехода с уровня level на следующий: урожай (чем выше уровень, тем ценнее) и монеты.
+static func feed_cost(level: int) -> Dictionary:
+	var crop: String = Farming.CROP_IDS[clampi((level - 1) / 3, 0, Farming.CROP_IDS.size() - 1)]
+	return {"coins": 30 * level * level, "items": [[str(Farming.spec(crop)["produce"]), 6 + 2 * level]]}
+
+
+static func level_multiplier(level: int) -> float:
+	return 1.0 + LEVEL_BONUS * float(maxi(0, level - 1))
 
 
 static func awaken_multiplier(level: int) -> float:

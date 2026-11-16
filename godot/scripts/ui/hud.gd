@@ -10,13 +10,14 @@ const PILLS := [
 	"res://scripts/ui/hot_offer_pill.gd",
 	"res://scripts/ui/home_floor_pill.gd",
 	"res://scripts/ui/dungeon_pill.gd",
+	"res://scripts/ui/event_map_pill.gd",
 ]
-## Маленькие плашки (таймеры): в один ряд с переносом, чтобы столбец справа не рос вниз.
+## Круглые таймеры (удача, набег, ивент, блюдо): по два в ряд под кнопками справа.
 const MINI_PILLS := [
 	"res://scripts/ui/raid_pill.gd",
 	"res://scripts/ui/event_pill.gd",
 	"res://scripts/ui/meal_pill.gd",
-	"res://scripts/ui/event_map_pill.gd",
+	"res://scripts/ui/alliance_pill.gd",
 ]
 
 ## Карточки у NPC с одной главной кнопкой: вместо карточки внизу (там палец ведёт героя) над головой героя
@@ -37,7 +38,6 @@ var _level_box: PanelContainer
 var _coin_box: PanelContainer
 var _energy: EnergyRow
 var _hp: CombatCards.HpStrip
-var _pack_box: PanelContainer
 var _potion: PotionButton
 ## Ряд справа над нижней панелью: расходники и зелье.
 var _combat_row := CombatRow.new()
@@ -55,8 +55,10 @@ var _bubble_cards := Control.new()
 var _overlay_layer := CanvasLayer.new()
 var _badges: Dictionary = {}
 var _level_label: Label
-var _level_name: Label
 var _xp_bar: ProgressBar
+var _boss: BossBar
+## Ширина полос в блоке героя (опыт, энергия, здоровье).
+const CARD_BAR := 124.0
 ## Ширина подписи нижней кнопки: 5 кнопок в ряд на узком экране.
 const TAB_LABEL_WIDTH := 62.0
 
@@ -153,40 +155,23 @@ func _build_top() -> void:
 	num.position = Vector2(46, 46) - Vector2(22, 22) * 0.8
 	_pro_crown = UiKit.icon("crown", 16)
 	root.add_child(_pro_crown)
+	# Блок героя без лишнего: опыт, энергия и здоровье. Здоровье видно всегда: если прятать его вне боя,
+	# блок меняет высоту и миникарта под ним прыгает.
+	# Название локации показывает баннер при входе, мощь - окно уровня по нажатию на блок.
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 2)
+	col.add_theme_constant_override("separation", 4)
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_child(col)
-	_level_name = UiKit.title("", 13)
-	_level_name.custom_minimum_size = Vector2(140, 0)
-	_level_name.clip_text = true
-	col.add_child(_level_name)
-	_xp_bar = UiKit.bar(0.0, "gold", 140, 14, " ")
+	_xp_bar = UiKit.bar(0.0, "gold", CARD_BAR, 14, " ")
 	col.add_child(_xp_bar)
-	# Энергия - под опытом, рядом со здоровьем
 	_energy = EnergyRow.new()
+	_energy.bar.custom_minimum_size.x = CARD_BAR - 36.0
 	col.add_child(_energy)
-	# Здоровье
 	_hp = CombatCards.HpStrip.new()
+	_hp.bar.custom_minimum_size.x = CARD_BAR - 17.0
 	col.add_child(_hp)
 	_level_box = level_box
 
-	# Рюкзак справа под монетами (как в iOS), первой плашкой в столбце справа
-	var pack_box := PanelContainer.new()
-	pack_box.add_theme_stylebox_override("panel", UiKit.pill_style())
-	pack_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	pack_box.size_flags_horizontal = Control.SIZE_SHRINK_END
-	_pills.add_child(pack_box)
-	_pack_box = pack_box
-	var prow := HBoxContainer.new()
-	prow.add_theme_constant_override("separation", 6)
-	pack_box.add_child(prow)
-	prow.add_child(UiKit.icon("bag", 22))
-	var pcol := VBoxContainer.new()
-	pcol.add_theme_constant_override("separation", 1)
-	prow.add_child(pcol)
-	_pack_bar = UiKit.bar(0.0, "green", 100, 14, " ")
-	_pack_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	pcol.add_child(_pack_bar)
 	_minimap = MiniMap.new()
 	_minimap.position = Vector2(10, top + 96)
 	root.add_child(_minimap)
@@ -202,9 +187,13 @@ func _build_top() -> void:
 	coin_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(coin_box)
 	_coin_box = coin_box
+	# Монеты и рюкзак в одной плашке: сверху кристаллы и монеты, под ними полоса рюкзака
+	var ccol := VBoxContainer.new()
+	ccol.add_theme_constant_override("separation", 4)
+	coin_box.add_child(ccol)
 	var crow := HBoxContainer.new()
 	crow.add_theme_constant_override("separation", 6)
-	coin_box.add_child(crow)
+	ccol.add_child(crow)
 	# Кристаллы: нажатие открывает магазин на вкладке кристаллов
 	var gem_button := Button.new()
 	gem_button.flat = true
@@ -230,23 +219,35 @@ func _build_top() -> void:
 	crow.add_child(UiKit.icon("coin", 22))
 	_coins_label = UiKit.title("0", 16)
 	crow.add_child(_coins_label)
+	var prow := HBoxContainer.new()
+	prow.add_theme_constant_override("separation", 6)
+	prow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ccol.add_child(prow)
+	var bag := UiKit.icon("bag", 18)
+	bag.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	prow.add_child(bag)
+	_pack_bar = UiKit.bar(0.0, "green", 60, 14, " ")
+	_pack_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_pack_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	prow.add_child(_pack_bar)
 
 	_pills.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	_pills.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_pills.offset_left = -10
 	_pills.offset_right = -10
-	_pills.offset_top = top + 42
+	_pills.offset_top = top + 74
 	_pills.alignment = BoxContainer.ALIGNMENT_BEGIN
-	_pills.add_theme_constant_override("separation", 6)
+	_pills.add_theme_constant_override("separation", 10)
 	_pills.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(_pills)
 
-	# Полоска босса под шапкой
-	var boss := BossBar.new()
-	boss.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	boss.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	boss.offset_top = top + 92
-	root.add_child(boss)
+	# Полоска босса под шапкой: между миникартой слева и кнопками справа, ничего не перекрывает
+	_boss = BossBar.new()
+	_boss.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	_boss.offset_left = 10.0 + MiniMap.MAX_SIZE.x + 8.0
+	_boss.offset_right = -(10.0 + HudRound.COLUMN + 8.0)
+	_boss.offset_top = top + 76
+	root.add_child(_boss)
 	for path in PILLS:
 		if ResourceLoader.exists(path):
 			var pill: Control = load(path).new()
@@ -254,12 +255,13 @@ func _build_top() -> void:
 			_pills.add_child(pill)
 	var mini := HFlowContainer.new()
 	mini.alignment = FlowContainer.ALIGNMENT_END
-	mini.add_theme_constant_override("h_separation", 6)
-	mini.add_theme_constant_override("v_separation", 6)
-	mini.custom_minimum_size = Vector2(220, 0)
+	mini.add_theme_constant_override("h_separation", 10)
+	mini.add_theme_constant_override("v_separation", 14)
+	mini.custom_minimum_size = Vector2(HudRound.ROUND * 2.0 + 10.0, 0)
 	mini.size_flags_horizontal = Control.SIZE_SHRINK_END
 	mini.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_pills.add_child(mini)
+	mini.add_child(LuckButton.new("pill"))
 	for path in MINI_PILLS:
 		if ResourceLoader.exists(path):
 			mini.add_child(load(path).new())
@@ -302,6 +304,8 @@ func _build_bottom() -> void:
 	_combat_row.add_theme_constant_override("separation", 8)
 	_combat_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_prompts.add_child(_combat_row)
+	# Последнее сообщение чата альянса - над кнопками, по нажатию открывается чат
+	_prompts.add_child(ChatStrip.new())
 	var items := ConsumableBar.new()
 	items.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_combat_row.add_child(items)
@@ -368,7 +372,7 @@ func _hud_button(w: Array) -> Control:
 	t.set_meta("fit", 11)
 	UiKit.fit_label(t, TAB_LABEL_WIDTH, 11)
 	col.add_child(t)
-	var badge := UiKit.count_badge(0)
+	var badge := UiKit.count_badge(0) if center else UiKit.dot_badge()
 	badge.visible = false
 	UiKit.pin_badge(badge, b)
 	_badges[w[0]] = badge
@@ -516,8 +520,9 @@ func _update_badges() -> void:
 		var n := Nav.group_count(id)
 		var badge: PanelContainer = _badges[id]
 		badge.visible = n > 0
+		# Число только у заданий, на остальных вкладках - красная точка: меньше шума внизу
 		if n > 0:
-			(badge.get_child(0) as Label).text = str(mini(n, 99))
+			(badge.get_child(0) as Label).text = str(mini(n, 99)) if id == Nav.CENTER else ""
 
 
 func _build_banner() -> void:
@@ -578,9 +583,10 @@ func _refresh_values() -> void:
 		_pro_crown.visible = Game.premium.has_pro()
 		_pro_crown.global_position = _badge_box.global_position + Vector2(_badge_box.size.x - 10, -8)
 	if _level_box != null and _minimap != null:
-		_minimap.position = Vector2(10, _level_box.get_rect().end.y + 10.0)
+		_minimap.position = Vector2(10, _level_box.get_rect().end.y + 8.0)
+		# Полоска босса не заходит на миникарту и блок героя
+		_boss.offset_top = maxf(_coin_box.get_rect().end.y, _level_box.get_rect().end.y) + 6.0
 	_level_label.text = str(Game.level)
-	_level_name.text = Locations.name_of(Game.current)
 	_xp_bar.value = Game.level_progress
 	# На последнем уровне полоска показывает путь к следующему очку мастерства
 	(_xp_bar.get_child(0) as Label).text = "%s/%s" % [Fmt.compact(int(Game.save["xp"])),
@@ -600,6 +606,60 @@ func _refresh_values() -> void:
 	_update_bubbles()
 	if _prompt_cards.has("tutorial") and bool(Game.save.get("tutorialDone", false)):
 		set_prompt("tutorial", null)
+	_update_guide()
+
+
+var _guide_key := ""
+
+
+## Карточка обучения (после первой подсказки): текущий шаг, прогресс и совет, где это делается.
+func _update_guide() -> void:
+	var show := Game.guide.active() and bool(Game.save.get("tutorialDone", false))
+	var key := "%d|%d|%s" % [Game.guide.index(), Game.guide.progress(), L.code] if show else ""
+	if key == _guide_key:
+		return
+	_guide_key = key
+	set_prompt("guide", _guide_card() if show else null)
+
+
+func _guide_card() -> Control:
+	var i := Game.guide.index()
+	var s := Guide.step(i)
+	var p := PanelContainer.new()
+	p.add_theme_stylebox_override("panel", UiKit.panel_style(14))
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 4)
+	p.add_child(col)
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 8)
+	col.add_child(top)
+	top.add_child(UiKit.icon(str(s["icon"]), 26))
+	var texts := VBoxContainer.new()
+	texts.add_theme_constant_override("separation", 0)
+	texts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top.add_child(texts)
+	texts.add_child(UiKit.label(L.t("guide.step", [i + 1, Guide.STEPS.size()]), 11, UiKit.INK_SOFT))
+	var t := UiKit.label(Guide.step_text(i), 14)
+	t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	texts.add_child(t)
+	var reward := HBoxContainer.new()
+	reward.add_theme_constant_override("separation", 2)
+	reward.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	reward.add_child(UiKit.icon("coin", 16))
+	reward.add_child(UiKit.label(Fmt.n(int(s.get("coins", 0))), 13))
+	top.add_child(reward)
+	var target := int(s.get("target", 1))
+	if target > 1:
+		col.add_child(UiKit.bar(float(Game.guide.progress()) / float(target), "green", 120.0, 10.0,
+			"%d/%d" % [mini(Game.guide.progress(), target), target]))
+	var hint := UiKit.label(Guide.step_hint(i), 12, UiKit.INK_SOFT)
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(hint)
+	# Карточка не мешает касаниям: под ней джойстик
+	for c in p.find_children("*", "Control", true, false):
+		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return p
 
 
 ## Число в шапке не сужается обратно: иначе при каждой смене монет (бой, продажа) плашка справа и блок
@@ -611,22 +671,19 @@ func _hold_width(l: Label) -> void:
 		l.custom_minimum_size.x = w
 
 
-## Блок уровня слева не заходит под монеты справа: название локации и полоска опыта сужаются.
+## Блок героя слева не заходит под монеты справа: на узком экране полосы сужаются.
 func _fit_top() -> void:
-	if _level_box == null or _coin_box == null or _level_name == null:
+	if _level_box == null or _coin_box == null:
 		return
 	var vw := get_viewport().get_visible_rect().size.x
 	var room := vw - 10.0 - _coin_box.size.x - 8.0 - _level_box.position.x
-	var fixed := _level_box.get_combined_minimum_size().x - _level_name.custom_minimum_size.x
-	var w := clampf(room - fixed, 60.0, 140.0)
-	if absf(_level_name.custom_minimum_size.x - w) < 0.5:
+	var fixed := _level_box.get_combined_minimum_size().x - _xp_bar.custom_minimum_size.x
+	var w := clampf(room - fixed, 70.0, CARD_BAR)
+	if absf(_xp_bar.custom_minimum_size.x - w) < 0.5:
 		return
-	_level_name.custom_minimum_size.x = w
 	_xp_bar.custom_minimum_size.x = w
-	if _energy != null:
-		_energy.bar.custom_minimum_size.x = maxf(40.0, w - 36.0)
-	if _hp != null:
-		_hp.bar.custom_minimum_size.x = maxf(40.0, w - 17.0)
+	_energy.bar.custom_minimum_size.x = maxf(40.0, w - 36.0)
+	_hp.bar.custom_minimum_size.x = maxf(40.0, w - 17.0)
 	_level_box.reset_size()
 
 
@@ -727,3 +784,85 @@ class CombatRow extends HBoxContainer:
 			if c is Control and (c as Control).visible:
 				any = true
 		visible = any
+
+
+## Плашка чата альянса на главном экране: последнее сообщение и непрочитанные. Сама опрашивает чат раз в 30 с.
+class ChatStrip extends PanelContainer:
+	var _label: Label
+	var _badge: Label
+	var _poll := 3.0
+	var _t := 0.0
+
+	func _init() -> void:
+		size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		custom_minimum_size = Vector2(0, 34)
+		var st := UiKit.box(Color(0.12, 0.08, 0.05, 0.72), Color(0, 0, 0, 0), 14, 0, false)
+		st.content_margin_left = 8
+		st.content_margin_right = 10
+		st.content_margin_top = 4
+		st.content_margin_bottom = 4
+		add_theme_stylebox_override("panel", st)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(row)
+		var ic := UiKit.icon("scroll", 18)
+		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(ic)
+		_label = UiKit.label("", 12, Color.WHITE, 2)
+		_label.custom_minimum_size = Vector2(200, 0)
+		_label.clip_text = true
+		_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(_label)
+		_badge = UiKit.label("", 11, Color.WHITE, 2)
+		_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var bs := UiKit.box(UiKit.BAD, Color(0, 0, 0, 0), 9, 0, false)
+		bs.content_margin_left = 5
+		bs.content_margin_right = 5
+		_badge.add_theme_stylebox_override("normal", bs)
+		row.add_child(_badge)
+		visible = false
+
+	func _gui_input(e: InputEvent) -> void:
+		var tap: bool = (e is InputEventScreenTouch and not e.pressed) or (e is InputEventMouseButton and not e.pressed \
+			and e.button_index == MOUSE_BUTTON_LEFT)
+		if tap and Hud.current != null:
+			Hud.current.open_window(AlliancePanel.new("chat"))
+			accept_event()
+
+	func _process(delta: float) -> void:
+		_t -= delta
+		if _t > 0.0:
+			return
+		_t = 0.5
+		var al := Game.alliance
+		if not al.in_alliance():
+			visible = false
+			return
+		_poll -= 0.5
+		if _poll <= 0.0 and Hud.current != null and not Hud.current.has_window():
+			_poll = 30.0
+			al.poll_chat()
+		var last: Dictionary = {}
+		for i in range(al.messages.size() - 1, -1, -1):
+			var m: Dictionary = al.messages[i]
+			if str(m.get("kind", "text")) == "text":
+				last = m
+				break
+		if last.is_empty():
+			visible = false
+			return
+		var body := str(last.get("body", ""))
+		if Hall.is_sticker(body):
+			body = L.t("chat.sticker")
+		_label.text = "%s: %s" % [str(last.get("name", "")), body.replace("\n", " ")]
+		var n := AlliancePanel.unread()
+		_badge.text = str(n)
+		_badge.visible = n > 0
+		visible = true
+		# Плашка всегда последняя - прямо над кнопками
+		var p := get_parent()
+		if p != null and get_index() != p.get_child_count() - 1:
+			p.move_child(self, -1)
