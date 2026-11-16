@@ -3,9 +3,11 @@ extends RefCounted
 ## Гонка к Сердцу долины: флажки (попытки), идущий забег, трофеи, лиги и статистика мест.
 ## В Game.save: raceRun - идущий забег (RaceRun.d) или нет ключа; raceFlags = {n, at} - флажки и когда
 ## пересчитаны; raceStats = {trophies, places [4], races, best (с), league (лучшая лига, за которую дана награда)};
-## racePending - итоги, ещё не отправленные на сервер [{room, place, times}].
+## racePending - итоги, ещё не отправленные на сервер [{room, place, times}]; raceAds = {day, n} - флажки за рекламу
+## сегодня; raceTitles - титулы за месяц [{m (номер месяца), p (место)}].
 ## Сервер (docs/supabase/race.sql через Game.rating.call_rpc): race_join - место в комнате на 4, race_sync - свой
-## ход и ход живых соперников, race_result - итог для рейтинга, race_top - рейтинг дня и месяца.
+## ход и ход живых соперников, race_result - итог для рейтинга, race_top - рейтинг дня и месяца, race_cheer и
+## race_emote - уютные действия, race_prizes и race_prize_claim - награды за места в рейтинге.
 ## Без сети гонка идёт со странниками. Правила забега - RaceRun, данные - Race.
 
 var _run: RaceRun
@@ -19,6 +21,12 @@ var top := {}
 var top_error := false
 ## Снимки экрана: данные подставлены, сеть не трогаем.
 var demo := false
+## Незабранные награды за рейтинг: [{period, key, place, points}] (с сервера).
+var prizes: Array = []
+## Меня подбодрили: растёт с каждым новым подарком (поле показывает), gift_count - сколько подарков пришло.
+var gift_rev := 0
+var gift_count := 0
+var _emote_at := -100.0
 
 
 func defaults(save: Dictionary) -> void:
@@ -35,6 +43,13 @@ func defaults(save: Dictionary) -> void:
 	save["raceStats"] = {"trophies": maxi(0, int(stats.get("trophies", 0))), "places": places,
 		"races": maxi(0, int(stats.get("races", 0))), "best": float(stats.get("best", 0.0)),
 		"league": int(stats.get("league", 0))}
+	var ads: Variant = save.get("raceAds", {})
+	save["raceAds"] = {"day": int((ads as Dictionary).get("day", 0)), "n": int((ads as Dictionary).get("n", 0))} if ads is Dictionary else {"day": 0, "n": 0}
+	var titles: Array = []
+	for x in save.get("raceTitles", []) if save.get("raceTitles") is Array else []:
+		if x is Dictionary and Race.month_title(int(x.get("p", 0))) != "":
+			titles.append({"m": int(x["m"]), "p": int(x["p"])})
+	save["raceTitles"] = titles
 	var pend: Variant = save.get("racePending", [])
 	save["racePending"] = (pend as Array).filter(func(p: Variant) -> bool: return p is Dictionary and int(p.get("room", 0)) > 0).slice(-20) if pend is Array else []
 	_run = RaceRun.from_save(save.get("raceRun"))
@@ -81,6 +96,28 @@ func add_flags(n: int) -> void:
 	Game.mark_dirty()
 
 
+func _ads() -> Dictionary:
+	var a: Dictionary = Game.save["raceAds"]
+	if int(a["day"]) != ShopSystem.day_index():
+		a["day"] = ShopSystem.day_index()
+		a["n"] = 0
+	return a
+
+
+## Сколько флажков за рекламу ещё можно взять сегодня.
+func ad_flags_left() -> int:
+	return maxi(0, Race.AD_FLAGS - int(_ads()["n"]))
+
+
+## Флажок за досмотренный ролик (Ads.show_rewarded).
+func ad_flag() -> void:
+	if ad_flags_left() <= 0:
+		return
+	_ads()["n"] = int(_ads()["n"]) + 1
+	add_flags(1)
+	Game.show_toast("px:bolt", L.t("race.adFlagGot"))
+
+
 # MARK: Забег
 
 func run() -> RaceRun:
@@ -121,7 +158,8 @@ func start_online() -> RaceRun:
 		return start()
 	busy = true
 	Game.changed.emit()
-	var res: Variant = await Game.rating.call_rpc("race_join", {"p_name": Game.rating.player_name(), "p_skin": Skins.current()})
+	var res: Variant = await Game.rating.call_rpc("race_join",
+		{"p_name": Game.rating.player_name(), "p_skin": Skins.current(), "p_league": league()})
 	busy = false
 	if not can_start():
 		return null
@@ -143,7 +181,38 @@ func sync() -> void:
 		return
 	if _run.apply_humans(res.get("seats", []), Clock.now()):
 		rev += 1
+	var fresh := _run.receive_gifts(int(res.get("gifts", 0)))
+	if fresh > 0:
+		gift_count = fresh
+		gift_rev += 1
 	touch()
+
+
+## Подбодрить отстающего (RaceRun.cheer); живому сопернику подарок уходит через сервер. Ответ как у RaceRun.cheer.
+func cheer() -> Dictionary:
+	if _run == null:
+		return {}
+	var c := _run.cheer(Clock.now())
+	if c.is_empty():
+		return c
+	touch()
+	if bool(c["human"]) and _run.room() > 0 and not demo:
+		Game.rating.call_rpc("race_cheer", {"p_room": _run.room(), "p_seat": int(c["seat"])})
+	return c
+
+
+func can_emote() -> bool:
+	return _run != null and Clock.now() - _emote_at >= Race.EMOTE_EVERY
+
+
+## Смайлик над своим бегуном (видят живые соперники).
+func emote(id: String) -> bool:
+	if not id in Race.EMOTES or not can_emote():
+		return false
+	_emote_at = Clock.now()
+	if _run.room() > 0 and not demo:
+		Game.rating.call_rpc("race_emote", {"p_room": _run.room(), "p_emote": id})
+	return true
 
 
 ## Награда за место: {trophies, crystals, key, league (новая лига или -1), league_crystals}.
@@ -160,6 +229,10 @@ func claim() -> Dictionary:
 	var place := _run.place(Clock.now())
 	var r := reward_for(place)
 	r["place"] = place
+	# Очки дружбы («Подбодрить») - по трофею сверху
+	r["friend"] = _run.cheers()
+	r["trophies"] = int(r["trophies"]) + int(r["friend"])
+	r["beacon"] = _run.lit_beacon()
 	var s := _s()
 	var before := Race.league_of(int(s["trophies"]))
 	s["trophies"] = int(s["trophies"]) + int(r["trophies"])
@@ -218,6 +291,59 @@ func fetch_top(period: String) -> void:
 	Game.changed.emit()
 
 
+## Награды за места в рейтинге вчерашних дней и прошлого месяца.
+func fetch_prizes() -> void:
+	if demo or not OnlineConfig.enabled():
+		return
+	var res: Variant = await Game.rating.call_rpc("race_prizes", {})
+	if res is Array:
+		prizes = (res as Array).filter(func(p: Variant) -> bool: return p is Dictionary)
+		Game.changed.emit()
+
+
+## Кристаллы за место из ответа сервера ({period, place}).
+static func prize_value(p: Dictionary) -> int:
+	var place := int(p.get("place", 0))
+	return Race.month_prize(place) if str(p.get("period", "")) == "month" else Race.day_prize(place)
+
+
+## Забрать награду за место (место проверяет сервер): кристаллы, за месяц - титул.
+func claim_prize(p: Dictionary) -> void:
+	if busy:
+		return
+	busy = true
+	var res: Variant = {"period": p["period"], "key": p["key"], "place": p["place"]}
+	if not demo:
+		res = await Game.rating.call_rpc("race_prize_claim", {"p_period": str(p["period"]), "p_key": int(p["key"])})
+	busy = false
+	prizes.erase(p)
+	if res is Dictionary:
+		grant_prize(res)
+	Game.changed.emit()
+
+
+## Выдать награду за место (ответ сервера {period, key, place}).
+func grant_prize(res: Dictionary) -> void:
+	var gems := prize_value(res)
+	if gems <= 0:
+		return
+	Game.shop.add_crystals(gems)
+	if str(res["period"]) == "month":
+		Game.save["raceTitles"].append({"m": int(res["key"]), "p": int(res["place"])})
+	Game.show_toast("px:gem", L.t("race.prizeGot", [gems]))
+	Game.mark_dirty()
+	Game.save_now()
+
+
+## Лучший титул за месяц: {m, p} или {}.
+func best_title() -> Dictionary:
+	var out := {}
+	for t in Game.save["raceTitles"]:
+		if out.is_empty() or int(t["p"]) < int(out["p"]) or (int(t["p"]) == int(out["p"]) and int(t["m"]) > int(out["m"])):
+			out = t
+	return out
+
+
 ## Сохранить состояние забега (после добычи, продажи, ворот).
 func touch() -> void:
 	if _run != null:
@@ -252,6 +378,8 @@ func best() -> float:
 func ready_count() -> int:
 	if not open():
 		return 0
+	if not prizes.is_empty():
+		return 1
 	if _run != null:
 		return 1 if _run.decided(Clock.now()) else 0
 	return 1 if flags() > 0 else 0

@@ -132,10 +132,11 @@ func test_catch_up_bonus() -> void:
 	var run := _run()
 	for b in run.d["bots"]:
 		b["pace"] = 100.0
-	eq(run.behind(1000.0 + 200.0), 3, "лидер прошёл трое ворот")
+	eq(run.behind(1000.0 + 250.0), 3, "лидер прошёл трое ворот")
+	eq(run.beacon_left(1000.0 + 250.0), 0.0, "маяк лидера уже погас")
 	var total := 0
 	for i in 200:
-		total += run.gather("wood", 2, 1000.0 + 200.0)
+		total += run.gather("wood", 2, 1000.0 + 250.0)
 	between(float(total) / 200.0, 2.0 * 1.45 - 0.15, 2.0 * 1.45 + 0.15, "+45% добычи при отставании на 3 ворот")
 
 
@@ -369,3 +370,107 @@ func test_save_keeps_online_fields() -> void:
 	eq(back.room(), 9, "комната сохранилась")
 	eq(back.d["times"], [12.5, 40.0], "свои этапы сохранились")
 	eq(RaceRun.bot_steps(back.d["bots"][1], 60.0), 2, "ход живого сохранился")
+
+
+func test_beacon_speeds_up_gathering() -> void:
+	var run := _run(0, 0.0)
+	for b in run.d["bots"]:
+		b["pace"] = 2000.0
+	run.d["bots"][1]["pace"] = 400.0
+	near(run.beacon_at(), 400.0, 0.001, "маяк зажёг первый дошедший")
+	eq(run.beacon_left(399.0), 0.0, "до его финиша маяка нет")
+	near(run.beacon_left(450.0), Race.BEACON_TIME - 50.0, 0.001, "после - горит BEACON_TIME")
+	eq(run.beacon_left(400.0 + Race.BEACON_TIME + 1.0), 0.0, "и гаснет")
+	run.d["gates"] = [true, true, true]
+	var total := 0
+	for i in 200:
+		total += run.gather("wood", 2, 450.0)
+	between(float(total) / 200.0, 2.0 * (1.0 + Race.BEACON_BOOST) - 0.15, 2.0 * (1.0 + Race.BEACON_BOOST) + 0.15, "добыча быстрее под маяком")
+	check(not run.lit_beacon(), "я его не зажигал")
+	run.d["shards"] = [true, true, true]
+	check(run.finish(300.0), "я дошёл раньше всех")
+	check(run.lit_beacon(), "значит, маяк мой")
+	eq(run.beacon_left(450.0), 0.0, "дошедшему ускорение не нужно")
+
+
+func test_cheer_the_one_behind() -> void:
+	var run := _run(0, 0.0)
+	for b in run.d["bots"]:
+		b["pace"] = 5000.0
+	check(not run.can_cheer(10.0), "никто не отстаёт - некого подбодрить")
+	run.d["gates"] = [true, false, false]
+	eq(run.cheer_kind(), "", "сумка пуста - нечем")
+	run.d["bag"] = {"wood": 12, "stone": 3}
+	check(run.can_cheer(10.0), "теперь можно")
+	var c := run.cheer(10.0)
+	check(not c.is_empty(), "подбодрил")
+	eq(str(c["kind"]), "wood", "делюсь тем, чего больше")
+	eq(run.have("wood"), 12 - Race.CHEER_COST, "ресурсы ушли")
+	eq(run.cheers(), 1, "очко дружбы")
+	run.d["bag"]["wood"] = 100
+	run.cheer(10.0)
+	run.cheer(10.0)
+	check(run.cheer(10.0).is_empty(), "не больше CHEER_MAX за гонку")
+	eq(run.cheers(), Race.CHEER_MAX, "очков дружбы - CHEER_MAX")
+
+
+func test_gifts_arrive_once() -> void:
+	var run := _run(2, 0.0)
+	var food := str(Race.FOOD[run.biome])
+	eq(run.receive_gifts(2), 2, "два подарка")
+	eq(run.have(food), 2 * Race.CHEER_COST, "еда своего угла в сумке")
+	eq(run.receive_gifts(2), 0, "повторно не кладём")
+	eq(run.receive_gifts(3), 1, "новый - один")
+
+
+func test_friend_trophies_on_claim() -> void:
+	fresh({"level": Race.MIN_LEVEL})
+	var r := Game.race
+	var run := r.start(3)
+	run.d["cheers"] = 2
+	Clock.offset = Race.DURATION + Race.RESULT_WAIT + 5
+	var got := r.claim()
+	eq(int(got["friend"]), 2, "очки дружбы в итоге")
+	eq(r.trophies(), int(Race.TROPHIES[int(got["place"]) - 1]) + 2, "по трофею за каждое")
+
+
+func test_ad_flags_per_day() -> void:
+	fresh({"level": Race.MIN_LEVEL})
+	var r := Game.race
+	Game.save["raceFlags"]["n"] = 0
+	for i in Race.AD_FLAGS:
+		r.ad_flag()
+	eq(r.ad_flags_left(), 0, "за рекламу - не больше AD_FLAGS в день")
+	r.ad_flag()
+	eq(int(Game.save["raceFlags"]["n"]), Race.AD_FLAGS, "лишний ролик флажка не даёт")
+	Clock.offset = 86400 + 5
+	eq(r.ad_flags_left(), Race.AD_FLAGS, "назавтра снова можно")
+
+
+func test_rating_prizes() -> void:
+	eq(Race.day_prize(1), Race.DAY_PRIZES[0], "1 место дня")
+	eq(Race.day_prize(10), Race.DAY_PRIZES[3], "10 место дня")
+	eq(Race.day_prize(11), 0, "11 место дня без награды")
+	eq(Race.month_prize(2), Race.MONTH_PRIZES[1], "2 место месяца")
+	eq(Race.month_prize(100), Race.MONTH_PRIZES[4], "100 место месяца")
+	eq(Race.month_prize(101), 0, "101 - без награды")
+	eq(Race.month_title(3), "champion", "титул чемпиона")
+	eq(Race.month_title(42), "top100", "титул топ-100")
+	eq(Race.month_label(2026 * 12 + 10), "11.2026", "месяц сервера")
+	eq(Race.day_label(20772), "15.11", "день сервера")
+	fresh({"level": Race.MIN_LEVEL})
+	var crystals := Game.shop.crystals()
+	Game.race.grant_prize({"period": "month", "key": 2026 * 12 + 10, "place": 5})
+	eq(Game.shop.crystals(), crystals + Race.month_prize(5), "кристаллы за месяц")
+	eq(Race.month_title(int(Game.race.best_title()["p"])), "medalist", "титул сохранён")
+
+
+func test_game_center_race() -> void:
+	fresh({"level": Race.MIN_LEVEL})
+	check(not GCenter.earned("race.win_1"), "без побед достижения нет")
+	Game.save["raceStats"]["places"][0] = 1
+	check(GCenter.earned("race.win_1"), "первая победа")
+	check("race.win_1" in GCenter.pending_achievements(), "уйдёт в Game Center")
+	Game.save["raceStats"]["trophies"] = 800
+	check(GCenter.earned("race.league_3"), "золотая лига")
+	eq(GCenter.score("race_trophies"), 800, "таблица трофеев")
