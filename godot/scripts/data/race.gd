@@ -20,7 +20,7 @@ const FLAG_EVERY := 3600
 const TILE := 640.0
 const SIZE := TILE * 3.0
 ## Ширина прохода в воротах.
-const GAP := 112.0
+const GAP := 150.0
 ## Радиус Сердца в центре ядра.
 const HEART_R := 120.0
 

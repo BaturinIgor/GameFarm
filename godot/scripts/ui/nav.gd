@@ -11,7 +11,7 @@ const GROUPS := [
 	["animals", "paw", "hud.animals", ["animals", "wild", "incubator", "arena"]],
 	["quests", "scroll", "hud.quests", ["quests", "heart"]],
 	["hero", "star", "nav.hero", ["talents", "hunt", "collection", "wardrobe"]],
-	["world", "map", "nav.world", ["map", "mine", "events", "alliance"]],
+	["world", "map", "nav.world", ["map", "mine", "race", "events", "alliance"]],
 ]
 ## Вкладка в центре: крупнее остальных.
 const CENTER := "quests"
@@ -33,6 +33,7 @@ const SUBS := {
 	"wardrobe": ["wardrobe.title", "res://scripts/ui/wardrobe_panel.gd"],
 	"map": ["hud.map", "res://scripts/ui/map_panel.gd"],
 	"mine": ["mine.title", "res://scripts/ui/mine_panel.gd"],
+	"race": ["race.title", "res://scripts/ui/race_panel.gd"],
 	"events": ["event.title", "res://scripts/ui/events_panel.gd"],
 	"alliance": ["alliance.title", "res://scripts/ui/alliance_panel.gd"],
 }
@@ -58,6 +59,7 @@ static func level_of(sub: String) -> int:
 		"wild": return int(Wild.RINGS[0]["level"])
 		"events": return Events.MIN_LEVEL
 		"mine": return Mine.MIN_LEVEL
+		"race": return Race.MIN_LEVEL
 		"incubator": return Incubator.MIN_LEVEL
 		"heart": return Story.MIN_LEVEL
 		"alliance": return Alliances.JOIN_LEVEL
@@ -100,6 +102,8 @@ static func _count(sub: String) -> int:
 			return Game.world_map.openable_gates() + (1 if MapPanel.garden_chest_ready() else 0)
 		"mine":
 			return Game.mine.ready_count()
+		"race":
+			return Game.race.ready_count()
 		"incubator":
 			return Game.incubator.ready_count()
 		"arena":

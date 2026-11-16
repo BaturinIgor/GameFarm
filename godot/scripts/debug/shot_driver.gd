@@ -19,6 +19,7 @@ var _opened := ""
 var _shot_done := ""
 var _sub := 0
 var _mine: MineGame
+var _race: RaceScene
 var _lang := ""
 ## Только эти окна ("-- --only alliance:war,shop"): сразу к снимкам окон, без прогулки и остальных шагов.
 var _only: Array = []
@@ -806,6 +807,42 @@ func _extra(k: int) -> void:
 		_ when k == 63 + 2 * Story.count():
 			_shot("9_arena_top")
 			_check_layout("arena:top")
+			main.hud.close_window()
+			# Гонка к Сердцу: окно, старт, середина гонки, итог, окно после награды
+			if Game.level < Race.MIN_LEVEL:
+				Game.save["level"] = Race.MIN_LEVEL
+				Game.recalc()
+			main.hud.open_window(RacePanel.new())
+		_ when k == 64 + 2 * Story.count():
+			_shot("10_race_panel")
+			_check_layout("race")
+			main.hud.close_window()
+			Game.race.start(6)
+			_race = RaceScene.launch()
+		_ when k == 66 + 2 * Story.count():
+			_shot("10_race_start")
+			# Середина: прошло 6 минут, первые ворота открыты монетами, рюкзак не пуст
+			var run := Game.race.run()
+			run.d["start"] = float(run.d["start"]) - 360.0
+			run.d["coins"] = int(run.d["coins"]) + int(Race.GATES[0]["coins"]) + 40
+			run.open_gate(0, "coins")
+			_race._gate_opened(0)
+			run.add_xp(Race.LEVEL_XP[2])
+			for kind in ["wood", "stone", "coal"]:
+				run.d["bag"][kind] = 9
+			_race._player.position = Race.trader_pos(run.seat, 1)
+			_race._cam = _race._player.position
+			_race._ui_cd = 0.0
+		_ when k == 67 + 2 * Story.count():
+			_shot("10_race_mid")
+			_race._show_end()
+		_ when k == 68 + 2 * Story.count():
+			_shot("10_race_end")
+			_race._claim()
+			_race = null
+		_ when k == 69 + 2 * Story.count():
+			_shot("10_race_after")
+			_check_layout("race:after")
 			main.hud.close_window()
 			_step = 5
 			_time = 300.0
