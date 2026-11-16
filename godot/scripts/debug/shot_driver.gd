@@ -261,8 +261,14 @@ func _process(delta: float) -> void:
 				if not towers.is_empty():
 					main.world.player.position = towers[0] + Vector2(90, 40)
 			elif _sub == 5 and _time > 311.0:
-				_sub = 6
+				_sub = 55
 				_shot("7_raid")
+				# Тот же кадр без шапки: подложка для макетов главного экрана
+				main.hud.visible = false
+			elif _sub == 55 and _time > 311.4:
+				_sub = 6
+				_shot("7_world_nohud")
+				main.hud.visible = true
 				print("raid live: ", Game.raids.live)
 				if MonstersFeature.current != null:
 					for sl in MonstersFeature.current.slots:
