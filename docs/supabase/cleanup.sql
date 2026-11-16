@@ -12,6 +12,7 @@
 --   забранные лоты ярмарки альянса старше 4 недель;
 --   очки турнира зверей старше 8 недель, журнал защит старше 2 недель;
 --   лиги войны альянсов старше 4 недель;
+--   комнаты гонки старше 2 суток, итоги гонок старше 62 дней;
 --   просьбы о помощи старше 3 дней, подарки альянсу старше 7 дней, похвалы старше 14 дней.
 
 create or replace function public.hh_cleanup() returns void
@@ -50,6 +51,10 @@ begin
   -- Турнир зверей (если выполнен tourney.sql)
   if to_regproc('public.tourney_cleanup') is not null then
     perform tourney_cleanup();
+  end if;
+  -- Гонка к Сердцу долины (если выполнен race.sql)
+  if to_regproc('public.race_cleanup') is not null then
+    perform race_cleanup();
   end if;
 end $$;
 
