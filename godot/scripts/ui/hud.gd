@@ -155,7 +155,8 @@ func _build_top() -> void:
 	num.position = Vector2(46, 46) - Vector2(22, 22) * 0.8
 	_pro_crown = UiKit.icon("crown", 16)
 	root.add_child(_pro_crown)
-	# Блок героя без лишнего: опыт, энергия и здоровье (только когда герой ранен или в бою).
+	# Блок героя без лишнего: опыт, энергия и здоровье. Здоровье видно всегда: если прятать его вне боя,
+	# блок меняет высоту и миникарта под ним прыгает.
 	# Название локации показывает баннер при входе, мощь - окно уровня по нажатию на блок.
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 4)
@@ -168,7 +169,6 @@ func _build_top() -> void:
 	col.add_child(_energy)
 	_hp = CombatCards.HpStrip.new()
 	_hp.bar.custom_minimum_size.x = CARD_BAR - 17.0
-	_hp.visible = false
 	col.add_child(_hp)
 	_level_box = level_box
 
@@ -582,15 +582,8 @@ func _refresh_values() -> void:
 	if _pro_crown != null:
 		_pro_crown.visible = Game.premium.has_pro()
 		_pro_crown.global_position = _badge_box.global_position + Vector2(_badge_box.size.x - 10, -8)
-	# Здоровье - только когда герой ранен или дерётся
-	var hurt := Game.combat.in_combat or Game.combat.hp_fraction() < 0.999
-	if _hp.visible != hurt:
-		_hp.visible = hurt
-		_level_box.reset_size()
 	if _level_box != null and _minimap != null:
-		# Миникарта под блоком героя; когда появляется здоровье, она плавно съезжает, а не прыгает
-		var y := _level_box.position.y + _level_box.get_combined_minimum_size().y + 8.0
-		_minimap.position = Vector2(10, lerpf(_minimap.position.y, y, 0.5) if absf(_minimap.position.y - y) > 0.5 else y)
+		_minimap.position = Vector2(10, _level_box.get_rect().end.y + 8.0)
 		# Полоска босса не заходит на миникарту и блок героя
 		_boss.offset_top = maxf(_coin_box.get_rect().end.y, _level_box.get_rect().end.y) + 6.0
 	_level_label.text = str(Game.level)
