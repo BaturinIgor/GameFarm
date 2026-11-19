@@ -82,6 +82,7 @@ struct ContentView: View {
             if new != nil && old == nil { Sound.shared.play(.open) }
             if new == nil && old != nil { Sound.shared.play(.close) }
         }
+        .designDemo(game) { sheet = $0 }
         .sheet(item: $sheet) { which in
             Group {
                 switch which {
