@@ -23,7 +23,7 @@ final class GameState {
     @ObservationIgnored private var bannerToken = 0
 
     private init() {
-        save = SaveFile.load()
+        save = Self.designSave() ?? SaveFile.load()
         recalc()
         ensureQuests()
     }
@@ -662,5 +662,16 @@ final class GameState {
         s.sellMult = (1 + 0.01 * (lvl - 1)) * (1 + sellBonus)
         s.capacity = Int(capacity)
         stats = s
+    }
+}
+
+extension GameState {
+    /// Прогресс для макетов (только отладочная сборка с -design).
+    static func designSave() -> SaveData? {
+        #if DEBUG
+        return DesignDemo.save()
+        #else
+        return nil
+        #endif
     }
 }
