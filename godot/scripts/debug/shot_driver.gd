@@ -450,17 +450,23 @@ func _touch(p: Vector2, pressed: bool) -> void:
 	var e := InputEventMouseButton.new()
 	e.button_index = MOUSE_BUTTON_LEFT
 	e.pressed = pressed
-	e.position = p
-	e.global_position = p
+	e.position = _to_window(p)
+	e.global_position = e.position
 	Input.parse_input_event(e)
 
 
 func _drag(p: Vector2) -> void:
 	var e := InputEventMouseMotion.new()
-	e.position = p
-	e.global_position = p
+	e.position = _to_window(p)
+	e.global_position = e.position
 	e.button_mask = MOUSE_BUTTON_MASK_LEFT
 	Input.parse_input_event(e)
+
+
+## Точки сценария заданы в координатах экрана игры 390x844. При большем окне (снимки для App Store
+## и макеты 1290x2796) их нужно перевести в пиксели окна, иначе касание попадает не туда.
+func _to_window(p: Vector2) -> Vector2:
+	return get_viewport().get_final_transform() * p
 
 
 func _nearest(world: World) -> ResourceSpot:
