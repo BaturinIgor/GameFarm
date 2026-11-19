@@ -30,7 +30,9 @@ enum DesignDemo {
         s.active = Array(AnimalID.allCases.prefix(3))
         s.harvests = 640
         s.coinsEarned = 9400
-        if value("-design-overlay") == "offer" { s.starterOfferUntil = Date().addingTimeInterval(36 * 3600) }
+        // Набор новичка уже показан дважды, иначе он сам всплывает поверх каждого кадра на 18 уровне.
+        s.starterOffers = 2
+        s.starterOfferUntil = Date().addingTimeInterval(36 * 3600)
         return s
     }
 
