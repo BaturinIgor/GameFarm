@@ -29,6 +29,7 @@ struct ContentView: View {
         }
         .animation(.spring(duration: 0.35), value: game.levelUp)
         .animation(.spring(duration: 0.35), value: game.offlineReport)
+        .designDemo(game) { sheet = $0 }
         .sheet(item: $sheet) { which in
             Group {
                 switch which {

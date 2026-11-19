@@ -1,0 +1,12 @@
+# Макеты всех экранов версии 1.0 (design/1.0/screens): имя кадра и аргументы запуска.
+# Снимает .github/workflows/design.yml. Параметры описаны в GameFarm/App/DesignDemo.swift.
+01-first-launch -design -design-new
+02-world -design
+03-storage -design -design-sheet storage
+04-workshop -design -design-sheet workshop
+05-talents -design -design-sheet talents
+06-animals -design -design-sheet animals
+07-map -design -design-sheet map
+08-level -design -design-sheet level
+09-overlay-levelUp -design -design-overlay levelUp
+10-overlay-offline -design -design-overlay offline
