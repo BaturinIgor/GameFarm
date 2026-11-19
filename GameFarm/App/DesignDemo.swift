@@ -36,7 +36,9 @@ enum DesignDemo {
     @MainActor
     static func start(_ game: GameState) async -> GameSheet? {
         guard active else { return nil }
-        try? await Task.sleep(for: .milliseconds(800))
+        // Карточки клада сами исчезают через 3 секунды: их показываем перед самым снимком (через 9 с).
+        let late = ["treasure", "chest"].contains(value("-design-overlay") ?? "")
+        try? await Task.sleep(for: .milliseconds(late ? 7600 : 800))
         let items = ResourceKind.allCases.prefix(4).enumerated().map { ResourceAmount(kind: $0.element, amount: 3 + $0.offset * 4) }
         switch value("-design-overlay") {
         case "levelUp": game.levelUp = LevelUpInfo(from: 17, to: 18)
