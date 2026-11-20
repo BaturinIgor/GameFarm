@@ -81,6 +81,20 @@ func build_top() -> void:
 	for t in tabs_shown():
 		items.append([t[0], L.t(t[2]), 1 if _tab_news(t[0]) else 0, t[1]])
 	top_bar.add_child(UiKit.tabs(items, tab, func(id: String) -> void: _set_tab(id)))
+	# Восстановление покупок видно сразу на каждой вкладке с покупками за деньги (App Review 3.1.1):
+	# в неподвижной полосе над прокруткой, а не только внизу вкладки "Бесплатно"
+	if Store.LIVE and tab in ["offers", "vip", "crystals"]:
+		var row := HBoxContainer.new()
+		row.alignment = BoxContainer.ALIGNMENT_END
+		row.add_child(restore_button(13))
+		top_bar.add_child(row)
+
+
+## Кнопка "Восстановить покупки".
+static func restore_button(size := 14) -> GameButton:
+	var b := UiKit.button(L.t("shop.restore"), "wood", size, true)
+	b.pressed.connect(func() -> void: Store.restore())
+	return b
 
 
 ## Точка на вкладке: там есть что-то новое или бесплатное.
@@ -947,9 +961,8 @@ func _build_free() -> void:
 
 	if not Store.LIVE:
 		return
-	var restore := UiKit.button(L.t("shop.restore"), "wood", 14, true)
+	var restore := restore_button()
 	restore.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	restore.pressed.connect(func() -> void: Store.restore())
 	content.add_child(restore)
 	var footer := _wrap(L.t("shop.footer"), 11, UiKit.INK_SOFT)
 	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -1489,6 +1502,8 @@ func _build_detail() -> void:
 			if Hud.current != null:
 				Hud.current.open_window(WardrobePanel.new()))
 		buttons.add_child(wardrobe)
+	if Store.LIVE and not Products.consumable(product):
+		buttons.add_child(restore_button())
 	var close_b := UiKit.button(L.t("common.close"), "wood", 14, true)
 	close_b.pressed.connect(_close_detail)
 	buttons.add_child(close_b)
